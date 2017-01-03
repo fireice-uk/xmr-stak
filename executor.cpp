@@ -471,10 +471,13 @@ void executor::hashrate_report()
 	else
 		output.append("---------------------------\n");
 
-	output.append("Totals:  ").append(hps_format(fTotal[0], num, sizeof(num))).
-		append(hps_format(fTotal[1], num, sizeof(num))).
-		append(hps_format(fTotal[2], num, sizeof(num))).append(" H/s\nHighest: ").
-		append(hps_format(fHighestHps, num, sizeof(num))).append(" H/s\n");
+	output.append("Totals:  ");
+	output.append(hps_format(fTotal[0], num, sizeof(num)));
+	output.append(hps_format(fTotal[1], num, sizeof(num)));
+	output.append(hps_format(fTotal[2], num, sizeof(num)));
+	output.append(" H/s\nHighest: ");
+	output.append(hps_format(fHighestHps, num, sizeof(num)));
+	output.append(" H/s\n");
 
 	fputs(output.c_str(), stdout);
 }
