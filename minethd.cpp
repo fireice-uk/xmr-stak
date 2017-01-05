@@ -238,7 +238,7 @@ bool minethd::self_test()
 
 	if((ctx1 = minethd_alloc_ctx()) == nullptr)
 	{
-		cryptonight_free_ctx(ctx1);
+		cryptonight_free_ctx(ctx0);
 		return false;
 	}
 

@@ -24,7 +24,7 @@
 #include "jext.h"
 #include "socks.h"
 
-#define AGENTID_STR "geezer-cli/0.9"
+#define AGENTID_STR "xmr-stak-cpu/1.0"
 
 using namespace rapidjson;
 

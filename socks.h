@@ -19,7 +19,6 @@ inline void sock_init()
 	}
 }
 
-
 inline void sock_close(SOCKET s)
 {
 	shutdown(s, SD_BOTH);
@@ -65,8 +64,8 @@ inline const char* sock_gai_strerror(int err, char* buf, size_t len)
 inline void sock_init() {}
 typedef int SOCKET;
 
-#define INVALID_SOCKET	(-1)
-#define SOCKET_ERROR	(-1)
+#define INVALID_SOCKET  (-1)
+#define SOCKET_ERROR    (-1)
 
 inline void sock_close(SOCKET s)
 {

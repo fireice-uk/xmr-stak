@@ -479,7 +479,7 @@ void executor::hashrate_report()
 	output.append(hps_format(fHighestHps, num, sizeof(num)));
 	output.append(" H/s\n");
 
-	fputs(output.c_str(), stdout);
+	printer::inst()->print_str(output.c_str());
 }
 
 char* time_format(char* buf, size_t len, std::chrono::system_clock::time_point time)
@@ -562,7 +562,7 @@ void executor::result_report()
 	else
 		out.append("Yay! No errors.\n");
 
-	fputs(out.c_str(), stdout);
+	printer::inst()->print_str(output.c_str());
 }
 
 void executor::connection_report()
@@ -601,5 +601,5 @@ void executor::connection_report()
 	else
 		out.append("Yay! No errors.\n");
 
-	fputs(out.c_str(), stdout);
+	printer::inst()->print_str(output.c_str());
 }
