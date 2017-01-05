@@ -238,14 +238,15 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 	bool bResult = pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult);
 	size_t t_len = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count() - t_start;
 
+	if(t_len > 0xFFFF)
+		t_len = 0xFFFF;
+	iPoolCallTimes.push_back((uint16_t)t_len);
+
 	if(bResult)
 	{
 		uint64_t* targets = (uint64_t*)oResult.bResult;
 		log_result_ok(jpsock::t64_to_diff(targets[3]));
 		printer::inst()->print_msg(L3, "Result accepted by the pool.");
-
-		iPoolCallTime += t_len;
-		iPoolCalls++;
 	}
 	else
 	{
@@ -536,8 +537,13 @@ void executor::result_report()
 	out.append("Difficulty       : ").append(std::to_string(iPoolDiff)).append(1, '\n');
 	out.append("Good results     : ").append(std::to_string(iGoodRes)).append(" / ").
 		append(std::to_string(iTotalRes)).append(num);
-	snprintf(num, sizeof(num), "%.1f sec\n", dConnSec / iTotalRes);
-	out.append("Avg result time  : ").append(num);
+
+	if(iPoolCallTimes.size() != 0)
+	{
+		// Here we use iPoolCallTimes since it also gets reset when we disconnect
+		snprintf(num, sizeof(num), "%.1f sec\n", dConnSec / iPoolCallTimes.size());
+		out.append("Avg result time  : ").append(num);
+	}
 	out.append("Pool-side hashes : ").append(std::to_string(iPoolHashes)).append(2, '\n');
 	out.append("Top 10 best results found:\n");
 
@@ -562,7 +568,7 @@ void executor::result_report()
 	else
 		out.append("Yay! No errors.\n");
 
-	printer::inst()->print_str(output.c_str());
+	printer::inst()->print_str(out.c_str());
 }
 
 void executor::connection_report()
@@ -581,8 +587,13 @@ void executor::connection_report()
 	else
 		out.append("Connected since : <not connected>\n");
 
-	if (iPoolCalls > 0)
-		out.append("Pool ping time  : ").append(std::to_string(iPoolCallTime / iPoolCalls)).append(" ms\n");
+	size_t n_calls = iPoolCallTimes.size();
+	if (n_calls > 1)
+	{
+		//Not-really-but-good-enough median
+		std::nth_element(iPoolCallTimes.begin(), iPoolCallTimes.begin() + n_calls/2, iPoolCallTimes.end());
+		out.append("Pool ping time  : ").append(std::to_string(iPoolCallTimes[n_calls/2])).append(" ms\n");
+	}
 	else
 		out.append("Pool ping time  : (n/a)\n");
 
@@ -601,5 +612,5 @@ void executor::connection_report()
 	else
 		out.append("Yay! No errors.\n");
 
-	printer::inst()->print_str(output.c_str());
+	printer::inst()->print_str(out.c_str());
 }

@@ -114,17 +114,18 @@ private:
 
 	std::chrono::system_clock::time_point tPoolConnTime;
 	size_t iPoolHashes;
-	size_t iPoolCallTime;
-	size_t iPoolCalls;
 	uint64_t iPoolDiff;
+
+	// Set it to 16 bit so that we can just let it grow
+	// Maximum realistic growth rate - 5MB / month
+	std::vector<uint16_t> iPoolCallTimes;
 
 	//Those stats are reset if we disconnect
 	inline void reset_stats()
 	{
+		iPoolCallTimes.empty();
 		tPoolConnTime = std::chrono::system_clock::now();
 		iPoolHashes = 0;
-		iPoolCallTime = 0;
-		iPoolCalls = 0;
 		iPoolDiff = 0;
 	}
 
