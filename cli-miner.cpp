@@ -27,7 +27,6 @@
 #ifdef _WIN32
 void win_exit()
 {
-
 	printer::inst()->print_str("Press any key to exit.");
 	get_key();
 	return;
@@ -64,6 +63,12 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
+	if (!minethd::self_test())
+	{
+		win_exit();
+		return 0;
+	}
+
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_str("XMR-Stak-CPU mining software, CPU Version.\n");
 	printer::inst()->print_str("Based on CPU mining code by wolf9466 (heavily optimized by myself).\n");
@@ -76,12 +81,6 @@ int main(int argc, char *argv[])
 	printer::inst()->print_str("'r' - results\n");
 	printer::inst()->print_str("'c' - connection\n");
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
-
-	if (!minethd::self_test())
-	{
-		win_exit();
-		return 0;
-	}
 
 	executor::inst()->ex_start();
 

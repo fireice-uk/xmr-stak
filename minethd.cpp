@@ -174,23 +174,26 @@ cryptonight_ctx* minethd_alloc_ctx()
 	return nullptr; //Should never happen
 }
 
-static bool check_for_aesni()
+static bool check_cpu_features()
 {
 	constexpr int AESNI_BIT = 1 << 25;
+	constexpr int SSE2_BIT = 1 << 26;
+
 	int cpu_info[4];
 #ifdef _WIN32
 	__cpuid(cpu_info, 1);
 #else
 	__cpuid(1, cpu_info[0], cpu_info[1], cpu_info[2], cpu_info[3]);
 #endif
-	return (cpu_info[2] & AESNI_BIT) != 0;
+	return (cpu_info[2] & AESNI_BIT) != 0 &&
+		(cpu_info[3] & SSE2_BIT) != 0;
 }
 
 bool minethd::self_test()
 {
-	if (!check_for_aesni())
+	if (!check_cpu_features())
 	{
-		printer::inst()->print_msg(L0, "Your CPU does not support the AES-NI instruction set");
+		printer::inst()->print_msg(L0, "This application requires CPU support of AES-NI and SSE2 instructions.");
 		return false;
 	}
 
@@ -246,15 +249,15 @@ bool minethd::self_test()
 	bResult = memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
 	cryptonight_double_hash_ctx("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
-	bResult &= memcmp(out,	"\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
-							"\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
+	bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
+	                       "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
 
 	cryptonight_free_ctx(ctx0);
 	cryptonight_free_ctx(ctx1);
 
 	if(!bResult)
 		printer::inst()->print_msg(L0,
-			"Cryptonight hash self-test failed. This might be caused by bad compiler optimizations.");
+		    "Cryptonight hash self-test failed. This might be caused by bad compiler optimizations.");
 
 	return bResult;
 }
