@@ -22,6 +22,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <intrin.h>
+
 void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 {
 	SetThreadAffinityMask(h, 1 << cpu_id);
@@ -30,6 +31,7 @@ void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 #else
 #include <pthread.h>
 #include <cpuid.h>
+
 void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 {
 	cpu_set_t mn;
@@ -330,8 +332,8 @@ void minethd::work_main()
 		if (oWork.bStall)
 		{
 			/*  We are stalled here because the executor didn't find a job for us yet,
-				either because of network latency, or a socket problem. Since we are
-				raison d'etre of this software it us sensible to just wait until we have something*/
+			    either because of network latency, or a socket problem. Since we are
+			    raison d'etre of this software it us sensible to just wait until we have something*/
 
 			while (iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
