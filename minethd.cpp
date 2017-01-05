@@ -1,4 +1,4 @@
-/*
+aub/*
   * This program is free software: you can redistribute it and/or modify
   * it under the terms of the GNU General Public License as published by
   * the Free Software Foundation, either version 3 of the License, or
@@ -174,23 +174,23 @@ cryptonight_ctx* minethd_alloc_ctx()
 
 static bool check_for_aesni()
 {
-    constexpr int AESNI_BIT = 1 << 25;
-    int cpu_info[4];
+	constexpr int AESNI_BIT = 1 << 25;
+	int cpu_info[4];
 #ifdef _WIN32
-    __cpuid(cpu_info, 1);
+	__cpuid(cpu_info, 1);
 #else
-    __cpuid(1, cpu_info[0], cpu_info[1], cpu_info[2], cpu_info[3]);
+	__cpuid(1, cpu_info[0], cpu_info[1], cpu_info[2], cpu_info[3]);
 #endif
-    return (cpu_info[2] & AESNI_BIT) != 0;
+	return (cpu_info[2] & AESNI_BIT) != 0;
 }
 
 bool minethd::self_test()
 {
-    if (!check_for_aesni())
-    {
-        printer::inst()->print_msg(L0, "Your CPU does not support the AES-NI instruction set");
-        return false;
-    }
+	if (!check_for_aesni())
+	{
+		printer::inst()->print_msg(L0, "Your CPU does not support the AES-NI instruction set");
+		return false;
+	}
 
 	alloc_msg msg = { 0 };
 	size_t res;
@@ -330,8 +330,8 @@ void minethd::work_main()
 		if (oWork.bStall)
 		{
 			/*  We are stalled here because the executor didn't find a job for us yet,
-			    either because of network latency, or a socket problem. Since we are
-			    raison d'etre of this software it us sensible to just wait until we have something*/
+				either because of network latency, or a socket problem. Since we are
+				raison d'etre of this software it us sensible to just wait until we have something*/
 
 			while (iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
