@@ -21,7 +21,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
-
+#include <intrin.h>
 void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 {
 	SetThreadAffinityMask(h, 1 << cpu_id);
@@ -29,7 +29,7 @@ void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 
 #else
 #include <pthread.h>
-
+#include <cpuid.h>
 void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 {
 	cpu_set_t mn;
@@ -172,8 +172,26 @@ cryptonight_ctx* minethd_alloc_ctx()
 	return nullptr; //Should never happen
 }
 
+static bool check_for_aesni()
+{
+    constexpr int AESNI_BIT = 1 << 25;
+    int cpu_info[4];
+#ifdef _WIN32
+    __cpuid(cpu_info, 1);
+#else
+    __cpuid(1, cpu_info[0], cpu_info[1], cpu_info[2], cpu_info[3]);
+#endif
+    return (cpu_info[2] & AESNI_BIT) != 0;
+}
+
 bool minethd::self_test()
 {
+    if (!check_for_aesni())
+    {
+        printer::inst()->print_msg(L0, "Your CPU does not support the AES-NI instruction set");
+        return false;
+    }
+
 	alloc_msg msg = { 0 };
 	size_t res;
 	bool fatal = false;
