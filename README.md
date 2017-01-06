@@ -37,11 +37,18 @@ ccoRQjxqA1CEfQJICf0WEyaabUnSKfxCQ0dwADD0KMxD6EiJENt3m1+FSn0bA1j/
 
 #### Usage on Linux
 ```
-	cmake .
+    cmake .
     make
 ```
 
 GCC version 5.1 or higher is required for full C++11 support. CMake release compile scripts, as well as CodeBlocks build environment for debug builds is included.
+
+To do a static build for a system without gcc 5.1+
+```
+    cmake -DCMAKE_BUILD_TYPE=STATIC
+    make
+```
+Note - cmake caches variables, so if you want to do a dynamic build later you need to specify '-DCMAKE_BUILD_TYPE=RELEASE'
 
 #### CPU mining performance 
 
@@ -98,7 +105,7 @@ Network error log:
 ```
 
 #### Default dev donation
-By default the miner will donate 1% of the hashpower (1 minute in 100 minutes) to my pool. If you want to change that, edit **dev-donate.h** before you build the binaries.
+By default the miner will donate 1% of the hashpower (1 minute in 100 minutes) to my pool. If you want to change that, edit **donate-level.h** before you build the binaries.
 
 If you want to donate directly to support further development, here is my wallet
 * 4581HhZkQHgZrZjKeCfCJxZff9E3xCgHGF25zABZz7oR71TnbbgiS7sK9jveE6Dx6uMs2LwszDuvQJgRZQotdpHt1fTdDhk
