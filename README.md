@@ -15,23 +15,23 @@ Hash: SHA256
 Windows binary release checksums
 
 sha1sum xmr-stak-cpu.exe
-4bc77aa89b046d0ccc62c79b6d9b6329248327a6  xmr-stak-cpu.exe
+46a96c9bfd95ae7d3bd026363fe646cc119228f8  xmr-stak-cpu.exe
 
 sha3sum xmr-stak-cpu.exe
-c7c68a75b1ac322834b2708f94b2513c452bbac7ceed9a30b6b3b580  xmr-stak-cpu.exe
+a7961b4ba74afe0d3c2882329106241bb667565b18a1669d8b59f16b  xmr-stak-cpu.exe
 
 date
-Tue  3 Jan 13:54:40 GMT 2017
+Wed 11 Jan 18:04:04 GMT 2017
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2
 
-iQEcBAEBCAAGBQJYa61hAAoJEPsk95p+1Bw05fcH/jwsMBCnS9NllprPJCm+L3PW
-9mw2AsWKnPTjfNsV80LWFnl/Sl8VqPlrGiRVcqYtijqgpipGP7APunhB8uKf2pL0
-TKKkMn0VX9fcBsBAQb9KYaT8zLuOqaY0rjXcHyHGv2mvRaa5EYeC7uK0pKBgPhOt
-ccoRQjxqA1CEfQJICf0WEyaabUnSKfxCQ0dwADD0KMxD6EiJENt3m1+FSn0bA1j/
-16l7caqmP4HfyFcoYptF5YRFnf+5V/8lwPMOxIDvfbhHKleX4i7yQDDLcvFynSig
-1FVzcIG4c6Fv9FIYPqQEbnN+hU+odnpxbmipJhTEnSmj632pJ9R6Kr8wU45MBkA=
-=K/fC
+iQEcBAEBCAAGBQJYdnOvAAoJEPsk95p+1Bw046QH+wWbDwetdLmXtgQdS7Lfj6aN
+/BE62Uu+3usPWOzdAiUrYu5QXfsrjNEIBGl43uB6VAvEdl5Xm8/5gItavrcye4gH
+01Y40RSnKA/jvRiP3FYSA6qI7duLftffTQwGAsq6qrPpjTXyQ3F1XlYBJD6TRI7u
+ovyCobsL9Gb83UzbLyl9m5szF/88wA7+z5WtHs0BLLU5tACF9mJpsxnSbikQZOCi
+NChuMyuqeF3cBNPdozJ/K5g9ErMASbwD8S582iNX7mklm5fgECYW+CL/RsIY5g/H
++TTaQk+2ItMxzhbHkIREazWnywaRlrcRudSs06Rz8gLzm/VQMCVHqELvM5RgnsE=
+=UE6r
 -----END PGP SIGNATURE-----
 ```
 
