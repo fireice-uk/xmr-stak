@@ -35,7 +35,7 @@ using namespace rapidjson;
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
 enum configEnum { iCpuThreadNum, aCpuThreadsConf, sUseSlowMem, sPoolAddr,
-	sWalletAddr, sPoolPwd, iCallTimeout, iNetRetry, iVerboseLevel, bPreferIpv4 };
+	sWalletAddr, sPoolPwd, iCallTimeout, iNetRetry, iVerboseLevel, iAutohashTime, bPreferIpv4 };
 
 struct configVal {
 	configEnum iName;
@@ -54,6 +54,7 @@ configVal oConfigValues[] = {
 	{ iCallTimeout, "call_timeout", kNumberType },
 	{ iNetRetry, "retry_time", kNumberType },
 	{ iVerboseLevel, "verbose_level", kNumberType },
+	{ iAutohashTime, "h_print_time", kNumberType },
 	{ bPreferIpv4, "prefer_ipv4", kTrueType }
 };
 
@@ -174,9 +175,14 @@ uint64_t jconf::GetNetRetry()
 	return prv->configValues[iNetRetry]->GetUint64();
 }
 
-int64_t jconf::GetVerboseLevel()
+uint64_t jconf::GetVerboseLevel()
 {
-	return prv->configValues[iVerboseLevel]->GetInt64();
+	return prv->configValues[iVerboseLevel]->GetUint64();
+}
+
+uint64_t jconf::GetAutohashTime()
+{
+	return prv->configValues[iAutohashTime]->GetUint64();
 }
 
 bool jconf::parse_config(const char* sFilename)
@@ -290,10 +296,10 @@ bool jconf::parse_config(const char* sFilename)
 		return false;
 	}
 
-	if(!prv->configValues[iVerboseLevel]->IsInt64())
+	if(!prv->configValues[iVerboseLevel]->IsUint64() || !prv->configValues[iAutohashTime]->IsUint64())
 	{
 		printer::inst()->print_msg(L0,
-			"Invalid config file. verbose_level has to be an integer.");
+			"Invalid config file. verbose_level and h_print_time need to be positive integers.");
 		return false;
 	}
 

@@ -33,6 +33,12 @@ executor::executor()
 	my_thd = nullptr;
 }
 
+void executor::push_timed_event(ex_event&& ev, size_t sec)
+{
+	std::unique_lock<std::mutex> lck(timed_event_mutex);
+	lTimedEvents.emplace_back(std::move(ev), sec_to_ticks(sec));
+}
+
 void executor::ex_clock_thd()
 {
 	size_t iSwitchPeriod = sec_to_ticks(iDevDonatePeriod);
@@ -52,19 +58,21 @@ void executor::ex_clock_thd()
 
 		push_event(ex_event(EV_PERF_TICK));
 
-		if(iReconnectCountdown != 0)
+		// Service timed events
+		std::unique_lock<std::mutex> lck(timed_event_mutex);
+		std::list<timed_event>::iterator ev = lTimedEvents.begin();
+		while (ev != lTimedEvents.end())
 		{
-			iReconnectCountdown--;
-			if(iReconnectCountdown == 0)
-				push_event(ex_event(EV_RECONNECT, usr_pool_id));
+			ev->ticks_left--;
+			if(ev->ticks_left == 0)
+			{
+				push_event(std::move(ev->event));
+				ev = lTimedEvents.erase(ev);
+			}
+			else
+				ev++;
 		}
-
-		if(iDevDisconnectCountdown != 0)
-		{
-			iDevDisconnectCountdown--;
-			if(iDevDisconnectCountdown == 0)
-				push_event(ex_event(EV_DEV_POOL_EXIT));
-		}
+		lck.unlock();
 
 		if(iDevPortion == 0)
 			continue;
@@ -90,7 +98,7 @@ void executor::sched_reconnect()
 	auto work = minethd::miner_work();
 	minethd::switch_work(work);
 
-	iReconnectCountdown = sec_to_ticks(rt);
+	push_timed_event(ex_event(EV_RECONNECT, usr_pool_id), rt);
 }
 
 void executor::log_socket_error(std::string&& sError)
@@ -312,16 +320,13 @@ void executor::on_switch_pool(size_t pool_id)
 		minethd::switch_work(oWork);
 
 		if(dev_pool->is_running())
-			iDevDisconnectCountdown = sec_to_ticks(5);
+			push_timed_event(ex_event(EV_DEV_POOL_EXIT), 5);
 	}
 }
 
 void executor::ex_main()
 {
 	assert(1000 % iTickTime == 0);
-
-	iReconnectCountdown = 0;
-	iDevDisconnectCountdown = 0;
 
 	minethd::miner_work oWork = minethd::miner_work();
 	pvThreads = minethd::thread_starter(oWork);
@@ -340,6 +345,10 @@ void executor::ex_main()
 	// Place the default success result at postion 0, it needs to
 	// be here even if our first result is a failure
 	vMineResults.emplace_back();
+
+	// If the user requested it, start the autohash printer
+	if(jconf::inst()->GetVerboseLevel() >= 4)
+		push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 
 	size_t cnt = 0, i;
 	while (true)
@@ -401,6 +410,11 @@ void executor::ex_main()
 
 		case EV_USR_CONNSTAT:
 			connection_report();
+			break;
+
+		case EV_HASHRATE_LOOP:
+			hashrate_report();
+			push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 			break;
 
 		case EV_INVALID_VAL:

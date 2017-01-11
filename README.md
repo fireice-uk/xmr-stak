@@ -166,6 +166,12 @@ Reference: http://rybkaforum.net/cgi-bin/rybkaforum/topic_show.pl?pid=259791#pid
 
 *Warning: do not download ntrights.exe from any other site other then the offical Microsoft download page.*
 
+**VirtualAlloc failed**
+
+If you set up the user rights properly (see above), and your system has 4-8GB of RAM (50%+ use), there is a significant chance that there simply won't be a large enough chunk of contiguous memory because Windows is fairly bad at mitigating memory fragmentation.
+
+If that happens, disable all auto-staring applications and run the miner after a reboot.
+
 **msvcp140.dll and vcruntime140.dll not available errors**
 
 Download and install this [runtime package](https://www.microsoft.com/en-us/download/details.aspx?id=48145) from Microsoft.  *Warning: Do NOT use "missing dll" sites - dll's are exe files with another name, and it is a fairly safe bet that any dll on a shady site like that will be trojaned.  Please download offical runtimes from Microsoft above.*

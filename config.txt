@@ -21,6 +21,11 @@
 
 /*
  * LARGE PAGE SUPPORT
+ * Lare pages need a properly set up OS. It can be difficult if you are not used to systems administation,
+ * but the performace results are worth the trouble - you will get around 20% boost. Slow memory mode is
+ * meant as a backup, you won't get stellar results there. If you are running into trouble, especially
+ * on Windows, please read the common issues in the README.
+ *
  * By default we will try to allocate large pages. This means you need to "Run As Administrator" on Windows.
  * You need to edit your system's group policies to enable locking large pages. Here are the steps from MSDN
  *
@@ -92,8 +97,17 @@
  *                 1 - Print intro, connection event, disconnect event
  *                 2 - All of level 1, and new job (block) event if the difficulty is different from the last job
  *                 3 - All of level 1, and new job (block) event in all cases, result submission event.
+ *                 4 - All of level 3, and automatic hashrate report printing 
  */
 "verbose_level" : 3,
+
+/*
+ * Automatic hashrate report
+ *
+ * h_print_time - How often, in seconds, should we print a hashrate report if verbose_level is set to 4.
+ *                This option has no effect if verbose_level is not 4.
+ */
+"h_print_time" : 60,
 
 /*
  * prefer_ipv4 - IPv6 preference. If the host is available on both IPv4 and IPv6 net, which one should be choose?

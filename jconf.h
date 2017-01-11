@@ -35,9 +35,8 @@ public:
 	const char* GetPoolPwd();
 	const char* GetWalletAddress();
 
-	int64_t GetVerboseLevel();
-
-	double GetDonationLevel();
+	uint64_t GetVerboseLevel();
+	uint64_t GetAutohashTime();
 
 	uint64_t GetCallTimeout();
 	uint64_t GetNetRetry();

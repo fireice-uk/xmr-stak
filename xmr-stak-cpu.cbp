@@ -11,7 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="config.jscfg" />
+				<Option parameters="config-debug.txt" />
 				<Compiler>
 					<Add option="-march=corei7-avx" />
 					<Add option="-std=c++11" />
@@ -29,7 +29,7 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="config.jscfg" />
+				<Option parameters="config-debug.txt" />
 				<Compiler>
 					<Add option="-march=westmere" />
 					<Add option="-O3" />
@@ -49,7 +49,7 @@
 				<Option object_output="obj/Release_test/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="config.jscfg" />
+				<Option parameters="config-debug.txt" />
 				<Compiler>
 					<Add option="-march=westmere" />
 					<Add option="-O3" />

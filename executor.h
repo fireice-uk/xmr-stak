@@ -3,6 +3,7 @@
 #include "msgstruct.h"
 #include <atomic>
 #include <array>
+#include <list>
 
 class jpsock;
 class minethd;
@@ -21,10 +22,20 @@ public:
 	void ex_main();
 
 	inline void push_event(ex_event&& ev) { oEventQ.push(std::move(ev)); }
+	void push_timed_event(ex_event&& ev, size_t sec);
 
 private:
+	struct timed_event
+	{
+		ex_event event;
+		size_t ticks_left;
+
+		timed_event(ex_event&& ev, size_t ticks) : event(std::move(ev)), ticks_left(ticks) {}
+	};
+
 	// In miliseconds, has to divide a second (1000ms) into an integer number
 	constexpr static size_t iTickTime = 500;
+
 	// Dev donation time period in seconds. 100 minutes by default.
 	// We will divide up this period according to the config setting
 	constexpr static size_t iDevDonatePeriod = 100 * 60;
@@ -33,15 +44,17 @@ private:
 	constexpr static size_t dev_pool_id = 1;
 	constexpr static size_t usr_pool_id = 2;
 
-	std::atomic<size_t> iReconnectCountdown;
+	//std::atomic<size_t> iDevDisconnectCountdown;
+	//std::atomic<size_t> iReconnectCountdown;
+	std::list<timed_event> lTimedEvents;
+	std::mutex timed_event_mutex;
 	thdq<ex_event> oEventQ;
 
 	telemetry* telem;
 	std::vector<minethd*>* pvThreads;
 	std::thread* my_thd;
 
-	size_t  current_pool_id;
-	std::atomic<size_t> iDevDisconnectCountdown;
+	size_t current_pool_id;
 
 	jpsock* usr_pool;
 	jpsock* dev_pool;
