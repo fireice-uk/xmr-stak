@@ -26,6 +26,10 @@
 #include "console.h"
 #include "donate-level.h"
 
+#ifdef _WIN32
+#define strncasecmp _strnicmp
+#endif // _WIN32
+
 executor* executor::oInst = NULL;
 
 executor::executor()
@@ -261,7 +265,16 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 		if(!pool->have_sock_error())
 		{
 			printer::inst()->print_msg(L3, "Result rejected by the pool.");
-			log_result_error(pool->get_call_error());
+
+			std::string error = pool->get_call_error();
+
+			if(strncasecmp(error.c_str(), "Unauthenticated", 15) == 0)
+			{
+				printer::inst()->print_msg(L2, "Your miner was unable to find a share in time. Either the pool difficulty is too high, or the pool timeout is too low.");
+				pool->disconnect();
+			}
+
+			log_result_error(std::move(error));
 		}
 		else
 			log_result_error("[NETWORK ERROR]");
