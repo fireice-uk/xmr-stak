@@ -209,9 +209,13 @@ bool jconf::parse_config(const char* sFilename)
 		return false;
 	}
 
-	buffer = (char*)malloc(flen + 3);
+	if(flen <= 16)
+	{
+		printer::inst()->print_msg(L0, "File is empty or too short - %s.", sFilename);
+		return false;
+	}
 
-	buffer[0] = '{';
+	buffer = (char*)malloc(flen + 3);
 	if(fread(buffer+1, flen, 1, pFile) != 1)
 	{
 		free(buffer);
@@ -219,9 +223,19 @@ bool jconf::parse_config(const char* sFilename)
 		printer::inst()->print_msg(L0, "Read error while reading %s.", sFilename);
 		return false;
 	}
+	fclose(pFile);
+
+	//Replace Unicode BOM with spaces - we always use UTF-8
+	if(buffer[1] == 0xEF && buffer[2] == 0xBB && buffer[3] == 0xBF)
+	{
+		buffer[1] = ' ';
+		buffer[2] = ' ';
+		buffer[3] = ' ';
+	}
+
+	buffer[0] = '{';
 	buffer[flen] = '}';
 	buffer[flen + 1] = '\0';
-	fclose(pFile);
 
 	prv->jsonDoc.Parse<kParseCommentsFlag|kParseTrailingCommasFlag>(buffer, flen+2);
 	free(buffer);
