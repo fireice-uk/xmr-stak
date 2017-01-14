@@ -18,7 +18,7 @@ set(CMAKE_C_FLAGS "-DNDEBUG -march=westmere -O3 -m64 -s")
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11")
 
 set(CMAKE_EXE_LINKER_FLAGS_RELSEASE "")
-set(CMAKE_EXE_LINKER_FLAGS_STATIC "-static")
+set(CMAKE_EXE_LINKER_FLAGS_STATIC "-static-libgcc -static-libstdc++")
 
 set(EXECUTABLE_OUTPUT_PATH "bin")
 
