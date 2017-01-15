@@ -18,6 +18,7 @@
 #include "jconf.h"
 #include "console.h"
 #include "donate-level.h"
+#include "httpd.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -64,6 +65,12 @@ int main(int argc, char *argv[])
 	}
 
 	if (!minethd::self_test())
+	{
+		win_exit();
+		return 0;
+	}
+
+	if (!httpd::inst()->start_daemon())
 	{
 		win_exit();
 		return 0;

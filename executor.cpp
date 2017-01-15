@@ -414,19 +414,19 @@ void executor::ex_main()
 		break;
 
 		case EV_USR_HASHRATE:
-			hashrate_report();
-			break;
-
 		case EV_USR_RESULTS:
-			result_report();
+		case EV_USR_CONNSTAT:
+			print_report(ev.iName);
 			break;
 
-		case EV_USR_CONNSTAT:
-			connection_report();
+		case EV_HTML_HASHRATE:
+		case EV_HTML_RESULTS:
+		case EV_HTML_CONNSTAT:
+			http_report(ev.iName);
 			break;
 
 		case EV_HASHRATE_LOOP:
-			hashrate_report();
+			print_report(EV_USR_HASHRATE);
 			push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 			break;
 
@@ -451,23 +451,22 @@ inline const char* hps_format(double h, char* buf, size_t l)
 		return " (na)";
 }
 
-void executor::hashrate_report()
+void executor::hashrate_report(std::string& out)
 {
-	std::string output;
 	char num[32];
 	size_t nthd = pvThreads->size();
 
-	output.reserve(256 + nthd * 64);
+	out.reserve(256 + nthd * 64);
 
 	double fTotal[3] = { 0.0, 0.0, 0.0};
 	size_t i;
 
-	output.append("HASHRATE REPORT\n");
-	output.append("| ID | 2.5s |  60s |  15m |");
+	out.append("HASHRATE REPORT\n");
+	out.append("| ID | 2.5s |  60s |  15m |");
 	if(nthd != 1)
-		output.append(" ID | 2.5s |  60s |  15m |\n");
+		out.append(" ID | 2.5s |  60s |  15m |\n");
 	else
-		output.append(1, '\n');
+		out.append(1, '\n');
 
 	for (i = 0; i < nthd; i++)
 	{
@@ -478,36 +477,34 @@ void executor::hashrate_report()
 		fHps[2] = telem->calc_telemetry_data(900000, i);
 
 		snprintf(num, sizeof(num), "| %2u |", (unsigned int)i);
-		output.append(num);
-		output.append(hps_format(fHps[0], num, sizeof(num))).append(" |");
-		output.append(hps_format(fHps[1], num, sizeof(num))).append(" |");
-		output.append(hps_format(fHps[2], num, sizeof(num))).append(1, ' ');
+		out.append(num);
+		out.append(hps_format(fHps[0], num, sizeof(num))).append(" |");
+		out.append(hps_format(fHps[1], num, sizeof(num))).append(" |");
+		out.append(hps_format(fHps[2], num, sizeof(num))).append(1, ' ');
 
 		fTotal[0] += fHps[0];
 		fTotal[1] += fHps[1];
 		fTotal[2] += fHps[2];
 
 		if((i & 0x1) == 1) //Odd i's
-			output.append("|\n");
+			out.append("|\n");
 	}
 
 	if((i & 0x1) == 1) //We had odd number of threads
-		output.append("|\n");
+		out.append("|\n");
 
 	if(nthd != 1)
-		output.append("-----------------------------------------------------\n");
+		out.append("-----------------------------------------------------\n");
 	else
-		output.append("---------------------------\n");
+		out.append("---------------------------\n");
 
-	output.append("Totals:  ");
-	output.append(hps_format(fTotal[0], num, sizeof(num)));
-	output.append(hps_format(fTotal[1], num, sizeof(num)));
-	output.append(hps_format(fTotal[2], num, sizeof(num)));
-	output.append(" H/s\nHighest: ");
-	output.append(hps_format(fHighestHps, num, sizeof(num)));
-	output.append(" H/s\n");
-
-	printer::inst()->print_str(output.c_str());
+	out.append("Totals:  ");
+	out.append(hps_format(fTotal[0], num, sizeof(num)));
+	out.append(hps_format(fTotal[1], num, sizeof(num)));
+	out.append(hps_format(fTotal[2], num, sizeof(num)));
+	out.append(" H/s\nHighest: ");
+	out.append(hps_format(fHighestHps, num, sizeof(num)));
+	out.append(" H/s\n");
 }
 
 char* time_format(char* buf, size_t len, std::chrono::system_clock::time_point time)
@@ -531,12 +528,11 @@ char* time_format(char* buf, size_t len, std::chrono::system_clock::time_point t
 	return buf;
 }
 
-void executor::result_report()
+void executor::result_report(std::string& out)
 {
 	char num[128];
 	char date[32];
 
-	std::string out;
 	out.reserve(1024);
 
 	size_t iGoodRes = vMineResults[0].count, iTotalRes = iGoodRes;
@@ -594,16 +590,13 @@ void executor::result_report()
 	}
 	else
 		out.append("Yay! No errors.\n");
-
-	printer::inst()->print_str(out.c_str());
 }
 
-void executor::connection_report()
+void executor::connection_report(std::string& out)
 {
 	char num[128];
 	char date[32];
 
-	std::string out;
 	out.reserve(512);
 
 	jpsock* pool = pick_pool_by_id(dev_pool_id + 1);
@@ -638,6 +631,70 @@ void executor::connection_report()
 	}
 	else
 		out.append("Yay! No errors.\n");
+}
+
+void executor::print_report(ex_event_name ev)
+{
+	std::string out;
+	switch(ev)
+	{
+	case EV_USR_HASHRATE:
+		hashrate_report(out);
+		break;
+
+	case EV_USR_RESULTS:
+		result_report(out);
+		break;
+
+	case EV_USR_CONNSTAT:
+		connection_report(out);
+		break;
+	default:
+		assert(false);
+		break;
+	}
 
 	printer::inst()->print_str(out.c_str());
+}
+
+void executor::http_report(ex_event_name ev)
+{
+	assert(pHttpString != nullptr);
+
+	switch(ev)
+	{
+	case EV_HTML_HASHRATE:
+		hashrate_report(*pHttpString);
+		break;
+
+	case EV_HTML_RESULTS:
+		result_report(*pHttpString);
+		break;
+
+	case EV_HTML_CONNSTAT:
+		connection_report(*pHttpString);
+		break;
+	default:
+		assert(false);
+		break;
+	}
+
+	httpReady.set_value();
+}
+
+void executor::get_http_report(ex_event_name ev_id, std::string& data)
+{
+	std::lock_guard<std::mutex> lck(httpMutex);
+
+	assert(pHttpString == nullptr);
+	assert(ev_id == EV_HTML_HASHRATE || ev_id == EV_HTML_RESULTS || ev_id == EV_HTML_CONNSTAT);
+
+	pHttpString = &data;
+	httpReady = std::promise<void>();
+	std::future<void> ready = httpReady.get_future();
+
+	push_event(ex_event(ev_id));
+
+	ready.wait();
+	pHttpString = nullptr;
 }

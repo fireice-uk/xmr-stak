@@ -4,6 +4,7 @@
 #include <atomic>
 #include <array>
 #include <list>
+#include <future>
 
 class jpsock;
 class minethd;
@@ -20,6 +21,8 @@ public:
 
 	void ex_start() { my_thd = new std::thread(&executor::ex_main, this); }
 	void ex_main();
+
+	void get_http_report(ex_event_name ev_id, std::string& data);
 
 	inline void push_event(ex_event&& ev) { oEventQ.push(std::move(ev)); }
 	void push_timed_event(ex_event&& ev, size_t sec);
@@ -69,9 +72,16 @@ private:
 	void ex_clock_thd();
 	void pool_connect(jpsock* pool);
 
-	void hashrate_report();
-	void result_report();
-	void connection_report();
+	void hashrate_report(std::string& out);
+	void result_report(std::string& out);
+	void connection_report(std::string& out);
+
+	void http_report(ex_event_name ev);
+	void print_report(ex_event_name ev);
+
+	std::string* pHttpString = nullptr;
+	std::promise<void> httpReady;
+	std::mutex httpMutex;
 
 	struct sck_error_log
 	{
