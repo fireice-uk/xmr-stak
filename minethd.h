@@ -94,7 +94,7 @@ public:
 	std::atomic<uint64_t> iTimestamp;
 
 private:
-	minethd(miner_work& pWork, size_t iNo, bool double_work);
+	minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefetch);
 
 	// We use the top 10 bits of the nonce for thread and resume
 	// This allows us to resume up to 128 threads 4 times before
@@ -119,5 +119,6 @@ private:
 	uint8_t iThreadNo;
 
 	bool bQuit;
+	bool bNoPrefetch;
 };
 

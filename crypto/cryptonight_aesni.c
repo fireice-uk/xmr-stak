@@ -270,6 +270,54 @@ void cryptonight_hash_ctx(const void* input, size_t len, void* output, cryptonig
 	extra_hashes[ctx0->hash_state[0] & 3](ctx0->hash_state, 200, output);
 }
 
+void cryptonight_hash_ctx_np(const void* input, size_t len, void* output, cryptonight_ctx* ctx0)
+{
+	keccak((const uint8_t *)input, len, ctx0->hash_state, 200);
+
+	// Optim - 99% time boundary
+	cn_explode_scratchpad((__m128i*)ctx0->hash_state, (__m128i*)ctx0->long_state);
+
+	uint8_t* l0 = ctx0->long_state;
+	uint64_t* h0 = (uint64_t*)ctx0->hash_state;
+
+	uint64_t al0 = h0[0] ^ h0[4];
+	uint64_t ah0 = h0[1] ^ h0[5];
+	__m128i bx0 = _mm_set_epi64x(h0[3] ^ h0[7], h0[2] ^ h0[6]);
+
+	uint64_t idx0 = h0[0] ^ h0[4];
+
+	// Optim - 90% time boundary
+	for(size_t i = 0; i < 0x80000; i++)
+	{
+		__m128i cx;
+		cx = _mm_load_si128((__m128i *)&l0[idx0 & 0x1FFFF0]);
+		cx = _mm_aesenc_si128(cx, _mm_set_epi64x(ah0, al0));
+		_mm_store_si128((__m128i *)&l0[idx0 & 0x1FFFF0], _mm_xor_si128(bx0, cx));
+		idx0 = _mm_cvtsi128_si64(cx);
+		bx0 = cx;
+
+		uint64_t hi, lo, cl, ch;
+		cl = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[0];
+		ch = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[1];
+		lo = _umul128(idx0, cl, &hi);
+		al0 += hi;
+		ah0 += lo;
+		((uint64_t*)&l0[idx0 & 0x1FFFF0])[0] = al0;
+		((uint64_t*)&l0[idx0 & 0x1FFFF0])[1] = ah0;
+		ah0 ^= ch;
+		al0 ^= cl;
+		idx0 = al0;
+	}
+
+	// Optim - 90% time boundary
+	cn_implode_scratchpad((__m128i*)ctx0->long_state, (__m128i*)ctx0->hash_state);
+
+	// Optim - 99% time boundary
+
+	keccakf((uint64_t*)ctx0->hash_state, 24);
+	extra_hashes[ctx0->hash_state[0] & 3](ctx0->hash_state, 200, output);
+}
+
 // This lovely creation will do 2 cn hashes at a time. We have plenty of space on silicon
 // to fit temporary vars for two contexts. Function will read len*2 from input and write 64 bytes to output
 // We are still limited by L3 cache, so doubling will only work with CPUs where we have more than 2MB to core (Xeons)

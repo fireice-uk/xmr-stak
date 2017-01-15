@@ -99,14 +99,15 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	if(!oThdConf.IsObject())
 		return false;
 
-	const Value *mode, *aff;
+	const Value *mode, *no_prefetch, *aff;
 	mode = GetObjectMember(oThdConf, "low_power_mode");
+	no_prefetch = GetObjectMember(oThdConf, "no_prefetch");
 	aff = GetObjectMember(oThdConf, "affine_to_cpu");
 
-	if(mode == nullptr || aff == nullptr)
+	if(mode == nullptr || no_prefetch == nullptr || aff == nullptr)
 		return false;
 
-	if(!mode->IsBool())
+	if(!mode->IsBool() || !no_prefetch->IsBool())
 		return false;
 
 	if(!aff->IsNumber() && !aff->IsBool())
@@ -116,6 +117,8 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 		return false;
 
 	cfg.bDoubleMode = mode->GetBool();
+	cfg.bNoPrefetch = no_prefetch->GetBool();
+
 	if(aff->IsNumber())
 		cfg.iCpuAff = aff->GetInt64();
 	else
