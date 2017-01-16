@@ -117,7 +117,7 @@ void telemetry::push_perf_value(size_t iThd, uint64_t iHashCount, uint64_t iTime
 	iBucketTop[iThd] = (iTop + 1) & iBucketMask;
 }
 
-minethd::minethd(miner_work& pWork, size_t iNo, bool double_work)
+minethd::minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefetch)
 {
 	oWork = pWork;
 	bQuit = 0;
@@ -125,6 +125,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, bool double_work)
 	iJobNo = 0;
 	iHashCount = 0;
 	iTimestamp = 0;
+	bNoPrefetch = no_prefetch;
 
 	if(double_work)
 		oWorkThd = std::thread(&minethd::double_work_main, this);
@@ -242,11 +243,30 @@ bool minethd::self_test()
 		return false;
 	}
 
+	bool bHasLp = ctx0->ctx_info[0] == 1 && ctx1->ctx_info[1];
+	size_t n = jconf::inst()->GetThreadCount();
+	jconf::thd_cfg cfg;
+	for (size_t i = 0; i < n; i++)
+	{
+		jconf::inst()->GetThreadConfig(i, cfg);
+
+		if(!bHasLp && cfg.bNoPrefetch)
+		{
+			printer::inst()->print_msg(L0, "Wrong config. You are running in slow memory mode with no_prefetch.");
+			cryptonight_free_ctx(ctx0);
+			cryptonight_free_ctx(ctx1);
+			return false;
+		}
+	}
+
 	unsigned char out[64];
 	bool bResult;
 
 	cryptonight_hash_ctx("This is a test", 14, out, ctx0);
 	bResult = memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
+
+	cryptonight_hash_ctx_np("This is a test", 14, out, ctx0);
+	bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
 	cryptonight_double_hash_ctx("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
 	bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
@@ -278,7 +298,7 @@ std::vector<minethd*>* minethd::thread_starter(miner_work& pWork)
 	{
 		jconf::inst()->GetThreadConfig(i, cfg);
 
-		minethd* thd = new minethd(pWork, i, cfg.bDoubleMode);
+		minethd* thd = new minethd(pWork, i, cfg.bDoubleMode, cfg.bNoPrefetch);
 
 		if(cfg.iCpuAff >= 0)
 			thd_setaffinity(thd->oWorkThd.native_handle(), cfg.iCpuAff);
@@ -362,7 +382,11 @@ void minethd::work_main()
 			iCount++;
 
 			*piNonce = ++result.iNonce;
-			cryptonight_hash_ctx(oWork.bWorkBlob, oWork.iWorkSize, result.bResult, ctx);
+
+			if(bNoPrefetch)
+				cryptonight_hash_ctx_np(oWork.bWorkBlob, oWork.iWorkSize, result.bResult, ctx);
+			else
+				cryptonight_hash_ctx(oWork.bWorkBlob, oWork.iWorkSize, result.bResult, ctx);
 
 			if (*piHashVal < oWork.iTarget)
 				executor::inst()->push_event(ex_event(result, oWork.iPoolId));

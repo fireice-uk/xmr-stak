@@ -15,6 +15,7 @@ public:
 
 	struct thd_cfg {
 		bool bDoubleMode;
+		bool bNoPrefetch;
 		long long iCpuAff;
 	};
 
