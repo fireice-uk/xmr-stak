@@ -15,28 +15,29 @@ Hash: SHA256
 Windows binary release checksums
 
 sha1sum xmr-stak-cpu.exe
-46a96c9bfd95ae7d3bd026363fe646cc119228f8  xmr-stak-cpu.exe
+32f551c891040eda2c25e18e6287665471a5a653  xmr-stak-cpu.exe
 
 sha3sum xmr-stak-cpu.exe
-a7961b4ba74afe0d3c2882329106241bb667565b18a1669d8b59f16b  xmr-stak-cpu.exe
+ed12841738c899a3eb61f51787aa670c25b64ce3c5a626717e6a8f6b  xmr-stak-cpu.exe
 
 date
-Wed 11 Jan 18:04:04 GMT 2017
+Mon 16 Jan 15:13:25 GMT 2017
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2
 
-iQEcBAEBCAAGBQJYdnOvAAoJEPsk95p+1Bw046QH+wWbDwetdLmXtgQdS7Lfj6aN
-/BE62Uu+3usPWOzdAiUrYu5QXfsrjNEIBGl43uB6VAvEdl5Xm8/5gItavrcye4gH
-01Y40RSnKA/jvRiP3FYSA6qI7duLftffTQwGAsq6qrPpjTXyQ3F1XlYBJD6TRI7u
-ovyCobsL9Gb83UzbLyl9m5szF/88wA7+z5WtHs0BLLU5tACF9mJpsxnSbikQZOCi
-NChuMyuqeF3cBNPdozJ/K5g9ErMASbwD8S582iNX7mklm5fgECYW+CL/RsIY5g/H
-+TTaQk+2ItMxzhbHkIREazWnywaRlrcRudSs06Rz8gLzm/VQMCVHqELvM5RgnsE=
-=UE6r
+iQEcBAEBCAAGBQJYfONvAAoJEPsk95p+1Bw02coH/0by+VMK76gnmpNjIxDcphkV
+S1GG+f0sIAYUrGpoMCJTXbr7hU3Na+grTbt6xLM2Tb0xJjX4Mc47Cixajzy7+TTx
+R2+CvBRl8LG9zob6JNiohvxD1+SK7RWDKWenFyDlr9BewgE/ArqZM+16BQBrLP9H
+XIWy1wh/lcSYuS548tnUYdNOmEnR9TqA454M4r8PED85HSpNmvI+eG8fZ8OK471C
+3yMupjYlAbiEBT+gE6bZwLeeCH9NO2gGeBAb31w8RBsMRjy+VvhFhTOoJwZbXj9e
+sMUwNBu+fLVoilMVvp8SDpQ7Uw/WFT085N2eJiCCuEbHgFAwM3uwD6VHz3eXd0s=
+=QJQj
 -----END PGP SIGNATURE-----
 ```
 
 #### Usage on Linux
 ```
+    sudo apt-get install libmicrohttpd-dev
     cmake .
     make
 ```
