@@ -58,7 +58,6 @@
 				<Linker>
 					<Add option="-s" />
 					<Add option="-m64" />
-					<Add library="pthread" />
 				</Linker>
 			</Target>
 		</Build>

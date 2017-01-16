@@ -545,7 +545,6 @@ void executor::result_report(std::string& out)
 	if(iTotalRes == 0)
 	{
 		out.append("You haven't found any results yet.\n");
-		fputs(out.c_str(), stdout);
 		return;
 	}
 
