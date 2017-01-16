@@ -235,7 +235,8 @@ bool jconf::parse_config(const char* sFilename)
 	fclose(pFile);
 
 	//Replace Unicode BOM with spaces - we always use UTF-8
-	if(buffer[1] == 0xEF && buffer[2] == 0xBB && buffer[3] == 0xBF)
+	unsigned char* ubuffer = (unsigned char*)buffer;
+	if(ubuffer[1] == 0xEF && ubuffer[2] == 0xBB && ubuffer[3] == 0xBF)
 	{
 		buffer[1] = ' ';
 		buffer[2] = ' ';

@@ -243,7 +243,7 @@ bool minethd::self_test()
 		return false;
 	}
 
-	bool bHasLp = ctx0->ctx_info[0] == 1 && ctx1->ctx_info[1];
+	bool bHasLp = ctx0->ctx_info[0] == 1 && ctx1->ctx_info[0] == 1;
 	size_t n = jconf::inst()->GetThreadCount();
 	jconf::thd_cfg cfg;
 	for (size_t i = 0; i < n; i++)
