@@ -146,7 +146,7 @@ private:
 	//Those stats are reset if we disconnect
 	inline void reset_stats()
 	{
-		iPoolCallTimes.empty();
+		iPoolCallTimes.clear();
 		tPoolConnTime = std::chrono::system_clock::now();
 		iPoolHashes = 0;
 		iPoolDiff = 0;

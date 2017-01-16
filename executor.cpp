@@ -580,7 +580,7 @@ void executor::result_report(std::string& out)
 	out.append("\nError details:\n");
 	if(ln > 1)
 	{
-		out.append("| Count |                       Error text |           Last seen |\n");
+		out.append("| Count | Error text                       | Last seen           |\n");
 		for(size_t i=1; i < ln; i++)
 		{
 			snprintf(num, sizeof(num), "| %5llu | %-32.32s | %s |\n", int_port(vMineResults[i].count),
@@ -621,10 +621,10 @@ void executor::connection_report(std::string& out)
 	size_t ln = vSocketLog.size();
 	if(ln > 0)
 	{
-		out.append("| Date                |                                                       Error text |\n");
+		out.append("| Date                | Error text                                             |\n");
 		for(size_t i=0; i < ln; i++)
 		{
-			snprintf(num, sizeof(num), "| %s | %-64.64s |\n",
+			snprintf(num, sizeof(num), "| %s | %-54.54s |\n",
 				time_format(date, sizeof(date), vSocketLog[i].time), vSocketLog[i].msg.c_str());
 			out.append(num);
 		}
