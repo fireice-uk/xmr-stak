@@ -40,6 +40,9 @@ public:
 
 	uint64_t GetCallTimeout();
 	uint64_t GetNetRetry();
+
+	uint16_t GetHttpdPort();
+
 	bool PreferIpv4();
 
 private:

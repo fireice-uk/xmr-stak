@@ -110,6 +110,16 @@
 "h_print_time" : 60,
 
 /*
+ * Built-in web server
+ * I like checking my hashrate on my phone. Don't you?
+ * Keep in mind that you will need to set up port forwarding on your router if you want to access it from
+ * outside of your home network. Ports lower than 1024 on Linux systems will require root.
+ *
+ * httpd_port - Port we should listen on. Default, 0, will switch off the server.
+ */
+"httpd_port" : 0,
+
+/*
  * prefer_ipv4 - IPv6 preference. If the host is available on both IPv4 and IPv6 net, which one should be choose?
  *               This setting will only be needed in 2020's. No need to worry about it now.
  */

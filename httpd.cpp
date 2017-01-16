@@ -7,6 +7,7 @@
 #include "httpd.h"
 #include "console.h"
 #include "executor.h"
+#include "jconf.h"
 
 #ifdef _WIN32
 #include "libmicrohttpd/microhttpd.h"
@@ -81,7 +82,7 @@ int httpd::req_handler(void * cls,
 bool httpd::start_daemon()
 {
 	d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION,
-		8100, NULL, NULL,
+		jconf::inst()->GetHttpdPort(), NULL, NULL,
 		&httpd::req_handler,
 		NULL, MHD_OPTION_END);
 

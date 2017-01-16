@@ -70,10 +70,13 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	if (!httpd::inst()->start_daemon())
+	if(jconf::inst()->GetHttpdPort() != 0)
 	{
-		win_exit();
-		return 0;
+		if (!httpd::inst()->start_daemon())
+		{
+			win_exit();
+			return 0;
+		}
 	}
 
 	printer::inst()->print_str("-------------------------------------------------------------------\n");

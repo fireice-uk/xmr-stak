@@ -34,8 +34,8 @@ using namespace rapidjson;
 /*
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
-enum configEnum { iCpuThreadNum, aCpuThreadsConf, sUseSlowMem, sPoolAddr,
-	sWalletAddr, sPoolPwd, iCallTimeout, iNetRetry, iVerboseLevel, iAutohashTime, bPreferIpv4 };
+enum configEnum { iCpuThreadNum, aCpuThreadsConf, sUseSlowMem, sPoolAddr, sWalletAddr,
+	sPoolPwd, iCallTimeout, iNetRetry, iVerboseLevel, iAutohashTime, iHttpdPort, bPreferIpv4 };
 
 struct configVal {
 	configEnum iName;
@@ -55,6 +55,7 @@ configVal oConfigValues[] = {
 	{ iNetRetry, "retry_time", kNumberType },
 	{ iVerboseLevel, "verbose_level", kNumberType },
 	{ iAutohashTime, "h_print_time", kNumberType },
+	{ iHttpdPort, "httpd_port", kNumberType },
 	{ bPreferIpv4, "prefer_ipv4", kTrueType }
 };
 
@@ -183,6 +184,11 @@ uint64_t jconf::GetVerboseLevel()
 uint64_t jconf::GetAutohashTime()
 {
 	return prv->configValues[iAutohashTime]->GetUint64();
+}
+
+uint16_t jconf::GetHttpdPort()
+{
+	return prv->configValues[iHttpdPort]->GetUint();
 }
 
 bool jconf::parse_config(const char* sFilename)
@@ -314,6 +320,13 @@ bool jconf::parse_config(const char* sFilename)
 	{
 		printer::inst()->print_msg(L0,
 			"Invalid config file. verbose_level and h_print_time need to be positive integers.");
+		return false;
+	}
+
+	if(!prv->configValues[iHttpdPort]->IsUint() || prv->configValues[iHttpdPort]->GetUint() > 0xFFFF)
+	{
+		printer::inst()->print_msg(L0,
+			"Invalid config file. httpd_port has to be in the range 0 to 65535.");
 		return false;
 	}
 

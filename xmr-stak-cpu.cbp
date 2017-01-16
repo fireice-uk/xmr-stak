@@ -21,7 +21,6 @@
 				</Compiler>
 				<Linker>
 					<Add option="-m64" />
-					<Add library="pthread" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -41,7 +40,6 @@
 				<Linker>
 					<Add option="-s" />
 					<Add option="-m64" />
-					<Add library="pthread" />
 				</Linker>
 			</Target>
 			<Target title="Release_test">
@@ -67,6 +65,10 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Linker>
+			<Add library="pthread" />
+			<Add library="libmicrohttpd" />
+		</Linker>
 		<Unit filename="cli-miner.cpp" />
 		<Unit filename="console.cpp" />
 		<Unit filename="console.h" />
@@ -104,6 +106,8 @@
 		<Unit filename="donate-level.h" />
 		<Unit filename="executor.cpp" />
 		<Unit filename="executor.h" />
+		<Unit filename="httpd.cpp" />
+		<Unit filename="httpd.h" />
 		<Unit filename="jconf.cpp" />
 		<Unit filename="jconf.h" />
 		<Unit filename="jext.h" />

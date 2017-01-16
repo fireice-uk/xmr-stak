@@ -8,6 +8,11 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     endif()
 endif()
 
+find_library(MHTD NAMES microhttpd)
+if("${MHTD}" STREQUAL "MHTD-NOTFOUND")
+    message(FATAL_ERROR "libmicrohttpd is required")
+endif()
+
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CONFIGURATION_TYPES "RELEASE;STATIC")
 if("${CMAKE_BUILD_TYPE}" STREQUAL "") 
@@ -25,6 +30,6 @@ set(EXECUTABLE_OUTPUT_PATH "bin")
 file(GLOB SOURCES "crypto/*.c" "*.cpp")
 
 add_executable(xmr-stak-cpu ${SOURCES})
-target_link_libraries(xmr-stak-cpu pthread)
+target_link_libraries(xmr-stak-cpu pthread microhttpd)
  
 
