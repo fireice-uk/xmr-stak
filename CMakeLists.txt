@@ -27,7 +27,7 @@ set(CMAKE_EXE_LINKER_FLAGS_STATIC "-static-libgcc -static-libstdc++")
 
 set(EXECUTABLE_OUTPUT_PATH "bin")
 
-file(GLOB SOURCES "crypto/*.c" "*.cpp")
+file(GLOB SOURCES "crypto/*.c" "crypto/*.cpp" "*.cpp")
 
 add_executable(xmr-stak-cpu ${SOURCES})
 target_link_libraries(xmr-stak-cpu pthread microhttpd)
