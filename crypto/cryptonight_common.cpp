@@ -129,7 +129,7 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 		return ptr;
 	}
 #else
-	ptr->long_state = mmap(0, MEMORY, PROT_READ | PROT_WRITE,
+	ptr->long_state = (uint8_t*)mmap(0, MEMORY, PROT_READ | PROT_WRITE,
 		MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, 0, 0);
 
 	if (ptr->long_state == MAP_FAILED)
@@ -174,15 +174,15 @@ void cryptonight_free_ctx(cryptonight_ctx* ctx)
 
 void cryptonight_hash_ctx(const void* input, size_t len, void* output, cryptonight_ctx* ctx)
 {
-	cryptonight_hash<0x8000, MEMORY, true>(input, len, output, ctx);
+	cryptonight_hash<0x80000, MEMORY, true>(input, len, output, ctx);
 }
 
 void cryptonight_hash_ctx_np(const void* input, size_t len, void* output, cryptonight_ctx* ctx)
 {
-	cryptonight_hash<0x8000, MEMORY, false>(input, len, output, ctx);
+	cryptonight_hash<0x80000, MEMORY, false>(input, len, output, ctx);
 }
 
 void cryptonight_double_hash_ctx(const void*  input, size_t len, void* output, cryptonight_ctx* __restrict ctx0, cryptonight_ctx* __restrict ctx1)
 {
-	cryptonight_double_hash<0x8000, MEMORY, false>(input, len, output, ctx0, ctx1);
+	cryptonight_double_hash<0x80000, MEMORY, false>(input, len, output, ctx0, ctx1);
 }
