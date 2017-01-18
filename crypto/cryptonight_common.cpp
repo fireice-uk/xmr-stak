@@ -13,11 +13,15 @@
   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
   */
 
+extern "C"
+{
 #include "c_groestl.h"
 #include "c_blake256.h"
 #include "c_jh.h"
 #include "c_skein.h"
+}
 #include "cryptonight.h"
+#include "cryptonight_aesni.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -36,19 +40,19 @@
 #endif // _WIN32
 
 void do_blake_hash(const void* input, size_t len, char* output) {
-	blake256_hash((uint8_t*)output, input, len);
+	blake256_hash((uint8_t*)output, (const uint8_t*)input, len);
 }
 
 void do_groestl_hash(const void* input, size_t len, char* output) {
-	groestl(input, len * 8, (uint8_t*)output);
+	groestl((const uint8_t*)input, len * 8, (uint8_t*)output);
 }
 
 void do_jh_hash(const void* input, size_t len, char* output) {
-	jh_hash(32 * 8, input, 8 * len, (uint8_t*)output);
+	jh_hash(32 * 8, (const uint8_t*)input, 8 * len, (uint8_t*)output);
 }
 
 void do_skein_hash(const void* input, size_t len, char* output) {
-	skein_hash(8 * 32, input, 8 * len, (uint8_t*)output);
+	skein_hash(8 * 32, (const uint8_t*)input, 8 * len, (uint8_t*)output);
 }
 
 void (* const extra_hashes[4])(const void *, size_t, char *) = {do_blake_hash, do_groestl_hash, do_jh_hash, do_skein_hash};
@@ -94,11 +98,11 @@ size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 
 cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 {
-	cryptonight_ctx* ptr = _mm_malloc(sizeof(cryptonight_ctx), 4096);
+	cryptonight_ctx* ptr = (cryptonight_ctx*)_mm_malloc(sizeof(cryptonight_ctx), 4096);
 
 	if(use_fast_mem == 0)
 	{
-		ptr->long_state = _mm_malloc(MEMORY, 4096);
+		ptr->long_state = (uint8_t*)_mm_malloc(MEMORY, 4096);
 		ptr->ctx_info[0] = 0;
 		ptr->ctx_info[1] = 0;
 		return ptr;
@@ -110,7 +114,7 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 	if(MEMORY > iLargePageMin)
 		iLargePageMin *= 2;
 
-	ptr->long_state = (cryptonight_ctx*)VirtualAlloc(NULL, iLargePageMin,
+	ptr->long_state = (uint8_t*)VirtualAlloc(NULL, iLargePageMin,
 		MEM_COMMIT | MEM_RESERVE | MEM_LARGE_PAGES, PAGE_READWRITE);
 
 	if(ptr->long_state == NULL)
@@ -166,4 +170,19 @@ void cryptonight_free_ctx(cryptonight_ctx* ctx)
 		_mm_free(ctx->long_state);
 
 	_mm_free(ctx);
+}
+
+void cryptonight_hash_ctx(const void* input, size_t len, void* output, cryptonight_ctx* ctx)
+{
+	cryptonight_hash<0x8000, MEMORY, true>(input, len, output, ctx);
+}
+
+void cryptonight_hash_ctx_np(const void* input, size_t len, void* output, cryptonight_ctx* ctx)
+{
+	cryptonight_hash<0x8000, MEMORY, false>(input, len, output, ctx);
+}
+
+void cryptonight_double_hash_ctx(const void*  input, size_t len, void* output, cryptonight_ctx* __restrict ctx0, cryptonight_ctx* __restrict ctx1)
+{
+	cryptonight_double_hash<0x8000, MEMORY, false>(input, len, output, ctx0, ctx1);
 }
