@@ -13,6 +13,7 @@
   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
   *
   */
+#pragma once
 
 #include "cryptonight.h"
 #include <memory.h>
@@ -36,9 +37,12 @@ static inline uint64_t _umul128(uint64_t a, uint64_t b, uint64_t* hi)
 #error You are trying to do a 32-bit build. This will all end in tears. I know it.
 #endif
 
-void keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen);
-void keccakf(uint64_t st[25], int rounds);
-extern void(*const extra_hashes[4])(const void *, size_t, char *);
+extern "C"
+{
+	void keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen);
+	void keccakf(uint64_t st[25], int rounds);
+	extern void(*const extra_hashes[4])(const void *, size_t, char *);
+}
 
 // This will shift and xor tmp1 into itself as 4 32-bit vals such as
 // sl_xor(a1 a2 a3 a4) = a1 (a2^a1) (a3^a2^a1) (a4^a3^a2^a1)
@@ -125,6 +129,7 @@ static inline void aes_round(__m128i key, __m128i* x0, __m128i* x1, __m128i* x2,
 	*x7 = _mm_aesenc_si128(*x7, key);
 }
 
+template<size_t MEM>
 void cn_explode_scratchpad(const __m128i* input, __m128i* output)
 {
 	// This is more than we have registers, compiler will assign 2 keys on the stack
@@ -142,7 +147,7 @@ void cn_explode_scratchpad(const __m128i* input, __m128i* output)
 	xin6 = _mm_load_si128(input + 10);
 	xin7 = _mm_load_si128(input + 11);
 
-	for (size_t i = 0; i < MEMORY / sizeof(__m128i); i += 8)
+	for (size_t i = 0; i < MEM / sizeof(__m128i); i += 8)
 	{
 		aes_round(k0, &xin0, &xin1, &xin2, &xin3, &xin4, &xin5, &xin6, &xin7);
 		aes_round(k1, &xin0, &xin1, &xin2, &xin3, &xin4, &xin5, &xin6, &xin7);
@@ -159,15 +164,16 @@ void cn_explode_scratchpad(const __m128i* input, __m128i* output)
 		_mm_store_si128(output + i + 1, xin1);
 		_mm_store_si128(output + i + 2, xin2);
 		_mm_store_si128(output + i + 3, xin3);
-		_mm_prefetch(output + i + 0, _MM_HINT_T2);
+		_mm_prefetch((const char*)output + i + 0, _MM_HINT_T2);
 		_mm_store_si128(output + i + 4, xin4);
 		_mm_store_si128(output + i + 5, xin5);
 		_mm_store_si128(output + i + 6, xin6);
 		_mm_store_si128(output + i + 7, xin7);
-		_mm_prefetch(output + i + 4, _MM_HINT_T2);
+		_mm_prefetch((const char*)output + i + 4, _MM_HINT_T2);
 	}
 }
 
+template<size_t MEM>
 void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 {
 	// This is more than we have registers, compiler will assign 2 keys on the stack
@@ -185,14 +191,14 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 	xout6 = _mm_load_si128(output + 10);
 	xout7 = _mm_load_si128(output + 11);
 
-	for (size_t i = 0; i < MEMORY / sizeof(__m128i); i += 8)
+	for (size_t i = 0; i < MEM / sizeof(__m128i); i += 8)
 	{
-		_mm_prefetch(input + i + 0, _MM_HINT_NTA);
+		_mm_prefetch((const char*)input + i + 0, _MM_HINT_NTA);
 		xout0 = _mm_xor_si128(_mm_load_si128(input + i + 0), xout0);
 		xout1 = _mm_xor_si128(_mm_load_si128(input + i + 1), xout1);
 		xout2 = _mm_xor_si128(_mm_load_si128(input + i + 2), xout2);
 		xout3 = _mm_xor_si128(_mm_load_si128(input + i + 3), xout3);
-		_mm_prefetch(input + i + 4, _MM_HINT_NTA);
+		_mm_prefetch((const char*)input + i + 4, _MM_HINT_NTA);
 		xout4 = _mm_xor_si128(_mm_load_si128(input + i + 4), xout4);
 		xout5 = _mm_xor_si128(_mm_load_si128(input + i + 5), xout5);
 		xout6 = _mm_xor_si128(_mm_load_si128(input + i + 6), xout6);
@@ -220,12 +226,13 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 	_mm_store_si128(output + 11, xout7);
 }
 
-void cryptonight_hash_ctx(const void* input, size_t len, void* output, cryptonight_ctx* ctx0)
+template<size_t ITERATIONS, size_t MEM, bool PREFETCH>
+void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_ctx* ctx0)
 {
 	keccak((const uint8_t *)input, len, ctx0->hash_state, 200);
 
 	// Optim - 99% time boundary
-	cn_explode_scratchpad((__m128i*)ctx0->hash_state, (__m128i*)ctx0->long_state);
+	cn_explode_scratchpad<MEM>((__m128i*)ctx0->hash_state, (__m128i*)ctx0->long_state);
 
 	uint8_t* l0 = ctx0->long_state;
 	uint64_t* h0 = (uint64_t*)ctx0->hash_state;
@@ -237,7 +244,7 @@ void cryptonight_hash_ctx(const void* input, size_t len, void* output, cryptonig
 	uint64_t idx0 = h0[0] ^ h0[4];
 
 	// Optim - 90% time boundary
-	for(size_t i = 0; i < 0x80000; i++)
+	for(size_t i = 0; i < ITERATIONS; i++)
 	{
 		__m128i cx;
 		cx = _mm_load_si128((__m128i *)&l0[idx0 & 0x1FFFF0]);
@@ -245,7 +252,8 @@ void cryptonight_hash_ctx(const void* input, size_t len, void* output, cryptonig
 		_mm_store_si128((__m128i *)&l0[idx0 & 0x1FFFF0], _mm_xor_si128(bx0, cx));
 		idx0 = _mm_cvtsi128_si64(cx);
 		bx0 = cx;
-		_mm_prefetch(&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
+		if(PREFETCH)
+			_mm_prefetch((const char*)&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
 
 		uint64_t hi, lo, cl, ch;
 		cl = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[0];
@@ -258,77 +266,31 @@ void cryptonight_hash_ctx(const void* input, size_t len, void* output, cryptonig
 		ah0 ^= ch;
 		al0 ^= cl;
 		idx0 = al0;
-		_mm_prefetch(&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
+		if(PREFETCH)
+			_mm_prefetch((const char*)&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
 	}
 
 	// Optim - 90% time boundary
-	cn_implode_scratchpad((__m128i*)ctx0->long_state, (__m128i*)ctx0->hash_state);
+	cn_implode_scratchpad<MEM>((__m128i*)ctx0->long_state, (__m128i*)ctx0->hash_state);
 
 	// Optim - 99% time boundary
 
 	keccakf((uint64_t*)ctx0->hash_state, 24);
-	extra_hashes[ctx0->hash_state[0] & 3](ctx0->hash_state, 200, output);
-}
-
-void cryptonight_hash_ctx_np(const void* input, size_t len, void* output, cryptonight_ctx* ctx0)
-{
-	keccak((const uint8_t *)input, len, ctx0->hash_state, 200);
-
-	// Optim - 99% time boundary
-	cn_explode_scratchpad((__m128i*)ctx0->hash_state, (__m128i*)ctx0->long_state);
-
-	uint8_t* l0 = ctx0->long_state;
-	uint64_t* h0 = (uint64_t*)ctx0->hash_state;
-
-	uint64_t al0 = h0[0] ^ h0[4];
-	uint64_t ah0 = h0[1] ^ h0[5];
-	__m128i bx0 = _mm_set_epi64x(h0[3] ^ h0[7], h0[2] ^ h0[6]);
-
-	uint64_t idx0 = h0[0] ^ h0[4];
-
-	// Optim - 90% time boundary
-	for(size_t i = 0; i < 0x80000; i++)
-	{
-		__m128i cx;
-		cx = _mm_load_si128((__m128i *)&l0[idx0 & 0x1FFFF0]);
-		cx = _mm_aesenc_si128(cx, _mm_set_epi64x(ah0, al0));
-		_mm_store_si128((__m128i *)&l0[idx0 & 0x1FFFF0], _mm_xor_si128(bx0, cx));
-		idx0 = _mm_cvtsi128_si64(cx);
-		bx0 = cx;
-
-		uint64_t hi, lo, cl, ch;
-		cl = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[0];
-		ch = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[1];
-		lo = _umul128(idx0, cl, &hi);
-		al0 += hi;
-		ah0 += lo;
-		((uint64_t*)&l0[idx0 & 0x1FFFF0])[0] = al0;
-		((uint64_t*)&l0[idx0 & 0x1FFFF0])[1] = ah0;
-		ah0 ^= ch;
-		al0 ^= cl;
-		idx0 = al0;
-	}
-
-	// Optim - 90% time boundary
-	cn_implode_scratchpad((__m128i*)ctx0->long_state, (__m128i*)ctx0->hash_state);
-
-	// Optim - 99% time boundary
-
-	keccakf((uint64_t*)ctx0->hash_state, 24);
-	extra_hashes[ctx0->hash_state[0] & 3](ctx0->hash_state, 200, output);
+	extra_hashes[ctx0->hash_state[0] & 3](ctx0->hash_state, 200, (char*)output);
 }
 
 // This lovely creation will do 2 cn hashes at a time. We have plenty of space on silicon
 // to fit temporary vars for two contexts. Function will read len*2 from input and write 64 bytes to output
 // We are still limited by L3 cache, so doubling will only work with CPUs where we have more than 2MB to core (Xeons)
-void cryptonight_double_hash_ctx(const void* input, size_t len, void* output, cryptonight_ctx* __restrict ctx0, cryptonight_ctx* __restrict ctx1)
+template<size_t ITERATIONS, size_t MEM, bool PREFETCH>
+void cryptonight_double_hash(const void* input, size_t len, void* output, cryptonight_ctx* __restrict ctx0, cryptonight_ctx* __restrict ctx1)
 {
 	keccak((const uint8_t *)input, len, ctx0->hash_state, 200);
 	keccak((const uint8_t *)input+len, len, ctx1->hash_state, 200);
 
 	// Optim - 99% time boundary
-	cn_explode_scratchpad((__m128i*)ctx0->hash_state, (__m128i*)ctx0->long_state);
-	cn_explode_scratchpad((__m128i*)ctx1->hash_state, (__m128i*)ctx1->long_state);
+	cn_explode_scratchpad<MEM>((__m128i*)ctx0->hash_state, (__m128i*)ctx0->long_state);
+	cn_explode_scratchpad<MEM>((__m128i*)ctx1->hash_state, (__m128i*)ctx1->long_state);
 
 	uint8_t* l0 = ctx0->long_state;
 	uint64_t* h0 = (uint64_t*)ctx0->hash_state;
@@ -344,7 +306,7 @@ void cryptonight_double_hash_ctx(const void* input, size_t len, void* output, cr
 	uint64_t idx1 = h1[0] ^ h1[4];
 
 	// Optim - 90% time boundary
-	for (size_t i = 0; i < 0x80000; i++)
+	for (size_t i = 0; i < ITERATIONS; i++)
 	{
 		__m128i cx;
 		cx = _mm_load_si128((__m128i *)&l0[idx0 & 0x1FFFF0]);
@@ -352,14 +314,16 @@ void cryptonight_double_hash_ctx(const void* input, size_t len, void* output, cr
 		_mm_store_si128((__m128i *)&l0[idx0 & 0x1FFFF0], _mm_xor_si128(bx0, cx));
 		idx0 = _mm_cvtsi128_si64(cx);
 		bx0 = cx;
-		_mm_prefetch(&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
+		if(PREFETCH)
+			_mm_prefetch((const char*)&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
 
 		cx = _mm_load_si128((__m128i *)&l1[idx1 & 0x1FFFF0]);
 		cx = _mm_aesenc_si128(cx, ax1);
 		_mm_store_si128((__m128i *)&l1[idx1 & 0x1FFFF0], _mm_xor_si128(bx1, cx));
 		idx1 = _mm_cvtsi128_si64(cx);
 		bx1 = cx;
-		_mm_prefetch(&l1[idx1 & 0x1FFFF0], _MM_HINT_T0);
+		if(PREFETCH)
+			_mm_prefetch((const char*)&l1[idx1 & 0x1FFFF0], _MM_HINT_T0);
 
 		uint64_t hi, lo;
 		cx = _mm_load_si128((__m128i *)&l0[idx0 & 0x1FFFF0]);
@@ -368,7 +332,8 @@ void cryptonight_double_hash_ctx(const void* input, size_t len, void* output, cr
 		_mm_store_si128((__m128i*)&l0[idx0 & 0x1FFFF0], ax0);
 		ax0 = _mm_xor_si128(ax0, cx);
 		idx0 = _mm_cvtsi128_si64(ax0);
-		_mm_prefetch(&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
+		if(PREFETCH)
+			_mm_prefetch((const char*)&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
 
 		cx = _mm_load_si128((__m128i *)&l1[idx1 & 0x1FFFF0]);
 		lo = _umul128(idx1, _mm_cvtsi128_si64(cx), &hi);
@@ -376,17 +341,18 @@ void cryptonight_double_hash_ctx(const void* input, size_t len, void* output, cr
 		_mm_store_si128((__m128i*)&l1[idx1 & 0x1FFFF0], ax1);
 		ax1 = _mm_xor_si128(ax1, cx);
 		idx1 = _mm_cvtsi128_si64(ax1);
-		_mm_prefetch(&l1[idx1 & 0x1FFFF0], _MM_HINT_T0);
+		if(PREFETCH)
+			_mm_prefetch((const char*)&l1[idx1 & 0x1FFFF0], _MM_HINT_T0);
 	}
 
 	// Optim - 90% time boundary
-	cn_implode_scratchpad((__m128i*)ctx0->long_state, (__m128i*)ctx0->hash_state);
-	cn_implode_scratchpad((__m128i*)ctx1->long_state, (__m128i*)ctx1->hash_state);
+	cn_implode_scratchpad<MEM>((__m128i*)ctx0->long_state, (__m128i*)ctx0->hash_state);
+	cn_implode_scratchpad<MEM>((__m128i*)ctx1->long_state, (__m128i*)ctx1->hash_state);
 
 	// Optim - 99% time boundary
 
 	keccakf((uint64_t*)ctx0->hash_state, 24);
-	extra_hashes[ctx0->hash_state[0] & 3](ctx0->hash_state, 200, output);
+	extra_hashes[ctx0->hash_state[0] & 3](ctx0->hash_state, 200, (char*)output);
 	keccakf((uint64_t*)ctx1->hash_state, 24);
 	extra_hashes[ctx1->hash_state[0] & 3](ctx1->hash_state, 200, (char*)output + 32);
 }

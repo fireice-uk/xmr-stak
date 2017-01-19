@@ -92,12 +92,7 @@
 		</Unit>
 		<Unit filename="crypto/c_skein.h" />
 		<Unit filename="crypto/cryptonight.h" />
-		<Unit filename="crypto/cryptonight_aesni.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="crypto/cryptonight_common.c">
-			<Option compilerVar="CC" />
-		</Unit>
+		<Unit filename="crypto/cryptonight_common.cpp" />
 		<Unit filename="crypto/groestl_tables.h" />
 		<Unit filename="crypto/hash.h" />
 		<Unit filename="crypto/int-util.h" />
