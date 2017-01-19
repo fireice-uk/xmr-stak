@@ -61,7 +61,8 @@ static inline __m128i sl_xor(__m128i tmp1)
 	return tmp1;
 }
 
-static inline void aes_genkey_sub(__m128i* xout0, __m128i* xout2, uint8_t rcon)
+template<uint8_t rcon>
+static inline void aes_genkey_sub(__m128i* xout0, __m128i* xout2)
 {
 	__m128i xout1 = _mm_aeskeygenassist_si128(*xout2, rcon);
 	xout1 = _mm_shuffle_epi32(xout1, 0xFF); // see PSHUFD, set all elems to 4th elem
@@ -99,28 +100,28 @@ static inline void aes_genkey(const __m128i* memory, __m128i* k0, __m128i* k1, _
 	if(SOFT_AES)
 		soft_aes_genkey_sub(&xout0, &xout2, 0x01);
 	else
-		aes_genkey_sub(&xout0, &xout2, 0x01);
+		aes_genkey_sub<0x01>(&xout0, &xout2);
 	*k2 = xout0;
 	*k3 = xout2;
 
 	if(SOFT_AES)
 		soft_aes_genkey_sub(&xout0, &xout2, 0x02);
 	else
-		aes_genkey_sub(&xout0, &xout2, 0x02);
+		aes_genkey_sub<0x02>(&xout0, &xout2);
 	*k4 = xout0;
 	*k5 = xout2;
 
 	if(SOFT_AES)
 		soft_aes_genkey_sub(&xout0, &xout2, 0x04);
 	else
-		aes_genkey_sub(&xout0, &xout2, 0x04);
+		aes_genkey_sub<0x04>(&xout0, &xout2);
 	*k6 = xout0;
 	*k7 = xout2;
 
 	if(SOFT_AES)
 		soft_aes_genkey_sub(&xout0, &xout2, 0x08);
 	else
-		aes_genkey_sub(&xout0, &xout2, 0x08);
+		aes_genkey_sub<0x08>(&xout0, &xout2);
 	*k8 = xout0;
 	*k9 = xout2;
 }
