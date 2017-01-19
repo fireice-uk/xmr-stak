@@ -22,6 +22,9 @@
 
 #ifdef _WIN32
 #define strcasecmp _stricmp
+#include <intrin.h>
+#else
+#include <cpuid.h>
 #endif
 
 #include "rapidjson/document.h"
@@ -120,6 +123,12 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	cfg.bDoubleMode = mode->GetBool();
 	cfg.bNoPrefetch = no_prefetch->GetBool();
 
+	if(!bHaveAes && (cfg.bDoubleMode || cfg.bNoPrefetch))
+	{
+		printer::inst()->print_msg(L0, "Invalid thread confg - low_power_mode and no_prefetch are unsupported on CPUs without AES-NI.");
+		return false;
+	}
+
 	if(aff->IsNumber())
 		cfg.iCpuAff = aff->GetInt64();
 	else
@@ -194,11 +203,37 @@ uint16_t jconf::GetHttpdPort()
 	return prv->configValues[iHttpdPort]->GetUint();
 }
 
+bool jconf::check_cpu_features()
+{
+	constexpr int AESNI_BIT = 1 << 25;
+	constexpr int SSE2_BIT = 1 << 26;
+
+	int cpu_info[4];
+#ifdef _WIN32
+	__cpuid(cpu_info, 1);
+#else
+	__cpuid(1, cpu_info[0], cpu_info[1], cpu_info[2], cpu_info[3]);
+#endif
+
+	bHaveAes = (cpu_info[2] & AESNI_BIT) != 0;
+
+	if(!bHaveAes)
+		printer::inst()->print_msg(L0, "Your CPU doesn't support hardware AES. Don't expect high hashrates.");
+
+	return (cpu_info[3] & SSE2_BIT) != 0;
+}
+
 bool jconf::parse_config(const char* sFilename)
 {
 	FILE * pFile;
 	char * buffer;
 	size_t flen;
+
+	if(!check_cpu_features())
+	{
+		printer::inst()->print_msg(L0, "CPU support of SSE2 is required.");
+		return false;
+	}
 
 	pFile = fopen(sFilename, "rb");
 	if (pFile == NULL)

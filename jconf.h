@@ -46,10 +46,15 @@ public:
 
 	bool PreferIpv4();
 
+	inline bool HaveHardwareAes() { return bHaveAes; }
+
 private:
 	jconf();
 	static jconf* oInst;
 
+	bool check_cpu_features();
 	struct opaque_private;
 	opaque_private* prv;
+
+	bool bHaveAes;
 };

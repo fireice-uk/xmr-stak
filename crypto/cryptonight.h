@@ -25,6 +25,7 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 void cryptonight_free_ctx(cryptonight_ctx* ctx);
 
 void cryptonight_hash_ctx(const void* input, size_t len, void* output, cryptonight_ctx* ctx);
+void cryptonight_hash_ctx_soft(const void* input, size_t len, void* output, cryptonight_ctx* ctx);
 void cryptonight_hash_ctx_np(const void* input, size_t len, void* output, cryptonight_ctx* ctx);
 void cryptonight_double_hash_ctx(const void*  input, size_t len, void* output, cryptonight_ctx* __restrict ctx0, cryptonight_ctx* __restrict ctx1);
 

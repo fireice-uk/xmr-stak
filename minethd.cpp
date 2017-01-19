@@ -21,16 +21,13 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#include <intrin.h>
 
 void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 {
 	SetThreadAffinityMask(h, 1 << cpu_id);
 }
-
 #else
 #include <pthread.h>
-#include <cpuid.h>
 
 void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 {
@@ -175,29 +172,8 @@ cryptonight_ctx* minethd_alloc_ctx()
 	return nullptr; //Should never happen
 }
 
-static bool check_cpu_features()
-{
-	constexpr int AESNI_BIT = 1 << 25;
-	constexpr int SSE2_BIT = 1 << 26;
-
-	int cpu_info[4];
-#ifdef _WIN32
-	__cpuid(cpu_info, 1);
-#else
-	__cpuid(1, cpu_info[0], cpu_info[1], cpu_info[2], cpu_info[3]);
-#endif
-	return (cpu_info[2] & AESNI_BIT) != 0 &&
-		(cpu_info[3] & SSE2_BIT) != 0;
-}
-
 bool minethd::self_test()
 {
-	if (!check_cpu_features())
-	{
-		printer::inst()->print_msg(L0, "This application requires CPU support of AES-NI and SSE2 instructions.");
-		return false;
-	}
-
 	alloc_msg msg = { 0 };
 	size_t res;
 	bool fatal = false;
@@ -350,6 +326,7 @@ void minethd::work_main()
 	piNonce = (uint32_t*)(oWork.bWorkBlob + 39);
 	iConsumeCnt++;
 
+	bool bHaveAes = jconf::inst()->HaveHardwareAes();
 	while (bQuit == 0)
 	{
 		if (oWork.bStall)
@@ -383,10 +360,15 @@ void minethd::work_main()
 
 			*piNonce = ++result.iNonce;
 
-			if(bNoPrefetch)
-				cryptonight_hash_ctx_np(oWork.bWorkBlob, oWork.iWorkSize, result.bResult, ctx);
+			if(bHaveAes)
+			{
+				if(bNoPrefetch)
+					cryptonight_hash_ctx_np(oWork.bWorkBlob, oWork.iWorkSize, result.bResult, ctx);
+				else
+					cryptonight_hash_ctx(oWork.bWorkBlob, oWork.iWorkSize, result.bResult, ctx);
+			}
 			else
-				cryptonight_hash_ctx(oWork.bWorkBlob, oWork.iWorkSize, result.bResult, ctx);
+				cryptonight_hash_ctx_soft(oWork.bWorkBlob, oWork.iWorkSize, result.bResult, ctx);
 
 			if (*piHashVal < oWork.iTarget)
 				executor::inst()->push_event(ex_event(result, oWork.iPoolId));

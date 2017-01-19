@@ -92,11 +92,15 @@
 		</Unit>
 		<Unit filename="crypto/c_skein.h" />
 		<Unit filename="crypto/cryptonight.h" />
+		<Unit filename="crypto/cryptonight_aesni.h" />
 		<Unit filename="crypto/cryptonight_common.cpp" />
 		<Unit filename="crypto/groestl_tables.h" />
 		<Unit filename="crypto/hash.h" />
 		<Unit filename="crypto/int-util.h" />
 		<Unit filename="crypto/skein_port.h" />
+		<Unit filename="crypto/soft_aes.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="donate-level.h" />
 		<Unit filename="executor.cpp" />
 		<Unit filename="executor.h" />
