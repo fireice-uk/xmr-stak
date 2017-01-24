@@ -13,7 +13,6 @@
 				<Option compiler="gcc" />
 				<Option parameters="config-debug.txt" />
 				<Compiler>
-					<Add option="-march=corei7-avx" />
 					<Add option="-std=c++11" />
 					<Add option="-m64" />
 					<Add option="-g" />
@@ -30,7 +29,6 @@
 				<Option compiler="gcc" />
 				<Option parameters="config-debug.txt" />
 				<Compiler>
-					<Add option="-march=westmere" />
 					<Add option="-O3" />
 					<Add option="-std=c++11" />
 					<Add option="-m64" />
@@ -49,7 +47,6 @@
 				<Option compiler="gcc" />
 				<Option parameters="config-debug.txt" />
 				<Compiler>
-					<Add option="-march=westmere" />
 					<Add option="-O3" />
 					<Add option="-std=c++11" />
 					<Add option="-m64" />
@@ -62,6 +59,7 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-march=westmere" />
 			<Add option="-Wall" />
 		</Compiler>
 		<Linker>
