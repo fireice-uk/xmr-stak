@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <openssl/ssl.h>
+
 //Do a press any key for the windows folk. *insert any key joke here*
 #ifdef _WIN32
 void win_exit()
@@ -43,6 +45,9 @@ void do_benchmark();
 
 int main(int argc, char *argv[])
 {
+	SSL_library_init();
+	SSL_load_error_strings();
+
 	const char* sFilename = "config.txt";
 	bool benchmark_mode = false;
 

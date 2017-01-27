@@ -65,6 +65,8 @@
 		<Linker>
 			<Add library="pthread" />
 			<Add library="libmicrohttpd" />
+			<Add library="crypto" />
+			<Add library="ssl" />
 		</Linker>
 		<Unit filename="cli-miner.cpp" />
 		<Unit filename="console.cpp" />
@@ -147,6 +149,8 @@
 		<Unit filename="rapidjson/stream.h" />
 		<Unit filename="rapidjson/stringbuffer.h" />
 		<Unit filename="rapidjson/writer.h" />
+		<Unit filename="socket.cpp" />
+		<Unit filename="socket.h" />
 		<Unit filename="socks.h" />
 		<Unit filename="thdq.hpp" />
 		<Extensions>
