@@ -210,7 +210,9 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 	jpsock* pool = pick_pool_by_id(pool_id);
 
 	minethd::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob,
-		oPoolJob.iWorkLen, oPoolJob.iResumeCnt, oPoolJob.iTarget, pool_id);
+		oPoolJob.iWorkLen, oPoolJob.iResumeCnt, oPoolJob.iTarget,
+		(pool_id != dev_pool_id) ? jconf::inst()->NiceHashMode() : false,
+		pool_id);
 
 	minethd::switch_work(oWork);
 
@@ -328,7 +330,8 @@ void executor::on_switch_pool(size_t pool_id)
 		}
 
 		minethd::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob,
-			oPoolJob.iWorkLen, oPoolJob.iResumeCnt, oPoolJob.iTarget, pool_id);
+			oPoolJob.iWorkLen, oPoolJob.iResumeCnt, oPoolJob.iTarget,
+			jconf::inst()->NiceHashMode(), pool_id);
 
 		minethd::switch_work(oWork);
 

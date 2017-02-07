@@ -70,6 +70,14 @@
 "use_slow_memory" : "warn",
 
 /*
+ * NiceHash mode
+ * nicehash_nonce - Limit the noce to 3 bytes as required by nicehash. This cuts all the safety margins, and
+ *                  if a block isn't found within 30 minutes then you might run into nonce collisions. Number
+ *                  of threads in this mode is hard-limited to 32.
+ */
+"nicehash_nonce" : false,
+
+/*
  * pool_address	  - Pool address should be in the form "pool.supportxmr.com:3333". Only stratum pools are supported.
  * wallet_address - Your wallet, or pool login.
  * pool_password  - Can be empty in most cases or "x".
