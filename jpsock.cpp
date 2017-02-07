@@ -121,7 +121,7 @@ std::string&& jpsock::get_call_error()
 	return std::move(prv->oCallRsp.sCallErr);
 }
 
-inline bool jpsock::set_socket_error(const char* a)
+bool jpsock::set_socket_error(const char* a)
 {
 	if(!bHaveSocketError)
 	{
@@ -132,7 +132,7 @@ inline bool jpsock::set_socket_error(const char* a)
 	return false;
 }
 
-inline bool jpsock::set_socket_error(const char* a, const char* b)
+bool jpsock::set_socket_error(const char* a, const char* b)
 {
 	if(!bHaveSocketError)
 	{

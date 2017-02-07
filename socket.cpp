@@ -5,6 +5,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/opensslconf.h>
+
 #ifndef OPENSSL_THREADS
 #error OpenSSL was compiled without thread support
 #endif
@@ -168,13 +169,6 @@ void tls_socket::init_ctx()
 	if(ctx == nullptr)
 		return;
 
-	/* Cannot fail ??? */
-	//SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, verify_callback);
-
-	/* Cannot fail ??? */
-	//SSL_CTX_set_verify_depth(ctx, 4);
-
-	/* Cannot fail ??? */
 	SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION);
 }
 
@@ -233,22 +227,34 @@ bool tls_socket::connect()
 
 	/* Step 1: verify a server certificate was presented during the negotiation */
 	X509* cert = SSL_get_peer_certificate(ssl);
-	if(cert) { X509_free(cert); } /* Free immediately */
-
 	if(cert == nullptr)
 	{
 		print_error();
 		return false;
 	}
 
-	/* Step 2: verify the result of chain verification */
-	/* Verification performed according to RFC 4158    */
-	//res = SSL_get_verify_result(ssl);
-	//if(!(X509_V_OK == res)) handleFailure();
+	const EVP_MD* digest;
+	unsigned char md[EVP_MAX_MD_SIZE];
+	unsigned int dlen;
 
-	/* Step 3: hostname verification */
-	/* An exercise left to the reader */
+	digest = EVP_get_digestbyname("sha256");
+	if(digest == nullptr)
+	{
+		print_error();
+		false;
+	}
 
+	if(X509_digest(cert, digest, md, &dlen) != 1)
+	{
+		print_error();
+		false;
+	}
+
+	for(size_t i=0; i < dlen; i++)
+		printf("%.2X:", md[i]);
+	printf("\n");
+
+	X509_free(cert);
 	return true;
 }
 

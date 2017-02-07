@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
 {
 	SSL_library_init();
 	SSL_load_error_strings();
+	OpenSSL_add_all_digests();
 
 	const char* sFilename = "config.txt";
 	bool benchmark_mode = false;
