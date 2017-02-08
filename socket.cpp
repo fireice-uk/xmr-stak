@@ -282,7 +282,7 @@ void tls_socket::close(bool free)
 
 	if(!free)
 	{
-		SSL_shutdown(ssl);
+		sock_close(BIO_get_fd(bio, nullptr));
 	}
 	else
 	{
