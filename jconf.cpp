@@ -37,8 +37,8 @@ using namespace rapidjson;
 /*
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
-enum configEnum { iCpuThreadNum, aCpuThreadsConf, sUseSlowMem, bNiceHashMode, sPoolAddr, sWalletAddr,
-	sPoolPwd, iCallTimeout, iNetRetry, iVerboseLevel, iAutohashTime, iHttpdPort, bPreferIpv4 };
+enum configEnum { iCpuThreadNum, aCpuThreadsConf, sUseSlowMem, bNiceHashMode, bTlsMode, bTlsSecureAlgo, sTlsFingerprint,
+	sPoolAddr, sWalletAddr, sPoolPwd, iCallTimeout, iNetRetry, iVerboseLevel, iAutohashTime, iHttpdPort, bPreferIpv4 };
 
 struct configVal {
 	configEnum iName;
@@ -52,6 +52,9 @@ configVal oConfigValues[] = {
 	{ aCpuThreadsConf, "cpu_threads_conf", kArrayType },
 	{ sUseSlowMem, "use_slow_memory", kStringType },
 	{ bNiceHashMode, "nicehash_nonce", kTrueType },
+	{ bTlsMode, "use_tls", kTrueType },
+	{ bTlsSecureAlgo, "tls_secure_algo", kTrueType },
+	{ sTlsFingerprint, "tls_fingerprint", kStringType },
 	{ sPoolAddr, "pool_address", kStringType },
 	{ sWalletAddr, "wallet_address", kStringType },
 	{ sPoolPwd, "pool_password", kStringType },
@@ -152,6 +155,21 @@ jconf::slow_mem_cfg jconf::GetSlowMemSetting()
 		return never_use;
 	else
 		return unknown_value;
+}
+
+bool jconf::GetTlsSetting()
+{
+	return prv->configValues[bTlsMode]->GetBool();
+}
+
+bool jconf::TlsSecureAlgos()
+{
+	return prv->configValues[bTlsSecureAlgo]->GetBool();
+}
+
+const char* jconf::GetTlsFingerprint()
+{
+	return prv->configValues[sTlsFingerprint]->GetString();
 }
 
 const char* jconf::GetPoolAddress()
@@ -337,6 +355,12 @@ bool jconf::parse_config(const char* sFilename)
 		return false;
 	}
 
+	if(NiceHashMode() && n_thd >= 32)
+	{
+		printer::inst()->print_msg(L0, "You need to use less than 32 threads in NiceHash mode.");
+		return false;
+	}
+
 	thd_cfg c;
 	for(size_t i=0; i < n_thd; i++)
 	{
@@ -378,7 +402,7 @@ bool jconf::parse_config(const char* sFilename)
 #ifdef _WIN32
 	if(GetSlowMemSetting() == no_mlck)
 	{
-		printer::inst()->print_msg(L0, "On Windows large pages need mlock. Please use another option.\n");
+		printer::inst()->print_msg(L0, "On Windows large pages need mlock. Please use another option.");
 		return false;
 	}
 #endif // _WIN32

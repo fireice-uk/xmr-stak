@@ -78,6 +78,16 @@
 "nicehash_nonce" : false,
 
 /*
+ * TLS Settings
+ * use_tls         - This option will make us connect using Transport Layer Security.
+ * tls_secure_algo - Use only secure algorithms. This will make us quit with an error if we can't negotiate a secure algo.
+ * tls_fingerprint - Server's SHA256 fingerprint. If this string is non-empty then we will check the server's cert against it.
+ */
+"use_tls" : false,
+"tls_secure_algo" : true,
+"tls_fingerprint" : "",
+
+/*
  * pool_address	  - Pool address should be in the form "pool.supportxmr.com:3333". Only stratum pools are supported.
  * wallet_address - Your wallet, or pool login.
  * pool_password  - Can be empty in most cases or "x".
