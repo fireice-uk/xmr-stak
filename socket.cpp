@@ -1,6 +1,8 @@
 #include "socket.h"
 #include "jpsock.h"
 #include "jconf.h"
+#include "console.h"
+#include "executor.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -169,7 +171,10 @@ void tls_socket::init_ctx()
 	if(ctx == nullptr)
 		return;
 
-	SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION);
+	if(jconf::inst()->TlsSecureAlgos())
+	{
+		SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_COMPRESSION);
+	}
 }
 
 bool tls_socket::set_hostname(const char* sAddr)
@@ -203,11 +208,15 @@ bool tls_socket::set_hostname(const char* sAddr)
 		return false;
 	}
 
-	/*if(SSL_set_cipher_list(ssl, "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4") != 1)
+	if(jconf::inst()->TlsSecureAlgos())
 	{
-		print_error();
-		return false;
-	}*/
+		if(SSL_set_cipher_list(ssl, "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4:!SHA1") != 1)
+		{
+			print_error();
+			return false;
+		}
+	}
+
 	return true;
 }
 
@@ -241,18 +250,50 @@ bool tls_socket::connect()
 	if(digest == nullptr)
 	{
 		print_error();
-		false;
+		return false;
 	}
 
 	if(X509_digest(cert, digest, md, &dlen) != 1)
 	{
+		X509_free(cert);
 		print_error();
-		false;
+		return false;
 	}
 
-	for(size_t i=0; i < dlen; i++)
-		printf("%.2X:", md[i]);
-	printf("\n");
+	if(pCallback->pool_id != executor::dev_pool_id)
+	{
+		//Base64 encode digest
+		BIO *bmem, *b64;
+		b64 = BIO_new(BIO_f_base64());
+		bmem = BIO_new(BIO_s_mem());
+
+		BIO_puts(bmem, "SHA256:");
+		b64 = BIO_push(b64, bmem);
+		BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+		BIO_write(b64, md, dlen);
+		BIO_flush(b64);
+
+		const char* conf_md = jconf::inst()->GetTlsFingerprint();
+		char *b64_md = nullptr;
+		size_t b64_len = BIO_get_mem_data(bmem, &b64_md);
+
+		if(strlen(conf_md) == 0)
+		{
+			printer::inst()->print_msg(L1, "Server fingerprint: %.*s", (int)b64_len, b64_md);
+		}
+		else if(strncmp(b64_md, conf_md, b64_len) != 0)
+		{
+			printer::inst()->print_msg(L0, "FINGERPRINT FAILED CHECK: %.*s was given, %s was configured",
+				(int)b64_len, b64_md, conf_md);
+
+			pCallback->set_socket_error("FINGERPRINT FAILED CHECK");
+			BIO_free_all(b64);
+			X509_free(cert);
+			return false;
+		}
+
+		BIO_free_all(b64);
+	}
 
 	X509_free(cert);
 	return true;

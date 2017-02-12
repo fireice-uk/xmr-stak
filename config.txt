@@ -79,6 +79,9 @@
 
 /*
  * TLS Settings
+ * If you need real security, make sure tls_secure_algo is enabled (otherwise MITM attack can downgrade encryption
+ * to trivially breakable stuff like DES and MD5), and verify the server's fingerprint through a trusted channel. 
+ *
  * use_tls         - This option will make us connect using Transport Layer Security.
  * tls_secure_algo - Use only secure algorithms. This will make us quit with an error if we can't negotiate a secure algo.
  * tls_fingerprint - Server's SHA256 fingerprint. If this string is non-empty then we will check the server's cert against it.

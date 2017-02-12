@@ -24,7 +24,7 @@ class base_socket;
 class jpsock
 {
 public:
-	jpsock(size_t id);
+	jpsock(size_t id, bool tls);
 	~jpsock();
 
 	bool connect(const char* sAddr, std::string& sConnectError);

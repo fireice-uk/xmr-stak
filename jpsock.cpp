@@ -85,7 +85,7 @@ struct jpsock::opq_json_val
 	opq_json_val(const Value* val) : val(val) {}
 };
 
-jpsock::jpsock(size_t id) : pool_id(id)
+jpsock::jpsock(size_t id, bool tls) : pool_id(id)
 {
 	sock_init();
 
@@ -95,8 +95,10 @@ jpsock::jpsock(size_t id) : pool_id(id)
 
 	prv = new opaque_private(bJsonCallMem, bJsonRecvMem, bJsonParseMem);
 
-	//sck = new plain_socket(this);
-	sck = new tls_socket(this);
+	if(tls)
+		sck = new tls_socket(this);
+	else
+		sck = new plain_socket(this);
 
 	oRecvThd = nullptr;
 	bRunning = false;
