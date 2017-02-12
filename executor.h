@@ -81,6 +81,8 @@ private:
 	std::promise<void> httpReady;
 	std::mutex httpMutex;
 
+	size_t iReconnectAttempts = 0;
+
 	struct sck_error_log
 	{
 		std::chrono::system_clock::time_point time;

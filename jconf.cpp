@@ -38,7 +38,8 @@ using namespace rapidjson;
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
 enum configEnum { iCpuThreadNum, aCpuThreadsConf, sUseSlowMem, bNiceHashMode, bTlsMode, bTlsSecureAlgo, sTlsFingerprint,
-	sPoolAddr, sWalletAddr, sPoolPwd, iCallTimeout, iNetRetry, iVerboseLevel, iAutohashTime, iHttpdPort, bPreferIpv4 };
+	sPoolAddr, sWalletAddr, sPoolPwd, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, iAutohashTime, iHttpdPort,
+	bPreferIpv4 };
 
 struct configVal {
 	configEnum iName;
@@ -60,6 +61,7 @@ configVal oConfigValues[] = {
 	{ sPoolPwd, "pool_password", kStringType },
 	{ iCallTimeout, "call_timeout", kNumberType },
 	{ iNetRetry, "retry_time", kNumberType },
+	{ iGiveUpLimit, "giveup_limit", kNumberType },
 	{ iVerboseLevel, "verbose_level", kNumberType },
 	{ iAutohashTime, "h_print_time", kNumberType },
 	{ iHttpdPort, "httpd_port", kNumberType },
@@ -205,6 +207,11 @@ uint64_t jconf::GetCallTimeout()
 uint64_t jconf::GetNetRetry()
 {
 	return prv->configValues[iNetRetry]->GetUint64();
+}
+
+uint64_t jconf::GetGiveUpLimit()
+{
+	return prv->configValues[iGiveUpLimit]->GetUint64();
 }
 
 uint64_t jconf::GetVerboseLevel()
@@ -378,10 +385,12 @@ bool jconf::parse_config(const char* sFilename)
 		return false;
 	}
 
-	if(!prv->configValues[iCallTimeout]->IsUint64() || !prv->configValues[iNetRetry]->IsUint64())
+	if(!prv->configValues[iCallTimeout]->IsUint64() ||
+		!prv->configValues[iNetRetry]->IsUint64() ||
+		!prv->configValues[iGiveUpLimit]->IsUint64())
 	{
 		printer::inst()->print_msg(L0,
-			"Invalid config file. call_timeout and retry_time need to be positive integers.");
+			"Invalid config file. call_timeout, retry_time and giveup_limit need to be positive integers.");
 		return false;
 	}
 

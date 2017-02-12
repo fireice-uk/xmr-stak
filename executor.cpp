@@ -96,8 +96,17 @@ void executor::ex_clock_thd()
 
 void executor::sched_reconnect()
 {
+	iReconnectAttempts++;
+	size_t iLimit = jconf::inst()->GetGiveUpLimit();
+	if(iLimit != 0 && iReconnectAttempts > iLimit)
+	{
+		printer::inst()->print_msg(L0, "Give up limit reached. Exitting.");
+		exit(0);
+	}
+
 	long long unsigned int rt = jconf::inst()->GetNetRetry();
-	printer::inst()->print_msg(L1, "Pool connection lost. Waiting %lld s before retry.", rt);
+	printer::inst()->print_msg(L1, "Pool connection lost. Waiting %lld s before retry (attempt %llu).",
+		rt, int_port(iReconnectAttempts));
 
 	auto work = minethd::miner_work();
 	minethd::switch_work(work);
@@ -178,7 +187,10 @@ void executor::on_sock_ready(size_t pool_id)
 		}
 	}
 	else
+	{
+		iReconnectAttempts = 0;
 		reset_stats();
+	}
 }
 
 void executor::on_sock_error(size_t pool_id, std::string&& sError)
