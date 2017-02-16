@@ -12,26 +12,28 @@ XMR-Stak should compile on any C++11 compliant compiler. Windows compiler is ass
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA256
 
-Windows binary release checksums
+sha1sum *
+d34a0ba0dd7b3b1f900a7e02772e197e974b4a73  libeay32.dll
+2ee9966a0fc163da58408d91be36b84fa287c10b  ssleay32.dll
+3d5535c01bdd50066655b2c002b2a940340a8eb4  xmr-stak-cpu.exe
 
-sha1sum xmr-stak-cpu.exe
-32f551c891040eda2c25e18e6287665471a5a653  xmr-stak-cpu.exe
-
-sha3sum xmr-stak-cpu.exe
-ed12841738c899a3eb61f51787aa670c25b64ce3c5a626717e6a8f6b  xmr-stak-cpu.exe
+sha3sum *
+05003137a87313c81d6c348c9b96411c95d48dc22c35f36c39129747  libeay32.dll
+133c065d9ef2c93396382e2ba5d8c3ca8c6a57c6beb0159cb9a4b6c5  ssleay32.dll
+55b1cd92890b6aaa0a647dd9fec2abc41173018507dd3c2c1537ef7f  xmr-stak-cpu.exe
 
 date
-Mon 16 Jan 15:13:25 GMT 2017
+Thu 16 Feb 21:10:19 GMT 2017
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2
 
-iQEcBAEBCAAGBQJYfONvAAoJEPsk95p+1Bw02coH/0by+VMK76gnmpNjIxDcphkV
-S1GG+f0sIAYUrGpoMCJTXbr7hU3Na+grTbt6xLM2Tb0xJjX4Mc47Cixajzy7+TTx
-R2+CvBRl8LG9zob6JNiohvxD1+SK7RWDKWenFyDlr9BewgE/ArqZM+16BQBrLP9H
-XIWy1wh/lcSYuS548tnUYdNOmEnR9TqA454M4r8PED85HSpNmvI+eG8fZ8OK471C
-3yMupjYlAbiEBT+gE6bZwLeeCH9NO2gGeBAb31w8RBsMRjy+VvhFhTOoJwZbXj9e
-sMUwNBu+fLVoilMVvp8SDpQ7Uw/WFT085N2eJiCCuEbHgFAwM3uwD6VHz3eXd0s=
-=QJQj
+iQEcBAEBCAAGBQJYphV/AAoJEPsk95p+1Bw0nHAH/iFkyu0dMeBtenyHq4y1treC
+rnT3sKZ4I0o6YHkH365tuOlnhVBd5HFQ6foSy2gpNb9bl+GGga9+NqZ0XCV4yg/p
+6XfbRnmQknjQSa7kKhbXEsHcsM0TDdijvPw9YfUKilZV809hhSdXTxr/yxtCgl+Q
+6PKAs4KNZkM/tXYmclSAWeVi/NCZ6h8T/Kx5DkunUr6VBaQEzqGO+gfvojedVbZI
+Mbd97GCvSiWsDbTkE6pwUEndye7rtnBojOEO0jwcBywQHc2C8Wl1DBoVMzmnSzue
+wVz6+vh6nZDozQLHfkjdR/72Rsn6POl04vO9x0HGZ/oT3KBgMcpZ6ksFprxv6nY=
+=41ZK
 -----END PGP SIGNATURE-----
 ```
 
