@@ -105,6 +105,10 @@ double telemetry::calc_telemetry_data(size_t iLastMilisec, size_t iThread)
 	if (!bHaveFullSet || iEarliestStamp == 0 || iLastestStamp == 0)
 		return nan("");
 
+	//Don't think that can happen, but just in case
+	if (iLastestStamp - iEarliestStamp == 0)
+		return nan("");
+
 	double fHashes, fTime;
 	fHashes = iLastestHashCnt - iEarliestHashCnt;
 	fTime = iLastestStamp - iEarliestStamp;

@@ -429,10 +429,24 @@ void executor::ex_main()
 			if((cnt++ & 0xF) == 0) //Every 16 ticks
 			{
 				double fHps = 0.0;
-				for (i = 0; i < pvThreads->size(); i++)
-					fHps += telem->calc_telemetry_data(2500, i);
+				double fTelem;
+				bool normal = true;
 
-				if(fHighestHps < fHps)
+				for (i = 0; i < pvThreads->size(); i++)
+				{
+					fTelem = telem->calc_telemetry_data(2500, i);
+					if(std::isnormal(fTelem))
+					{
+						fHps += fTelem;
+					}
+					else
+					{
+						normal = false;
+						break;
+					}
+				}
+
+				if(normal && fHighestHps < fHps)
 					fHighestHps = fHps;
 			}
 		break;
@@ -625,6 +639,7 @@ void executor::connection_report(std::string& out)
 	jpsock* pool = pick_pool_by_id(dev_pool_id + 1);
 
 	out.append("CONNECTION REPORT\n");
+	out.append("Pool address    : ").append(jconf::inst()->GetPoolAddress()).append(1, '\n');
 	if (pool->is_running() && pool->is_logged_in())
 		out.append("Connected since : ").append(time_format(date, sizeof(date), tPoolConnTime)).append(1, '\n');
 	else
