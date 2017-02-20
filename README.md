@@ -1,6 +1,6 @@
 ### XMR-Stak-CPU - Monero mining software
 
-XMR-Stak is a universal Stratum pool miner. This is the CPU-mining version, but I'm planning to release Nvidia and AMD GPU versions too.
+XMR-Stak is a universal Stratum pool miner. This is the CPU-mining version; there is also an [AMD GPU version](https://github.com/fireice-uk/xmr-stak-amd). An NVIDIA GPU version is being planned.
 
 
 #### Usage on Windows 
@@ -37,9 +37,9 @@ wVz6+vh6nZDozQLHfkjdR/72Rsn6POl04vO9x0HGZ/oT3KBgMcpZ6ksFprxv6nY=
 -----END PGP SIGNATURE-----
 ```
 
-#### Usage on Linux
+#### Usage on Linux (Debian-based distros)
 ```
-    sudo apt-get install libmicrohttpd-dev
+    sudo apt-get install libmicrohttpd-dev libssl-dev cmake build-essential
     cmake .
     make
 ```
