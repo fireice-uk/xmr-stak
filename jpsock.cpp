@@ -386,14 +386,17 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 		uint32_t iTempInt;
 		char sTempStr[] = "00000000"; // Little-endian CPU FTW
 		memcpy(sTempStr, target->GetString(), target_slen);
-		hex2bin(sTempStr, 8, (unsigned char*)&iTempInt);
+		if(!hex2bin(sTempStr, 8, (unsigned char*)&iTempInt))
+			return set_socket_error("PARSE error: Invalid target");
+
 		oPoolJob.iTarget = t32_to_t64(iTempInt);
 	}
 	else if(target_slen <= 16)
 	{
 		char sTempStr[] = "0000000000000000";
 		memcpy(sTempStr, target->GetString(), target_slen);
-		hex2bin(sTempStr, 16, (unsigned char*)&oPoolJob.iTarget);
+		if(!hex2bin(sTempStr, 16, (unsigned char*)&oPoolJob.iTarget))
+			return set_socket_error("PARSE error: Invalid target");
 	}
 	else
 		return set_socket_error("PARSE error: Job error 5");
