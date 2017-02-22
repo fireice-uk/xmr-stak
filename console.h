@@ -31,6 +31,7 @@ public:
 	inline void set_verbose_level(size_t level) { verbose_level = (verbosity)level; }
 	void print_msg(verbosity verbose, const char* fmt, ...);
 	void print_str(const char* str);
+	bool open_logfile(const char* file);
 
 private:
 	printer();
@@ -38,4 +39,5 @@ private:
 
 	std::mutex print_mutex;
 	verbosity verbose_level;
+	FILE* logfile;
 };

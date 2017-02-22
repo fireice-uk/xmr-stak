@@ -155,6 +155,13 @@ printer* printer::oInst = nullptr;
 printer::printer()
 {
 	verbose_level = LINF;
+	logfile = nullptr;
+}
+
+bool printer::open_logfile(const char* file)
+{
+	logfile = fopen(file, "ab+");
+	return logfile != nullptr;
 }
 
 void printer::print_msg(verbosity verbose, const char* fmt, ...)
@@ -185,10 +192,22 @@ void printer::print_msg(verbosity verbose, const char* fmt, ...)
 
 	std::unique_lock<std::mutex> lck(print_mutex);
 	fputs(buf, stdout);
+
+	if(logfile != nullptr)
+	{
+		fputs(buf, logfile);
+		fflush(logfile);
+	}
 }
 
 void printer::print_str(const char* str)
 {
 	std::unique_lock<std::mutex> lck(print_mutex);
 	fputs(str, stdout);
+
+	if(logfile != nullptr)
+	{
+		fputs(str, logfile);
+		fflush(logfile);
+	}
 }

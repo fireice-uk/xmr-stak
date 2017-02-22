@@ -45,9 +45,10 @@ using namespace rapidjson;
 /*
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
-enum configEnum { iCpuThreadNum, aCpuThreadsConf, sUseSlowMem, bNiceHashMode, bTlsMode, bTlsSecureAlgo, sTlsFingerprint,
-	sPoolAddr, sWalletAddr, sPoolPwd, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, iAutohashTime, iHttpdPort,
-	bPreferIpv4 };
+enum configEnum { iCpuThreadNum, aCpuThreadsConf, sUseSlowMem, bNiceHashMode,
+	bTlsMode, bTlsSecureAlgo, sTlsFingerprint, sPoolAddr, sWalletAddr, sPoolPwd,
+	iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, iAutohashTime,
+	sOutputFile, iHttpdPort, bPreferIpv4 };
 
 struct configVal {
 	configEnum iName;
@@ -72,6 +73,7 @@ configVal oConfigValues[] = {
 	{ iGiveUpLimit, "giveup_limit", kNumberType },
 	{ iVerboseLevel, "verbose_level", kNumberType },
 	{ iAutohashTime, "h_print_time", kNumberType },
+	{ sOutputFile, "output_file", kStringType },
 	{ iHttpdPort, "httpd_port", kNumberType },
 	{ bPreferIpv4, "prefer_ipv4", kTrueType }
 };
@@ -240,6 +242,11 @@ uint16_t jconf::GetHttpdPort()
 bool jconf::NiceHashMode()
 {
 	return prv->configValues[bNiceHashMode]->GetBool();
+}
+
+const char* jconf::GetOutputFile()
+{
+	return prv->configValues[sOutputFile]->GetString();
 }
 
 bool jconf::check_cpu_features()

@@ -141,6 +141,14 @@
 "h_print_time" : 60,
 
 /*
+ * Output file
+ *
+ * output_file  - This option will log all output to a file.
+ *
+ */
+"output_file" : "",
+
+/*
  * Built-in web server
  * I like checking my hashrate on my phone. Don't you?
  * Keep in mind that you will need to set up port forwarding on your router if you want to access it from

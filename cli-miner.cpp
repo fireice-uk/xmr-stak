@@ -124,6 +124,9 @@ int main(int argc, char *argv[])
 	printer::inst()->print_str("'c' - connection\n");
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 
+	if(strlen(jconf::inst()->GetOutputFile()) != 0)
+		printer::inst()->open_logfile(jconf::inst()->GetOutputFile());
+
 	executor::inst()->ex_start();
 
 	int key;
