@@ -153,6 +153,8 @@
 		<Unit filename="socket.h" />
 		<Unit filename="socks.h" />
 		<Unit filename="thdq.hpp" />
+		<Unit filename="webdesign.cpp" />
+		<Unit filename="webdesign.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />

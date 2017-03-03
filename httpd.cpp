@@ -32,6 +32,8 @@
 #include "executor.h"
 #include "jconf.h"
 
+#include "webdesign.h"
+
 #ifdef _WIN32
 #include "libmicrohttpd/microhttpd.h"
 #define strcasecmp _stricmp
@@ -63,27 +65,37 @@ int httpd::req_handler(void * cls,
 	*ptr = nullptr;
 
 	std::string str;
-	if(strcasecmp(url, "/h") == 0 || strcasecmp(url, "/hashrate") == 0)
+	if(strcasecmp(url, "/style.css") == 0)
 	{
-		str.append("<html><head><title>Hashrate Report</title></head><body><pre>");
+		const char* req_etag = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "If-None-Match");
+
+		if(req_etag != NULL && strcmp(req_etag, sHtmlCssEtag) == 0)
+		{ //Cache hit
+			rsp = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
+
+			int ret = MHD_queue_response(connection, MHD_HTTP_NOT_MODIFIED, rsp);
+			MHD_destroy_response(rsp);
+			return ret;
+		}
+
+		rsp = MHD_create_response_from_buffer(sHtmlCssSize, (void*)sHtmlCssFile, MHD_RESPMEM_PERSISTENT);
+		MHD_add_response_header(rsp, "ETag", sHtmlCssEtag);
+	}
+	else if(strcasecmp(url, "/h") == 0 || strcasecmp(url, "/hashrate") == 0)
+	{
 		executor::inst()->get_http_report(EV_HTML_HASHRATE, str);
-		str.append("</pre></body></html>");
 
 		rsp = MHD_create_response_from_buffer(str.size(), (void*)str.c_str(), MHD_RESPMEM_MUST_COPY);
 	}
 	else if(strcasecmp(url, "/c") == 0 || strcasecmp(url, "/connection") == 0)
 	{
-		str.append("<html><head><title>Connection Report</title></head><body><pre>");
 		executor::inst()->get_http_report(EV_HTML_CONNSTAT, str);
-		str.append("</pre></body></html>");
 
 		rsp = MHD_create_response_from_buffer(str.size(), (void*)str.c_str(), MHD_RESPMEM_MUST_COPY);
 	}
 	else if(strcasecmp(url, "/r") == 0 || strcasecmp(url, "/results") == 0)
 	{
-		str.append("<html><head><title>Results Report</title></head><body><pre>");
 		executor::inst()->get_http_report(EV_HTML_RESULTS, str);
-		str.append("</pre></body></html>");
 
 		rsp = MHD_create_response_from_buffer(str.size(), (void*)str.c_str(), MHD_RESPMEM_MUST_COPY);
 	}

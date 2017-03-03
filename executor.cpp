@@ -33,6 +33,7 @@
 #include "jconf.h"
 #include "console.h"
 #include "donate-level.h"
+#include "webdesign.h"
 
 #ifdef _WIN32
 #define strncasecmp _strnicmp
@@ -478,13 +479,11 @@ void executor::ex_main()
 
 inline const char* hps_format(double h, char* buf, size_t l)
 {
-	if(std::isnormal(h))
+	if(std::isnormal(h) || h == 0.0)
 	{
 		snprintf(buf, l, " %03.1f", h);
 		return buf;
 	}
-	else if(h == 0.0) //Zero is not normal but we want it
-		return "  0.0";
 	else
 		return " (na)";
 }
@@ -695,6 +694,138 @@ void executor::print_report(ex_event_name ev)
 	printer::inst()->print_str(out.c_str());
 }
 
+void executor::http_hashrate_report(std::string& out)
+{
+	char num_a[32], num_b[32], num_c[32], num_d[32];
+	char buffer[4096];
+	size_t nthd = pvThreads->size();
+
+	out.reserve(4096);
+
+	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Hashrate Report", "Hashrate Report");
+	out.append(buffer);
+
+	snprintf(buffer, sizeof(buffer), sHtmlHashrateBodyHigh, (unsigned int)nthd + 3);
+	out.append(buffer);
+
+	double fTotal[3] = { 0.0, 0.0, 0.0};
+	for(size_t i=0; i < nthd; i++)
+	{
+		double fHps[3];
+
+		fHps[0] = telem->calc_telemetry_data(2500, i);
+		fHps[1] = telem->calc_telemetry_data(60000, i);
+		fHps[2] = telem->calc_telemetry_data(900000, i);
+
+		num_a[0] = num_b[0] = num_c[0] ='\0';
+		hps_format(fHps[0], num_a, sizeof(num_a));
+		hps_format(fHps[1], num_b, sizeof(num_b));
+		hps_format(fHps[2], num_c, sizeof(num_c));
+
+		fTotal[0] += fHps[0];
+		fTotal[1] += fHps[1];
+		fTotal[2] += fHps[2];
+
+		snprintf(buffer, sizeof(buffer), sHtmlHashrateTableRow, (unsigned int)i, num_a, num_b, num_c);
+		out.append(buffer);
+	}
+
+	num_a[0] = num_b[0] = num_c[0] = num_d[0] ='\0';
+	hps_format(fTotal[0], num_a, sizeof(num_a));
+	hps_format(fTotal[1], num_b, sizeof(num_b));
+	hps_format(fTotal[2], num_c, sizeof(num_c));
+	hps_format(fHighestHps, num_d, sizeof(num_d));
+
+	snprintf(buffer, sizeof(buffer), sHtmlHashrateBodyLow, num_a, num_b, num_c, num_d);
+	out.append(buffer);
+}
+
+void executor::http_result_report(std::string& out)
+{
+	char date[128];
+	char buffer[4096];
+
+	out.reserve(4096);
+
+	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Result Report", "Result Report");
+	out.append(buffer);
+
+	size_t iGoodRes = vMineResults[0].count, iTotalRes = iGoodRes;
+	size_t ln = vMineResults.size();
+
+	for(size_t i=1; i < ln; i++)
+		iTotalRes += vMineResults[i].count;
+
+	double fGoodResPrc = 0.0;
+	if(iTotalRes > 0)
+		fGoodResPrc = 100.0 * iGoodRes / iTotalRes;
+
+	double fAvgResTime = 0.0;
+	if(iPoolCallTimes.size() > 0)
+	{
+		using namespace std::chrono;
+		fAvgResTime = ((double)duration_cast<seconds>(system_clock::now() - tPoolConnTime).count())
+			/ iPoolCallTimes.size();
+	}
+
+	snprintf(buffer, sizeof(buffer), sHtmlResultBodyHigh,
+		iPoolDiff, iGoodRes, iTotalRes, fGoodResPrc, fAvgResTime, iPoolHashes,
+		int_port(iTopDiff[0]), int_port(iTopDiff[1]), int_port(iTopDiff[2]), int_port(iTopDiff[3]),
+		int_port(iTopDiff[4]), int_port(iTopDiff[5]), int_port(iTopDiff[6]), int_port(iTopDiff[7]),
+		int_port(iTopDiff[8]), int_port(iTopDiff[9]));
+
+	out.append(buffer);
+
+	for(size_t i=1; i < vMineResults.size(); i++)
+	{
+		snprintf(buffer, sizeof(buffer), sHtmlResultTableRow, vMineResults[i].msg.c_str(),
+			int_port(vMineResults[i].count), time_format(date, sizeof(date), vMineResults[i].time));
+		out.append(buffer);
+	}
+
+	out.append(sHtmlResultBodyLow);
+}
+
+void executor::http_connection_report(std::string& out)
+{
+	char date[128];
+	char buffer[4096];
+
+	out.reserve(4096);
+
+	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Connection Report", "Connection Report");
+	out.append(buffer);
+
+	jpsock* pool = pick_pool_by_id(dev_pool_id + 1);
+	const char* cdate = "not connected";
+	if (pool->is_running() && pool->is_logged_in())
+		cdate = time_format(date, sizeof(date), tPoolConnTime);
+
+	size_t n_calls = iPoolCallTimes.size();
+	unsigned int ping_time = 0;
+	if (n_calls > 1)
+	{
+		//Not-really-but-good-enough median
+		std::nth_element(iPoolCallTimes.begin(), iPoolCallTimes.begin() + n_calls/2, iPoolCallTimes.end());
+		ping_time = iPoolCallTimes[n_calls/2];
+	}
+
+	snprintf(buffer, sizeof(buffer), sHtmlConnectionBodyHigh,
+		jconf::inst()->GetPoolAddress(),
+		cdate, ping_time);
+	out.append(buffer);
+
+
+	for(size_t i=0; i < vSocketLog.size(); i++)
+	{
+		snprintf(buffer, sizeof(buffer), sHtmlConnectionTableRow,
+			time_format(date, sizeof(date), vSocketLog[i].time), vSocketLog[i].msg.c_str());
+		out.append(buffer);
+	}
+
+	out.append(sHtmlConnectionBodyLow);
+}
+
 void executor::http_report(ex_event_name ev)
 {
 	assert(pHttpString != nullptr);
@@ -702,15 +833,15 @@ void executor::http_report(ex_event_name ev)
 	switch(ev)
 	{
 	case EV_HTML_HASHRATE:
-		hashrate_report(*pHttpString);
+		http_hashrate_report(*pHttpString);
 		break;
 
 	case EV_HTML_RESULTS:
-		result_report(*pHttpString);
+		http_result_report(*pHttpString);
 		break;
 
 	case EV_HTML_CONNSTAT:
-		connection_report(*pHttpString);
+		http_connection_report(*pHttpString);
 		break;
 	default:
 		assert(false);

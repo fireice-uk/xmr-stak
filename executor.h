@@ -74,6 +74,10 @@ private:
 	void result_report(std::string& out);
 	void connection_report(std::string& out);
 
+	void http_hashrate_report(std::string& out);
+	void http_result_report(std::string& out);
+	void http_connection_report(std::string& out);
+
 	void http_report(ex_event_name ev);
 	void print_report(ex_event_name ev);
 
@@ -136,8 +140,8 @@ private:
 	std::array<size_t, 10> iTopDiff { { } }; //Initialize to zero
 
 	std::chrono::system_clock::time_point tPoolConnTime;
-	size_t iPoolHashes;
-	uint64_t iPoolDiff;
+	size_t iPoolHashes = 0;
+	uint64_t iPoolDiff = 0;
 
 	// Set it to 16 bit so that we can just let it grow
 	// Maximum realistic growth rate - 5MB / month
