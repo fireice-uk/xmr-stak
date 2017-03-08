@@ -27,7 +27,12 @@ extern const char sHtmlCssFile [] =
 	"a:active {"
 		"color: rgb(204, 122, 0);"
 	"}"
-
+	
+	".all {"
+		"max-width:600px;"
+		"margin: auto;"
+	"}"
+	
 	".header {"
 		"background-color: rgb(30, 30, 30);"
 		"color: white;"
@@ -91,6 +96,7 @@ extern const char sHtmlCommonHeader [] =
 	"<head><meta name='viewport' content='width=device-width' />"
 	"<link rel='stylesheet' href='style.css' /><title>%s</title></head>"
 	"<body>"
+	"<div class='all'>"
 	"<div class='header'><span style='color: rgb(255, 153, 0)'>XMR</span>-Stak-CPU</div>"
 
 	"<div class='flex-container'>"
@@ -118,7 +124,7 @@ extern const char sHtmlHashrateBodyLow [] =
 		"<tr><th>Totals:</th><td>%s</td><td>%s</td><td>%s</td></tr>"
 		"<tr><th>Highest:</th><td>%s</td><td colspan='2'></td></tr>"
 	"</table>"
-	"</div></body></html>";
+	"</div></div></body></html>";
 
 extern const char sHtmlConnectionBodyHigh [] =
 	"<div class=data>"
@@ -128,14 +134,14 @@ extern const char sHtmlConnectionBodyHigh [] =
 		"<tr><th>Pool ping time</th><td>%u ms</td></tr>"
 	"</table>"
 	"<h4>Network error log</h4>"
-	"<table style='max-width: 1000px;'>"
+	"<table'>"
 		"<tr><th style='width: 20%; min-width: 10em;'>Date</th><th>Error</th></tr>";
 
 extern const char sHtmlConnectionTableRow [] =
 	"<tr><td>%s</td><td>%s</td></tr>";
 
 extern const char sHtmlConnectionBodyLow [] =
-	"</table></div></body></html>";
+	"</table></div></div></body></html>";
 
 extern const char sHtmlResultBodyHigh [] =
 	"<div class=data>"
@@ -154,7 +160,7 @@ extern const char sHtmlResultBodyHigh [] =
 		"<tr><th>9</th><td>%llu</td><th>10</th><td>%llu</td></tr>"
 	"</table>"
 	"<h4>Error details</h4>"
-	"<table style='max-width: 1000px;'>"
+	"<table'>"
 		"<tr><th colspan='2'>Error text</th></tr>"
 		"<tr><th style='width: 5em;'>Count</th><th>Last seen</th></tr>";
 
@@ -162,5 +168,5 @@ extern const char sHtmlResultTableRow [] =
 	"<tr><td colspan='2'>%s</td></tr><tr><td>%llu</td><td>%s</td></tr>";
 
 extern const char sHtmlResultBodyLow [] =
-	"</table></div></body></html>";
+	"</table></div></div></body></html>";
 
