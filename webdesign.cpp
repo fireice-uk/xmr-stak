@@ -134,7 +134,7 @@ extern const char sHtmlConnectionBodyHigh [] =
 		"<tr><th>Pool ping time</th><td>%u ms</td></tr>"
 	"</table>"
 	"<h4>Network error log</h4>"
-	"<table'>"
+	"<table>"
 		"<tr><th style='width: 20%; min-width: 10em;'>Date</th><th>Error</th></tr>";
 
 extern const char sHtmlConnectionTableRow [] =
@@ -160,7 +160,7 @@ extern const char sHtmlResultBodyHigh [] =
 		"<tr><th>9</th><td>%llu</td><th>10</th><td>%llu</td></tr>"
 	"</table>"
 	"<h4>Error details</h4>"
-	"<table'>"
+	"<table>"
 		"<tr><th colspan='2'>Error text</th></tr>"
 		"<tr><th style='width: 5em;'>Count</th><th>Last seen</th></tr>";
 
