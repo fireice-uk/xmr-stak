@@ -1,15 +1,15 @@
 #include <stdlib.h>
 
-extern const char sHtmlCssEtag [] = "00000005";
+extern const char sHtmlCssEtag [] = "00000006";
 extern const char sHtmlCssFile [] =
 	"body {"
 		"font-family: Tahoma, Arial, sans-serif;"
 		"font-size: 80%;"
-		"background-color: rgb(230, 230, 230);"
+		"background-color: rgb(240, 240, 240);"
 	"}"
 
 	"a {"
-		"color: rgb(43, 51, 62);"
+		"color: rgb(44, 55, 66);"
 	"}"
 
 	"a:link {"
@@ -17,7 +17,7 @@ extern const char sHtmlCssFile [] =
 	"}"
 
 	"a:visited {"
-		"color: rgb(43, 51, 62);"
+		"color: rgb(44, 55, 66);"
 	"}"
 
 	"a:hover {"
@@ -42,9 +42,9 @@ extern const char sHtmlCssFile [] =
 	"}"
 
 	".links {"
-		"padding: 5px;"
+		"padding: 7px;"
 		"text-align: center;"
-		"background-color: rgb(213, 213, 213);"
+		"background-color: rgb(215, 215, 215);"
 		"box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 2px 1px -1px rgba(0, 0, 0, 0.12);"
 	"}"
 
@@ -72,7 +72,7 @@ extern const char sHtmlCssFile [] =
 	"}"
 
 	"h4 {"
-		"background-color: rgb(0, 129, 124);"
+		"background-color: rgb(0, 130, 130);"
 		"color: white;"
 		"padding: 10px;"
 		"margin: 10px 0px;"
@@ -85,7 +85,7 @@ extern const char sHtmlCssFile [] =
 
 	".flex-item {"
 		"width: 33%;"
-		"margin: 6px;"
+		"margin: 3px;"
 	"}";
 
 size_t sHtmlCssSize = sizeof(sHtmlCssFile) - 1;
@@ -97,7 +97,7 @@ extern const char sHtmlCommonHeader [] =
 	"<link rel='stylesheet' href='style.css' /><title>%s</title></head>"
 	"<body>"
 	"<div class='all'>"
-	"<div class='header'><span style='color: rgb(255, 153, 0)'>XMR</span>-Stak-CPU</div>"
+	"<div class='header'><span style='color: rgb(255, 160, 0)'>XMR</span>-Stak-CPU</div>"
 
 	"<div class='flex-container'>"
 		"<div class='links flex-item'>"
