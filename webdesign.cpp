@@ -1,15 +1,15 @@
 #include <stdlib.h>
 
-extern const char sHtmlCssEtag [] = "00000005";
+extern const char sHtmlCssEtag [] = "00000006";
 extern const char sHtmlCssFile [] =
 	"body {"
 		"font-family: Tahoma, Arial, sans-serif;"
 		"font-size: 80%;"
-		"background-color: rgb(230, 230, 230);"
+		"background-color: rgb(240, 240, 240);"
 	"}"
 
 	"a {"
-		"color: rgb(43, 51, 62);"
+		"color: rgb(44, 55, 66);"
 	"}"
 
 	"a:link {"
@@ -17,7 +17,7 @@ extern const char sHtmlCssFile [] =
 	"}"
 
 	"a:visited {"
-		"color: rgb(43, 51, 62);"
+		"color: rgb(44, 55, 66);"
 	"}"
 
 	"a:hover {"
@@ -27,7 +27,12 @@ extern const char sHtmlCssFile [] =
 	"a:active {"
 		"color: rgb(204, 122, 0);"
 	"}"
-
+	
+	".all {"
+		"max-width:600px;"
+		"margin: auto;"
+	"}"
+	
 	".header {"
 		"background-color: rgb(30, 30, 30);"
 		"color: white;"
@@ -37,9 +42,9 @@ extern const char sHtmlCssFile [] =
 	"}"
 
 	".links {"
-		"padding: 5px;"
+		"padding: 7px;"
 		"text-align: center;"
-		"background-color: rgb(213, 213, 213);"
+		"background-color: rgb(215, 215, 215);"
 		"box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 2px 1px -1px rgba(0, 0, 0, 0.12);"
 	"}"
 
@@ -67,7 +72,7 @@ extern const char sHtmlCssFile [] =
 	"}"
 
 	"h4 {"
-		"background-color: rgb(0, 129, 124);"
+		"background-color: rgb(0, 130, 130);"
 		"color: white;"
 		"padding: 10px;"
 		"margin: 10px 0px;"
@@ -80,7 +85,7 @@ extern const char sHtmlCssFile [] =
 
 	".flex-item {"
 		"width: 33%;"
-		"margin: 6px;"
+		"margin: 3px;"
 	"}";
 
 size_t sHtmlCssSize = sizeof(sHtmlCssFile) - 1;
@@ -91,7 +96,8 @@ extern const char sHtmlCommonHeader [] =
 	"<head><meta name='viewport' content='width=device-width' />"
 	"<link rel='stylesheet' href='style.css' /><title>%s</title></head>"
 	"<body>"
-	"<div class='header'><span style='color: rgb(255, 153, 0)'>XMR</span>-Stak-CPU</div>"
+	"<div class='all'>"
+	"<div class='header'><span style='color: rgb(255, 160, 0)'>XMR</span>-Stak-CPU</div>"
 
 	"<div class='flex-container'>"
 		"<div class='links flex-item'>"
@@ -118,7 +124,7 @@ extern const char sHtmlHashrateBodyLow [] =
 		"<tr><th>Totals:</th><td>%s</td><td>%s</td><td>%s</td></tr>"
 		"<tr><th>Highest:</th><td>%s</td><td colspan='2'></td></tr>"
 	"</table>"
-	"</div></body></html>";
+	"</div></div></body></html>";
 
 extern const char sHtmlConnectionBodyHigh [] =
 	"<div class=data>"
@@ -128,14 +134,14 @@ extern const char sHtmlConnectionBodyHigh [] =
 		"<tr><th>Pool ping time</th><td>%u ms</td></tr>"
 	"</table>"
 	"<h4>Network error log</h4>"
-	"<table style='max-width: 1000px;'>"
+	"<table>"
 		"<tr><th style='width: 20%; min-width: 10em;'>Date</th><th>Error</th></tr>";
 
 extern const char sHtmlConnectionTableRow [] =
 	"<tr><td>%s</td><td>%s</td></tr>";
 
 extern const char sHtmlConnectionBodyLow [] =
-	"</table></div></body></html>";
+	"</table></div></div></body></html>";
 
 extern const char sHtmlResultBodyHigh [] =
 	"<div class=data>"
@@ -154,7 +160,7 @@ extern const char sHtmlResultBodyHigh [] =
 		"<tr><th>9</th><td>%llu</td><th>10</th><td>%llu</td></tr>"
 	"</table>"
 	"<h4>Error details</h4>"
-	"<table style='max-width: 1000px;'>"
+	"<table>"
 		"<tr><th colspan='2'>Error text</th></tr>"
 		"<tr><th style='width: 5em;'>Count</th><th>Last seen</th></tr>";
 
@@ -162,5 +168,5 @@ extern const char sHtmlResultTableRow [] =
 	"<tr><td colspan='2'>%s</td></tr><tr><td>%llu</td><td>%s</td></tr>";
 
 extern const char sHtmlResultBodyLow [] =
-	"</table></div></body></html>";
+	"</table></div></div></body></html>";
 
