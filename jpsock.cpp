@@ -33,7 +33,7 @@
 #include "socks.h"
 #include "socket.h"
 
-#define AGENTID_STR "xmr-stak-cpu/1.0"
+#define AGENTID_STR "xmr-stak-cpu/1.3.1"
 
 using namespace rapidjson;
 
