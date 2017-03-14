@@ -101,12 +101,20 @@ int httpd::req_handler(void * cls,
 	}
 	else
 	{
-		char buffer[1024];
-		snprintf(buffer, sizeof(buffer), "<html><head><title>Error</title></head><body>"
-			"<pre>Unkown url %s - please use /h, /r or /c as url</pre></body></html>", url);
+		//Do a 302 redirect to /h
+		char loc_path[256];
+		const char* host_val = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Host");
 
-		rsp = MHD_create_response_from_buffer(strlen(buffer),
-		(void*)buffer, MHD_RESPMEM_MUST_COPY);
+		if(host_val != nullptr)
+			snprintf(loc_path, sizeof(loc_path), "http://%s/h", host_val);
+		else
+			snprintf(loc_path, sizeof(loc_path), "/h");
+
+		rsp = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
+		int ret = MHD_queue_response(connection, MHD_HTTP_TEMPORARY_REDIRECT, rsp);
+		MHD_add_response_header(rsp, "Location", loc_path);
+		MHD_destroy_response(rsp);
+		return ret;
 	}
 
 	int ret = MHD_queue_response(connection, MHD_HTTP_OK, rsp);
