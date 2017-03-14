@@ -423,6 +423,15 @@ bool jconf::parse_config(const char* sFilename)
 		return false;
 	}
 
+#ifdef CONF_NO_TLS
+	if(prv->configValues[bTlsMode]->GetBool())
+	{
+		printer::inst()->print_msg(L0,
+			"Invalid config file. TLS enabled while the application has been compiled without TLS support.");
+		return false;
+	}
+#endif // CONF_NO_TLS
+
 #ifdef _WIN32
 	if(GetSlowMemSetting() == no_mlck)
 	{

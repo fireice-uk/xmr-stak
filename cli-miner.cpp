@@ -32,8 +32,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifndef CONF_NO_TLS
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#endif
 
 //Do a press any key for the windows folk. *insert any key joke here*
 #ifdef _WIN32
@@ -54,12 +56,14 @@ void do_benchmark();
 
 int main(int argc, char *argv[])
 {
+#ifndef CONF_NO_TLS
 	SSL_library_init();
 	SSL_load_error_strings();
 	ERR_load_BIO_strings();
 	ERR_load_crypto_strings();
 	SSL_load_error_strings();
 	OpenSSL_add_all_digests();
+#endif
 
 	const char* sFilename = "config.txt";
 	bool benchmark_mode = false;

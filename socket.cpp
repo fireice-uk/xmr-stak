@@ -27,12 +27,14 @@
 #include "console.h"
 #include "executor.h"
 
+#ifndef CONF_NO_TLS
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/opensslconf.h>
 
 #ifndef OPENSSL_THREADS
 #error OpenSSL was compiled without thread support
+#endif
 #endif
 
 plain_socket::plain_socket(jpsock* err_callback) : pCallback(err_callback)
@@ -166,6 +168,7 @@ void plain_socket::close(bool free)
 	}
 }
 
+#ifndef CONF_NO_TLS
 tls_socket::tls_socket(jpsock* err_callback) : pCallback(err_callback)
 {
 }
@@ -355,4 +358,5 @@ void tls_socket::close(bool free)
 		bio = nullptr;
 	}
 }
+#endif
 
