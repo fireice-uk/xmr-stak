@@ -33,6 +33,7 @@
 #include <string.h>
 
 #include <openssl/ssl.h>
+#include <openssl/err.h>
 
 //Do a press any key for the windows folk. *insert any key joke here*
 #ifdef _WIN32
@@ -56,6 +57,8 @@ int main(int argc, char *argv[])
 	SSL_library_init();
 	SSL_load_error_strings();
 	ERR_load_BIO_strings();
+	ERR_load_crypto_strings();
+	SSL_load_error_strings();
 	OpenSSL_add_all_digests();
 
 	const char* sFilename = "config.txt";

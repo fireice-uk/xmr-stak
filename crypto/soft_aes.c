@@ -195,6 +195,13 @@ static inline void sub_word(uint8_t* key)
 	key[3] = Sbox[key[3]];
 }
 
+#ifdef __clang__
+uint32_t _rotr(uint32_t value, uint32_t amount)
+{
+	return (value >> amount) | (value << ((32 - amount) & 31));
+}
+#endif
+
 __m128i soft_aeskeygenassist(__m128i key, uint8_t rcon)
 {
 	uint32_t X1 = _mm_cvtsi128_si32(_mm_shuffle_epi32(key, 0x55));
