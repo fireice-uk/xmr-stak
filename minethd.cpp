@@ -37,12 +37,25 @@ void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 #else
 #include <pthread.h>
 
+#if defined(__APPLE__)
+#include <mach/thread_policy.h>
+#include <mach/thread_act.h>
+#define SYSCTL_CORE_COUNT   "machdep.cpu.core_count"
+#endif
+
 void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 {
+#if defined(__APPLE__)
+	thread_port_t mach_thread;
+	thread_affinity_policy_data_t policy = { cpu_id };
+	mach_thread = pthread_mach_thread_np(h);
+	thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
+#else
 	cpu_set_t mn;
 	CPU_ZERO(&mn);
 	CPU_SET(cpu_id, &mn);
 	pthread_setaffinity_np(h, sizeof(cpu_set_t), &mn);
+#endif
 }
 #endif // _WIN32
 
@@ -297,7 +310,12 @@ std::vector<minethd*>* minethd::thread_starter(miner_work& pWork)
 		minethd* thd = new minethd(pWork, i, cfg.bDoubleMode, cfg.bNoPrefetch);
 
 		if(cfg.iCpuAff >= 0)
+		{
+#if defined(__APPLE__)
+			printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory."
+#endif
 			thd_setaffinity(thd->oWorkThd.native_handle(), cfg.iCpuAff);
+		}
 
 		pvThreads->push_back(thd);
 
