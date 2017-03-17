@@ -312,7 +312,7 @@ std::vector<minethd*>* minethd::thread_starter(miner_work& pWork)
 		if(cfg.iCpuAff >= 0)
 		{
 #if defined(__APPLE__)
-			printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory."
+			printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory.");
 #endif
 			thd_setaffinity(thd->oWorkThd.native_handle(), cfg.iCpuAff);
 		}
