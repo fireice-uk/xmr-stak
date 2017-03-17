@@ -39,6 +39,10 @@ extern "C"
 #include <malloc.h>
 #endif // __GNUC__
 
+#if defined(__APPLE__)
+#include <mach/vm_statistics.h>
+#endif
+
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -137,8 +141,14 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 		return ptr;
 	}
 #else
+
+#if defined(__APPLE__)
+	ptr->long_state  = (uint8_t*)mmap(0, MEMORY, PROT_READ | PROT_WRITE,
+		MAP_PRIVATE | MAP_ANON, VM_FLAGS_SUPERPAGE_SIZE_2MB, 0);
+#else
 	ptr->long_state = (uint8_t*)mmap(0, MEMORY, PROT_READ | PROT_WRITE,
 		MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, 0, 0);
+#endif
 
 	if (ptr->long_state == MAP_FAILED)
 	{
