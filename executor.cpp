@@ -83,7 +83,7 @@ void executor::ex_clock_thd()
 				ev = lTimedEvents.erase(ev);
 			}
 			else
-				ev++;
+				++ev;
 		}
 		lck.unlock();
 
