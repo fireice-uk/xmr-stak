@@ -301,6 +301,7 @@ bool jconf::parse_config(const char* sFilename)
 
 	if(flen <= 16)
 	{
+		fclose(pFile);
 		printer::inst()->print_msg(L0, "File is empty or too short - %s.", sFilename);
 		return false;
 	}
