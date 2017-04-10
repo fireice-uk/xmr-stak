@@ -32,7 +32,7 @@
 
 void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 {
-	SetThreadAffinityMask(h, 1 << cpu_id);
+	SetThreadAffinityMask(h, 1ULL << cpu_id);
 }
 #else
 #include <pthread.h>
