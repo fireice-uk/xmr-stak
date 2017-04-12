@@ -26,7 +26,10 @@
 #include "jconf.h"
 #include "console.h"
 #include "donate-level.h"
-#include "httpd.h"
+
+#ifndef CONF_NO_HTTPD
+#	include "httpd.h"
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -109,6 +112,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
+#ifndef CONF_NO_HTTPD
 	if(jconf::inst()->GetHttpdPort() != 0)
 	{
 		if (!httpd::inst()->start_daemon())
@@ -117,6 +121,7 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 	}
+#endif
 
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_str("XMR-Stak-CPU mining software, CPU Version.\n");
