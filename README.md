@@ -77,8 +77,14 @@ By default the miner will donate 1% of the hashpower (1 minute in 100 minutes) t
 
 If you want to donate directly to support further development, here is my wallet
 
+fireice-uk:
 ```
 4581HhZkQHgZrZjKeCfCJxZff9E3xCgHGF25zABZz7oR71TnbbgiS7sK9jveE6Dx6uMs2LwszDuvQJgRZQotdpHt1fTdDhk
+```
+
+psychocrypt:
+```
+43NoJVEXo21hGZ6tDG6Z3g4qimiGdJPE6GRxAmiWwm26gwr62Lqo7zRiCJFSBmbkwTGNuuES9ES5TgaVHceuYc4Y75txCTU
 ```
 
 ## PGP Key
