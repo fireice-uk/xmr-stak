@@ -55,7 +55,7 @@ lBoYbHZRpcWUfDO8o2y+ZQIs+yzMoJHHBBXB9fsHlwq62PTtzjsEVwB2aq9ABzk=
 
 ### To do a static build for a system without gcc 5.1+
 ```
-    cmake -DCMAKE_BUILD_TYPE=STATIC .
+    cmake -DCMAKE_LINK_STATIC=ON .
     make install
 ```
 Note - cmake caches variables, so if you want to do a dynamic build later you need to specify '-DCMAKE_BUILD_TYPE=RELEASE'
@@ -197,6 +197,8 @@ and install.
 - `CMAKE_INSTALL_PREFIX` install miner to the home folder
   - `cmake . -DCMAKE_INSTALL_PREFIX=$HOME/xmr-stak-cpu`
   - you can find the binary and the `config.txt` file after `make install` in `$HOME/xmr-stak-cpu/bin`
+- `CMAKE_LINK_STATIC` link libgcc and libstdc++ libraries static (default OFF)
+  - disable with `cmake . -DCMAKE_LINK_STATIC=ON`
 -`CMAKE_BUILD_TYPE` set the build type
   - valid options: `Release` or `Debug`
   - you should always keep `Release` for your productive miners
