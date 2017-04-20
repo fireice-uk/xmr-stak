@@ -3,3 +3,12 @@ obj/
 xmr-stak-cpu.layout
 xmr-stak-cpu.depend
 config-debug.txt
+
+# netbeans project files
+/nbproject/
+
+# tmp files
+*~
+
+# merge original backup files
+*.orig
