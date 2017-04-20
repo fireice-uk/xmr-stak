@@ -114,7 +114,8 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 
 	if(use_fast_mem == 0)
 	{
-		ptr->long_state = (uint8_t*)_mm_malloc(MEMORY, 4096);
+		// use 2MiB aligned memory
+		ptr->long_state = (uint8_t*)_mm_malloc(MEMORY, 2*1024*1024);
 		ptr->ctx_info[0] = 0;
 		ptr->ctx_info[1] = 0;
 		return ptr;
