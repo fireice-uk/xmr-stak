@@ -358,7 +358,7 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, boo
 
 	std::bitset<3> digit;
 	digit.set(0, bMulx);
-	digit.set(1, bNoPrefetch);
+	digit.set(1, !bNoPrefetch);
 	digit.set(2, !bHaveAes);
 
 	return func_table[digit.to_ulong()];
@@ -450,7 +450,7 @@ minethd::cn_hash_fun_dbl minethd::func_dbl_selector(bool bHaveAes, bool bNoPrefe
 
 	std::bitset<3> digit;
 	digit.set(0, bMulx);
-	digit.set(1, bNoPrefetch);
+	digit.set(1, !bNoPrefetch);
 	digit.set(2, !bHaveAes);
 
 	return func_table[digit.to_ulong()];
