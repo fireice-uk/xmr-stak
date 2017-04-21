@@ -59,7 +59,7 @@
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="-march=westmere" />
+			<Add option="-march=haswell" />
 			<Add option="-Wall" />
 		</Compiler>
 		<Linker>

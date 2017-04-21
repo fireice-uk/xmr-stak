@@ -56,6 +56,7 @@ public:
 	bool PreferIpv4();
 
 	inline bool HaveHardwareAes() { return bHaveAes; }
+	inline bool HaveMulx() { return bHaveBmi2; }
 
 private:
 	jconf();
@@ -66,4 +67,5 @@ private:
 	opaque_private* prv;
 
 	bool bHaveAes;
+	bool bHaveBmi2;
 };
