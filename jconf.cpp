@@ -139,9 +139,9 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	cfg.bDoubleMode = mode->GetBool();
 	cfg.bNoPrefetch = no_prefetch->GetBool();
 
-	if(!bHaveAes && (cfg.bDoubleMode || cfg.bNoPrefetch))
+	if(!bHaveAes && cfg.bDoubleMode)
 	{
-		printer::inst()->print_msg(L0, "Invalid thread confg - low_power_mode and no_prefetch are unsupported on CPUs without AES-NI.");
+		printer::inst()->print_msg(L0, "Invalid thread confg - low_power_mode are unsupported on CPUs without AES-NI.");
 		return false;
 	}
 

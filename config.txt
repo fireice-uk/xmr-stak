@@ -11,8 +11,7 @@
  *                  consume much less power (as less cores are working), but will max out at around 80-85% of 
  *                  the maximum performance.
  *
- * no_prefetch -    This mode meant for large pages only. It will generate an error if running on slow memory
- *                  Some sytems can gain up to extra 5% here, but sometimes it will have no difference or make
+ * no_prefetch -    Some sytems can gain up to extra 5% here, but sometimes it will have no difference or make
  *                  things slower.
  *
  * affine_to_cpu -  This can be either false (no affinity), or the CPU core number. Note that on hyperthreading 
@@ -22,8 +21,8 @@
  *
  */
 "cpu_threads_conf" : [ 
-	{ "low_power_mode" : false, "no_prefetch" : false, "affine_to_cpu" : 0 },
-	{ "low_power_mode" : false, "no_prefetch" : false, "affine_to_cpu" : 1 },
+	{ "low_power_mode" : false, "no_prefetch" : true, "affine_to_cpu" : 0 },
+	{ "low_power_mode" : false, "no_prefetch" : true, "affine_to_cpu" : 1 },
 ],
 
 /*
