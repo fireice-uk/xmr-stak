@@ -28,6 +28,11 @@ static inline uint64_t _umul128(uint64_t a, uint64_t b, uint64_t* hi)
 	return (uint64_t)r;
 }
 
+__attribute__((target ("bmi2"))) static inline uint64_t _mulx_u64(uint64_t a, uint64_t b, uint64_t* hi)
+{
+	return _mulx_u64((unsigned long long)a, (unsigned long long)b, (unsigned long long*)hi);
+}
+
 #define _mm256_set_m128i(v0, v1)  _mm256_insertf128_si256(_mm256_castsi128_si256(v1), (v0), 1)
 #else
 #include <intrin.h>
@@ -319,7 +324,7 @@ void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_c
 		ch = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[1];
 
 		if(MULX)
-			lo = _mulx_u64(idx0, cl, (long long unsigned int*)&hi);
+			lo = _mulx_u64(idx0, cl, &hi);
 		else
 			lo = _umul128(idx0, cl, &hi);
 
@@ -406,7 +411,7 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 		cx = _mm_load_si128((__m128i *)&l0[idx0 & 0x1FFFF0]);
 
 		if(MULX)
-			lo = _mulx_u64(idx0, _mm_cvtsi128_si64(cx), (long long unsigned int*)&hi);
+			lo = _mulx_u64(idx0, _mm_cvtsi128_si64(cx), &hi);
 		else
 			lo = _umul128(idx0, _mm_cvtsi128_si64(cx), &hi);
 
@@ -421,7 +426,7 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 		cx = _mm_load_si128((__m128i *)&l1[idx1 & 0x1FFFF0]);
 
 		if(MULX)
-			lo = _mulx_u64(idx1, _mm_cvtsi128_si64(cx), (long long unsigned int*)&hi);
+			lo = _mulx_u64(idx1, _mm_cvtsi128_si64(cx), &hi);
 		else
 			lo = _umul128(idx1, _mm_cvtsi128_si64(cx), &hi);
 
