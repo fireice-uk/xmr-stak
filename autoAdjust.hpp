@@ -40,10 +40,7 @@ public:
 
 		printer::inst()->print_msg(L0, "Autoconf L3 size detected at %u.", L3KB_size);
 
-		uint32_t corecnt;
-		bool linux_layout;
-
-		detectCPUConf(corecnt, linux_layout);
+		detectCPUConf();
 
 		printer::inst()->print_msg(L0, "Autoconf cores detected at %u on %s.", corecnt,
 			linux_layout ? "Linux" : "Windows");
