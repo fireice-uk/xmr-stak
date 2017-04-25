@@ -59,7 +59,7 @@ public:
 		{
 			bool double_mode;
 
-			if(L3KB_size < 0)
+			if(L3KB_size <= 0)
 				break;
 
 			double_mode = L3KB_size / 2048 > (int32_t)(corecnt-i);
