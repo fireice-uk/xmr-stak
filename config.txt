@@ -1,10 +1,3 @@
-/* 
- * Number of threads. You can configure them below. Cryptonight uses 2MB of memory, so the optimal setting 
- * here is the size of your L3 cache divided by 2. Intel mid-to-high end desktop processors have 2MB of L3
- * cache per physical core. Low end cpus can have 1.5 or 1 MB while Xeons can have 2, 2.5 or 3MB per core.
- */
-"cpu_thread_num" : 2,
-
 /*
  * Thread configuration for each thread. Make sure it matches the number above.
  * low_power_mode - This mode will double the cache usage, and double the single thread performance. It will 
@@ -19,11 +12,18 @@
  *                  even or odd numbered cpu numbers. For Linux it will be usually the lower CPU numbers, so for a 4 
  *                  physical core CPU you should select cpu numbers 0-3.
  *
+ * On the first run the miner will look at your system and suggest a basic configuration that will work,
+ * you can try to tweak it from there to get the best performance.
+ * 
+ * A filled out configuration should look like this:
+ * "cpu_threads_conf" :
+ * [ 
+ *      { "low_power_mode" : false, "no_prefetch" : true, "affine_to_cpu" : 0 },
+ *      { "low_power_mode" : false, "no_prefetch" : true, "affine_to_cpu" : 1 },
+ * ],
  */
-"cpu_threads_conf" : [ 
-	{ "low_power_mode" : false, "no_prefetch" : true, "affine_to_cpu" : 0 },
-	{ "low_power_mode" : false, "no_prefetch" : true, "affine_to_cpu" : 1 },
-],
+"cpu_threads_conf" : 
+null,
 
 /*
  * LARGE PAGE SUPPORT

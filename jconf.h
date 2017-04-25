@@ -29,6 +29,7 @@ public:
 
 	size_t GetThreadCount();
 	bool GetThreadConfig(size_t id, thd_cfg &cfg);
+	bool NeedsAutoconf();
 
 	slow_mem_cfg GetSlowMemSetting();
 
@@ -57,6 +58,8 @@ public:
 
 	inline bool HaveHardwareAes() { return bHaveAes; }
 	inline bool HaveMulx() { return bHaveBmi2; }
+
+	static void cpuid(uint32_t eax, int32_t ecx, int32_t val[4]);
 
 private:
 	jconf();
