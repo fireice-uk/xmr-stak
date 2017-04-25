@@ -68,6 +68,7 @@
 			<Add library="crypto" />
 			<Add library="ssl" />
 		</Linker>
+		<Unit filename="autoAdjust.hpp" />
 		<Unit filename="cli-miner.cpp" />
 		<Unit filename="console.cpp" />
 		<Unit filename="console.h" />
