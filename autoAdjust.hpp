@@ -29,9 +29,7 @@ public:
 		printer::inst()->print_str("The values are not optimal, please try to tweak the values based on notes in config.txt.\n");
 		printer::inst()->print_str("Please copy & paste the block within the asterisks to your config.\n\n");
 
-		int32_t L3KB_size = 0;
-
-		if(!detectL3Size(L3KB_size))
+		if(!detectL3Size())
 			return;
 
 		if(L3KB_size < 1024 || L3KB_size > 102400)
@@ -68,10 +66,15 @@ public:
 				double_mode ? "true" : "false", aff_id);
 			printer::inst()->print_str(strbuf);
 
-			if(linux_layout)
-				aff_id++;
-			else
+			if(!linux_layout || old_amd)
+			{
 				aff_id += 2;
+
+				if(aff_id >= corecnt)
+					aff_id = 1;
+			}
+			else
+				aff_id++;
 
 			if(double_mode)
 				L3KB_size -= 4096;
@@ -83,7 +86,7 @@ public:
 	}
 
 private:
-	bool detectL3Size(int32_t &l3kb)
+	bool detectL3Size()
 	{
 		int32_t cpu_info[4];
 		char cpustr[13] = {0};
@@ -103,7 +106,7 @@ private:
 				return false;
 			}
 
-			l3kb = ((get_masked(cpu_info[1], 31, 22) + 1) * (get_masked(cpu_info[1], 21, 12) + 1) *
+			L3KB_size = ((get_masked(cpu_info[1], 31, 22) + 1) * (get_masked(cpu_info[1], 21, 12) + 1) *
 				(get_masked(cpu_info[1], 11, 0) + 1) * (cpu_info[2] + 1)) / 1024;
 
 			return true;
@@ -112,7 +115,11 @@ private:
 		{
 			jconf::cpuid(0x80000006, 0, cpu_info);
 
-			l3kb = get_masked(cpu_info[3], 31, 18) * 512;
+			L3KB_size = get_masked(cpu_info[3], 31, 18) * 512;
+
+			jconf::cpuid(1, 0, cpu_info);
+			if(get_masked(cpu_info[0], 11, 8) < 0x17) //0x17h is Zen
+				old_amd = true;
 
 			return true;
 		}
@@ -123,7 +130,7 @@ private:
 		}
 	}
 
-	void detectCPUConf(uint32_t &corecnt, bool &linux_layout)
+	void detectCPUConf()
 	{
 #ifdef _WIN32
 		SYSTEM_INFO info;
@@ -135,4 +142,9 @@ private:
 		linux_layout = true;
 #endif // _WIN32
 	}
+
+	int32_t L3KB_size = 0;
+	uint32_t corecnt;
+	bool old_amd = false;
+	bool linux_layout;
 };
