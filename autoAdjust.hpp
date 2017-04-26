@@ -32,12 +32,16 @@ public:
 		printer::inst()->print_str("The values are not optimal, please try to tweak the values based on notes in config.txt.\n");
 		printer::inst()->print_str("Please copy & paste the block within the asterisks to your config.\n\n");
 
-		if(!detectL3Size())
-			return;
-
-		if(L3KB_size < 1024 || L3KB_size > 102400)
+		if(!detectL3Size() || L3KB_size < 1024 || L3KB_size > 102400)
 		{
-			printer::inst()->print_msg(L0, "Autoconf failed: L3 size sanity check failed - %u KB.", L3KB_size);
+			if(L3KB_size < 1024 || L3KB_size > 102400)
+				printer::inst()->print_msg(L0, "Autoconf failed: L3 size sanity check failed - %u KB.", L3KB_size);
+
+			printer::inst()->print_msg(L0, "Autoconf failed: Printing config for a single thread. Please try to add new ones until the hashrate slows down.");
+			printer::inst()->print_str("\n**************** Copy&Paste ****************\n\n");
+			printer::inst()->print_str("\"cpu_threads_conf\" :\n[\n");
+			printer::inst()->print_str("    { \"low_power_mode\" : false, \"no_prefetch\" : true, \"affine_to_cpu\" : false },\n");
+			printer::inst()->print_str("],\n\n**************** Copy&Paste ****************\n");
 			return;
 		}
 
@@ -82,7 +86,7 @@ public:
 				L3KB_size -= 2048;
 		}
 
-		printer::inst()->print_str("]\n\n**************** Copy&Paste ****************\n");
+		printer::inst()->print_str("],\n\n**************** Copy&Paste ****************\n");
 	}
 
 private:
