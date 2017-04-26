@@ -277,7 +277,6 @@ bool jconf::check_cpu_features()
 {
 	constexpr int AESNI_BIT = 1 << 25;
 	constexpr int SSE2_BIT = 1 << 26;
-	constexpr int BMI2_BIT = 1 << 8;
 	int32_t cpu_info[4];
 	bool bHaveSse2;
 
@@ -285,10 +284,6 @@ bool jconf::check_cpu_features()
 
 	bHaveAes = (cpu_info[2] & AESNI_BIT) != 0;
 	bHaveSse2 = (cpu_info[3] & SSE2_BIT) != 0;
-
-	cpuid(7, 0, cpu_info);
-
-	bHaveBmi2 = (cpu_info[1] & BMI2_BIT) != 0;
 
 	return bHaveSse2;
 }
@@ -462,9 +457,6 @@ bool jconf::parse_config(const char* sFilename)
 	{
 		if(!bHaveAes)
 			printer::inst()->print_msg(L0, "Your CPU doesn't support hardware AES. Don't expect high hashrates.");
-
-		if(bHaveBmi2)
-			printer::inst()->print_msg(L0, "CPU supports BMI2 instructions. Faster multiplication enabled.");
 	}
 
 	return true;

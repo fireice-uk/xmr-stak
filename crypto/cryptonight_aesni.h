@@ -27,12 +27,6 @@ static inline uint64_t _umul128(uint64_t a, uint64_t b, uint64_t* hi)
 	*hi = r >> 64;
 	return (uint64_t)r;
 }
-
-__attribute__((target ("bmi2"))) static inline uint64_t _mulx_u64(uint64_t a, uint64_t b, uint64_t* hi)
-{
-	return _mulx_u64((unsigned long long)a, (unsigned long long)b, (unsigned long long*)hi);
-}
-
 #define _mm256_set_m128i(v0, v1)  _mm256_insertf128_si256(_mm256_castsi128_si256(v1), (v0), 1)
 #else
 #include <intrin.h>
@@ -284,7 +278,7 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 	_mm_store_si128(output + 11, xout7);
 }
 
-template<size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH, bool MULX>
+template<size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
 void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_ctx* ctx0)
 {
 	keccak((const uint8_t *)input, len, ctx0->hash_state, 200);
@@ -323,10 +317,7 @@ void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_c
 		cl = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[0];
 		ch = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[1];
 
-		if(MULX)
-			lo = _mulx_u64(idx0, cl, &hi);
-		else
-			lo = _umul128(idx0, cl, &hi);
+		lo = _umul128(idx0, cl, &hi);
 
 		al0 += hi;
 		ah0 += lo;
@@ -352,7 +343,7 @@ void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_c
 // This lovely creation will do 2 cn hashes at a time. We have plenty of space on silicon
 // to fit temporary vars for two contexts. Function will read len*2 from input and write 64 bytes to output
 // We are still limited by L3 cache, so doubling will only work with CPUs where we have more than 2MB to core (Xeons)
-template<size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH, bool MULX>
+template<size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
 void cryptonight_double_hash(const void* input, size_t len, void* output, cryptonight_ctx* __restrict ctx0, cryptonight_ctx* __restrict ctx1)
 {
 	keccak((const uint8_t *)input, len, ctx0->hash_state, 200);
@@ -410,10 +401,7 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 		uint64_t hi, lo;
 		cx = _mm_load_si128((__m128i *)&l0[idx0 & 0x1FFFF0]);
 
-		if(MULX)
-			lo = _mulx_u64(idx0, _mm_cvtsi128_si64(cx), &hi);
-		else
-			lo = _umul128(idx0, _mm_cvtsi128_si64(cx), &hi);
+		lo = _umul128(idx0, _mm_cvtsi128_si64(cx), &hi);
 
 		ax0 = _mm_add_epi64(ax0, _mm_set_epi64x(lo, hi));
 		_mm_store_si128((__m128i*)&l0[idx0 & 0x1FFFF0], ax0);
@@ -425,10 +413,7 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 
 		cx = _mm_load_si128((__m128i *)&l1[idx1 & 0x1FFFF0]);
 
-		if(MULX)
-			lo = _mulx_u64(idx1, _mm_cvtsi128_si64(cx), &hi);
-		else
-			lo = _umul128(idx1, _mm_cvtsi128_si64(cx), &hi);
+		lo = _umul128(idx1, _mm_cvtsi128_si64(cx), &hi);
 
 		ax1 = _mm_add_epi64(ax1, _mm_set_epi64x(lo, hi));
 		_mm_store_si128((__m128i*)&l1[idx1 & 0x1FFFF0], ax1);

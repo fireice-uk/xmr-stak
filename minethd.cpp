@@ -251,20 +251,20 @@ bool minethd::self_test()
 	cn_hash_fun hashf;
 	cn_hash_fun_dbl hashdf;
 
-	hashf = func_selector(jconf::inst()->HaveHardwareAes(), false, jconf::inst()->HaveMulx());
+	hashf = func_selector(jconf::inst()->HaveHardwareAes(), false);
 	hashf("This is a test", 14, out, ctx0);
 	bResult = memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
-	hashf = func_selector(jconf::inst()->HaveHardwareAes(), true, jconf::inst()->HaveMulx());
+	hashf = func_selector(jconf::inst()->HaveHardwareAes(), true);
 	hashf("This is a test", 14, out, ctx0);
 	bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
-	hashdf = func_dbl_selector(jconf::inst()->HaveHardwareAes(), false, jconf::inst()->HaveMulx());
+	hashdf = func_dbl_selector(jconf::inst()->HaveHardwareAes(), false);
 	hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
 	bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
 		                   "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
 
-	hashdf = func_dbl_selector(jconf::inst()->HaveHardwareAes(), true, jconf::inst()->HaveMulx());
+	hashdf = func_dbl_selector(jconf::inst()->HaveHardwareAes(), true);
 	hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
 	bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
 		                   "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
@@ -338,28 +338,23 @@ void minethd::consume_work()
 	iConsumeCnt++;
 }
 
-minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, bool bMulx)
+minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch)
 {
-	// We have three independent flag bits in the functions
+	// We have two independent flag bits in the functions
 	// therefore we will build a binary digit and select the
-	// function as a three digit binary
-	// Digit order SOFT_AES, NO_PREFETCH, MULX
+	// function as a two digit binary
+	// Digit order SOFT_AES, NO_PREFETCH
 
-	static const cn_hash_fun func_table[8] = {
-		cryptonight_hash<0x80000, MEMORY, false, false, false>,
-		cryptonight_hash<0x80000, MEMORY, false, false, true>,
-		cryptonight_hash<0x80000, MEMORY, false, true, false>,
-		cryptonight_hash<0x80000, MEMORY, false, true, true>,
-		cryptonight_hash<0x80000, MEMORY, true, false, false>,
-		cryptonight_hash<0x80000, MEMORY, true, false, true>,
-		cryptonight_hash<0x80000, MEMORY, true, true, false>,
-		cryptonight_hash<0x80000, MEMORY, true, true, true>
+	static const cn_hash_fun func_table[4] = {
+		cryptonight_hash<0x80000, MEMORY, false, false>,
+		cryptonight_hash<0x80000, MEMORY, false, true>,
+		cryptonight_hash<0x80000, MEMORY, true, false>,
+		cryptonight_hash<0x80000, MEMORY, true, true>
 	};
 
-	std::bitset<3> digit;
-	digit.set(0, bMulx);
-	digit.set(1, !bNoPrefetch);
-	digit.set(2, !bHaveAes);
+	std::bitset<2> digit;
+	digit.set(0, !bNoPrefetch);
+	digit.set(1, !bHaveAes);
 
 	return func_table[digit.to_ulong()];
 }
@@ -373,7 +368,7 @@ void minethd::work_main()
 	uint32_t* piNonce;
 	job_result result;
 
-	hash_fun = func_selector(jconf::inst()->HaveHardwareAes(), bNoPrefetch, jconf::inst()->HaveMulx());
+	hash_fun = func_selector(jconf::inst()->HaveHardwareAes(), bNoPrefetch);
 	ctx = minethd_alloc_ctx();
 
 	piHashVal = (uint64_t*)(result.bResult + 24);
@@ -430,28 +425,23 @@ void minethd::work_main()
 	cryptonight_free_ctx(ctx);
 }
 
-minethd::cn_hash_fun_dbl minethd::func_dbl_selector(bool bHaveAes, bool bNoPrefetch, bool bMulx)
+minethd::cn_hash_fun_dbl minethd::func_dbl_selector(bool bHaveAes, bool bNoPrefetch)
 {
-	// We have three independent flag bits in the functions
+	// We have two independent flag bits in the functions
 	// therefore we will build a binary digit and select the
-	// function as a three digit binary
-	// Digit order SOFT_AES, NO_PREFETCH, MULX
+	// function as a two digit binary
+	// Digit order SOFT_AES, NO_PREFETCH
 
-	static const cn_hash_fun_dbl func_table[8] = {
-		cryptonight_double_hash<0x80000, MEMORY, false, false, false>,
-		cryptonight_double_hash<0x80000, MEMORY, false, false, true>,
-		cryptonight_double_hash<0x80000, MEMORY, false, true, false>,
-		cryptonight_double_hash<0x80000, MEMORY, false, true, true>,
-		cryptonight_double_hash<0x80000, MEMORY, true, false, false>,
-		cryptonight_double_hash<0x80000, MEMORY, true, false, true>,
-		cryptonight_double_hash<0x80000, MEMORY, true, true, false>,
-		cryptonight_double_hash<0x80000, MEMORY, true, true, true>
+	static const cn_hash_fun_dbl func_table[4] = {
+		cryptonight_double_hash<0x80000, MEMORY, false, false>,
+		cryptonight_double_hash<0x80000, MEMORY, false, true>,
+		cryptonight_double_hash<0x80000, MEMORY, true, false>,
+		cryptonight_double_hash<0x80000, MEMORY, true, true>
 	};
 
-	std::bitset<3> digit;
-	digit.set(0, bMulx);
-	digit.set(1, !bNoPrefetch);
-	digit.set(2, !bHaveAes);
+	std::bitset<2> digit;
+	digit.set(0, !bNoPrefetch);
+	digit.set(1, !bHaveAes);
 
 	return func_table[digit.to_ulong()];
 }
@@ -469,7 +459,7 @@ void minethd::double_work_main()
 	uint32_t iNonce;
 	job_result res;
 
-	hash_fun = func_dbl_selector(jconf::inst()->HaveHardwareAes(), bNoPrefetch, jconf::inst()->HaveMulx());
+	hash_fun = func_dbl_selector(jconf::inst()->HaveHardwareAes(), bNoPrefetch);
 	ctx0 = minethd_alloc_ctx();
 	ctx1 = minethd_alloc_ctx();
 

@@ -114,8 +114,8 @@ private:
 	inline uint32_t calc_nicehash_nonce(uint32_t start, uint32_t resume)
 		{ return start | (resume * iThreadCount + iThreadNo) << 18; }
 
-	static cn_hash_fun func_selector(bool bHaveAes, bool bNoPrefetch, bool bMulx);
-	static cn_hash_fun_dbl func_dbl_selector(bool bHaveAes, bool bNoPrefetch, bool bMulx);
+	static cn_hash_fun func_selector(bool bHaveAes, bool bNoPrefetch);
+	static cn_hash_fun_dbl func_dbl_selector(bool bHaveAes, bool bNoPrefetch);
 
 	void work_main();
 	void double_work_main();
