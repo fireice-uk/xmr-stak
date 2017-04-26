@@ -8,7 +8,10 @@
 #include <unistd.h>
 #endif // _WIN32
 
-int32_t get_masked(int32_t val, int32_t h, int32_t l)
+// Mask bits between h and l and return the value
+// This enables us to put in values exactly like in the manual
+// For example EBX[31:22] is get_masked(cpu_info[1], 31, 22)
+inline int32_t get_masked(int32_t val, int32_t h, int32_t l)
 {
 	val &= (0x7FFFFFFF >> (31-(h-l))) << l;
 	return val >> l;
@@ -34,15 +37,15 @@ public:
 
 		if(L3KB_size < 1024 || L3KB_size > 102400)
 		{
-			printer::inst()->print_msg(L0, "Autoconf failed: L3 size sanity check failed %u.", L3KB_size);
+			printer::inst()->print_msg(L0, "Autoconf failed: L3 size sanity check failed - %u KB.", L3KB_size);
 			return;
 		}
 
-		printer::inst()->print_msg(L0, "Autoconf L3 size detected at %u.", L3KB_size);
+		printer::inst()->print_msg(L0, "Autoconf L3 size detected at %u KB.", L3KB_size);
 
 		detectCPUConf();
 
-		printer::inst()->print_msg(L0, "Autoconf cores detected at %u on %s.", corecnt,
+		printer::inst()->print_msg(L0, "Autoconf core count detected as %u on %s.", corecnt,
 			linux_layout ? "Linux" : "Windows");
 
 		printer::inst()->print_str("\n**************** Copy&Paste ****************\n\n");
