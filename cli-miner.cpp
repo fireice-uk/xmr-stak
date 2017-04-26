@@ -26,7 +26,11 @@
 #include "jconf.h"
 #include "console.h"
 #include "donate-level.h"
-#include "httpd.h"
+#include "autoAdjust.hpp"
+
+#ifndef CONF_NO_HTTPD
+#	include "httpd.h"
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -96,6 +100,14 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
+	if(jconf::inst()->NeedsAutoconf())
+	{
+		autoAdjust adjust;
+		adjust.printConfig();
+		win_exit();
+		return 0;
+	}
+
 	if (!minethd::self_test())
 	{
 		win_exit();
@@ -109,6 +121,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
+#ifndef CONF_NO_HTTPD
 	if(jconf::inst()->GetHttpdPort() != 0)
 	{
 		if (!httpd::inst()->start_daemon())
@@ -117,11 +130,12 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 	}
+#endif
 
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_str("XMR-Stak-CPU mining software, CPU Version.\n");
-	printer::inst()->print_str("Based on CPU mining code by wolf9466 (heavily optimized by myself).\n");
-	printer::inst()->print_str("Brought to you by fireice_uk under GPLv3.\n\n");
+	printer::inst()->print_str("Based on CPU mining code by wolf9466 (heavily optimized by fireice_uk).\n");
+	printer::inst()->print_str("Brought to you by fireice_uk and psychocrypt under GPLv3.\n\n");
 	char buffer[64];
 	snprintf(buffer, sizeof(buffer), "Configurable dev donation level is set to %.1f %%\n\n", fDevDonationLevel * 100.0);
 	printer::inst()->print_str(buffer);

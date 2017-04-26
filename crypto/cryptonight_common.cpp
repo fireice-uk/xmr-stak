@@ -114,7 +114,8 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 
 	if(use_fast_mem == 0)
 	{
-		ptr->long_state = (uint8_t*)_mm_malloc(MEMORY, 4096);
+		// use 2MiB aligned memory
+		ptr->long_state = (uint8_t*)_mm_malloc(MEMORY, 2*1024*1024);
 		ptr->ctx_info[0] = 0;
 		ptr->ctx_info[1] = 0;
 		return ptr;
@@ -188,24 +189,4 @@ void cryptonight_free_ctx(cryptonight_ctx* ctx)
 		_mm_free(ctx->long_state);
 
 	_mm_free(ctx);
-}
-
-void cryptonight_hash_ctx(const void* input, size_t len, void* output, cryptonight_ctx* ctx)
-{
-	cryptonight_hash<0x80000, MEMORY, true, false>(input, len, output, ctx);
-}
-
-void cryptonight_hash_ctx_soft(const void* input, size_t len, void* output, cryptonight_ctx* ctx)
-{
-	cryptonight_hash<0x80000, MEMORY, true, true>(input, len, output, ctx);
-}
-
-void cryptonight_hash_ctx_np(const void* input, size_t len, void* output, cryptonight_ctx* ctx)
-{
-	cryptonight_hash<0x80000, MEMORY, false, false>(input, len, output, ctx);
-}
-
-void cryptonight_double_hash_ctx(const void*  input, size_t len, void* output, cryptonight_ctx* __restrict ctx0, cryptonight_ctx* __restrict ctx1)
-{
-	cryptonight_double_hash<0x80000, MEMORY, false, false>(input, len, output, ctx0, ctx1);
 }

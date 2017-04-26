@@ -21,6 +21,8 @@
   *
   */
 
+#ifndef CONF_NO_HTTPD
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -141,4 +143,6 @@ bool httpd::start_daemon()
 
 	return true;
 }
+
+#endif
 

@@ -29,6 +29,7 @@ public:
 
 	size_t GetThreadCount();
 	bool GetThreadConfig(size_t id, thd_cfg &cfg);
+	bool NeedsAutoconf();
 
 	slow_mem_cfg GetSlowMemSetting();
 
@@ -56,6 +57,8 @@ public:
 	bool PreferIpv4();
 
 	inline bool HaveHardwareAes() { return bHaveAes; }
+
+	static void cpuid(uint32_t eax, int32_t ecx, int32_t val[4]);
 
 private:
 	jconf();

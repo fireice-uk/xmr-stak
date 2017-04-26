@@ -1,6 +1,7 @@
 #pragma once
 #include <thread>
 #include <atomic>
+#include "crypto/cryptonight.h"
 
 class telemetry
 {
@@ -97,6 +98,9 @@ public:
 	std::atomic<uint64_t> iTimestamp;
 
 private:
+	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx*);
+	typedef void (*cn_hash_fun_dbl)(const void*, size_t, void*, cryptonight_ctx* __restrict, cryptonight_ctx* __restrict);
+
 	minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefetch);
 
 	// We use the top 10 bits of the nonce for thread and resume
@@ -109,6 +113,9 @@ private:
 	// Limited version of the nonce calc above
 	inline uint32_t calc_nicehash_nonce(uint32_t start, uint32_t resume)
 		{ return start | (resume * iThreadCount + iThreadNo) << 18; }
+
+	static cn_hash_fun func_selector(bool bHaveAes, bool bNoPrefetch);
+	static cn_hash_fun_dbl func_dbl_selector(bool bHaveAes, bool bNoPrefetch);
 
 	void work_main();
 	void double_work_main();

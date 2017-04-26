@@ -27,7 +27,6 @@ static inline uint64_t _umul128(uint64_t a, uint64_t b, uint64_t* hi)
 	*hi = r >> 64;
 	return (uint64_t)r;
 }
-
 #define _mm256_set_m128i(v0, v1)  _mm256_insertf128_si256(_mm256_castsi128_si256(v1), (v0), 1)
 #else
 #include <intrin.h>
@@ -150,7 +149,7 @@ static inline void soft_aes_round(__m128i key, __m128i* x0, __m128i* x1, __m128i
 	*x7 = soft_aesenc(*x7, key);
 }
 
-template<size_t MEM, bool SOFT_AES>
+template<size_t MEM, bool SOFT_AES, bool PREFETCH>
 void cn_explode_scratchpad(const __m128i* input, __m128i* output)
 {
 	// This is more than we have registers, compiler will assign 2 keys on the stack
@@ -201,16 +200,21 @@ void cn_explode_scratchpad(const __m128i* input, __m128i* output)
 		_mm_store_si128(output + i + 1, xin1);
 		_mm_store_si128(output + i + 2, xin2);
 		_mm_store_si128(output + i + 3, xin3);
-		_mm_prefetch((const char*)output + i + 0, _MM_HINT_T2);
+
+		if(PREFETCH)
+			_mm_prefetch((const char*)output + i + 0, _MM_HINT_T2);
+
 		_mm_store_si128(output + i + 4, xin4);
 		_mm_store_si128(output + i + 5, xin5);
 		_mm_store_si128(output + i + 6, xin6);
 		_mm_store_si128(output + i + 7, xin7);
-		_mm_prefetch((const char*)output + i + 4, _MM_HINT_T2);
+
+		if(PREFETCH)
+			_mm_prefetch((const char*)output + i + 4, _MM_HINT_T2);
 	}
 }
 
-template<size_t MEM, bool SOFT_AES>
+template<size_t MEM, bool SOFT_AES, bool PREFETCH>
 void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 {
 	// This is more than we have registers, compiler will assign 2 keys on the stack
@@ -230,12 +234,17 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 
 	for (size_t i = 0; i < MEM / sizeof(__m128i); i += 8)
 	{
-		_mm_prefetch((const char*)input + i + 0, _MM_HINT_NTA);
+		if(PREFETCH)
+			_mm_prefetch((const char*)input + i + 0, _MM_HINT_NTA);
+
 		xout0 = _mm_xor_si128(_mm_load_si128(input + i + 0), xout0);
 		xout1 = _mm_xor_si128(_mm_load_si128(input + i + 1), xout1);
 		xout2 = _mm_xor_si128(_mm_load_si128(input + i + 2), xout2);
 		xout3 = _mm_xor_si128(_mm_load_si128(input + i + 3), xout3);
-		_mm_prefetch((const char*)input + i + 4, _MM_HINT_NTA);
+
+		if(PREFETCH)
+			_mm_prefetch((const char*)input + i + 4, _MM_HINT_NTA);
+
 		xout4 = _mm_xor_si128(_mm_load_si128(input + i + 4), xout4);
 		xout5 = _mm_xor_si128(_mm_load_si128(input + i + 5), xout5);
 		xout6 = _mm_xor_si128(_mm_load_si128(input + i + 6), xout6);
@@ -279,13 +288,13 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 	_mm_store_si128(output + 11, xout7);
 }
 
-template<size_t ITERATIONS, size_t MEM, bool PREFETCH, bool SOFT_AES>
+template<size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
 void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_ctx* ctx0)
 {
 	keccak((const uint8_t *)input, len, ctx0->hash_state, 200);
 
 	// Optim - 99% time boundary
-	cn_explode_scratchpad<MEM, SOFT_AES>((__m128i*)ctx0->hash_state, (__m128i*)ctx0->long_state);
+	cn_explode_scratchpad<MEM, SOFT_AES, PREFETCH>((__m128i*)ctx0->hash_state, (__m128i*)ctx0->long_state);
 
 	uint8_t* l0 = ctx0->long_state;
 	uint64_t* h0 = (uint64_t*)ctx0->hash_state;
@@ -301,20 +310,25 @@ void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_c
 	{
 		__m128i cx;
 		cx = _mm_load_si128((__m128i *)&l0[idx0 & 0x1FFFF0]);
+
 		if(SOFT_AES)
 			cx = soft_aesenc(cx, _mm_set_epi64x(ah0, al0));
 		else
 			cx = _mm_aesenc_si128(cx, _mm_set_epi64x(ah0, al0));
+
 		_mm_store_si128((__m128i *)&l0[idx0 & 0x1FFFF0], _mm_xor_si128(bx0, cx));
 		idx0 = _mm_cvtsi128_si64(cx);
 		bx0 = cx;
+
 		if(PREFETCH)
 			_mm_prefetch((const char*)&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
 
 		uint64_t hi, lo, cl, ch;
 		cl = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[0];
 		ch = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[1];
+
 		lo = _umul128(idx0, cl, &hi);
+
 		al0 += hi;
 		ah0 += lo;
 		((uint64_t*)&l0[idx0 & 0x1FFFF0])[0] = al0;
@@ -322,12 +336,13 @@ void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_c
 		ah0 ^= ch;
 		al0 ^= cl;
 		idx0 = al0;
+
 		if(PREFETCH)
 			_mm_prefetch((const char*)&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
 	}
 
 	// Optim - 90% time boundary
-	cn_implode_scratchpad<MEM, SOFT_AES>((__m128i*)ctx0->long_state, (__m128i*)ctx0->hash_state);
+	cn_implode_scratchpad<MEM, SOFT_AES, PREFETCH>((__m128i*)ctx0->long_state, (__m128i*)ctx0->hash_state);
 
 	// Optim - 99% time boundary
 
@@ -338,15 +353,15 @@ void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_c
 // This lovely creation will do 2 cn hashes at a time. We have plenty of space on silicon
 // to fit temporary vars for two contexts. Function will read len*2 from input and write 64 bytes to output
 // We are still limited by L3 cache, so doubling will only work with CPUs where we have more than 2MB to core (Xeons)
-template<size_t ITERATIONS, size_t MEM, bool PREFETCH, bool SOFT_AES>
+template<size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
 void cryptonight_double_hash(const void* input, size_t len, void* output, cryptonight_ctx* __restrict ctx0, cryptonight_ctx* __restrict ctx1)
 {
 	keccak((const uint8_t *)input, len, ctx0->hash_state, 200);
 	keccak((const uint8_t *)input+len, len, ctx1->hash_state, 200);
 
 	// Optim - 99% time boundary
-	cn_explode_scratchpad<MEM, SOFT_AES>((__m128i*)ctx0->hash_state, (__m128i*)ctx0->long_state);
-	cn_explode_scratchpad<MEM, SOFT_AES>((__m128i*)ctx1->hash_state, (__m128i*)ctx1->long_state);
+	cn_explode_scratchpad<MEM, SOFT_AES, PREFETCH>((__m128i*)ctx0->hash_state, (__m128i*)ctx0->long_state);
+	cn_explode_scratchpad<MEM, SOFT_AES, PREFETCH>((__m128i*)ctx1->hash_state, (__m128i*)ctx1->long_state);
 
 	uint8_t* l0 = ctx0->long_state;
 	uint64_t* h0 = (uint64_t*)ctx0->hash_state;
@@ -366,50 +381,62 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 	{
 		__m128i cx;
 		cx = _mm_load_si128((__m128i *)&l0[idx0 & 0x1FFFF0]);
+
 		if(SOFT_AES)
 			cx = soft_aesenc(cx, ax0);
 		else
 			cx = _mm_aesenc_si128(cx, ax0);
+
 		_mm_store_si128((__m128i *)&l0[idx0 & 0x1FFFF0], _mm_xor_si128(bx0, cx));
 		idx0 = _mm_cvtsi128_si64(cx);
 		bx0 = cx;
+
 		if(PREFETCH)
 			_mm_prefetch((const char*)&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
 
 		cx = _mm_load_si128((__m128i *)&l1[idx1 & 0x1FFFF0]);
+
 		if(SOFT_AES)
 			cx = soft_aesenc(cx, ax1);
 		else
 			cx = _mm_aesenc_si128(cx, ax1);
+
 		_mm_store_si128((__m128i *)&l1[idx1 & 0x1FFFF0], _mm_xor_si128(bx1, cx));
 		idx1 = _mm_cvtsi128_si64(cx);
 		bx1 = cx;
+
 		if(PREFETCH)
 			_mm_prefetch((const char*)&l1[idx1 & 0x1FFFF0], _MM_HINT_T0);
 
 		uint64_t hi, lo;
 		cx = _mm_load_si128((__m128i *)&l0[idx0 & 0x1FFFF0]);
+
 		lo = _umul128(idx0, _mm_cvtsi128_si64(cx), &hi);
+
 		ax0 = _mm_add_epi64(ax0, _mm_set_epi64x(lo, hi));
 		_mm_store_si128((__m128i*)&l0[idx0 & 0x1FFFF0], ax0);
 		ax0 = _mm_xor_si128(ax0, cx);
 		idx0 = _mm_cvtsi128_si64(ax0);
+
 		if(PREFETCH)
 			_mm_prefetch((const char*)&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
 
 		cx = _mm_load_si128((__m128i *)&l1[idx1 & 0x1FFFF0]);
+
 		lo = _umul128(idx1, _mm_cvtsi128_si64(cx), &hi);
+
 		ax1 = _mm_add_epi64(ax1, _mm_set_epi64x(lo, hi));
 		_mm_store_si128((__m128i*)&l1[idx1 & 0x1FFFF0], ax1);
 		ax1 = _mm_xor_si128(ax1, cx);
 		idx1 = _mm_cvtsi128_si64(ax1);
+
 		if(PREFETCH)
 			_mm_prefetch((const char*)&l1[idx1 & 0x1FFFF0], _MM_HINT_T0);
 	}
 
 	// Optim - 90% time boundary
-	cn_implode_scratchpad<MEM, SOFT_AES>((__m128i*)ctx0->long_state, (__m128i*)ctx0->hash_state);
-	cn_implode_scratchpad<MEM, SOFT_AES>((__m128i*)ctx1->long_state, (__m128i*)ctx1->hash_state);
+	cn_implode_scratchpad<MEM, SOFT_AES, PREFETCH>((__m128i*)ctx0->long_state, (__m128i*)ctx0->hash_state);
+	cn_implode_scratchpad<MEM, SOFT_AES, PREFETCH>((__m128i*)ctx1->long_state, (__m128i*)ctx1->hash_state);
 
 	// Optim - 99% time boundary
 
