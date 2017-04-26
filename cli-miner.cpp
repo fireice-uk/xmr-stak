@@ -26,6 +26,7 @@
 #include "jconf.h"
 #include "console.h"
 #include "donate-level.h"
+#include "autoAdjust.hpp"
 
 #ifndef CONF_NO_HTTPD
 #	include "httpd.h"
@@ -95,6 +96,14 @@ int main(int argc, char *argv[])
 
 	if(!jconf::inst()->parse_config(sFilename))
 	{
+		win_exit();
+		return 0;
+	}
+
+	if(jconf::inst()->NeedsAutoconf())
+	{
+		autoAdjust adjust;
+		adjust.printConfig();
 		win_exit();
 		return 0;
 	}
