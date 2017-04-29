@@ -17,29 +17,29 @@ Hash: SHA256
 sha1sum
 d34a0ba0dd7b3b1f900a7e02772e197e974b4a73  libeay32.dll
 2ee9966a0fc163da58408d91be36b84fa287c10b  ssleay32.dll
-eb8f162dae5c400c522c1ca66f2400ff28fa3220  xmr-stak-cpu.exe
-2ae97065577820e26c097665c2ebc462a55b76f2  xmr-stak-cpu-notls.exe
+a03f81d7445005e0d51e3825e67cac8413df1068  xmr-stak-cpu.exe
+98bb62cd1f3c7a11a18d6c2b1f1bd6bf4b5b41a3  xmr-stak-cpu-notls.exe
+
 
 sha3sum
 05003137a87313c81d6c348c9b96411c95d48dc22c35f36c39129747  libeay32.dll
 133c065d9ef2c93396382e2ba5d8c3ca8c6a57c6beb0159cb9a4b6c5  ssleay32.dll
-f4fa6698eb71a8839bab36be0924d67f3436f6c6843962b480d54cb9  xmr-stak-cpu.exe
-527fef186d888997a8d7c703acfae9589f11601015e9a91f593d8431  xmr-stak-cpu-notls.exe
+9666ae2cfa337599282615275ea05f4e6240fd571c86530583ac89aa  xmr-stak-cpu.exe
+46f633b125907feed2f16fc97dcc8402a67218809fef226a77c0aa70  xmr-stak-cpu-notls.exe
 
 date
-Wed 26 Apr 22:25:44 BST 2017
+Sat 29 Apr 16:59:00 BST 2017
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2
 
-iQEcBAEBCAAGBQJZARCzAAoJEPsk95p+1Bw0NbUH/A1F7BU7z6RswiPhMem5iYXw
-kflEGCIA+afBRFBwncqulhJBt7G/dqpAzyopHz2GeY2Ga74Bb7onHhC0K7xdUFLs
-mmOf1GNSywzmz4+x55bffgehnr5e7DLIn0sqPcci+Cvbaxep8bkcAlLA6oljiliW
-zb9iruPw4Kqd19sLPQAZJTW4BMb8lDdBKm3a7BOMn3uHvWb45EkG670arqcy20Wh
-4IeHbXWmqmvmgT46J1dvsjGBAMysGG8dop1FO7tegHRz/QQM6ndA0MonGR+BR+ij
-7c7UkISostwzVkfWKvAYyV6hBC3sSVahn5DzBiKTO5HomRCd/GL/Wwa3hecHVFs=
-=1USM
+iQEcBAEBCAAGBQJZBLhQAAoJEPsk95p+1Bw0bWYH/0jtGhKqahRGaxAnLLmA9rsK
+HUsvIDkAFEshdcUK2yB32JXu4vltG2sbIb/AaY3qifFawhfMPQXGPhJ1YfWlJrI6
+icqcPlvHRo88nSfpCfRA3EOjmrNSM4uXb4/FM9ongTgqBKPkSAoQjJfnhXQfOFKb
+ULyN0xRRMuqPxnAggzqn5mwcJ1qPFnuUDjcBssnHw21P/p72qrMK/pMp1LeGMpGZ
++kzr7rS2wko7isJuMouddCK3rypxeIry2XfLehRqguhfXLw9Xi+HNmBCY+76bYWi
+xXl2Nm/u3cPP/eQVrZz5H8eACwIv+LL1EV+9uLanWUa+IO5hHr3KElvKNKD6vN0=
+=vGQV
 -----END PGP SIGNATURE-----
-
 ```
 
 ## Compile on Linux (Debian-based distros)
