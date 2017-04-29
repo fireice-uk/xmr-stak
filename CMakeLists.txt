@@ -118,7 +118,7 @@ target_link_libraries(xmr-stak-cpu ${LIBS} xmr-stak-c)
 
 # do not install the binary if the project and install are equal
 if( NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "${PROJECT_BINARY_DIR}" )
-    install(TARGETS xmr-stak-amd
+    install(TARGETS xmr-stak-cpu
             RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
 endif()
 
