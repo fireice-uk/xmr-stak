@@ -48,36 +48,33 @@ set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 # Find microhttpd
 ################################################################################
 
-option(MICROHTTPD_REQUIRED "Enable or disable the requirement of microhttp (http deamon)" ON)
-find_library(MHTD NAMES microhttpd)
-if("${MHTD}" STREQUAL "MHTD-NOTFOUND")
-    if(MICROHTTPD_REQUIRED)
-        message(FATAL_ERROR "microhttpd NOT found: use `-DMICROHTTPD_REQUIRED=OFF` to build without http deamon support")
+option(MICROHTTPD_ENABLE "Enable or disable the requirement of microhttp (http deamon)" ON)
+if(MICROHTTPD_ENABLE)
+    find_library(MHTD NAMES microhttpd)
+    if("${MHTD}" STREQUAL "MHTD-NOTFOUND")
+        message(FATAL_ERROR "microhttpd NOT found: use `-DMICROHTTPD_ENABLE=OFF` to build without http deamon support")
     else()
-        message(STATUS "microhttpd NOT found: disable http server")
-        add_definitions("-DCONF_NO_HTTPD")
+        set(LIBS ${LIBS} ${MHTD})
     endif()
 else()
-    set(LIBS ${LIBS} ${MHTD})
+    add_definitions("-DCONF_NO_HTTPD")
 endif()
 
 ###############################################################################
 # Find OpenSSL
 ###############################################################################
 
-option(OpenSSL_REQUIRED "Enable or disable the requirement of OpenSSL" ON)
-find_package(OpenSSL)
-if(OPENSSL_FOUND)
-    include_directories(${OPENSSL_INCLUDE_DIR})
-    set(LIBS ${LIBS} ${OPENSSL_LIBRARIES})
-else()
-    if(OpenSSL_REQUIRED)
-        message(FATAL_ERROR "OpenSSL NOT found: use `-DOpenSSL_REQUIRED=OFF` to build without SSL support")
+option(OpenSSL_ENABLE "Enable or disable the requirement of OpenSSL" ON)
+if(OpenSSL_ENABLE)
+    find_package(OpenSSL)
+    if(OPENSSL_FOUND)
+        include_directories(${OPENSSL_INCLUDE_DIR})
+        set(LIBS ${LIBS} ${OPENSSL_LIBRARIES})
     else()
-        if(NOT OPENSSL_FOUND)
-            add_definitions("-DCONF_NO_TLS")
-        endif()
+        message(FATAL_ERROR "OpenSSL NOT found: use `-DOpenSSL_ENABLE=OFF` to build without SSL support")
     endif()
+else()
+    add_definitions("-DCONF_NO_TLS")
 endif()
 
 ################################################################################
