@@ -58,7 +58,7 @@ xXl2Nm/u3cPP/eQVrZz5H8eACwIv+LL1EV+9uLanWUa+IO5hHr3KElvKNKD6vN0=
     cmake -DCMAKE_LINK_STATIC=ON .
     make install
 ```
-Note - cmake caches variables, so if you want to do a dynamic build later you need to specify '-DCMAKE_BUILD_TYPE=RELEASE'
+Note - cmake caches variables, so if you want to do a dynamic build later you need to specify '-DCMAKE_LINK_STATIC=OFF'
 
 
 You can find a complete compile guide under [Advanced Compile Options](#advanced-compile-options).
