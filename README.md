@@ -46,7 +46,7 @@ xXl2Nm/u3cPP/eQVrZz5H8eACwIv+LL1EV+9uLanWUa+IO5hHr3KElvKNKD6vN0=
 
 ### GNU Compiler
 ```
-    sudo apt-get install libmicrohttpd-dev libssl-dev cmake build-essential
+    sudo apt-get install libmicrohttpd-dev libssl-dev cmake build-essential hwloc-dev
     cmake .
     make install
 ```
@@ -171,9 +171,12 @@ and install.
 - `MICROHTTPD_ENABLE` allow to disable/enable the dependency *microhttpd*
   - by default enabled
   - there is no *http* interface available if option is disabled: `cmake . -DMICROHTTPD_ENABLE=OFF`
-- `OpenSSL_ENABLE`allow to disable/enable the dependency *OpenSSL*
+- `OpenSSL_ENABLE` allow to disable/enable the dependency *OpenSSL*
   - by default enabled
-  - it is not possible to connect to a *https* secured pool if optin is disabled: `cmake . -DOpenSSL_ENABLE=OFF`
+  - it is not possible to connect to a *https* secured pool if option is disabled: `cmake . -DOpenSSL_ENABLE=OFF`
+- `HWLOC_ENABLE` allow to disable/enable the dependency *hwloc*
+  - by default enabled
+  - the config suggestion is not optimal if option is disabled: `cmake . -DHWLOC_ENABLE=OFF`
 
 ## PGP Key
 ```
