@@ -21,6 +21,7 @@ public:
 	{
 		printer::inst()->print_str("The configuration for 'cpu_threads_conf' in your config file is 'null'.\n");
 		printer::inst()->print_str("The miner evaluates your system and prints a suggestion for the section `cpu_threads_conf` to the terminal.\n");
+		printer::inst()->print_str("The values are not optimal, please try to tweak the values based on notes in config.txt.\n");
 		printer::inst()->print_str("Please copy & paste the block within the asterisks to your config.\n\n");
 		printer::inst()->print_str("\n**************** Copy&Paste ****************\n\n");
 		printer::inst()->print_str("\"cpu_threads_conf\" :\n[\n");
