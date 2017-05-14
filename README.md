@@ -46,7 +46,7 @@ xXl2Nm/u3cPP/eQVrZz5H8eACwIv+LL1EV+9uLanWUa+IO5hHr3KElvKNKD6vN0=
 
 ### GNU Compiler
 ```
-    sudo apt-get install libmicrohttpd-dev libssl-dev cmake build-essential hwloc-dev
+    sudo apt-get install libmicrohttpd-dev libssl-dev cmake build-essential libhwloc-dev
     cmake .
     make install
 ```

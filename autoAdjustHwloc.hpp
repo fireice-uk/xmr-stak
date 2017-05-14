@@ -138,7 +138,7 @@ private:
 		if (obj->type == HWLOC_OBJ_CACHE)
 		{
 			size_t cacheSize = obj->attr->cache.size;
-			size_t numHashL3 = cacheSize / m_scratchPadMemSize;
+			size_t numHashL3 = ( cacheSize + m_scratchPadMemSize/ 2llu ) / m_scratchPadMemSize;
 
 			/* check cache is exclusive or inclusive */
 			const char* value = hwloc_obj_get_info_by_name(obj, "Inclusive");
@@ -176,7 +176,7 @@ private:
 						numHashL3 = 0;
 					numHashes += extraHash;
 					//add L2 hashes
-					numHashes += l2Cache / m_scratchPadMemSize;
+					numHashes += ( l2Cache + m_scratchPadMemSize / 2llu ) / m_scratchPadMemSize;
 					int numCachesLeft = numL2;
 					getConfig(topology, l3Cache, numHashes, numCachesLeft);
 					doL3 = false;
