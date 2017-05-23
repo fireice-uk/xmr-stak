@@ -3,19 +3,6 @@
 #include "console.h"
 #include <hwloc.h>
 
-/*
- * compat_popcnt is adapted from public domain code by:
- * Portable Snippets - https://gitub.com/nemequ/portable-snippets
- * Created by Evan Nemerson <evan@nemerson.com>
- */
-int compat_popcnt(size_t x) 
-{
-	x = x - ((x >> 1) & (size_t)~(size_t)0/3);
-	x = (x & (size_t)~(size_t)0/15*3) + ((x >> 2) & (size_t)~(size_t)0/15*3);
-	x = (x + (x >> 4)) & (size_t)~(size_t)0/255*15;
-	return (size_t)(x * ((size_t)~(size_t)0/255)) >> (sizeof(size_t) - 1) * 8;
-}
-
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -72,6 +59,17 @@ public:
 	}
 
 private:
+
+	/** count bits with ones */
+	template<typename T>
+	int compat_popcnt(T x)
+	{
+	  int count = 0;
+	  for( int i = 0; i < sizeof(T) - 1; ++i )
+		if( ( ( x >> i ) & 1 ) == 1 )
+		  ++count;
+	  return count;
+	}
 
 	int rightZeros(size_t v)
 	{
