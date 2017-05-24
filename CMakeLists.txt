@@ -78,6 +78,29 @@ else()
 endif()
 
 ################################################################################
+# Find hwloc
+################################################################################
+
+option(HWLOC_ENABLE "Enable or disable the requirement of hwloc" ON)
+if(HWLOC_ENABLE)
+    find_path(HWLOC_INCLUDE_DIR hwloc.h
+        $ENV{HWLOC_ROOT}/inlcude
+        /opt/local/include
+        /usr/local/include
+        /usr/include
+    )
+    find_library(HWLOC NAMES hwloc)
+    if("${HWLOC}" STREQUAL "MHTD-NOTFOUND" OR ${HWLOC_INCLUDE_DIR} STREQUAL "HWLOC_INCLUDE_DIR-NOTFOUND")
+        message(FATAL_ERROR "hwloc NOT found: use `-DHWLOC_ENABLE=OFF` to build without hwloc support")
+    else()
+        set(LIBS ${LIBS} ${HWLOC})
+        include_directories(AFTER ${HWLOC_INCLUDE_DIR})
+    endif()
+else()
+    add_definitions("-DCONF_NO_HWLOC")
+endif()
+
+################################################################################
 # Compile & Link
 ################################################################################
 

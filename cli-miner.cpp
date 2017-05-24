@@ -26,7 +26,11 @@
 #include "jconf.h"
 #include "console.h"
 #include "donate-level.h"
-#include "autoAdjust.hpp"
+#ifndef CONF_NO_HWLOC
+#   include "autoAdjustHwloc.hpp"
+#else
+#   include "autoAdjust.hpp"
+#endif
 #include "version.h"
 
 #ifndef CONF_NO_HTTPD
