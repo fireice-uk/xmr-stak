@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 	if(strlen(jconf::inst()->GetOutputFile()) != 0)
 		printer::inst()->open_logfile(jconf::inst()->GetOutputFile());
 
-	executor::inst()->ex_start();
+	executor::inst()->ex_start(jconf::inst()->DaemonMode());
 
 	using namespace std::chrono;
 	uint64_t lastTime = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
