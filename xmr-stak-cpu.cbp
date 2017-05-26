@@ -67,6 +67,7 @@
 			<Add library="libmicrohttpd" />
 			<Add library="crypto" />
 			<Add library="ssl" />
+			<Add library="libhwloc" />
 		</Linker>
 		<Unit filename="autoAdjust.hpp" />
 		<Unit filename="cli-miner.cpp" />
