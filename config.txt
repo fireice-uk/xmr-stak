@@ -140,6 +140,14 @@ null,
 "h_print_time" : 60,
 
 /*
+ * Daemon mode
+ *
+ * If you are running the process in the background and you don't need the keyboard reports, set this to true.
+ * This should solve the hashrate problems on some emulated terminals.
+ */
+"daemon_mode" : false,
+
+/*
  * Output file
  *
  * output_file  - This option will log all output to a file.
