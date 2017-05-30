@@ -42,12 +42,24 @@ xXl2Nm/u3cPP/eQVrZz5H8eACwIv+LL1EV+9uLanWUa+IO5hHr3KElvKNKD6vN0=
 -----END PGP SIGNATURE-----
 ```
 
-## Compile on Linux (Debian-based distros)
+## Compile on Linux 
 
 ### GNU Compiler
 ```
+    # Ubuntu / Debian
     sudo apt-get install libmicrohttpd-dev libssl-dev cmake build-essential libhwloc-dev
     cmake .
+
+    # Fedora
+    sudo dnf install gcc gcc-c++ hwloc-devel libmicrohttpd-devel openssl-devel cmake
+    cmake .
+
+    # CentOS
+    sudo yum install centos-release-scl cmake3 hwloc-devel libmicrohttpd-devel openssl-devel
+    sudo yum install devtoolset-4-gcc*
+    sudo scl enable devtoolset-4 bash
+    cmake3 .
+
     make install
 ```
 
