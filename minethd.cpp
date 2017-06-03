@@ -42,7 +42,10 @@ void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 #include <mach/thread_policy.h>
 #include <mach/thread_act.h>
 #define SYSCTL_CORE_COUNT   "machdep.cpu.core_count"
+#elif defined(__FreeBSD__)
+#include <pthread_np.h>
 #endif
+
 
 void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 {
@@ -51,6 +54,11 @@ void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 	thread_affinity_policy_data_t policy = { cpu_id };
 	mach_thread = pthread_mach_thread_np(h);
 	thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
+#elif defined(__FreeBSD__)
+	cpuset_t mn;
+	CPU_ZERO(&mn);
+	CPU_SET(cpu_id, &mn);
+	pthread_setaffinity_np(h, sizeof(cpuset_t), &mn);
 #else
 	cpu_set_t mn;
 	CPU_ZERO(&mn);
