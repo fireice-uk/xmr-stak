@@ -60,6 +60,9 @@ inline const char* sock_gai_strerror(int err, char* buf, size_t len)
 #include <unistd.h> /* Needed for close() */
 #include <errno.h>
 #include <string.h>
+#if defined(__FreeBSD__)
+#include <netinet/in.h> /* Needed for IPPROTO_TCP */
+#endif
 
 inline void sock_init() {}
 typedef int SOCKET;
@@ -76,7 +79,7 @@ inline void sock_close(SOCKET s)
 inline const char* sock_strerror(char* buf, size_t len)
 {
 	buf[0] = '\0';
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(__FreeBSD__)
 	strerror_r(errno, buf, len);
 	return buf;
 #else
