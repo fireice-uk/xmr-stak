@@ -97,11 +97,13 @@ public:
 	std::atomic<uint64_t> iHashCount;
 	std::atomic<uint64_t> iTimestamp;
 
+	int affinity;
+
 private:
 	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx*);
 	typedef void (*cn_hash_fun_dbl)(const void*, size_t, void*, cryptonight_ctx* __restrict, cryptonight_ctx* __restrict);
 
-	minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefetch);
+	minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefetch, int affinity);
 
 	// We use the top 10 bits of the nonce for thread and resume
 	// This allows us to resume up to 128 threads 4 times before
