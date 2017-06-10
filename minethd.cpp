@@ -72,6 +72,7 @@ void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 #include "minethd.h"
 #include "jconf.h"
 #include "crypto/cryptonight_aesni.h"
+#include "hwlocMemory.hpp"
 
 telemetry::telemetry(size_t iThd)
 {
@@ -148,7 +149,7 @@ void telemetry::push_perf_value(size_t iThd, uint64_t iHashCount, uint64_t iTime
 	iBucketTop[iThd] = (iTop + 1) & iBucketMask;
 }
 
-minethd::minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefetch)
+minethd::minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefetch, int affinity)
 {
 	oWork = pWork;
 	bQuit = 0;
@@ -157,6 +158,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefet
 	iHashCount = 0;
 	iTimestamp = 0;
 	bNoPrefetch = no_prefetch;
+	this->affinity = affinity;
 
 	if(double_work)
 		oWorkThd = std::thread(&minethd::double_work_main, this);
@@ -303,7 +305,7 @@ std::vector<minethd*>* minethd::thread_starter(miner_work& pWork)
 	{
 		jconf::inst()->GetThreadConfig(i, cfg);
 
-		minethd* thd = new minethd(pWork, i, cfg.bDoubleMode, cfg.bNoPrefetch);
+		minethd* thd = new minethd(pWork, i, cfg.bDoubleMode, cfg.bNoPrefetch, cfg.iCpuAff);
 
 		if(cfg.iCpuAff >= 0)
 		{
@@ -369,6 +371,9 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch)
 
 void minethd::work_main()
 {
+	// pin memory to NUMA node
+	bindMemoryToNUMANode(this->affinity);
+
 	cn_hash_fun hash_fun;
 	cryptonight_ctx* ctx;
 	uint64_t iCount = 0;
@@ -456,6 +461,9 @@ minethd::cn_hash_fun_dbl minethd::func_dbl_selector(bool bHaveAes, bool bNoPrefe
 
 void minethd::double_work_main()
 {
+	// pin memory to NUMA node
+	bindMemoryToNUMANode(this->affinity);
+
 	cn_hash_fun_dbl hash_fun;
 	cryptonight_ctx* ctx0;
 	cryptonight_ctx* ctx1;
