@@ -1,0 +1,62 @@
+dist: trusty
+
+sudo: false
+
+language: cpp
+
+addons:
+  apt:
+    packages: &default_packages
+      - cmake
+      - libmicrohttpd-dev
+      - libssl-dev
+      - libhwloc-dev
+
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - *default_packages
+            - gcc-5
+            - g++-5
+      env:
+        - CMAKE_CXX_COMPILER=g++-5
+        - CMAKE_C_COMPILER=gcc-5
+
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - *default_packages
+            - gcc-6
+            - g++-6
+      env:
+        - CMAKE_CXX_COMPILER=g++-6
+        - CMAKE_C_COMPILER=gcc-6
+
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - *default_packages
+            - gcc-7
+            - g++-7
+      env:
+        - CMAKE_CXX_COMPILER=g++-7
+        - CMAKE_C_COMPILER=gcc-7
+
+script:
+  - cmake -D CMAKE_C_COMPILER=${CMAKE_C_COMPILER} -D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} .
+  - make VERBOSE=1
+  - ./bin/xmr-stak-cpu -c ./config.txt
