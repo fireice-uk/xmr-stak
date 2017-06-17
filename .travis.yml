@@ -1,5 +1,7 @@
 dist: trusty
 
+osx_image: xcode8.3
+
 sudo: false
 
 language: cpp
@@ -56,7 +58,18 @@ matrix:
         - CMAKE_CXX_COMPILER=g++-7
         - CMAKE_C_COMPILER=gcc-7
 
+    - os: osx
+      compiler: gcc
+
+before_install:
+  - if [ $TRAVIS_OS_NAME = osx ]; then brew tap homebrew/science; fi
+
 script:
-  - cmake -D CMAKE_C_COMPILER=${CMAKE_C_COMPILER} -D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} .
+  - if [ $TRAVIS_OS_NAME = osx ]; then
+      brew install hwloc;
+      cmake -DMICROHTTPD_ENABLE=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl .;
+    else
+      cmake -D CMAKE_C_COMPILER=${CMAKE_C_COMPILER} -D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} .;
+    fi;
   - make VERBOSE=1
   - ./bin/xmr-stak-cpu -c ./config.txt
