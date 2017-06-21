@@ -12,7 +12,7 @@
 - download VS2017 Community and install from [https://www.visualstudio.com/downloads/](https://www.visualstudio.com/downloads/)
 - during the install chose the components
   - `Desktop development with C++` (left side)
-  - `Toolset for Visual Studio C++ 2015.3 v140...` (left side)
+  - `Toolset for Visual Studio C++ 2015.3 v140...` (right side)
 
 ### CMake for Win64
 
@@ -34,7 +34,7 @@
 ### Microhttpd for Win32
 
 - download the precompiled binary from [http://ftpmirror.gnu.org/libmicrohttpd/](http://ftpmirror.gnu.org/libmicrohttpd/)
-- tested version: [microhttpd-0.9.55](http://mirror.reismil.ch/gnu/libmicrohttpd/libmicrohttpd-0.9.55-w32-bin.zip)
+- tested version: [libmicrohttpd-0.9.55-w32-bin](http://mirror.reismil.ch/gnu/libmicrohttpd/libmicrohttpd-0.9.55-w32-bin.zip)
 - unzip microhttpd to ``C:\xmr-stak-dep`
 
 ### Validate the Dependency Folder
@@ -43,7 +43,7 @@
 - run
    ```
    cd c:\xmr-stak-dep
-   tree
+   tree .
    ```
 - the result should have the same structure
   ```
@@ -63,18 +63,87 @@
     │           ├───man1
     │           ├───man3
     │           └───man7
-    └───microhttpd
+    └───libmicrohttpd-0.9.55-w32-bin
+        ├───x86
+        │   ├───MinGW
+        │   │   ├───shared
+        │   │   │   └───mingw32
+        │   │   │       ├───bin
+        │   │   │       ├───include
+        │   │   │       └───lib
+        │   │   │           └───pkgconfig
+        │   │   ├───shared-xp
+        │   │   │   └───mingw32
+        │   │   │       ├───bin
+        │   │   │       ├───include
+        │   │   │       └───lib
+        │   │   │           └───pkgconfig
+        │   │   ├───static
+        │   │   │   └───mingw32
+        │   │   │       ├───include
+        │   │   │       └───lib
+        │   │   │           └───pkgconfig
+        │   │   └───static-xp
+        │   │       └───mingw32
+        │   │           ├───include
+        │   │           └───lib
+        │   │               └───pkgconfig
+        │   ├───VS2013
+        │   │   ├───Release-dll
+        │   │   ├───Release-dll-xp
+        │   │   ├───Release-static
+        │   │   └───Release-static-xp
+        │   ├───VS2015
+        │   │   ├───Debug-dll
+        │   │   ├───Debug-dll-xp
+        │   │   ├───Debug-static
+        │   │   ├───Debug-static-xp
+        │   │   ├───Release-dll
+        │   │   ├───Release-dll-xp
+        │   │   ├───Release-static
+        │   │   └───Release-static-xp
+        │   └───VS2017
+        │       ├───Debug-dll
+        │       ├───Debug-static
+        │       ├───Release-dll
+        │       └───Release-static
+        └───x86_64
+            ├───MinGW
+            │   ├───shared
+            │   │   └───mingw64
+            │   │       ├───bin
+            │   │       ├───include
+            │   │       └───lib
+            │   │           └───pkgconfig
+            │   └───static
+            │       └───mingw64
+            │           ├───include
+            │           └───lib
+            │               └───pkgconfig
+            ├───VS2013
+            │   ├───Release-dll
+            │   └───Release-static
+            ├───VS2015
+            │   ├───Debug-dll
+            │   ├───Debug-static
+            │   ├───Release-dll
+            │   └───Release-static
+            └───VS2017
+                ├───Debug-dll
+                ├───Debug-static
+                ├───Release-dll
+                └───Release-static
   ```
 
 ## Compile
 
 - download and unzip `xmr-stak-cpu`
 - open a command line `cmd`
-- goto your unzipped source code
-- run (the path to VS2017 can be differ)
+- `cd` to your unzipped source code directory
+- execute the following commands (NOTE: path to VS2017 can be different)
   ```
   "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsMSBuildCmd.bat"
-  set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc-win64-build-1.11.7;C:\xmr-stak-dep\microhttpd
+  set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc-win64-build-1.11.7;C:\xmr-stak-dep\libmicrohttpd-0.9.55-w32-bin\x86_64\VS2017\Release-static
   mkdir build
   cd build
   cmake -G "Visual Studio 15 2017 Win64" -T v141,host=x64 ..
@@ -83,4 +152,4 @@
   copy C:\xmr-stak-dep\hwloc-win64-build-1.11.7\bin\libhwloc-5.dll .
   copy ..\..\..\config.txt .
   ```
-- add the pool, pool-password and pool-username to `config.txt`
+- customize your `config.txt` file by adding the pool, username and password
