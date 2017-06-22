@@ -368,9 +368,11 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 	uint8_t* l1 = ctx1->long_state;
 	uint64_t* h1 = (uint64_t*)ctx1->hash_state;
 
-	__m128i ax0 = _mm_set_epi64x(h0[1] ^ h0[5], h0[0] ^ h0[4]);
+	uint64_t axl0 = h0[0] ^ h0[4];
+	uint64_t axh0 = h0[1] ^ h0[5];
 	__m128i bx0 = _mm_set_epi64x(h0[3] ^ h0[7], h0[2] ^ h0[6]);
-	__m128i ax1 = _mm_set_epi64x(h1[1] ^ h1[5], h1[0] ^ h1[4]);
+	uint64_t axl1 = h1[0] ^ h1[4];
+	uint64_t axh1 = h1[1] ^ h1[5];
 	__m128i bx1 = _mm_set_epi64x(h1[3] ^ h1[7], h1[2] ^ h1[6]);
 
 	uint64_t idx0 = h0[0] ^ h0[4];
@@ -383,9 +385,9 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 		cx = _mm_load_si128((__m128i *)&l0[idx0 & 0x1FFFF0]);
 
 		if(SOFT_AES)
-			cx = soft_aesenc(cx, ax0);
+			cx = soft_aesenc(cx, _mm_set_epi64x(axh0, axl0));
 		else
-			cx = _mm_aesenc_si128(cx, ax0);
+			cx = _mm_aesenc_si128(cx, _mm_set_epi64x(axh0, axl0));
 
 		_mm_store_si128((__m128i *)&l0[idx0 & 0x1FFFF0], _mm_xor_si128(bx0, cx));
 		idx0 = _mm_cvtsi128_si64(cx);
@@ -397,9 +399,9 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 		cx = _mm_load_si128((__m128i *)&l1[idx1 & 0x1FFFF0]);
 
 		if(SOFT_AES)
-			cx = soft_aesenc(cx, ax1);
+			cx = soft_aesenc(cx, _mm_set_epi64x(axh1, axl1));
 		else
-			cx = _mm_aesenc_si128(cx, ax1);
+			cx = _mm_aesenc_si128(cx, _mm_set_epi64x(axh1, axl1));
 
 		_mm_store_si128((__m128i *)&l1[idx1 & 0x1FFFF0], _mm_xor_si128(bx1, cx));
 		idx1 = _mm_cvtsi128_si64(cx);
@@ -408,27 +410,35 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 		if(PREFETCH)
 			_mm_prefetch((const char*)&l1[idx1 & 0x1FFFF0], _MM_HINT_T0);
 
-		uint64_t hi, lo;
-		cx = _mm_load_si128((__m128i *)&l0[idx0 & 0x1FFFF0]);
+		uint64_t hi, lo, cl, ch;
+		cl = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[0];
+		ch = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[1];
 
-		lo = _umul128(idx0, _mm_cvtsi128_si64(cx), &hi);
+		lo = _umul128(idx0, cl, &hi);
 
-		ax0 = _mm_add_epi64(ax0, _mm_set_epi64x(lo, hi));
-		_mm_store_si128((__m128i*)&l0[idx0 & 0x1FFFF0], ax0);
-		ax0 = _mm_xor_si128(ax0, cx);
-		idx0 = _mm_cvtsi128_si64(ax0);
+		axl0 += hi;
+		axh0 += lo;
+		((uint64_t*)&l0[idx0 & 0x1FFFF0])[0] = axl0;
+		((uint64_t*)&l0[idx0 & 0x1FFFF0])[1] = axh0;
+		axh0 ^= ch;
+		axl0 ^= cl;
+		idx0 = axl0;
 
 		if(PREFETCH)
 			_mm_prefetch((const char*)&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
 
-		cx = _mm_load_si128((__m128i *)&l1[idx1 & 0x1FFFF0]);
+		cl = ((uint64_t*)&l1[idx1 & 0x1FFFF0])[0];
+		ch = ((uint64_t*)&l1[idx1 & 0x1FFFF0])[1];
 
-		lo = _umul128(idx1, _mm_cvtsi128_si64(cx), &hi);
+		lo = _umul128(idx1, cl, &hi);
 
-		ax1 = _mm_add_epi64(ax1, _mm_set_epi64x(lo, hi));
-		_mm_store_si128((__m128i*)&l1[idx1 & 0x1FFFF0], ax1);
-		ax1 = _mm_xor_si128(ax1, cx);
-		idx1 = _mm_cvtsi128_si64(ax1);
+		axl1 += hi;
+		axh1 += lo;
+		((uint64_t*)&l1[idx1 & 0x1FFFF0])[0] = axl1;
+		((uint64_t*)&l1[idx1 & 0x1FFFF0])[1] = axh1;
+		axh1 ^= ch;
+		axl1 ^= cl;
+		idx1 = axl1;
 
 		if(PREFETCH)
 			_mm_prefetch((const char*)&l1[idx1 & 0x1FFFF0], _MM_HINT_T0);

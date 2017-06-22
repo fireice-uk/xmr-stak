@@ -48,7 +48,7 @@ using namespace rapidjson;
 enum configEnum { aCpuThreadsConf, sUseSlowMem, bNiceHashMode,
 	bTlsMode, bTlsSecureAlgo, sTlsFingerprint, sPoolAddr, sWalletAddr, sPoolPwd,
 	iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, iAutohashTime,
-	sOutputFile, iHttpdPort, bPreferIpv4 };
+	bDaemonMode, sOutputFile, iHttpdPort, bPreferIpv4 };
 
 struct configVal {
 	configEnum iName;
@@ -73,6 +73,7 @@ configVal oConfigValues[] = {
 	{ iGiveUpLimit, "giveup_limit", kNumberType },
 	{ iVerboseLevel, "verbose_level", kNumberType },
 	{ iAutohashTime, "h_print_time", kNumberType },
+	{ bDaemonMode, "daemon_mode", kTrueType },
 	{ sOutputFile, "output_file", kStringType },
 	{ iHttpdPort, "httpd_port", kNumberType },
 	{ bPreferIpv4, "prefer_ipv4", kTrueType }
@@ -249,6 +250,11 @@ uint16_t jconf::GetHttpdPort()
 bool jconf::NiceHashMode()
 {
 	return prv->configValues[bNiceHashMode]->GetBool();
+}
+
+bool jconf::DaemonMode()
+{
+	return prv->configValues[bDaemonMode]->GetBool();
 }
 
 const char* jconf::GetOutputFile()

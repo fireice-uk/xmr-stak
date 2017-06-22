@@ -26,7 +26,12 @@
 #include "jconf.h"
 #include "console.h"
 #include "donate-level.h"
-#include "autoAdjust.hpp"
+#ifndef CONF_NO_HWLOC
+#   include "autoAdjustHwloc.hpp"
+#else
+#   include "autoAdjust.hpp"
+#endif
+#include "version.h"
 
 #ifndef CONF_NO_HTTPD
 #	include "httpd.h"
@@ -133,7 +138,7 @@ int main(int argc, char *argv[])
 #endif
 
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
-	printer::inst()->print_str("XMR-Stak-CPU mining software, CPU Version.\n");
+	printer::inst()->print_str( XMR_STAK_NAME" " XMR_STAK_VERSION " mining software, CPU Version.\n");
 	printer::inst()->print_str("Based on CPU mining code by wolf9466 (heavily optimized by fireice_uk).\n");
 	printer::inst()->print_str("Brought to you by fireice_uk and psychocrypt under GPLv3.\n\n");
 	char buffer[64];
@@ -148,7 +153,10 @@ int main(int argc, char *argv[])
 	if(strlen(jconf::inst()->GetOutputFile()) != 0)
 		printer::inst()->open_logfile(jconf::inst()->GetOutputFile());
 
-	executor::inst()->ex_start();
+	executor::inst()->ex_start(jconf::inst()->DaemonMode());
+
+	using namespace std::chrono;
+	uint64_t lastTime = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
 
 	int key;
 	while(true)
@@ -169,6 +177,13 @@ int main(int argc, char *argv[])
 		default:
 			break;
 		}
+
+		uint64_t currentTime = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
+
+		/* Hard guard to make sure we never get called more than twice per second */
+		if( currentTime - lastTime < 500)
+			std::this_thread::sleep_for(std::chrono::milliseconds(500 - (currentTime - lastTime)));
+		lastTime = currentTime;
 	}
 
 	return 0;

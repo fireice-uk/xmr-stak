@@ -42,12 +42,24 @@ xXl2Nm/u3cPP/eQVrZz5H8eACwIv+LL1EV+9uLanWUa+IO5hHr3KElvKNKD6vN0=
 -----END PGP SIGNATURE-----
 ```
 
-## Compile on Linux (Debian-based distros)
+## Compile on Linux 
 
 ### GNU Compiler
 ```
-    sudo apt-get install libmicrohttpd-dev libssl-dev cmake build-essential
+    # Ubuntu / Debian
+    sudo apt-get install libmicrohttpd-dev libssl-dev cmake build-essential libhwloc-dev
     cmake .
+
+    # Fedora
+    sudo dnf install gcc gcc-c++ hwloc-devel libmicrohttpd-devel openssl-devel cmake
+    cmake .
+
+    # CentOS
+    sudo yum install centos-release-scl cmake3 hwloc-devel libmicrohttpd-devel openssl-devel
+    sudo yum install devtoolset-4-gcc*
+    sudo scl enable devtoolset-4 bash
+    cmake3 .
+
     make install
 ```
 
@@ -58,7 +70,7 @@ xXl2Nm/u3cPP/eQVrZz5H8eACwIv+LL1EV+9uLanWUa+IO5hHr3KElvKNKD6vN0=
     cmake -DCMAKE_LINK_STATIC=ON .
     make install
 ```
-Note - cmake caches variables, so if you want to do a dynamic build later you need to specify '-DCMAKE_BUILD_TYPE=RELEASE'
+Note - cmake caches variables, so if you want to do a dynamic build later you need to specify '-DCMAKE_LINK_STATIC=OFF'
 
 
 You can find a complete compile guide under [Advanced Compile Options](#advanced-compile-options).
@@ -168,12 +180,15 @@ and install.
 -`CMAKE_BUILD_TYPE` set the build type
   - valid options: `Release` or `Debug`
   - you should always keep `Release` for your productive miners
-- `MICROHTTPD_REQUIRED` allow to disable/enable the dependency *microhttpd*
+- `MICROHTTPD_ENABLE` allow to disable/enable the dependency *microhttpd*
   - by default enabled
-  - there is no *http* interface available if option is disabled: `cmake . -DMICROHTTPD_REQUIRED=OFF`
-- `OpenSSL_REQUIRED`allow to disable/enable the dependency *OpenSSL*
+  - there is no *http* interface available if option is disabled: `cmake . -DMICROHTTPD_ENABLE=OFF`
+- `OpenSSL_ENABLE` allow to disable/enable the dependency *OpenSSL*
   - by default enabled
-  - it is not possible to connect to a *https* secured pool if optin is disabled: `cmake . -DOpenSSL_REQUIRED=OFF`
+  - it is not possible to connect to a *https* secured pool if option is disabled: `cmake . -DOpenSSL_ENABLE=OFF`
+- `HWLOC_ENABLE` allow to disable/enable the dependency *hwloc*
+  - by default enabled
+  - the config suggestion is not optimal if option is disabled: `cmake . -DHWLOC_ENABLE=OFF`
 
 ## PGP Key
 ```

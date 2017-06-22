@@ -43,7 +43,6 @@ executor* executor::oInst = NULL;
 
 executor::executor()
 {
-	my_thd = nullptr;
 }
 
 void executor::push_timed_event(ex_event&& ev, size_t sec)
