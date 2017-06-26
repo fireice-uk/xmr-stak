@@ -41,6 +41,9 @@ xXl2Nm/u3cPP/eQVrZz5H8eACwIv+LL1EV+9uLanWUa+IO5hHr3KElvKNKD6vN0=
 =vGQV
 -----END PGP SIGNATURE-----
 ```
+## Compile for Windows
+
+- see [WINCOMPILE.md](WINCOMPILE.md)
 
 ## Compile on Linux 
 
