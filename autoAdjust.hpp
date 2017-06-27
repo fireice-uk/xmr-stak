@@ -38,10 +38,10 @@ public:
 				printer::inst()->print_msg(L0, "Autoconf failed: L3 size sanity check failed - %u KB.", L3KB_size);
 
 			printer::inst()->print_msg(L0, "Autoconf failed: Printing config for a single thread. Please try to add new ones until the hashrate slows down.");
-			printer::inst()->print_str("\n**************** Copy&Paste ****************\n\n");
+			printer::inst()->print_str("\n**************** Copy&Paste BEGIN ****************\n\n");
 			printer::inst()->print_str("\"cpu_threads_conf\" :\n[\n");
 			printer::inst()->print_str("    { \"low_power_mode\" : false, \"no_prefetch\" : true, \"affine_to_cpu\" : false },\n");
-			printer::inst()->print_str("],\n\n**************** Copy&Paste ****************\n");
+			printer::inst()->print_str("],\n\n**************** Copy&Paste END ****************\n");
 			return;
 		}
 
@@ -52,7 +52,7 @@ public:
 		printer::inst()->print_msg(L0, "Autoconf core count detected as %u on %s.", corecnt,
 			linux_layout ? "Linux" : "Windows");
 
-		printer::inst()->print_str("\n**************** Copy&Paste ****************\n\n");
+		printer::inst()->print_str("\n**************** Copy&Paste BEGIN ****************\n\n");
 		printer::inst()->print_str("\"cpu_threads_conf\" :\n[\n");
 
 		uint32_t aff_id = 0;
@@ -86,7 +86,7 @@ public:
 				L3KB_size -= 2048;
 		}
 
-		printer::inst()->print_str("],\n\n**************** Copy&Paste ****************\n");
+		printer::inst()->print_str("],\n\n**************** Copy&Paste END ****************\n");
 	}
 
 private:
