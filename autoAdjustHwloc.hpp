@@ -60,35 +60,6 @@ public:
 
 private:
 
-	/** count bits with ones */
-	template<typename T>
-	int compat_popcnt(T x)
-	{
-	  int count = 0;
-	  for( int i = 0; i < sizeof(T) - 1; ++i )
-		if( ( ( x >> i ) & 1 ) == 1 )
-		  ++count;
-	  return count;
-	}
-
-	int rightZeros(size_t v)
-	{
-		int c;
-		if (v)
-		{
-			v = (v ^ (v - 1)) >> 1;
-			for (c = 0; v; c++)
-			{
-				v >>= 1;
-			}
-		}
-		else
-		{
-			c = CHAR_BIT * sizeof (v);
-		}
-		return c;
-	}
-
 	inline void getConfig(hwloc_topology_t topology, hwloc_obj_t obj, size_t& numHashes, int& numCachesLeft)
 	{
 		if (obj->type == HWLOC_OBJ_CORE)
@@ -104,18 +75,15 @@ private:
 				hwloc_bitmap_singlify(cpuset);
 
 
-				size_t cpu = hwloc_bitmap_to_ulong(cpuset);
-				// move bit mask to right to allow to compare always the first bit
-				cpu >>= rightZeros(allcpu);
+				int firstNativeCore = hwloc_bitmap_first(cpuset);
 
-
-				int nativeCores = compat_popcnt(cpu);
+				int nativeCores = hwloc_bitmap_weight(cpuset);
 				int numPus = obj->arity;
-				for (int i = 0; i < numPus && numHashes != 0; i++)
+				for (int i = 0; i < numPus && numHashes != 0 && firstNativeCore != -1; i++)
 				{
 					hwloc_obj_t pu = obj->children[i];
 					// only use native pu's
-					if (pu->type == HWLOC_OBJ_PU && cpu & 1)
+					if (pu->type == HWLOC_OBJ_PU && hwloc_bitmap_isset( cpuset, i + firstNativeCore ))
 					{
 						// if no cache is available we give each native core a hash
 						int numUnit = numCachesLeft != 0 ? numCachesLeft : nativeCores;
@@ -123,14 +91,13 @@ private:
 						// two hashes per native pu if number of hashes if larger than compute units
 						int power = numHashes > numUnit ? 2 : 1;
 						char strbuf[256];
-						//printf("------------------------------core %i -> %i mpu=%i %lu\n", pu->os_index, power, nativeCores, numHashes);
+	
 						snprintf(strbuf, sizeof(strbuf), "   { \"low_power_mode\" : %s, \"no_prefetch\" : true, \"affine_to_cpu\" : %u },\n",
 							power == 2 ? "true" : "false", pu->os_index);
 						printer::inst()->print_str(strbuf);
 
 						// update number of free hashes
 						numHashes -= power;
-						cpu >>= 1;
 
 						// one cache is filled with hashes
 						if (numCachesLeft != 0) numCachesLeft--;
