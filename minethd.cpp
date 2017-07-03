@@ -24,6 +24,7 @@
 #include <assert.h>
 #include <cmath>
 #include <chrono>
+#include <cstring>
 #include <thread>
 #include <bitset>
 #include "console.h"
