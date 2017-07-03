@@ -1,5 +1,5 @@
-# Operating system (build VM template)
-os: Visual Studio 2017
+# image
+image: Visual Studio 2017
 
 # build platform
 platform: x64
@@ -8,20 +8,24 @@ platform: x64
 clone_folder: c:\xmr-stak-cpu
 
 install:
-  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
-  - call "%VS150COMNTOOLS%\VsMSBuildCmd.bat"
-#  - mkdir c:\xmr-stak-dep
-#  - curl -fsS https://slproweb.com/download/Win32OpenSSL-1_1_0f.exe -o Win32OpenSSL.exe
-#  - Win32OpenSSL.exe /silent /verysilent /sp- /suppressmsgboxes
-#  - curl -fsS https://www.open-mpi.org/software/hwloc/v1.11/downloads/hwloc-win64-build-1.11.7.zip -o hwloc-win64-build.zip
-#  - 7z x hwloc-win64-build.zip -o"c:\xmr-stak-dep" -y > nul
-#  - curl -fsS http://mirror.reismil.ch/gnu/libmicrohttpd/libmicrohttpd-latest-w32-bin.zip -o libmicrohttpd-w32-bin.zip
-#  - 7z x libmicrohttpd-w32-bin.zip -o"c:\xmr-stak-dep" -y > nul
-  - cd c:\xmr-stak-cpu & mkdir build & cd build
-#  - set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc-win64-build-1.11.7;C:\xmr-stak-dep\libmicrohttpd-0.9.55-w32-bin\x86_64\VS2017\Release-static
-  - cmake -G "Visual Studio 15 2017 Win64" -DOpenSSL_ENABLE=OFF -DHWLOC_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF -T v141,host=x64 ..
+  - mkdir c:\xmr-stak-dep
+  - curl -fsS http://slproweb.com/download/Win64OpenSSL-1_0_2L.exe -o Win64OpenSSL.exe
+  - Win64OpenSSL.exe /silent /verysilent /sp- /suppressmsgboxes
+  - curl -fsS https://www.open-mpi.org/software/hwloc/v1.11/downloads/hwloc-win64-build-1.11.7.zip -o hwloc-win64-build.zip
+  - 7z x hwloc-win64-build.zip -o"c:\xmr-stak-dep" -y > nul
+  - curl -fsS http://mirror.reismil.ch/gnu/libmicrohttpd/libmicrohttpd-latest-w32-bin.zip -o libmicrohttpd-w32-bin.zip
+  - 7z x libmicrohttpd-w32-bin.zip -o"c:\xmr-stak-dep" -y > nul
+
+build_script:
+  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsMSBuildCmd.bat"
+  - cd c:\xmr-stak-cpu
+  - set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc-win64-build-1.11.7;C:\xmr-stak-dep\libmicrohttpd-0.9.55-w32-bin\x86_64\VS2017\Release-static;
+  - cmake -G "Visual Studio 15 2017 Win64" -T v141,host=x64 .
   - msbuild xmr-stak-cpu.sln /p:Configuration=Release
-  - cd bin\Release
+
+test_script:
+  - cd c:\xmr-stak-cpu\bin\Release
   - copy c:\xmr-stak-dep\hwloc-win64-build-1.11.7\bin\libhwloc-5.dll .
   - copy c:\xmr-stak-dep\libmicrohttpd-0.9.55-w32-bin\x86_64\VS2017\Release-dll\libmicrohttpd-dll.dll .
-  - xmr-stack-cpu -c ..\..\..\config.txt
+  - dir
+#  - xmr-stak-cpu.exe -c ..\..\..\config.txt
