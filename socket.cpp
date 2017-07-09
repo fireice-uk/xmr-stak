@@ -56,7 +56,10 @@ bool plain_socket::set_hostname(const char* sAddr)
 	sAddrMb[ln] = '\0';
 
 	if ((sTmp = strstr(sAddrMb, "//")) != nullptr)
+	{
+		sTmp += 2;
 		memmove(sAddrMb, sTmp, strlen(sTmp) + 1);
+	}
 
 	if ((sPort = strchr(sAddrMb, ':')) == nullptr)
 		return pCallback->set_socket_error("CONNECT error: Pool port number not specified, please use format <hostname>:<port>.");
