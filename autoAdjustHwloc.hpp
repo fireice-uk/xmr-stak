@@ -119,14 +119,14 @@ private:
 			return;
 		}
 
-
 		size_t cacheSize = obj->attr->cache.size;
 		if(!isCacheInclusive(obj))
 		{
 			for(size_t i=0; i < obj->arity; i++)
 			{
+				hwloc_obj_t l2obj = obj->children[i];
 				//If L2 is exclusive and greater or equal to 2MB add room for one more hash
-				if(obj->type == HWLOC_OBJ_CACHE && obj->attr != nullptr && obj->attr->cache.size >= hashSize)
+				if(l2obj->type == HWLOC_OBJ_CACHE && l2obj->attr != nullptr && l2obj->attr->cache.size >= hashSize)
 					cacheSize += hashSize;
 			}
 		}

@@ -70,6 +70,7 @@
 			<Add library="libhwloc" />
 		</Linker>
 		<Unit filename="autoAdjust.hpp" />
+		<Unit filename="autoAdjustHwloc.hpp" />
 		<Unit filename="cli-miner.cpp" />
 		<Unit filename="console.cpp" />
 		<Unit filename="console.h" />
@@ -108,6 +109,7 @@
 		<Unit filename="executor.h" />
 		<Unit filename="httpd.cpp" />
 		<Unit filename="httpd.h" />
+		<Unit filename="hwlocMemory.hpp" />
 		<Unit filename="jconf.cpp" />
 		<Unit filename="jconf.h" />
 		<Unit filename="jext.h" />
