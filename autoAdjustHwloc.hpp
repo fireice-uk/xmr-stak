@@ -87,10 +87,10 @@ private:
 		}
 	}
 
-	inline bool isCacheInclusive(hwloc_obj_t obj)
+	inline bool isCacheExclusive(hwloc_obj_t obj)
 	{
 		const char* value = hwloc_obj_get_info_by_name(obj, "Inclusive");
-		return value == nullptr || value[0] == '1';
+		return value == nullptr || value[0] != '1';
 	}
 
 	// Top level cache isn't shared with other cores on the same package
@@ -120,7 +120,7 @@ private:
 		}
 
 		size_t cacheSize = obj->attr->cache.size;
-		if(!isCacheInclusive(obj))
+		if(isCacheExclusive(obj))
 		{
 			for(size_t i=0; i < obj->arity; i++)
 			{
