@@ -373,7 +373,7 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch)
 void minethd::work_main()
 {
 	// pin memory to NUMA node
-	bindMemoryToNUMANode(this->affinity);
+	bindMemoryToNUMANode(affinity);
 
 	cn_hash_fun hash_fun;
 	cryptonight_ctx* ctx;
@@ -463,7 +463,7 @@ minethd::cn_hash_fun_dbl minethd::func_dbl_selector(bool bHaveAes, bool bNoPrefe
 void minethd::double_work_main()
 {
 	// pin memory to NUMA node
-	bindMemoryToNUMANode(this->affinity);
+	bindMemoryToNUMANode(affinity);
 
 	cn_hash_fun_dbl hash_fun;
 	cryptonight_ctx* ctx0;
