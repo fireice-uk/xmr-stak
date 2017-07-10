@@ -90,7 +90,7 @@ private:
 	inline bool isCacheExclusive(hwloc_obj_t obj)
 	{
 		const char* value = hwloc_obj_get_info_by_name(obj, "Inclusive");
-		return value == nullptr || value[0] != '1';
+		return value != nullptr && value[0] == '1';
 	}
 
 	// Top level cache isn't shared with other cores on the same package
@@ -120,7 +120,7 @@ private:
 		}
 
 		size_t cacheSize = obj->attr->cache.size;
-		if(isCacheExclusive(obj))
+		if(!isCacheExclusive(obj))
 		{
 			for(size_t i=0; i < obj->arity; i++)
 			{
@@ -135,7 +135,7 @@ private:
 		cores.reserve(16);
 		findChildrenByType(obj, HWLOC_OBJ_CORE, [&cores](hwloc_obj_t found) { cores.emplace_back(found); } );
 
-		size_t cacheHashes = (obj->attr->cache.size + hashSize - 1) / hashSize;
+		size_t cacheHashes = (cacheSize + hashSize - 1) / hashSize;
 
 		//Firstly allocate PU 0 of every CORE, then PU 1 etc.
 		size_t pu_id = 0;
