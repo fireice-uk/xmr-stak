@@ -35,7 +35,7 @@ public:
 			tlcs.reserve(16);
 			results.reserve(16);
 
-			findChildrenByType(hwloc_get_root_obj(topology), HWLOC_OBJ_CACHE,
+			findChildrenCaches(hwloc_get_root_obj(topology),
 				[&tlcs](hwloc_obj_t found) { tlcs.emplace_back(found); } );
 
 			if(tlcs.size() == 0)
@@ -87,6 +87,27 @@ private:
 		}
 	}
 
+	inline bool isCacheObject(hwloc_obj_t obj)
+	{
+#if HWLOC_API_VERSION >= 0x20000
+		return hwloc_obj_type_is_cache(obj->type);
+#else
+		return obj->type == HWLOC_OBJ_CACHE;
+#endif // HWLOC_API_VERSION
+	}
+
+	template<typename func>
+	inline void findChildrenCaches(hwloc_obj_t obj, func lambda)
+	{
+		for(size_t i=0; i < obj->arity; i++)
+		{
+			if(isCacheObject(obj->children[i]))
+				lambda(obj->children[i]);
+			else
+				findChildrenCaches(obj->children[i], lambda);
+		}
+	}
+
 	inline bool isCacheExclusive(hwloc_obj_t obj)
 	{
 		const char* value = hwloc_obj_get_info_by_name(obj, "Inclusive");
@@ -110,7 +131,7 @@ private:
 		if(obj->attr->cache.size == 0)
 		{
 			//We will always have one child if PUs > 0
-			if(obj->children[0]->type != HWLOC_OBJ_CACHE)
+			if(!isCacheObject(obj->children[0]))
 				throw(std::runtime_error("The CPU doesn't seem to have a cache."));
 
 			//Try our luck with lower level caches
@@ -126,7 +147,7 @@ private:
 			{
 				hwloc_obj_t l2obj = obj->children[i];
 				//If L2 is exclusive and greater or equal to 2MB add room for one more hash
-				if(l2obj->type == HWLOC_OBJ_CACHE && l2obj->attr != nullptr && l2obj->attr->cache.size >= hashSize)
+				if(isCacheObject(l2obj) && l2obj->attr != nullptr && l2obj->attr->cache.size >= hashSize)
 					cacheSize += hashSize;
 			}
 		}
