@@ -27,12 +27,12 @@ extern const char sHtmlCssFile [] =
 	"a:active {"
 		"color: rgb(204, 122, 0);"
 	"}"
-	
+
 	".all {"
 		"max-width:600px;"
 		"margin: auto;"
 	"}"
-	
+
 	".header {"
 		"background-color: rgb(30, 30, 30);"
 		"color: white;"
@@ -167,6 +167,41 @@ extern const char sHtmlResultBodyHigh [] =
 extern const char sHtmlResultTableRow [] =
 	"<tr><td colspan='2'>%s</td></tr><tr><td>%llu</td><td>%s</td></tr>";
 
-extern const char sHtmlResultBodyLow [] =
+extern const char sHtmlResultBodyLow[] =
 	"</table></div></div></body></html>";
+
+extern const char sJsonApiThdHashrate[] =
+	"[%s,%s,%s]";
+
+extern const char sJsonApiResultError[] =
+	"{\"count\":%llu,\"last_seen\":%llu,\"text\":\"%s\"}";
+
+extern const char sJsonApiConnectionError[] =
+	"{\"last_seen\":%llu,\"text\":\"%s\"}";
+
+extern const char sJsonApiFormat [] =
+"{"
+	"\"hashrate\":{"
+		"\"threads\":[%s],"
+		"\"total\":%s,"
+		"\"highest\":%s"
+	"},"
+
+	"\"results\":{"
+		"\"diff_current\":%llu,"
+		"\"shares_good\":%llu,"
+		"\"shares_total\":%llu,"
+		"\"avg_time\":%.1f,"
+		"\"hashes_total\":%llu,"
+		"\"best\":[%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu],"
+		"\"error_log\":[%s]"
+	"},"
+
+	"\"connection\":{"
+		"\"pool\": \"%s\","
+		"\"uptime\":%llu,"
+		"\"ping\":%llu,"
+		"\"error_log\":[%s]"
+	"}"
+"}";
 

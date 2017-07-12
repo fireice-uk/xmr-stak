@@ -17,3 +17,8 @@ extern const char sHtmlConnectionBodyLow[];
 extern const char sHtmlResultBodyHigh[];
 extern const char sHtmlResultTableRow[];
 extern const char sHtmlResultBodyLow[];
+
+extern const char sJsonApiThdHashrate[];
+extern const char sJsonApiResultError[];
+extern const char sJsonApiConnectionError[];
+extern const char sJsonApiFormat[];
