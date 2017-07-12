@@ -77,6 +77,16 @@ null,
 "nicehash_nonce" : false,
 
 /*
+ * Manual hardware AES override
+ *
+ * Some VMs don't report AES capability correctly. You can set this value to true to make the miner use hardware
+ * AES or to false to make it use software AES.
+ * 
+ * WARNING: setting this to true on a CPU that doesn't support hardware AES will crash the miner.
+ */
+"aes_override" : null,
+
+/*
  * TLS Settings
  * If you need real security, make sure tls_secure_algo is enabled (otherwise MITM attack can downgrade encryption
  * to trivially breakable stuff like DES and MD5), and verify the server's fingerprint through a trusted channel. 
