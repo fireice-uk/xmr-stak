@@ -79,8 +79,8 @@ null,
 /*
  * Manual hardware AES override
  *
- * Some VMs don't report AES capability correctly. You can set this value to true to make the miner use hardware
- * AES or to false to make it use software AES.
+ * Some VMs don't report AES capability correctly. You can set this value to true to enforce hardware AES or 
+ * to false to force disable AES or null to let the miner decide if AES is used.
  * 
  * WARNING: setting this to true on a CPU that doesn't support hardware AES will crash the miner.
  */
