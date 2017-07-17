@@ -5,17 +5,23 @@
     # Ubuntu / Debian
     sudo apt-get install libmicrohttpd-dev libssl-dev cmake build-essential libhwloc-dev
     cmake .
+    make install
+
+    # Arch
+    sudo pacman -S base-devel hwloc openssl cmake libmicrohttpd
+    cmake .
+    make install
 
     # Fedora
     sudo dnf install gcc gcc-c++ hwloc-devel libmicrohttpd-devel openssl-devel cmake
     cmake .
+    make install
 
     # CentOS
     sudo yum install centos-release-scl cmake3 hwloc-devel libmicrohttpd-devel openssl-devel
     sudo yum install devtoolset-4-gcc*
     sudo scl enable devtoolset-4 bash
     cmake3 .
-
     make install
 ```
 
