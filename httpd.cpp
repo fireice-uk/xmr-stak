@@ -36,11 +36,9 @@
 
 #include "webdesign.h"
 
-#ifdef _WIN32
-#include "libmicrohttpd/microhttpd.h"
-#define strcasecmp _stricmp
-#else
 #include <microhttpd.h>
+#ifdef _WIN32
+#define strcasecmp _stricmp
 #endif // _WIN32
 
 httpd* httpd::oInst = nullptr;
