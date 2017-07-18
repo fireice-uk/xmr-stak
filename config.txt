@@ -94,12 +94,7 @@ null,
  * wallet_address - Your wallet, or pool login.
  * pool_password  - Can be empty in most cases or "x".
  *
- * Featured small pools       fee    
- * pool.minemonero.pro:3333 - 0.9%
- * pool.usxmrpool.com:3333  - 0.5%
- * pool.xmr.pt:3333         - 0.4%
- *
- * We feature pools up to 1MH/s here. For a more complete list see M5M400's pool list at www.moneropools.com
+ * We feature pools up to 1MH/s. For a more complete list see M5M400's pool list at www.moneropools.com
  */
 "pool_address" : "pool.usxmrpool.com:3333",
 "wallet_address" : "",
