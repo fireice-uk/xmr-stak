@@ -41,7 +41,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <ctime>
+#include <time.h>
 
 #ifndef CONF_NO_TLS
 #include <openssl/ssl.h>
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 	OpenSSL_add_all_digests();
 #endif
 
-	std::srand(std::time(0));
+	srand(time(0));
 
 	const char* sFilename = "config.txt";
 	bool benchmark_mode = false;
