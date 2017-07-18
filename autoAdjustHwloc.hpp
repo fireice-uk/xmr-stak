@@ -156,7 +156,7 @@ private:
 		cores.reserve(16);
 		findChildrenByType(obj, HWLOC_OBJ_CORE, [&cores](hwloc_obj_t found) { cores.emplace_back(found); } );
 
-		size_t cacheHashes = (cacheSize + hashSize/2u - 1) / hashSize;
+		size_t cacheHashes = (cacheSize + hashSize/2) / hashSize;
 
 		//Firstly allocate PU 0 of every CORE, then PU 1 etc.
 		size_t pu_id = 0;
