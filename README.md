@@ -7,7 +7,7 @@ XMR-Stak is a universal Stratum pool miner. This is the CPU-mining version; ther
 
 ## HTML and JSON API report configuraton
 
-To configure the reports shown above you need to edit the httpd_port variable. Then enable wifi on your phone and navigate to <miner ip address>:<httpd_port> in your phone browser. If you want to use the data in scripts, you can get the JSON version of the data at url <miner ip address>:<httpd_port>/api.json
+To configure the reports shown above you need to edit the httpd_port variable. Then enable wifi on your phone and navigate to [miner ip address]:[httpd_port] in your phone browser. If you want to use the data in scripts, you can get the JSON version of the data at url [miner ip address]:[httpd_port]/api.json
 
 ## Usage on Windows 
 1) Edit the config.txt file to enter your pool login and password. 
