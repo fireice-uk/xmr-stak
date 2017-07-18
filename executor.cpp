@@ -899,7 +899,7 @@ void executor::http_json_report(std::string& out)
 	for(size_t i=1; i < vMineResults.size(); i++)
 	{
 		using namespace std::chrono;
-		if(i != 0) res_error.append(1, ',');
+		if(i != 1) res_error.append(1, ',');
 
 		snprintf(buffer, sizeof(buffer), sJsonApiResultError, int_port(vMineResults[i].count),
 			int_port(duration_cast<seconds>(vMineResults[i].time.time_since_epoch()).count()),
