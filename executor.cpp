@@ -460,6 +460,7 @@ void executor::ex_main()
 		case EV_HTML_HASHRATE:
 		case EV_HTML_RESULTS:
 		case EV_HTML_CONNSTAT:
+		case EV_HTML_JSON:
 			http_report(ev.iName);
 			break;
 
@@ -825,6 +826,121 @@ void executor::http_connection_report(std::string& out)
 	out.append(sHtmlConnectionBodyLow);
 }
 
+inline const char* hps_format_json(double h, char* buf, size_t l)
+{
+	if(std::isnormal(h) || h == 0.0)
+	{
+		snprintf(buf, l, "%.1f", h);
+		return buf;
+	}
+	else
+		return "null";
+}
+
+void executor::http_json_report(std::string& out)
+{
+	const char *a, *b, *c;
+	char num_a[32], num_b[32], num_c[32];
+	char hr_buffer[64];
+	std::string hr_thds, res_error, cn_error;
+
+	size_t nthd = pvThreads->size();
+	double fTotal[3] = { 0.0, 0.0, 0.0};
+	hr_thds.reserve(nthd * 32);
+
+	for(size_t i=0; i < nthd; i++)
+	{
+		if(i != 0) hr_thds.append(1, ',');
+
+		double fHps[3];
+		fHps[0] = telem->calc_telemetry_data(2500, i);
+		fHps[1] = telem->calc_telemetry_data(60000, i);
+		fHps[2] = telem->calc_telemetry_data(900000, i);
+
+		fTotal[0] += fHps[0];
+		fTotal[1] += fHps[1];
+		fTotal[2] += fHps[2];
+
+		a = hps_format_json(fHps[0], num_a, sizeof(num_a));
+		b = hps_format_json(fHps[1], num_b, sizeof(num_b));
+		c = hps_format_json(fHps[2], num_c, sizeof(num_c));
+		snprintf(hr_buffer, sizeof(hr_buffer), sJsonApiThdHashrate, a, b, c);
+		hr_thds.append(hr_buffer);
+	}
+
+	a = hps_format_json(fTotal[0], num_a, sizeof(num_a));
+	b = hps_format_json(fTotal[1], num_b, sizeof(num_b));
+	c = hps_format_json(fTotal[2], num_c, sizeof(num_c));
+	snprintf(hr_buffer, sizeof(hr_buffer), sJsonApiThdHashrate, a, b, c);
+
+	a = hps_format_json(fHighestHps, num_a, sizeof(num_a));
+
+	size_t iGoodRes = vMineResults[0].count, iTotalRes = iGoodRes;
+	size_t ln = vMineResults.size();
+
+	for(size_t i=1; i < ln; i++)
+		iTotalRes += vMineResults[i].count;
+
+	jpsock* pool = pick_pool_by_id(dev_pool_id + 1);
+
+	size_t iConnSec = 0;
+	if(pool->is_running() && pool->is_logged_in())
+	{
+		using namespace std::chrono;
+		iConnSec = duration_cast<seconds>(system_clock::now() - tPoolConnTime).count();
+	}
+
+	double fAvgResTime = 0.0;
+	if(iPoolCallTimes.size() > 0)
+		fAvgResTime = double(iConnSec) / iPoolCallTimes.size();
+
+	res_error.reserve((vMineResults.size() - 1) * 128);
+	char buffer[256];
+	for(size_t i=1; i < vMineResults.size(); i++)
+	{
+		using namespace std::chrono;
+		if(i != 1) res_error.append(1, ',');
+
+		snprintf(buffer, sizeof(buffer), sJsonApiResultError, int_port(vMineResults[i].count),
+			int_port(duration_cast<seconds>(vMineResults[i].time.time_since_epoch()).count()),
+			vMineResults[i].msg.c_str());
+		res_error.append(buffer);
+	}
+
+	size_t n_calls = iPoolCallTimes.size();
+	size_t iPoolPing = 0;
+	if (n_calls > 1)
+	{
+		//Not-really-but-good-enough median
+		std::nth_element(iPoolCallTimes.begin(), iPoolCallTimes.begin() + n_calls/2, iPoolCallTimes.end());
+		iPoolPing = iPoolCallTimes[n_calls/2];
+	}
+
+	cn_error.reserve(vSocketLog.size() * 128);
+	for(size_t i=0; i < vSocketLog.size(); i++)
+	{
+		using namespace std::chrono;
+		if(i != 0) cn_error.append(1, ',');
+
+		snprintf(buffer, sizeof(buffer), sJsonApiConnectionError,
+			int_port(duration_cast<seconds>(vMineResults[i].time.time_since_epoch()).count()),
+			vSocketLog[i].msg.c_str());
+		cn_error.append(buffer);
+	}
+
+	size_t bb_size = 1024 + hr_thds.size() + res_error.size() + cn_error.size();
+	std::unique_ptr<char[]> bigbuf( new char[ bb_size ] );
+
+	int bb_len = snprintf(bigbuf.get(), bb_size, sJsonApiFormat,
+		hr_thds.c_str(), hr_buffer, a,
+		int_port(iPoolDiff), int_port(iGoodRes), int_port(iTotalRes), fAvgResTime, int_port(iPoolHashes),
+		int_port(iTopDiff[0]), int_port(iTopDiff[1]), int_port(iTopDiff[2]), int_port(iTopDiff[3]), int_port(iTopDiff[4]),
+		int_port(iTopDiff[5]), int_port(iTopDiff[6]), int_port(iTopDiff[7]), int_port(iTopDiff[8]), int_port(iTopDiff[9]),
+		res_error.c_str(), jconf::inst()->GetPoolAddress(), int_port(iConnSec), int_port(iPoolPing), cn_error.c_str());
+
+	out = std::string(bigbuf.get(), bigbuf.get() + bb_len);
+}
+
 void executor::http_report(ex_event_name ev)
 {
 	assert(pHttpString != nullptr);
@@ -842,6 +958,11 @@ void executor::http_report(ex_event_name ev)
 	case EV_HTML_CONNSTAT:
 		http_connection_report(*pHttpString);
 		break;
+
+	case EV_HTML_JSON:
+		http_json_report(*pHttpString);
+		break;
+
 	default:
 		assert(false);
 		break;
@@ -855,7 +976,8 @@ void executor::get_http_report(ex_event_name ev_id, std::string& data)
 	std::lock_guard<std::mutex> lck(httpMutex);
 
 	assert(pHttpString == nullptr);
-	assert(ev_id == EV_HTML_HASHRATE || ev_id == EV_HTML_RESULTS || ev_id == EV_HTML_CONNSTAT);
+	assert(ev_id == EV_HTML_HASHRATE || ev_id == EV_HTML_RESULTS
+		|| ev_id == EV_HTML_CONNSTAT || ev_id == EV_HTML_JSON);
 
 	pHttpString = &data;
 	httpReady = std::promise<void>();
