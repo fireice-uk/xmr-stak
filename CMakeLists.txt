@@ -74,7 +74,7 @@ if(MICROHTTPD_ENABLE)
         message(FATAL_ERROR "microhttpd NOT found: use `-DMICROHTTPD_ENABLE=OFF` to build without http deamon support")
     else()
         set(LIBS ${LIBS} ${MHTD})
-		include_directories(AFTER ${MTHD_INCLUDE_DIR})
+        include_directories(AFTER ${MTHD_INCLUDE_DIR})
     endif()
 else()
     add_definitions("-DCONF_NO_HTTPD")
@@ -147,8 +147,10 @@ endif()
 ################################################################################
 
 # activate sse2 and aes-ni
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2 -maes")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2 -maes")
+if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2 -maes")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2 -maes")
+endif()
 
 # activate static libgcc and libstdc++ linking
 if(CMAKE_LINK_STATIC)
