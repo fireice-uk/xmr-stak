@@ -127,10 +127,7 @@ private:
 		bool compare(std::string& err)
 		{
 			if(msg == err)
-			{
-				increment();
 				return true;
-			}
 			else
 				return false;
 		}
