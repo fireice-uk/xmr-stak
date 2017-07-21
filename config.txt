@@ -27,7 +27,7 @@ null,
 
 /*
  * LARGE PAGE SUPPORT
- * Lare pages need a properly set up OS. It can be difficult if you are not used to systems administation,
+ * Large pages need a properly set up OS. It can be difficult if you are not used to systems administation,
  * but the performace results are worth the trouble - you will get around 20% boost. Slow memory mode is
  * meant as a backup, you won't get stellar results there. If you are running into trouble, especially
  * on Windows, please read the common issues in the README.
