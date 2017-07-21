@@ -20,7 +20,7 @@ build_script:
   - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsMSBuildCmd.bat"
   - cd c:\xmr-stak-cpu
   - set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc-win64-build-1.11.7;C:\xmr-stak-dep\libmicrohttpd-0.9.55-w32-bin\x86_64\VS2017\Release-static;
-  - cmake -G "Visual Studio 15 2017 Win64" -T v141,host=x64 .
+  - cmake -DOpenSSL_ENABLE=OFF -G "Visual Studio 15 2017 Win64" -T v141,host=x64 .
   - msbuild xmr-stak-cpu.sln /p:Configuration=Release
 
 test_script:
