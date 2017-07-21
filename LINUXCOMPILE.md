@@ -13,13 +13,13 @@
     make install
 
     # Fedora
-    sudo dnf install gcc gcc-c++ hwloc-devel libmicrohttpd-devel openssl-devel cmake
+    sudo dnf install gcc gcc-c++ hwloc-devel libmicrohttpd-devel libstdc++-static make openssl-devel cmake
     cmake .
     make install
 
     # CentOS
-    sudo yum install centos-release-scl cmake3 hwloc-devel libmicrohttpd-devel openssl-devel
-    sudo yum install devtoolset-4-gcc*
+    sudo yum install centos-release-scl epel-release
+    sudo yum install cmake3 devtoolset-4-gcc* hwloc-devel libmicrohttpd-devel openssl-devel make
     sudo scl enable devtoolset-4 bash
     cmake3 .
     make install
@@ -38,6 +38,8 @@
 ```
 
 - g++ version 5.1 or higher is required for full C++11 support. CMake release compile scripts, as well as CodeBlocks build environment for debug builds is included.
+
+If you want to compile the binary without installing libraries / compiler or just compile binary for some other distribution, please check the [build_xmr-stak_docker.sh script](scripts/build_xmr-stak_docker/build_xmr-stak_docker.sh).
 
 ### To do a static build for a system without gcc 5.1+
 ```
