@@ -161,6 +161,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefet
 	bNoPrefetch = no_prefetch;
 	this->affinity = affinity;
 
+	std::lock_guard<std::mutex> lock(work_thd_mtx);
 	if(double_work)
 		oWorkThd = std::thread(&minethd::double_work_main, this);
 	else
@@ -363,6 +364,9 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch)
 
 void minethd::pin_thd_affinity()
 {
+	//Lock is needed because we need to use oWorkThd
+	std::lock_guard<std::mutex> lock(work_thd_mtx);
+
 	// pin memory to NUMA node
 	bindMemoryToNUMANode(affinity);
 

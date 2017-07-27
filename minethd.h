@@ -1,6 +1,7 @@
 #pragma once
 #include <thread>
 #include <atomic>
+#include <mutex>
 #include "crypto/cryptonight.h"
 
 class telemetry
@@ -130,6 +131,8 @@ private:
 	miner_work oWork;
 
 	void pin_thd_affinity();
+	// Held by the creating context to prevent a race cond with oWorkThd = std::thread(...)
+	std::mutex work_thd_mtx;
 
 	std::thread oWorkThd;
 	uint8_t iThreadNo;
