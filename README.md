@@ -111,7 +111,7 @@ Download and install this [runtime package](https://go.microsoft.com/fwlink/?Lin
 From [config.txt](config.txt):
 
 On Linux you will need to configure large page support `sudo sysctl -w vm.nr_hugepages=128` and increase your
-ulimit -l. To do do this you need to add following lines to /etc/security/limits.conf:
+ulimit -l. To do this you need to add following lines to /etc/security/limits.conf:
 
     * soft memlock 262144
     * hard memlock 262144
