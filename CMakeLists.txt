@@ -58,7 +58,7 @@ if(MICROHTTPD_ENABLE)
             /usr/local
             /usr
             ENV "PROGRAMFILES(X86)"
-            ENV "HWLOC_ROOT"
+            ENV "MICROHTTPD_ROOT"
         PATH_SUFFIXES
             include)
 
