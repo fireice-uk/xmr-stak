@@ -18,6 +18,7 @@
 #include <math.h>
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -552,7 +553,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 #ifdef __GNUC__
 	cl_platform_id PlatformIDList[entries];
 #else
-	cl_platform_id* PlatformIDList = _alloca(entries * sizeof(cl_platform_id));
+	cl_platform_id* PlatformIDList = (cl_platform_id*)_alloca(entries * sizeof(cl_platform_id));
 #endif
 	if((ret = clGetPlatformIDs(entries, PlatformIDList, NULL)) != CL_SUCCESS)
 	{
@@ -579,7 +580,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 #ifdef __GNUC__
 	cl_device_id DeviceIDList[entries];
 #else
-	cl_device_id* DeviceIDList = _alloca(entries * sizeof(cl_device_id));
+	cl_device_id* DeviceIDList = (cl_device_id*)_alloca(entries * sizeof(cl_device_id));
 #endif
 	if((ret = clGetDeviceIDs(PlatformIDList[platform_idx], CL_DEVICE_TYPE_GPU, entries, DeviceIDList, NULL)) != CL_SUCCESS)
 	{
@@ -591,7 +592,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 #ifdef __GNUC__
 	cl_device_id TempDeviceList[num_gpus];
 #else
-	cl_device_id* TempDeviceList = _alloca(entries * sizeof(cl_device_id));
+	cl_device_id* TempDeviceList = (cl_device_id*)_alloca(entries * sizeof(cl_device_id));
 #endif
 	for(int i = 0; i < num_gpus; ++i)
 	{

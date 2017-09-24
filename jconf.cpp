@@ -310,13 +310,6 @@ bool jconf::parse_config(const char* sFilename)
 	}
 #endif // CONF_NO_TLS
 
-#ifdef _WIN32
-	if(GetSlowMemSetting() == no_mlck)
-	{
-		printer::inst()->print_msg(L0, "On Windows large pages need mlock. Please use another option.");
-		return false;
-	}
-#endif // _WIN32
 
 	printer::inst()->set_verbose_level(prv->configValues[iVerboseLevel]->GetUint64());
 

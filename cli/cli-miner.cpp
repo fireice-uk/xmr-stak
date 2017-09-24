@@ -21,18 +21,18 @@
   *
   */
 
-#include "executor.h"
-#include "backend/miner_work.h"
-#include "backend/GlobalStates.hpp"
-#include "backend/BackendConnector.hpp"
-#include "jconf.h"
-#include "console.h"
-#include "donate-level.h"
+#include "../executor.h"
+#include "../backend/miner_work.h"
+#include "../backend/GlobalStates.hpp"
+#include "../backend/BackendConnector.hpp"
+#include "../jconf.h"
+#include "../console.h"
+#include "../donate-level.h"
 
-#include "version.h"
+#include "../version.h"
 
 #ifndef CONF_NO_HTTPD
-#	include "httpd.h"
+#	include "../httpd.h"
 #endif
 
 #include <stdlib.h>

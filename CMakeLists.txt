@@ -163,9 +163,10 @@ endif()
 # Find PThreads
 ################################################################################
 
-find_package(Threads REQUIRED)
-set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
-
+if(NOT WIN32)
+    find_package(Threads REQUIRED)
+    set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+endif()
 ################################################################################
 # Find microhttpd
 ################################################################################
@@ -268,10 +269,16 @@ endif()
 # Compile & Link
 ################################################################################
 
-# activate sse2 and aes-ni
-if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    # remove warnings that f_open() is not save and f_open_s should be used
+    add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
+    # disable min define to allow usage of std::min
+    add_definitions(-DNOMINMAX)
+else()
+    # activate sse2 and aes-ni
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2 -maes")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2 -maes")
+
 endif()
 
 # activate static libgcc and libstdc++ linking
@@ -282,6 +289,20 @@ if(CMAKE_LINK_STATIC)
     set(LIBS "-static-libgcc -static-libstdc++ ${LIBS}")
 endif()
 
+file(GLOB SRCFILES_C "crypto/*.c")
+
+add_library(xmr-stak-c
+    STATIC
+    ${SRCFILES_C}
+)
+
+file(GLOB BACKEND_CPP  "*.cpp" "backend/cpu/*.cpp" "backend/*.cpp"  "crypto/*.cpp")
+add_library(xmr-stak-backend
+    STATIC
+    ${BACKEND_CPP}
+)
+target_link_libraries(xmr-stak-backend xmr-stak-c ${CMAKE_DL_LIBS})
+
 if(CUDA_FOUND)
     file(GLOB CUDASRCFILES "backend/nvidia/nvcc_code/*.cu" "backend/nvidia/*.cpp")
 
@@ -290,26 +311,27 @@ if(CUDA_FOUND)
         SHARED
         ${CUDASRCFILES}
     )
-    target_link_libraries(xmrstak_cuda_backend  ${CUDA_LIBRARIES})
+    target_link_libraries(xmrstak_cuda_backend ${CUDA_LIBRARIES})
+    if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+        target_link_libraries(xmrstak_cuda_backend xmr-stak-backend)
+    endif()
 endif()
 
 if(OpenCL_FOUND)
-    file(GLOB OPENCLSRCFILES_C  "backend/amd/amd_gpu/*.cpp" "console.cpp" "backend/amd/*.cpp")
+    file(GLOB OPENCLSRCFILES_C  "backend/amd/amd_gpu/*.cpp" "backend/amd/*.cpp")
     add_library(xmrstak_opencl_backend
         SHARED
         ${OPENCLSRCFILES_C}
     )
-    #set_property(TARGET xmrstak_opencl_backend PROPERTY C_STANDARD 99)
-    target_link_libraries(xmrstak_opencl_backend PUBLIC ${OpenCL_LIBRARY})
+    target_link_libraries(xmrstak_opencl_backend ${OpenCL_LIBRARY} )
+    if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+        target_link_libraries(xmrstak_opencl_backend xmr-stak-backend)
+    endif()
 endif()
 
-file(GLOB SRCFILES_CPP "*.cpp" "crypto/*.cpp"  "backend/cpu/*.cpp" "backend/*.cpp")
-file(GLOB SRCFILES_C "crypto/*.c")
+file(GLOB SRCFILES_CPP "cli/*.cpp")
+set_source_files_properties(${SRCFILES_CPP} PROPERTIES LANGUAGE CXX)
 
-add_library(xmr-stak-c
-    STATIC
-    ${SRCFILES_C}
-)
 set_property(TARGET xmr-stak-c PROPERTY C_STANDARD 99)
 target_link_libraries(xmr-stak-c ${LIBS})
 
@@ -320,34 +342,47 @@ add_executable(xmr-stak-cpu
 set(EXECUTABLE_OUTPUT_PATH "bin")
 set(LIBRARY_OUTPUT_PATH "bin")
 
-target_link_libraries(xmr-stak-cpu ${LIBS} xmr-stak-c ${CMAKE_DL_LIBS})
+target_link_libraries(xmr-stak-cpu ${LIBS} xmr-stak-c xmr-stak-backend)
 
 ################################################################################
 # Install
 ################################################################################
+
 
 # do not install the binary if the project and install are equal
 if( NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "${PROJECT_BINARY_DIR}" )
     install(TARGETS xmr-stak-cpu
             RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
     if(CUDA_FOUND)
-        install(TARGETS xmrstak_cuda_backend
-            LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+        if(WIN32)
+            install(TARGETS xmrstak_cuda_backend
+                RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+        else()
+            install(TARGETS xmrstak_cuda_backend
+                LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+        endif()
     endif()
     if(OpenCL_FOUND)
-        install(TARGETS xmrstak_opencl_backend
-            LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+        if(WIN32)
+            install(TARGETS xmrstak_opencl_backend
+                RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+        else()
+            install(TARGETS xmrstak_opencl_backend
+                LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+        endif()
     endif()
+
+    set(WIN_OUTPUT_RELEASE "/Release")
 endif()
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/opencl"
-        DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/bin${WIN_OUTPUT_RELEASE}")
 
 # avoid overwrite of user defined settings
 # install `config.txt`if file not exists in `${CMAKE_INSTALL_PREFIX}/bin`
 install(CODE " \
     if(NOT EXISTS ${CMAKE_INSTALL_PREFIX}/bin/config.txt)\n   \
         file(INSTALL ${CMAKE_CURRENT_SOURCE_DIR}/config.txt   \
-            DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)\n        \
+            DESTINATION ${CMAKE_INSTALL_PREFIX}/bin${WIN_OUTPUT_RELEASE})\n        \
     endif()"
 )

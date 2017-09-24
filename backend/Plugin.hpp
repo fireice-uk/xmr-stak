@@ -27,17 +27,22 @@ struct Plugin
 	{
 #ifdef WIN32
 		libBackend = LoadLibrary(TEXT((libName + ".dll").c_str()));
+		if (!libBackend)
+		{
+			std::cerr << "WARNING: "<< m_backendName <<" cannot load backend library: " << (libName + ".dll") << std::endl;
+			return;
+		}
 #else
 		libBackend = dlopen((libName + ".so").c_str(), RTLD_LAZY);
-#endif
 		if (!libBackend)
 		{
 			std::cerr << "WARNING: "<< m_backendName <<" cannot load backend library: " << dlerror() << std::endl;
 			return;
 		}
+#endif
 
 #ifdef WIN32
-		fn_starterBackend = (func_t*) GetProcAddress(libBackend, "xmrstak_start_backend");
+		fn_starterBackend = (starterBackend_t) GetProcAddress(libBackend, "xmrstak_start_backend");
 		if (!fn_starterBackend)
 		{
 			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'xmrstak_start_backend'" << std::endl;

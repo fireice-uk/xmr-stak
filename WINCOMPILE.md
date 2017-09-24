@@ -68,8 +68,7 @@
   mkdir build
   cd build
   cmake -G "Visual Studio 15 2017 Win64" -T v141,host=x64 ..
-  msbuild xmr-stak-cpu.sln /p:Configuration=Release
+  cmake --build . --config Release --target install
   cd bin\Release
-  copy ..\..\..\config.txt .
   ```
 - customize your `config.txt` file by adding the pool, username and password
