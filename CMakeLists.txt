@@ -43,99 +43,104 @@ option(CMAKE_LINK_STATIC "link as much as possible libraries static" OFF)
 #option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" OFF)
 #set(CUDA_USE_STATIC_CUDA_RUNTIME OFF CACHE BOOL "Use the static version of the CUDA runtime library if available" FORCE)
 
-find_package(CUDA 7.5 QUIET)
+option(CUDA_ENABLE "Enable or disable NVIDIA CUDA support" ON)
+if(CUDA_ENABLE)
+    find_package(CUDA 7.5 QUIET)
 
-if(CUDA_FOUND)
+    if(CUDA_FOUND)
 
-    option(XMR-STAK_LARGEGRID "Support large CUDA block count > 128" ON)
-    if(XMR-STAK_LARGEGRID)
-        add_definitions("-DXMR_STAK_LARGEGRID=${XMR-STAK_LARGEGRID}")
-    endif()
-
-    set(DEVICE_COMPILER "nvcc")
-    set(CUDA_COMPILER "${DEVICE_COMPILER}" CACHE STRING "Select the device compiler")
-
-    if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-        list(APPEND DEVICE_COMPILER "clang")
-    endif()
-
-    set_property(CACHE CUDA_COMPILER PROPERTY STRINGS "${DEVICE_COMPILER}")
-
-    set(XMR-STAK_THREADS 0 CACHE STRING "Set maximum number of threads (for compile time optimization)")
-    if(NOT XMR-STAK_THREADS EQUAL 0)
-        message(STATUS "xmr-stak-nvidia: set max threads per block to ${XMR-STAK_THREADS}")
-        add_definitions("-DXMR_STAK_THREADS=${XMR-STAK_THREADS}")
-    endif()
-
-    set(CUDA_ARCH "20;30;35;37;50;52;60;61;62" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
-
-    # validate architectures (only numbers are allowed)
-    foreach(CUDA_ARCH_ELEM ${CUDA_ARCH})
-        string(REGEX MATCH "^[0-9]+$" IS_NUMBER ${CUDA_ARCH})
-        if(NOT IS_NUMBER)
-            message(FATAL_ERROR "Defined compute architecture '${CUDA_ARCH_ELEM}' in "
-                                "'${CUDA_ARCH}' is not an integral number, use e.g. '30' (for compute architecture 3.0).")
+        option(XMR-STAK_LARGEGRID "Support large CUDA block count > 128" ON)
+        if(XMR-STAK_LARGEGRID)
+            add_definitions("-DXMR_STAK_LARGEGRID=${XMR-STAK_LARGEGRID}")
         endif()
-        unset(IS_NUMBER)
 
-        if(${CUDA_ARCH_ELEM} LESS 20)
-            message(FATAL_ERROR "Unsupported CUDA architecture '${CUDA_ARCH_ELEM}' specified. "
-                                "Use '20' (for compute architecture 2.0) or higher.")
+        set(DEVICE_COMPILER "nvcc")
+        set(CUDA_COMPILER "${DEVICE_COMPILER}" CACHE STRING "Select the device compiler")
+
+        if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+            list(APPEND DEVICE_COMPILER "clang")
         endif()
-    endforeach()
 
-    option(CUDA_SHOW_REGISTER "Show registers used for each kernel and compute architecture" OFF)
-    option(CUDA_KEEP_FILES "Keep all intermediate files that are generated during internal compilation steps" OFF)
+        set_property(CACHE CUDA_COMPILER PROPERTY STRINGS "${DEVICE_COMPILER}")
 
-    if("${CUDA_COMPILER}" STREQUAL "clang")
-        set(CLANG_BUILD_FLAGS "-O3 -x cuda --cuda-path=${CUDA_TOOLKIT_ROOT_DIR}")
-        # activation usage of FMA
-        set(CLANG_BUILD_FLAGS "${CLANG_BUILD_FLAGS} -ffp-contract=fast")
+        set(XMR-STAK_THREADS 0 CACHE STRING "Set maximum number of threads (for compile time optimization)")
+        if(NOT XMR-STAK_THREADS EQUAL 0)
+            message(STATUS "xmr-stak-nvidia: set max threads per block to ${XMR-STAK_THREADS}")
+            add_definitions("-DXMR_STAK_THREADS=${XMR-STAK_THREADS}")
+        endif()
 
-        if(CUDA_SHOW_REGISTER)
-            set(CLANG_BUILD_FLAGS "${CLANG_BUILD_FLAGS} -Xcuda-ptxas -v")
-        endif(CUDA_SHOW_REGISTER)
+        set(CUDA_ARCH "20;30;35;37;50;52;60;61;62" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
 
-        if(CUDA_KEEP_FILES)
-            set(CLANG_BUILD_FLAGS "${CLANG_BUILD_FLAGS} -save-temps=${PROJECT_BINARY_DIR}")
-        endif(CUDA_KEEP_FILES)
-
+        # validate architectures (only numbers are allowed)
         foreach(CUDA_ARCH_ELEM ${CUDA_ARCH})
-            # set flags to create device code for the given architectures
-            set(CLANG_BUILD_FLAGS "${CLANG_BUILD_FLAGS} --cuda-gpu-arch=sm_${CUDA_ARCH_ELEM}")
+            string(REGEX MATCH "^[0-9]+$" IS_NUMBER ${CUDA_ARCH})
+            if(NOT IS_NUMBER)
+                message(FATAL_ERROR "Defined compute architecture '${CUDA_ARCH_ELEM}' in "
+                                    "'${CUDA_ARCH}' is not an integral number, use e.g. '30' (for compute architecture 3.0).")
+            endif()
+            unset(IS_NUMBER)
+
+            if(${CUDA_ARCH_ELEM} LESS 20)
+                message(FATAL_ERROR "Unsupported CUDA architecture '${CUDA_ARCH_ELEM}' specified. "
+                                    "Use '20' (for compute architecture 2.0) or higher.")
+            endif()
         endforeach()
 
-    elseif("${CUDA_COMPILER}" STREQUAL "nvcc")
-        # avoid that nvcc in CUDA < 8 tries to use libc `memcpy` within the kernel
-        if(CUDA_VERSION VERSION_LESS 8.0)
-            add_definitions(-D_FORCE_INLINES)
+        option(CUDA_SHOW_REGISTER "Show registers used for each kernel and compute architecture" OFF)
+        option(CUDA_KEEP_FILES "Keep all intermediate files that are generated during internal compilation steps" OFF)
+
+        if("${CUDA_COMPILER}" STREQUAL "clang")
+            set(CLANG_BUILD_FLAGS "-O3 -x cuda --cuda-path=${CUDA_TOOLKIT_ROOT_DIR}")
+            # activation usage of FMA
+            set(CLANG_BUILD_FLAGS "${CLANG_BUILD_FLAGS} -ffp-contract=fast")
+
+            if(CUDA_SHOW_REGISTER)
+                set(CLANG_BUILD_FLAGS "${CLANG_BUILD_FLAGS} -Xcuda-ptxas -v")
+            endif(CUDA_SHOW_REGISTER)
+
+            if(CUDA_KEEP_FILES)
+                set(CLANG_BUILD_FLAGS "${CLANG_BUILD_FLAGS} -save-temps=${PROJECT_BINARY_DIR}")
+            endif(CUDA_KEEP_FILES)
+
+            foreach(CUDA_ARCH_ELEM ${CUDA_ARCH})
+                # set flags to create device code for the given architectures
+                set(CLANG_BUILD_FLAGS "${CLANG_BUILD_FLAGS} --cuda-gpu-arch=sm_${CUDA_ARCH_ELEM}")
+            endforeach()
+
+        elseif("${CUDA_COMPILER}" STREQUAL "nvcc")
+            # avoid that nvcc in CUDA < 8 tries to use libc `memcpy` within the kernel
+            if(CUDA_VERSION VERSION_LESS 8.0)
+                add_definitions(-D_FORCE_INLINES)
+            endif()
+            foreach(CUDA_ARCH_ELEM ${CUDA_ARCH})
+                # set flags to create device code for the given architecture
+                set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
+                    "--generate-code arch=compute_${CUDA_ARCH_ELEM},code=sm_${CUDA_ARCH_ELEM} --generate-code arch=compute_${CUDA_ARCH_ELEM},code=compute_${CUDA_ARCH_ELEM}")
+            endforeach()
+
+            # give each thread an independent default stream
+            set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --default-stream per-thread")
+
+            option(CUDA_SHOW_CODELINES "Show kernel lines in cuda-gdb and cuda-memcheck" OFF)
+
+            if(CUDA_SHOW_CODELINES)
+                set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" --source-in-ptx -lineinfo)
+                set(CUDA_KEEP_FILES ON CACHE BOOL "activate keep files" FORCE)
+            endif(CUDA_SHOW_CODELINES)
+
+            if(CUDA_SHOW_REGISTER)
+                set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" -Xptxas=-v)
+            endif(CUDA_SHOW_REGISTER)
+
+            if(CUDA_KEEP_FILES)
+                set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" --keep --keep-dir "${PROJECT_BINARY_DIR}")
+            endif(CUDA_KEEP_FILES)
+
+        else()
+            message(FATAL_ERROR "selected CUDA compiler '${CUDA_COMPILER}' is not supported")
         endif()
-        foreach(CUDA_ARCH_ELEM ${CUDA_ARCH})
-            # set flags to create device code for the given architecture
-            set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
-                "--generate-code arch=compute_${CUDA_ARCH_ELEM},code=sm_${CUDA_ARCH_ELEM} --generate-code arch=compute_${CUDA_ARCH_ELEM},code=compute_${CUDA_ARCH_ELEM}")
-        endforeach()
-
-        # give each thread an independent default stream
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --default-stream per-thread")
-
-        option(CUDA_SHOW_CODELINES "Show kernel lines in cuda-gdb and cuda-memcheck" OFF)
-
-        if(CUDA_SHOW_CODELINES)
-            set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" --source-in-ptx -lineinfo)
-            set(CUDA_KEEP_FILES ON CACHE BOOL "activate keep files" FORCE)
-        endif(CUDA_SHOW_CODELINES)
-
-        if(CUDA_SHOW_REGISTER)
-            set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" -Xptxas=-v)
-        endif(CUDA_SHOW_REGISTER)
-
-        if(CUDA_KEEP_FILES)
-            set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" --keep --keep-dir "${PROJECT_BINARY_DIR}")
-        endif(CUDA_KEEP_FILES)
-
     else()
-        message(FATAL_ERROR "selected CUDA compiler '${CUDA_COMPILER}' is not supported")
+        message(FATAL_ERROR "CUDA NOT found: use `-DCUDA_ENABLE=OFF` to build without NVIDIA GPU support")
     endif()
 else()
     add_definitions("-DCONF_NO_CUDA")
@@ -150,12 +155,17 @@ list(APPEND CMAKE_PREFIX_PATH "$ENV{CMAKE_PREFIX_PATH}")
 # Find OpenCL
 ###############################################################################
 
-find_package(OpenCL)
-include_directories(SYSTEM ${OpenCL_INCLUDE_DIRS})
-#set(LIBS ${LIBS} ${OpenCL_LIBRARY})
-link_directories(${OpenCL_LIBRARY})
-
-if(NOT OpenCL_FOUND)
+option(OpenCL_ENABLE "Enable or disable the requirement of hwloc" ON)
+if(OpenCL_ENABLE)
+    find_package(OpenCL QUIET)
+    if(OpenCL_FOUND)
+        include_directories(SYSTEM ${OpenCL_INCLUDE_DIRS})
+        #set(LIBS ${LIBS} ${OpenCL_LIBRARY})
+        link_directories(${OpenCL_LIBRARY})
+    else()
+        message(FATAL_ERROR "OpenCL NOT found: use `-DOpenCL_ENABLE=OFF` to build without OpenCL support for AMD gpu's")
+    endif()
+else()
     add_definitions("-DCONF_NO_OPENCL")
 endif()
 
