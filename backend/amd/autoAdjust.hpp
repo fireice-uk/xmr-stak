@@ -80,7 +80,6 @@ private:
 		configTpl.set( std::string(tpl) );
 
 		std::string conf;
-		conf += std::string("\"gpu_threads_conf\" :\n[\n");
         int i = 0;
         for(auto& ctx : devVec)
         {
@@ -97,7 +96,6 @@ private:
                 "  },\n";
             ++i;
         }
-		conf += std::string("],\n\n");
 
 		configTpl.replace("PLATFORMINDEX",std::to_string(platformIndex));
 		configTpl.replace("NUMGPUS",std::to_string(devVec.size()));

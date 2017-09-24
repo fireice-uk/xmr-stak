@@ -42,7 +42,6 @@ public:
 		;
 		configTpl.set( std::string(tpl) );
 
-		conf += std::string("\"cpu_threads_conf\" :\n[\n");
 		try
 		{
 			std::vector<hwloc_obj_t> tlcs;
@@ -73,7 +72,6 @@ public:
 			conf += std::string("    { \"low_power_mode\" : false, \"no_prefetch\" : true, \"affine_to_cpu\" : false },\n");
 			printer::inst()->print_msg(L0, "Autoconf FAILED: %s. Create config for a single thread.", err.what());
 		}
-		conf += std::string("],\n\n");
 
 		configTpl.replace("CPUCONFIG",conf);
 		configTpl.write("cpu.txt");

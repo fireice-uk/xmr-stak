@@ -86,7 +86,6 @@ private:
 		configTpl.set( std::string(tpl) );
 
 		std::string conf;
-		conf += std::string("\"gpu_threads_conf\" :\n[\n");
         int i = 0;
         for(auto& ctx : nvidCtxVec)
         {
@@ -98,7 +97,6 @@ private:
                 "  },\n";
             ++i;
         }
-		conf += std::string("],\n\n");
 
 		configTpl.replace("GPUCONFIG",conf);
 		configTpl.write("nvidia.txt");

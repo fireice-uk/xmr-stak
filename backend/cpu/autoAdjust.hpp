@@ -44,7 +44,6 @@ public:
 		configTpl.set( std::string(tpl) );
 
 		std::string conf;
-		conf += std::string("\"cpu_threads_conf\" :\n[\n");
 
 		if(!detectL3Size() || L3KB_size < 1024 || L3KB_size > 102400)
 		{
@@ -95,8 +94,6 @@ public:
 					L3KB_size -= 2048;
 			}
 		}
-
-		conf += std::string("],\n\n");
 
 		configTpl.replace("CPUCONFIG",conf);
 		configTpl.write("cpu.txt");
