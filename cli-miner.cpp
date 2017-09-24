@@ -22,15 +22,13 @@
   */
 
 #include "executor.h"
-#include "minethd.h"
+#include "backend/miner_work.h"
+#include "backend/GlobalStates.hpp"
+#include "backend/BackendConnector.hpp"
 #include "jconf.h"
 #include "console.h"
 #include "donate-level.h"
-#ifndef CONF_NO_HWLOC
-#   include "autoAdjustHwloc.hpp"
-#else
-#   include "autoAdjust.hpp"
-#endif
+
 #include "version.h"
 
 #ifndef CONF_NO_HTTPD
@@ -48,19 +46,9 @@
 #include <openssl/err.h>
 #endif
 
-//Do a press any key for the windows folk. *insert any key joke here*
+
 #ifdef _WIN32
-void win_exit()
-{
-	printer::inst()->print_str("Press any key to exit.");
-	get_key();
-	return;
-}
-
-#define strcasecmp _stricmp
-
-#else
-void win_exit() { return; }
+#	define strcasecmp _stricmp
 #endif // _WIN32
 
 void do_benchmark();
@@ -109,15 +97,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	if(jconf::inst()->NeedsAutoconf())
-	{
-		autoAdjust adjust;
-		adjust.printConfig();
-		win_exit();
-		return 0;
-	}
-
-	if (!minethd::self_test())
+	if (!xmrstak::BackendConnector::self_test())
 	{
 		win_exit();
 		return 0;
@@ -144,6 +124,12 @@ int main(int argc, char *argv[])
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_str( XMR_STAK_NAME" " XMR_STAK_VERSION " mining software, CPU Version.\n");
 	printer::inst()->print_str("Based on CPU mining code by wolf9466 (heavily optimized by fireice_uk).\n");
+#ifndef CONF_NO_CUDA
+	printer::inst()->print_str("NVIDIA mining code was written by KlausT and psychocrypt.\n");
+#endif
+#ifndef CONF_NO_OPENCL
+	printer::inst()->print_str("AMD mining code was written by wolf9466.\n");
+#endif
 	printer::inst()->print_str("Brought to you by fireice_uk and psychocrypt under GPLv3.\n\n");
 	char buffer[64];
 	snprintf(buffer, sizeof(buffer), "Configurable dev donation level is set to %.1f %%\n\n", fDevDonationLevel * 100.0);
@@ -196,20 +182,20 @@ int main(int argc, char *argv[])
 void do_benchmark()
 {
 	using namespace std::chrono;
-	std::vector<minethd*>* pvThreads;
+	std::vector<xmrstak::IBackend*>* pvThreads;
 
 	printer::inst()->print_msg(L0, "Running a 60 second benchmark...");
 
 	uint8_t work[76] = {0};
-	minethd::miner_work oWork = minethd::miner_work("", work, sizeof(work), 0, 0, false, 0);
-	pvThreads = minethd::thread_starter(oWork);
+	xmrstak::miner_work oWork = xmrstak::miner_work("", work, sizeof(work), 0, 0, 0);
+	pvThreads = xmrstak::BackendConnector::thread_starter(oWork);
 
 	uint64_t iStartStamp = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
 
 	std::this_thread::sleep_for(std::chrono::seconds(60));
 
-	oWork = minethd::miner_work();
-	minethd::switch_work(oWork);
+	oWork = xmrstak::miner_work();
+	xmrstak::GlobalStates::switch_work(oWork);
 
 	double fTotalHps = 0.0;
 	for (uint32_t i = 0; i < pvThreads->size(); i++)

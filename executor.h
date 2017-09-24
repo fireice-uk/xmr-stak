@@ -5,10 +5,20 @@
 #include <array>
 #include <list>
 #include <future>
+#include "telemetry.h"
+#include "backend/IBackend.hpp"
 
 class jpsock;
+
+
+namespace xmrstak
+{
+namespace cpu
+{
 class minethd;
-class telemetry;
+
+} // namespace cpu
+} // namepsace xmrstak
 
 class executor
 {
@@ -50,8 +60,8 @@ private:
 	std::mutex timed_event_mutex;
 	thdq<ex_event> oEventQ;
 
-	telemetry* telem;
-	std::vector<minethd*>* pvThreads;
+	xmrstak::telemetry* telem;
+	std::vector<xmrstak::IBackend*>* pvThreads;
 
 	size_t current_pool_id;
 

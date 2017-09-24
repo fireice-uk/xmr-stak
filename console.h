@@ -41,3 +41,5 @@ private:
 	verbosity verbose_level;
 	FILE* logfile;
 };
+
+void win_exit();

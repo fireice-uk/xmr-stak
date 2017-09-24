@@ -27,12 +27,6 @@ public:
 		unknown_value
 	};
 
-	size_t GetThreadCount();
-	bool GetThreadConfig(size_t id, thd_cfg &cfg);
-	bool NeedsAutoconf();
-
-	slow_mem_cfg GetSlowMemSetting();
-
 	bool GetTlsSetting();
 	bool TlsSecureAlgos();
 	const char* GetTlsFingerprint();
@@ -52,15 +46,10 @@ public:
 
 	uint16_t GetHttpdPort();
 
-	bool NiceHashMode();
-
 	bool DaemonMode();
 
 	bool PreferIpv4();
 
-	inline bool HaveHardwareAes() { return bHaveAes; }
-
-	static void cpuid(uint32_t eax, int32_t ecx, int32_t val[4]);
 
 private:
 	jconf();

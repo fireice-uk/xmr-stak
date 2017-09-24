@@ -115,7 +115,7 @@ extern const char sHtmlCommonHeader [] =
 extern const char sHtmlHashrateBodyHigh [] =
 	"<div class=data>"
 	"<table>"
-		"<tr><th>Thread ID</th><th>2.5s</th><th>60s</th><th>15m</th><th rowspan='%u'>H/s</td></tr>";
+		"<tr><th>Thread ID</th><th>10s</th><th>60s</th><th>15m</th><th rowspan='%u'>H/s</td></tr>";
 
 extern const char sHtmlHashrateTableRow [] =
 	"<tr><th>%u</th><td>%s</td><td>%s</td><td>%s</td></tr>";

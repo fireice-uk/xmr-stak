@@ -394,7 +394,10 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 		if(!hex2bin(sTempStr, 8, (unsigned char*)&iTempInt) || iTempInt == 0)
 			return set_socket_error("PARSE error: Invalid target");
 
+		
 		oPoolJob.iTarget = t32_to_t64(iTempInt);
+		oPoolJob.iTarget32 = iTempInt;
+
 	}
 	else if(target_slen <= 16)
 	{

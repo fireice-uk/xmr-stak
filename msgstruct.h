@@ -11,6 +11,8 @@ struct pool_job
 	char		sJobID[64];
 	uint8_t		bWorkBlob[112];
 	uint64_t	iTarget;
+	// \todo remove workaround needed for amd
+	uint32_t	iTarget32;
 	uint32_t	iWorkLen;
 	uint32_t	iResumeCnt;
 
@@ -37,6 +39,7 @@ struct job_result
 		memcpy(this->bResult, bResult, sizeof(job_result::bResult));
 	}
 };
+
 
 enum ex_event_name { EV_INVALID_VAL, EV_SOCK_READY, EV_SOCK_ERROR,
 	EV_POOL_HAVE_JOB, EV_MINER_HAVE_RESULT, EV_PERF_TICK, EV_RECONNECT,

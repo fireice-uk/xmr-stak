@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <cstdlib>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -211,3 +212,18 @@ void printer::print_str(const char* str)
 		fflush(logfile);
 	}
 }
+
+//Do a press any key for the windows folk. *insert any key joke here*
+#ifdef _WIN32
+void win_exit()
+{
+	printer::inst()->print_str("Press any key to exit.");
+	get_key();
+	std::exit(1);
+}
+
+#else
+void win_exit() { 
+	std::exit(1);
+}
+#endif // _WIN32

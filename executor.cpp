@@ -29,7 +29,12 @@
 #include <time.h>
 #include "executor.h"
 #include "jpsock.h"
-#include "minethd.h"
+
+#include "telemetry.h"
+#include "backend/miner_work.h"
+#include "backend/GlobalStates.hpp"
+#include "backend/BackendConnector.hpp"
+
 #include "jconf.h"
 #include "console.h"
 #include "donate-level.h"
@@ -116,8 +121,8 @@ void executor::sched_reconnect()
 	printer::inst()->print_msg(L1, "Pool connection lost. Waiting %lld s before retry (attempt %llu).",
 		rt, int_port(iReconnectAttempts));
 
-	auto work = minethd::miner_work();
-	minethd::switch_work(work);
+	auto work = xmrstak::miner_work();
+	xmrstak::GlobalStates::switch_work(work);
 
 	push_timed_event(ex_event(EV_RECONNECT, usr_pool_id), rt);
 }
@@ -229,12 +234,13 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 
 	jpsock* pool = pick_pool_by_id(pool_id);
 
-	minethd::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob,
+	xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob,
 		oPoolJob.iWorkLen, oPoolJob.iResumeCnt, oPoolJob.iTarget,
-		pool_id != dev_pool_id && jconf::inst()->NiceHashMode(),
 		pool_id);
 
-	minethd::switch_work(oWork);
+	oWork.iTarget32 = oPoolJob.iTarget32;
+	
+	xmrstak::GlobalStates::switch_work(oWork);
 
 	if(pool_id == dev_pool_id)
 		return;
@@ -350,11 +356,13 @@ void executor::on_switch_pool(size_t pool_id)
 			return;
 		}
 
-		minethd::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob,
+		xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob,
 			oPoolJob.iWorkLen, oPoolJob.iResumeCnt, oPoolJob.iTarget,
-			jconf::inst()->NiceHashMode(), pool_id);
+			pool_id);
 
-		minethd::switch_work(oWork);
+		oWork.iTarget32 = oPoolJob.iTarget32;
+
+		xmrstak::GlobalStates::switch_work(oWork);
 
 		if(dev_pool->is_running())
 			push_timed_event(ex_event(EV_DEV_POOL_EXIT), 5);
@@ -365,9 +373,18 @@ void executor::ex_main()
 {
 	assert(1000 % iTickTime == 0);
 
-	minethd::miner_work oWork = minethd::miner_work();
-	pvThreads = minethd::thread_starter(oWork);
-	telem = new telemetry(pvThreads->size());
+	xmrstak::miner_work oWork = xmrstak::miner_work();
+
+	// \todo collect all backend threads
+	pvThreads = xmrstak::BackendConnector::thread_starter(oWork);
+
+	if(pvThreads->size()==0)
+	{
+		printer::inst()->print_msg(L1, "ERROR: No miner backend enabled.");
+		win_exit();
+	}
+
+	telem = new xmrstak::telemetry(pvThreads->size());
 
 	current_pool_id = usr_pool_id;
 	usr_pool = new jpsock(usr_pool_id, jconf::inst()->GetTlsSetting());
@@ -499,9 +516,9 @@ void executor::hashrate_report(std::string& out)
 	size_t i;
 
 	out.append("HASHRATE REPORT\n");
-	out.append("| ID | 2.5s |  60s |  15m |");
+	out.append("| ID | 10s |  60s |  15m |");
 	if(nthd != 1)
-		out.append(" ID | 2.5s |  60s |  15m |\n");
+		out.append(" ID | 10s |  60s |  15m |\n");
 	else
 		out.append(1, '\n');
 
@@ -509,7 +526,7 @@ void executor::hashrate_report(std::string& out)
 	{
 		double fHps[3];
 
-		fHps[0] = telem->calc_telemetry_data(2500, i);
+		fHps[0] = telem->calc_telemetry_data(10000, i);
 		fHps[1] = telem->calc_telemetry_data(60000, i);
 		fHps[2] = telem->calc_telemetry_data(900000, i);
 
