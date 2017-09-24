@@ -62,11 +62,6 @@ std::vector<IBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 
 	std::vector<IBackend*>* pvThreads = new std::vector<IBackend*>;
 
-	auto cpuThreads = cpu::minethd::thread_starter(static_cast<uint32_t>(pvThreads->size()), pWork);
-	pvThreads->insert(std::end(*pvThreads), std::begin(cpuThreads), std::end(cpuThreads));
-	if(cpuThreads.size() == 0)
-		printer::inst()->print_msg(L0, "WARNING: backend CPU disabled.");
-
 #ifndef CONF_NO_CUDA
 	Plugin nvidiaPlugin("NVIDIA", "libxmrstak_cuda_backend");
 	std::vector<IBackend*>* nvidiaThreads = nvidiaPlugin.startBackend(static_cast<uint32_t>(pvThreads->size()), pWork);
@@ -81,6 +76,13 @@ std::vector<IBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 	pvThreads->insert(std::end(*pvThreads), std::begin(*amdThreads), std::end(*amdThreads));
 	if(amdThreads->size() == 0)
 		printer::inst()->print_msg(L0, "WARNING: backend AMD disabled.");
+#endif
+
+#ifndef CONF_NO_CPU
+	auto cpuThreads = cpu::minethd::thread_starter(static_cast<uint32_t>(pvThreads->size()), pWork);
+	pvThreads->insert(std::end(*pvThreads), std::begin(cpuThreads), std::end(cpuThreads));
+	if(cpuThreads.size() == 0)
+		printer::inst()->print_msg(L0, "WARNING: backend CPU disabled.");
 #endif
 	
 	GlobalStates::iThreadCount = pvThreads->size();

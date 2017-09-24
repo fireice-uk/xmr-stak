@@ -43,7 +43,7 @@ option(CMAKE_LINK_STATIC "link as much as possible libraries static" OFF)
 #option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" OFF)
 #set(CUDA_USE_STATIC_CUDA_RUNTIME OFF CACHE BOOL "Use the static version of the CUDA runtime library if available" FORCE)
 
-option(CUDA_ENABLE "Enable or disable NVIDIA CUDA support" ON)
+option(CUDA_ENABLE "Enable or disable CUDA support (NVIDIA backend)" ON)
 if(CUDA_ENABLE)
     find_package(CUDA 7.5 QUIET)
 
@@ -155,7 +155,7 @@ list(APPEND CMAKE_PREFIX_PATH "$ENV{CMAKE_PREFIX_PATH}")
 # Find OpenCL
 ###############################################################################
 
-option(OpenCL_ENABLE "Enable or disable the requirement of hwloc" ON)
+option(OpenCL_ENABLE "Enable or disable OpenCL spport (AMD GPU support)" ON)
 if(OpenCL_ENABLE)
     find_package(OpenCL QUIET)
     if(OpenCL_FOUND)
@@ -167,6 +167,15 @@ if(OpenCL_ENABLE)
     endif()
 else()
     add_definitions("-DCONF_NO_OPENCL")
+endif()
+
+###############################################################################
+# CPU backend
+###############################################################################
+
+option(CPU_ENABLE "Enable or disable CPU support" ON)
+if(NOT CPU_ENABLE)
+    add_definitions("-DCONF_NO_CPU")
 endif()
 
 ################################################################################
