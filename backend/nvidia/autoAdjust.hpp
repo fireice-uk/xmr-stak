@@ -61,7 +61,7 @@ public:
 #endif
             if( cuda_get_deviceinfo(&ctx) != 1 )
             {
-                printer::inst()->print_msg(L0, "Setup failed for GPU %d. Exitting.\n", cfg.id);
+                printer::inst()->print_msg(L0, "Setup failed for GPU %d. Exitting.\n", i);
                 std::exit(0);
             }
             nvidCtxVec.push_back(ctx);

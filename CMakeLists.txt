@@ -390,7 +390,7 @@ if( NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "${PROJECT_BINARY_DIR}" )
                 LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
         endif()
     endif()
-
+else()
     set(WIN_OUTPUT_RELEASE "/Release")
 endif()
 
@@ -400,7 +400,7 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/opencl"
 # avoid overwrite of user defined settings
 # install `config.txt`if file not exists in `${CMAKE_INSTALL_PREFIX}/bin`
 install(CODE " \
-    if(NOT EXISTS ${CMAKE_INSTALL_PREFIX}/bin/config.txt)\n   \
+    if(NOT EXISTS ${CMAKE_INSTALL_PREFIX}/bin${WIN_OUTPUT_RELEASE}/config.txt)\n   \
         file(INSTALL ${CMAKE_CURRENT_SOURCE_DIR}/config.txt   \
             DESTINATION ${CMAKE_INSTALL_PREFIX}/bin${WIN_OUTPUT_RELEASE})\n        \
     endif()"

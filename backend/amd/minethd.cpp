@@ -60,11 +60,15 @@ minethd::minethd(miner_work& pWork, size_t iNo, GpuContext* ctx)
 	oWorkThd = std::thread(&minethd::work_main, this);
 }
 
-extern "C"  std::vector<IBackend*>* xmrstak_start_backend(uint32_t threadOffset, miner_work& pWork)
+extern "C"  {
+#ifdef WIN32
+__declspec(dllexport) 
+#endif
+std::vector<IBackend*>* xmrstak_start_backend(uint32_t threadOffset, miner_work& pWork)
 {
 	return amd::minethd::thread_starter(threadOffset, pWork);
 }
-
+} // extern "C"
 
 bool minethd::init_gpus()
 {

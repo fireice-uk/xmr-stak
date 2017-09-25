@@ -27,14 +27,14 @@ struct Plugin
 	{
 #ifdef WIN32
 		libBackend = LoadLibrary(TEXT((libName + ".dll").c_str()));
-		if (!libBackend)
+		if(!libBackend)
 		{
 			std::cerr << "WARNING: "<< m_backendName <<" cannot load backend library: " << (libName + ".dll") << std::endl;
 			return;
 		}
 #else
-		libBackend = dlopen((libName + ".so").c_str(), RTLD_LAZY);
-		if (!libBackend)
+		libBackend = dlopen((std::string("lib") + libName + ".so").c_str(), RTLD_LAZY);
+		if(!libBackend)
 		{
 			std::cerr << "WARNING: "<< m_backendName <<" cannot load backend library: " << dlerror() << std::endl;
 			return;
@@ -45,16 +45,16 @@ struct Plugin
 		fn_starterBackend = (starterBackend_t) GetProcAddress(libBackend, "xmrstak_start_backend");
 		if (!fn_starterBackend)
 		{
-			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'xmrstak_start_backend'" << std::endl;
+			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'xmrstak_start_backend': " <<GetLastError()<< std::endl;
 		}
 #else
 		// reset last error
 		dlerror();
 		fn_starterBackend = (starterBackend_t) dlsym(libBackend, "xmrstak_start_backend");
 		const char* dlsym_error = dlerror();
-		if (dlsym_error)
+		if(dlsym_error)
 		{
-			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'xmrstak_start_backend'" << std::endl;
+			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'xmrstak_start_backend': " << dlsym_error << std::endl;
 		}
 #endif
 	}
