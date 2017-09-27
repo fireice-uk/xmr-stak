@@ -1,14 +1,17 @@
 #pragma once
 #include <stdlib.h>
 #include <string>
+#include "Environment.hpp"
 
 class jconf
 {
 public:
 	static jconf* inst()
 	{
-		if (oInst == nullptr) oInst = new jconf;
-		return oInst;
+		auto& env = xmrstak::Environment::inst();
+		if(env.pJconfConfig == nullptr)
+			env.pJconfConfig = new jconf;
+		return env.pJconfConfig;
 	};
 
 	bool parse_config(const char* sFilename);
@@ -51,9 +54,16 @@ public:
 	bool PreferIpv4();
 
 
+	bool NiceHashMode();
+
+	inline bool HaveHardwareAes() { return bHaveAes; }
+
+	static void cpuid(uint32_t eax, int32_t ecx, int32_t val[4]);
+
+	slow_mem_cfg GetSlowMemSetting();
+
 private:
 	jconf();
-	static jconf* oInst;
 
 	bool check_cpu_features();
 	struct opaque_private;

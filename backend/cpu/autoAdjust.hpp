@@ -1,6 +1,7 @@
 #pragma once
 #include "jconf.h"
 #include "../../console.h"
+#include "../../jconf.h"
 #include "../../ConfigEditor.hpp"
 #include <string>
 
@@ -108,14 +109,14 @@ private:
 		int32_t cpu_info[4];
 		char cpustr[13] = {0};
 
-		xmrstak::cpu::jconf::cpuid(0, 0, cpu_info);
+		::jconf::cpuid(0, 0, cpu_info);
 		memcpy(cpustr, &cpu_info[1], 4);
 		memcpy(cpustr+4, &cpu_info[3], 4);
 		memcpy(cpustr+8, &cpu_info[2], 4);
 
 		if(strcmp(cpustr, "GenuineIntel") == 0)
 		{
-			xmrstak::cpu::jconf::cpuid(4, 3, cpu_info);
+			::jconf::cpuid(4, 3, cpu_info);
 
 			if(get_masked(cpu_info[0], 7, 5) != 3)
 			{
@@ -130,11 +131,11 @@ private:
 		}
 		else if(strcmp(cpustr, "AuthenticAMD") == 0)
 		{
-			xmrstak::cpu::jconf::cpuid(0x80000006, 0, cpu_info);
+			::jconf::cpuid(0x80000006, 0, cpu_info);
 
 			L3KB_size = get_masked(cpu_info[3], 31, 18) * 512;
 
-			xmrstak::cpu::jconf::cpuid(1, 0, cpu_info);
+			::jconf::cpuid(1, 0, cpu_info);
 			if(get_masked(cpu_info[0], 11, 8) < 0x17) //0x17h is Zen
 				old_amd = true;
 

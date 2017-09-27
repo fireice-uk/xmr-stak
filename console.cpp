@@ -151,8 +151,6 @@ inline void comp_localtime(const time_t* ctime, tm* stime)
 #endif // __WIN32
 }
 
-printer* printer::oInst = nullptr;
-
 printer::printer()
 {
 	verbose_level = LINF;

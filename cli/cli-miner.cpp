@@ -195,7 +195,7 @@ void do_benchmark()
 	std::this_thread::sleep_for(std::chrono::seconds(60));
 
 	oWork = xmrstak::miner_work();
-	xmrstak::GlobalStates::switch_work(oWork);
+	xmrstak::GlobalStates::inst().switch_work(oWork);
 
 	double fTotalHps = 0.0;
 	for (uint32_t i = 0; i < pvThreads->size(); i++)

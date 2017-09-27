@@ -5,6 +5,7 @@
 #include <string>
 #include "IBackend.hpp"
 #include <iostream>
+#include "../Environment.hpp"
 
 #ifndef USE_PRECOMPILED_HEADERS
 #ifdef WIN32
@@ -33,7 +34,7 @@ struct Plugin
 			return;
 		}
 #else
-		libBackend = dlopen((std::string("lib") + libName + ".so").c_str(), RTLD_LAZY);
+		libBackend = dlopen((std::string("./lib") + libName + ".so").c_str(), RTLD_LAZY);
 		if(!libBackend)
 		{
 			std::cerr << "WARNING: "<< m_backendName <<" cannot load backend library: " << dlerror() << std::endl;
@@ -59,7 +60,7 @@ struct Plugin
 #endif
 	}
 
-	std::vector<IBackend*>* startBackend(uint32_t threadOffset, miner_work& pWork)
+	std::vector<IBackend*>* startBackend(uint32_t threadOffset, miner_work& pWork, Environment& env)
 	{
 		if(fn_starterBackend == nullptr)
 		{
@@ -68,12 +69,12 @@ struct Plugin
 			return pvThreads;
 		}
 
-		return fn_starterBackend(threadOffset, pWork);
+		return fn_starterBackend(threadOffset, pWork, env);
 	}
 
 	std::string m_backendName;
 
-	typedef std::vector<IBackend*>* (*starterBackend_t)(uint32_t threadOffset, miner_work& pWork);
+	typedef std::vector<IBackend*>* (*starterBackend_t)(uint32_t threadOffset, miner_work& pWork, Environment& env);
 
 	starterBackend_t fn_starterBackend;
 

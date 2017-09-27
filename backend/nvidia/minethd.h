@@ -7,6 +7,7 @@
 #include "../../jconf.h"
 #include "./jconf.h"
 #include "../IBackend.hpp"
+#include "../../Environment.hpp"
 #include <iostream>
 
 namespace xmrstak
@@ -33,13 +34,13 @@ private:
 	// Bottom 22 bits allow for an hour of work at 1000 H/s
 	inline uint32_t calc_start_nonce(uint32_t resume)
 	{
-		return reverseBits<uint32_t>(iThreadNo + GlobalStates::iThreadCount * resume);
+		return reverseBits<uint32_t>(iThreadNo + GlobalStates::inst().iThreadCount * resume);
 	}
 
 	// Limited version of the nonce calc above
 	inline uint32_t calc_nicehash_nonce(uint32_t start, uint32_t resume)
 	{
-		return start | ( ( reverseBits(iThreadNo + GlobalStates::iThreadCount * resume) >> 4u ) );
+		return start | ( ( reverseBits(iThreadNo + GlobalStates::inst().iThreadCount * resume) >> 4u ) );
 	}
 
 	void work_main();

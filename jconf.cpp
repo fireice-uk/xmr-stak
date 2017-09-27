@@ -48,7 +48,7 @@ using namespace rapidjson;
 enum configEnum {
 	bTlsMode, bTlsSecureAlgo, sTlsFingerprint, sPoolAddr, sWalletAddr, sPoolPwd,
 	iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, iAutohashTime,
-	bDaemonMode, sOutputFile, iHttpdPort, bPreferIpv4 };
+	bDaemonMode, sOutputFile, iHttpdPort, bPreferIpv4, bNiceHashMode, bAesOverride, sUseSlowMem };
 
 struct configVal {
 	configEnum iName;
@@ -73,7 +73,10 @@ configVal oConfigValues[] = {
 	{ bDaemonMode, "daemon_mode", kTrueType },
 	{ sOutputFile, "output_file", kStringType },
 	{ iHttpdPort, "httpd_port", kNumberType },
-	{ bPreferIpv4, "prefer_ipv4", kTrueType }
+	{ bPreferIpv4, "prefer_ipv4", kTrueType },
+	{ bNiceHashMode, "nicehash_nonce", kTrueType },
+	{ bAesOverride, "aes_override", kNullType },
+	{ sUseSlowMem, "use_slow_memory", kStringType }
 };
 
 constexpr size_t iConfigCnt = (sizeof(oConfigValues)/sizeof(oConfigValues[0]));
@@ -101,8 +104,6 @@ struct jconf::opaque_private
 	{
 	}
 };
-
-jconf* jconf::oInst = nullptr;
 
 jconf::jconf()
 {
@@ -184,11 +185,65 @@ const char* jconf::GetOutputFile()
 	return prv->configValues[sOutputFile]->GetString();
 }
 
+bool jconf::NiceHashMode()
+{
+	return prv->configValues[bNiceHashMode]->GetBool();
+}
+
+
+void jconf::cpuid(uint32_t eax, int32_t ecx, int32_t val[4])
+{
+	memset(val, 0, sizeof(int32_t)*4);
+
+#ifdef _WIN32
+	__cpuidex(val, eax, ecx);
+#else
+	__cpuid_count(eax, ecx, val[0], val[1], val[2], val[3]);
+#endif
+}
+
+bool jconf::check_cpu_features()
+{
+	constexpr int AESNI_BIT = 1 << 25;
+	constexpr int SSE2_BIT = 1 << 26;
+	int32_t cpu_info[4];
+	bool bHaveSse2;
+
+	cpuid(1, 0, cpu_info);
+
+	bHaveAes = (cpu_info[2] & AESNI_BIT) != 0;
+	bHaveSse2 = (cpu_info[3] & SSE2_BIT) != 0;
+
+	return bHaveSse2;
+}
+
+jconf::slow_mem_cfg jconf::GetSlowMemSetting()
+{
+	const char* opt = prv->configValues[sUseSlowMem]->GetString();
+
+	if(strcasecmp(opt, "always") == 0)
+		return always_use;
+	else if(strcasecmp(opt, "no_mlck") == 0)
+		return no_mlck;
+	else if(strcasecmp(opt, "warn") == 0)
+		return print_warning;
+	else if(strcasecmp(opt, "never") == 0)
+		return never_use;
+	else
+		return unknown_value;
+}
+
 bool jconf::parse_config(const char* sFilename)
 {
 	FILE * pFile;
 	char * buffer;
 	size_t flen;
+
+	if(!check_cpu_features())
+	{
+		printer::inst()->print_msg(L0, "CPU support of SSE2 is required.");
+		return false;
+	}
 
 	pFile = fopen(sFilename, "rb");
 	if (pFile == NULL)
@@ -310,8 +365,37 @@ bool jconf::parse_config(const char* sFilename)
 	}
 #endif // CONF_NO_TLS
 
+	/* \todo check in the cpu backend if we have more than 32 worker
+	 *  keep in mined that we have change the why how the nonce is calculated (reverse thread index)
+	if(NiceHashMode() && GetThreadCount() >= 32)
+	{
+		printer::inst()->print_msg(L0, "You need to use less than 32 threads in NiceHash mode.");
+		return false;
+	}
+	*/
+
+	if(prv->configValues[bAesOverride]->IsBool())
+		bHaveAes = prv->configValues[bAesOverride]->GetBool();
+
+	if(!bHaveAes)
+		printer::inst()->print_msg(L0, "Your CPU doesn't support hardware AES. Don't expect high hashrates.");
 
 	printer::inst()->set_verbose_level(prv->configValues[iVerboseLevel]->GetUint64());
+
+	if(GetSlowMemSetting() == unknown_value)
+	{
+		printer::inst()->print_msg(L0,
+			"Invalid config file. use_slow_memory must be \"always\", \"no_mlck\", \"warn\" or \"never\"");
+		return false;
+	}
+
+#ifdef _WIN32
+	if(GetSlowMemSetting() == no_mlck)
+	{
+		printer::inst()->print_msg(L0, "On Windows large pages need mlock. Please use another option.");
+		return false;
+	}
+#endif // _WIN32
 
 	return true;
 }

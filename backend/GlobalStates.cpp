@@ -33,10 +33,6 @@
 namespace xmrstak
 {
 
-std::atomic<uint64_t> GlobalStates::iGlobalJobNo;
-std::atomic<uint64_t> GlobalStates::iConsumeCnt; //Threads get jobs as they are initialized
-miner_work GlobalStates::oGlobalWork;
-uint64_t GlobalStates::iThreadCount = 0;
 
 void GlobalStates::switch_work(miner_work& pWork)
 {

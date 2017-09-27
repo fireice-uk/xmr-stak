@@ -50,7 +50,7 @@ using namespace rapidjson;
 /*
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
-enum configEnum { aCpuThreadsConf, sUseSlowMem, bNiceHashMode, bAesOverride };
+enum configEnum { aCpuThreadsConf, sUseSlowMem };
 
 struct configVal {
 	configEnum iName;
@@ -61,10 +61,7 @@ struct configVal {
 // Same order as in configEnum, as per comment above
 // kNullType means any type
 configVal oConfigValues[] = {
-	{ aCpuThreadsConf, "cpu_threads_conf", kNullType },
-	{ sUseSlowMem, "use_slow_memory", kStringType },
-	{ bNiceHashMode, "nicehash_nonce", kTrueType },
-	{ bAesOverride, "aes_override", kNullType }
+	{ aCpuThreadsConf, "cpu_threads_conf", kNullType }
 };
 
 constexpr size_t iConfigCnt = (sizeof(oConfigValues)/sizeof(oConfigValues[0]));
@@ -141,21 +138,6 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	return true;
 }
 
-jconf::slow_mem_cfg jconf::GetSlowMemSetting()
-{
-	const char* opt = prv->configValues[sUseSlowMem]->GetString();
-
-	if(strcasecmp(opt, "always") == 0)
-		return always_use;
-	else if(strcasecmp(opt, "no_mlck") == 0)
-		return no_mlck;
-	else if(strcasecmp(opt, "warn") == 0)
-		return print_warning;
-	else if(strcasecmp(opt, "never") == 0)
-		return never_use;
-	else
-		return unknown_value;
-}
 
 size_t jconf::GetThreadCount()
 {
@@ -165,53 +147,11 @@ size_t jconf::GetThreadCount()
 		return 0;
 }
 
-bool jconf::NeedsAutoconf()
-{
-	return !prv->configValues[aCpuThreadsConf]->IsArray();
-}
-
-bool jconf::NiceHashMode()
-{
-	return prv->configValues[bNiceHashMode]->GetBool();
-}
-
-void jconf::cpuid(uint32_t eax, int32_t ecx, int32_t val[4])
-{
-	memset(val, 0, sizeof(int32_t)*4);
-
-#ifdef _WIN32
-	__cpuidex(val, eax, ecx);
-#else
-	__cpuid_count(eax, ecx, val[0], val[1], val[2], val[3]);
-#endif
-}
-
-bool jconf::check_cpu_features()
-{
-	constexpr int AESNI_BIT = 1 << 25;
-	constexpr int SSE2_BIT = 1 << 26;
-	int32_t cpu_info[4];
-	bool bHaveSse2;
-
-	cpuid(1, 0, cpu_info);
-
-	bHaveAes = (cpu_info[2] & AESNI_BIT) != 0;
-	bHaveSse2 = (cpu_info[3] & SSE2_BIT) != 0;
-
-	return bHaveSse2;
-}
-
 bool jconf::parse_config(const char* sFilename)
 {
 	FILE * pFile;
 	char * buffer;
 	size_t flen;
-
-	if(!check_cpu_features())
-	{
-		printer::inst()->print_msg(L0, "CPU support of SSE2 is required.");
-		return false;
-	}
 
 	pFile = fopen(sFilename, "rb");
 	if (pFile == NULL)
@@ -309,36 +249,6 @@ bool jconf::parse_config(const char* sFilename)
 			return false;
 		}
 	}
-
-	if(NiceHashMode() && GetThreadCount() >= 32)
-	{
-		printer::inst()->print_msg(L0, "You need to use less than 32 threads in NiceHash mode.");
-		return false;
-	}
-
-	if(GetSlowMemSetting() == unknown_value)
-	{
-		printer::inst()->print_msg(L0,
-			"Invalid config file. use_slow_memory must be \"always\", \"no_mlck\", \"warn\" or \"never\"");
-		return false;
-	}
-
-#ifdef _WIN32
-	if(GetSlowMemSetting() == no_mlck)
-	{
-		printer::inst()->print_msg(L0, "On Windows large pages need mlock. Please use another option.");
-		return false;
-	}
-#endif // _WIN32
-
-	//if(NeedsAutoconf())
-	//	return true;
-
-	if(prv->configValues[bAesOverride]->IsBool())
-		bHaveAes = prv->configValues[bAesOverride]->GetBool();
-
-	if(!bHaveAes)
-		printer::inst()->print_msg(L0, "Your CPU doesn't support hardware AES. Don't expect high hashrates.");
 
 	return true;
 }

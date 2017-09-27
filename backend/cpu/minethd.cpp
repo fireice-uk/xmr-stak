@@ -31,6 +31,7 @@
 #include "../IBackend.hpp"
 #include "../GlobalStates.hpp"
 #include "../../ConfigEditor.hpp"
+#include "../../jconf.h"
 
 #include "../../executor.h"
 #include "minethd.h"
@@ -129,21 +130,21 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 	cryptonight_ctx* ctx;
 	alloc_msg msg = { 0 };
 
-	switch (jconf::inst()->GetSlowMemSetting())
+	switch (::jconf::inst()->GetSlowMemSetting())
 	{
-	case jconf::never_use:
+	case ::jconf::never_use:
 		ctx = cryptonight_alloc_ctx(1, 1, &msg);
 		if (ctx == NULL)
 			printer::inst()->print_msg(L0, "MEMORY ALLOC FAILED: %s", msg.warning);
 		return ctx;
 
-	case jconf::no_mlck:
+	case ::jconf::no_mlck:
 		ctx = cryptonight_alloc_ctx(1, 0, &msg);
 		if (ctx == NULL)
 			printer::inst()->print_msg(L0, "MEMORY ALLOC FAILED: %s", msg.warning);
 		return ctx;
 
-	case jconf::print_warning:
+	case ::jconf::print_warning:
 		ctx = cryptonight_alloc_ctx(1, 1, &msg);
 		if (msg.warning != NULL)
 			printer::inst()->print_msg(L0, "MEMORY ALLOC FAILED: %s", msg.warning);
@@ -151,10 +152,10 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 			ctx = cryptonight_alloc_ctx(0, 0, NULL);
 		return ctx;
 
-	case jconf::always_use:
+	case ::jconf::always_use:
 		return cryptonight_alloc_ctx(0, 0, NULL);
 
-	case jconf::unknown_value:
+	case ::jconf::unknown_value:
 		return NULL; //Shut up compiler
 	}
 
@@ -167,27 +168,27 @@ bool minethd::self_test()
 	size_t res;
 	bool fatal = false;
 
-	switch (jconf::inst()->GetSlowMemSetting())
+	switch (::jconf::inst()->GetSlowMemSetting())
 	{
-	case jconf::never_use:
+	case ::jconf::never_use:
 		res = cryptonight_init(1, 1, &msg);
 		fatal = true;
 		break;
 
-	case jconf::no_mlck:
+	case ::jconf::no_mlck:
 		res = cryptonight_init(1, 0, &msg);
 		fatal = true;
 		break;
 
-	case jconf::print_warning:
+	case ::jconf::print_warning:
 		res = cryptonight_init(1, 1, &msg);
 		break;
 
-	case jconf::always_use:
+	case ::jconf::always_use:
 		res = cryptonight_init(0, 0, &msg);
 		break;
 
-	case jconf::unknown_value:
+	case ::jconf::unknown_value:
 	default:
 		return false; //Shut up compiler
 	}
@@ -214,20 +215,20 @@ bool minethd::self_test()
 	cn_hash_fun hashf;
 	cn_hash_fun_dbl hashdf;
 
-	hashf = func_selector(jconf::inst()->HaveHardwareAes(), false);
+	hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false);
 	hashf("This is a test", 14, out, ctx0);
 	bResult = memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
-	hashf = func_selector(jconf::inst()->HaveHardwareAes(), true);
+	hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true);
 	hashf("This is a test", 14, out, ctx0);
 	bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
-	hashdf = func_dbl_selector(jconf::inst()->HaveHardwareAes(), false);
+	hashdf = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), false);
 	hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
 	bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
 		                   "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
 
-	hashdf = func_dbl_selector(jconf::inst()->HaveHardwareAes(), true);
+	hashdf = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), true);
 	hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
 	bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
 		                   "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
@@ -284,9 +285,9 @@ std::vector<IBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 
 void minethd::consume_work()
 {
-	memcpy(&oWork, &GlobalStates::oGlobalWork, sizeof(miner_work));
+	memcpy(&oWork, &GlobalStates::inst().inst().oGlobalWork, sizeof(miner_work));
 	iJobNo++;
-	GlobalStates::iConsumeCnt++;
+	GlobalStates::inst().inst().iConsumeCnt++;
 }
 
 minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch)
@@ -336,12 +337,12 @@ void minethd::work_main()
 	uint32_t* piNonce;
 	job_result result;
 
-	hash_fun = func_selector(jconf::inst()->HaveHardwareAes(), bNoPrefetch);
+	hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch);
 	ctx = minethd_alloc_ctx();
 
 	piHashVal = (uint64_t*)(result.bResult + 24);
 	piNonce = (uint32_t*)(oWork.bWorkBlob + 39);
-	GlobalStates::iConsumeCnt++;
+	GlobalStates::inst().inst().iConsumeCnt++;
 
 	while (bQuit == 0)
 	{
@@ -351,7 +352,7 @@ void minethd::work_main()
 			    either because of network latency, or a socket problem. Since we are
 			    raison d'etre of this software it us sensible to just wait until we have something*/
 
-			while (GlobalStates::iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			while (GlobalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
@@ -366,7 +367,7 @@ void minethd::work_main()
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		memcpy(result.sJobID, oWork.sJobID, sizeof(job_result::sJobID));
 
-		while(GlobalStates::iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while(GlobalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			if ((iCount & 0xF) == 0) //Store stats every 16 hashes
 			{
@@ -430,7 +431,7 @@ void minethd::double_work_main()
 	uint32_t iNonce;
 	job_result res;
 
-	hash_fun = func_dbl_selector(jconf::inst()->HaveHardwareAes(), bNoPrefetch);
+	hash_fun = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch);
 	ctx0 = minethd_alloc_ctx();
 	ctx1 = minethd_alloc_ctx();
 
@@ -439,7 +440,7 @@ void minethd::double_work_main()
 	piNonce0 = (uint32_t*)(bDoubleWorkBlob + 39);
 	piNonce1 = nullptr;
 
-	GlobalStates::iConsumeCnt++;
+	GlobalStates::inst().inst().iConsumeCnt++;
 
 	while (bQuit == 0)
 	{
@@ -449,7 +450,7 @@ void minethd::double_work_main()
 			either because of network latency, or a socket problem. Since we are
 			raison d'etre of this software it us sensible to just wait until we have something*/
 
-			while (GlobalStates::iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			while (GlobalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
@@ -466,7 +467,7 @@ void minethd::double_work_main()
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
-		while (GlobalStates::iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while (GlobalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			if ((iCount & 0x7) == 0) //Store stats every 16 hashes
 			{

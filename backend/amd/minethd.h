@@ -3,6 +3,7 @@
 #include <atomic>
 #include "./jconf.h"
 #include "../IBackend.hpp"
+#include "../../Environment.hpp"
 
 #include "amd_gpu/gpu.h"
 
@@ -30,7 +31,7 @@ private:
 	// Bottom 24 bits allow for an hour of work at 4000 H/s
 	inline uint32_t calc_start_nonce(uint32_t resume)
 	{
-		return reverseBits<uint32_t>(static_cast<uint32_t>(iThreadNo + GlobalStates::iThreadCount * resume));
+		return reverseBits<uint32_t>(static_cast<uint32_t>(iThreadNo + GlobalStates::inst().iThreadCount * resume));
 	}
 	
 	void work_main();

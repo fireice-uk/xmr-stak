@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <climits>
 #include <iostream>
+#include <cassert>
 
 namespace xmrstak
 {

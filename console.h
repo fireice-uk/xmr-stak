@@ -1,5 +1,6 @@
 #pragma once
 #include <mutex>
+#include "Environment.hpp"
 
 enum out_colours { K_RED, K_GREEN, K_BLUE, K_YELLOW, K_CYAN, K_MAGENTA, K_WHITE, K_NONE };
 
@@ -24,8 +25,10 @@ class printer
 public:
 	static inline printer* inst()
 	{
-		if (oInst == nullptr) oInst = new printer;
-		return oInst;
+		auto& env = xmrstak::Environment::inst();
+		if(env.pPrinter == nullptr)
+			env.pPrinter = new printer;
+		return env.pPrinter;
 	};
 
 	inline void set_verbose_level(size_t level) { verbose_level = (verbosity)level; }
@@ -35,7 +38,6 @@ public:
 
 private:
 	printer();
-	static printer* oInst;
 
 	std::mutex print_mutex;
 	verbosity verbose_level;
