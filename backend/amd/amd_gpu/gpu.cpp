@@ -19,6 +19,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <regex>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -212,7 +213,7 @@ char* LoadTextFile(const char* filename)
 	return out;
 }
 
-size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, char* source_code)
+size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_code)
 {
 	size_t MaximumWorkSize;
 	cl_int ret;
@@ -330,9 +331,9 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, char* source_code)
 			printer::inst()->print_msg(L1,"Error %s when calling clGetProgramBuildInfo for build log.", err_to_str(ret));
 			return ERR_OCL_API;
 		}
-
+		
 		printer::inst()->print_str("Build log:\n");
-		printer::inst()->print_str(BuildLog);
+		std::cerr<<BuildLog<<std::endl;
 
 		free(BuildLog);
 		return ERR_OCL_API;
@@ -544,7 +545,6 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	if( platformName.find("Advanced Micro Devices") == std::string::npos)
 	{
 		printer::inst()->print_msg(L1,"WARNING: using non AMD device: %s", platformName.c_str());
-		return ERR_STUPID_PARAMS;
 	}
 	
 	free(platforms);
@@ -607,22 +607,41 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 		return ERR_OCL_API;
 	}
 
-	char* source_code = LoadTextFile(sSourcePath);
-	if(source_code == NULL)
-	{
-		printer::inst()->print_msg(L1,"Couldn't locate GPU source code file at %s.", sSourcePath);
-		return ERR_STUPID_PARAMS;
-	}
+	//char* source_code = LoadTextFile(sSourcePath);
+
+	const char *cryptonightCL =
+			#include "./opencl/cryptonight.cl"
+	;
+	const char *blake256CL =
+			#include "./opencl/blake256.cl"
+	;
+	const char *groestl256CL =
+			#include "./opencl/groestl256.cl"
+	;
+	const char *jhCL =
+			#include "./opencl/jh.cl"
+	;
+	const char *wolfAesCL =
+			#include "./opencl/wolf-aes.cl"
+	;
+	const char *wolfSkeinCL =
+			#include "./opencl/wolf-skein.cl"
+	;
+
+	std::string source_code(cryptonightCL);
+	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_WOLF_AES"), wolfAesCL);
+	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_WOLF_SKEIN"), wolfSkeinCL);
+	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_JH"), jhCL);
+	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_BLAKE256"), blake256CL);
+	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_GROESTL256"), groestl256CL);
 
 	for(int i = 0; i < num_gpus; ++i)
 	{
-		if((ret = InitOpenCLGpu(opencl_ctx, &ctx[i], source_code)) != ERR_SUCCESS)
+		if((ret = InitOpenCLGpu(opencl_ctx, &ctx[i], source_code.c_str())) != ERR_SUCCESS)
 		{
-			free(source_code);
 			return ret;
 		}
 	}
-	free(source_code);
 
 	return ERR_SUCCESS;
 }

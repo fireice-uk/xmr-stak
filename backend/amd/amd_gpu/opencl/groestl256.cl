@@ -1,3 +1,4 @@
+R"===(
 /* $Id: groestl.c 260 2011-07-21 01:02:38Z tp $ */
 /*
  * Groestl256
@@ -287,3 +288,5 @@ static const __constant ulong T4_G[] =
 			ROUND_SMALL_Q(a, r); \
 		} while (0)
 
+)==="
+		

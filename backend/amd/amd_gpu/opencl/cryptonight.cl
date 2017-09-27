@@ -1,3 +1,4 @@
+R"===(
 /*
   * This program is free software: you can redistribute it and/or modify
   * it under the terms of the GNU General Public License as published by
@@ -72,11 +73,16 @@ inline int amd_bfe(const uint src0, const uint offset, const uint width)
 }
 #endif
 
-#include "opencl/wolf-aes.cl"
-#include "opencl/wolf-skein.cl"
-#include "opencl/jh.cl"
-#include "opencl/blake256.cl"
-#include "opencl/groestl256.cl"
+//#include "opencl/wolf-aes.cl"
+XMRSTAK_INCLUDE_WOLF_AES
+//#include "opencl/wolf-skein.cl"
+XMRSTAK_INCLUDE_WOLF_SKEIN
+//#include "opencl/jh.cl"
+XMRSTAK_INCLUDE_JH
+//#include "opencl/blake256.cl"
+XMRSTAK_INCLUDE_BLAKE256
+//#include "opencl/groestl256.cl"
+XMRSTAK_INCLUDE_GROESTL256
 
 static const __constant ulong keccakf_rndc[24] = 
 {
@@ -968,3 +974,5 @@ __kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global
 	//for(int i = 0; i < 4; ++i) output[i] = State[i + 4];
 	if(as_uint2(State[7]).s1 <= Target) output[atomic_inc(output + 0xFF)] = BranchBuf[idx] + get_global_offset(0);
 }
+
+)==="
