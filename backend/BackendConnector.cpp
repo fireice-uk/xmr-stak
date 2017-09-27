@@ -44,6 +44,7 @@
 
 #include "Plugin.hpp"
 #include "../Environment.hpp"
+#include "../console.h"
 
 namespace xmrstak
 {

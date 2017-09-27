@@ -2,6 +2,7 @@
 
 class printer;
 class jconf;
+class executor;
 
 namespace xmrstak
 {
@@ -22,6 +23,7 @@ struct Environment
 		this->pPrinter = env.pPrinter;
 		this->pGlobalStates = env.pGlobalStates;
 		this->pJconfConfig = env.pJconfConfig;
+		this->pExecutor = env.pExecutor;
 		return *this;
 	}
 
@@ -36,6 +38,8 @@ struct Environment
 	GlobalStates* pGlobalStates;
 
 	jconf* pJconfConfig;
+
+	executor* pExecutor;
 
 };
 

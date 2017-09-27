@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 #endif
 
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
-	printer::inst()->print_str( XMR_STAK_NAME" " XMR_STAK_VERSION " mining software, CPU Version.\n");
+	printer::inst()->print_str( XMR_STAK_NAME" " XMR_STAK_VERSION " mining software.\n");
 	printer::inst()->print_str("Based on CPU mining code by wolf9466 (heavily optimized by fireice_uk).\n");
 #ifndef CONF_NO_CUDA
 	printer::inst()->print_str("NVIDIA mining code was written by KlausT and psychocrypt.\n");

@@ -7,6 +7,7 @@
 #include <future>
 #include "telemetry.h"
 #include "backend/IBackend.hpp"
+#include "Environment.hpp"
 
 class jpsock;
 
@@ -25,8 +26,10 @@ class executor
 public:
 	static executor* inst()
 	{
-		if (oInst == nullptr) oInst = new executor;
-		return oInst;
+		auto& env = xmrstak::Environment::inst();
+		if(env.pExecutor == nullptr)
+			env.pExecutor = new executor;
+		return env.pExecutor;
 	};
 
 	void ex_start(bool daemon) { daemon ? ex_main() : std::thread(&executor::ex_main, this).detach(); }
@@ -73,7 +76,6 @@ private:
 	bool is_dev_time;
 
 	executor();
-	static executor* oInst;
 
 	void ex_main();
 

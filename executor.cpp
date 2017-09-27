@@ -44,8 +44,6 @@
 #define strncasecmp _strnicmp
 #endif // _WIN32
 
-executor* executor::oInst = NULL;
-
 executor::executor()
 {
 }
