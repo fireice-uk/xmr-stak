@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <string>
 
 typedef struct {
 	int device_id;
@@ -23,6 +24,9 @@ typedef struct {
 	uint32_t *d_ctx_key1;
 	uint32_t *d_ctx_key2;
 	uint32_t *d_ctx_text;
+	std::string name;
+	size_t free_device_memory;
+	size_t total_device_memory;
 } nvid_ctx;
 
 extern "C" {

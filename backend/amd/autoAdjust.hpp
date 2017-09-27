@@ -83,13 +83,15 @@ private:
         int i = 0;
         for(auto& ctx : devVec)
         {
-			// use 90% of available memory
-			size_t availableMem = (ctx.freeMem * 100u) / 110;
-			size_t units = ctx.computeUnits;
+			// keep 64MiB memory free (value is randomly chosen)
+			size_t availableMem = ctx.freeMem - (64u * 1024 * 1024);
+			// 224byte extra memory is used per thread for meta data
 			size_t perThread = (size_t(1u)<<21) + 224u;
 			size_t max_intensity = availableMem / perThread;
+			// 1000 is a magic selected limit \todo select max intensity depending of the gpu type
 			size_t intensity = std::min( size_t(1000u) , max_intensity );
-			conf += std::string(" // gpu: ") + ctx.name + "\n";
+			conf += std::string("  // gpu: ") + ctx.name + "\n";
+			// set 8 threads per block (this is a good value for the most gpus)
             conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
                 "    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
                 "    \"affine_to_cpu\" : false, \n"
@@ -101,7 +103,7 @@ private:
 		configTpl.replace("NUMGPUS",std::to_string(devVec.size()));
 		configTpl.replace("GPUCONFIG",conf);
 		configTpl.write("amd.txt");
-		printer::inst()->print_msg(L0, "CPU configuration stored in file '%s'", "amd.txt");
+		printer::inst()->print_msg(L0, "AMD: GPU configuration stored in file '%s'", "amd.txt");
     }
 
     std::vector<GpuContext> devVec;

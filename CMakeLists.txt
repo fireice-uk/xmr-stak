@@ -108,6 +108,11 @@ if(CUDA_ENABLE)
             endforeach()
 
         elseif("${CUDA_COMPILER}" STREQUAL "nvcc")
+            # add c++11 for cuda
+            if(NOT "${CMAKE_CXX_FLAGS}" MATCHES "-std=c\\+\\+11")
+                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+            endif()
+
             # avoid that nvcc in CUDA < 8 tries to use libc `memcpy` within the kernel
             if(CUDA_VERSION VERSION_LESS 8.0)
                 add_definitions(-D_FORCE_INLINES)
