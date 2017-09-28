@@ -1,3 +1,4 @@
+R"===(
 /*
  * pool_address	  - Pool address should be in the form "pool.supportxmr.com:3333". Only stratum pools are supported.
  * wallet_address - Your wallet, or pool login.
@@ -5,9 +6,9 @@
  *
  * We feature pools up to 1MH/s. For a more complete list see M5M400's pool list at www.moneropools.com
  */
-"pool_address" : "pool.usxmrpool.com:3333",
-"wallet_address" : "",
-"pool_password" : "",
+"pool_address" : "POOLURL",
+"wallet_address" : "POOLUSER",
+"pool_password" : "POOLPASSWD",
 
 /*
  * Network timeouts.
@@ -155,3 +156,6 @@
  *               This setting will only be needed in 2020's. No need to worry about it now.
  */
 "prefer_ipv4" : true,
+
+)==="
+		

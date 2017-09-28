@@ -29,6 +29,7 @@
 #include "../console.h"
 #include "../donate-level.h"
 #include "../Params.hpp"
+#include "../ConfigEditor.hpp"
 
 #include "../version.h"
 
@@ -39,6 +40,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
+#include <iostream>
 
 #include <time.h>
 
@@ -91,17 +93,14 @@ int main(int argc, char *argv[])
 		else if(opName.compare("--noCPU") == 0)
 		{
 			Params::inst().useCPU = false;
-			return 0;
 		}
 		else if(opName.compare("--noAMD") == 0)
 		{
 			Params::inst().useAMD = false;
-			return 0;
 		}
 		else if(opName.compare("--noAMD") == 0)
 		{
 			Params::inst().useNVIDIA = false;
-			return 0;
 		}
 		else if(opName.compare("--cpu") == 0)
 		{
@@ -172,7 +171,42 @@ int main(int argc, char *argv[])
 		else
 			Params::inst().configFile = argv[i];
 	}
-	
+
+	// check if we need a guided start
+	if(!ConfigEditor::file_exist(Params::inst().configFile))
+	{
+		// load the template of the backend config into a char variable
+		const char *tpl =
+			#include "../config.tpl"
+		;
+		ConfigEditor configTpl{};
+		configTpl.set(std::string(tpl));
+		auto& pool = Params::inst().poolURL;
+		if(pool.empty())
+		{
+			std::cout<<"Please enter:\n- pool address: e.g. pool.usxmrpool.com:3333"<<std::endl;
+			std::cin >> pool;
+		}
+		auto& userName = Params::inst().poolUsername;
+		if(userName.empty())
+		{
+			std::cout<<"- user name (wallet address or pool login):"<<std::endl;
+			std::cin >> userName;
+		}
+		auto& passwd = Params::inst().poolPasswd;
+		if(passwd.empty())
+		{
+			// clear everything from stdin to allow an empty password
+			std::cin.clear(); std::cin.ignore(INT_MAX,'\n');
+			std::cout<<"- password (mostly empty or x):"<<std::endl;	
+			getline(std::cin, passwd);
+		}
+		configTpl.replace("POOLURL", pool);
+		configTpl.replace("POOLUSER", userName);
+		configTpl.replace("POOLPASSWD", passwd);
+		configTpl.write(Params::inst().configFile);
+		std::cout<<"Configuration stored in file '"<<Params::inst().configFile<<"'"<<std::endl;
+	}
 
 	if(!jconf::inst()->parse_config(Params::inst().configFile.c_str()))
 	{
@@ -180,7 +214,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	if (!xmrstak::BackendConnector::self_test())
+	if (!BackendConnector::self_test())
 	{
 		win_exit();
 		return 0;
