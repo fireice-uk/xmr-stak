@@ -1,6 +1,7 @@
 #pragma once
 #include <stdlib.h>
 #include <string>
+#include "../../Params.hpp"
 
 namespace xmrstak
 {
@@ -16,7 +17,7 @@ public:
 		return oInst;
 	};
 
-	bool parse_config(const char* sFilename = "cpu.txt");
+	bool parse_config(const char* sFilename = Params::inst().configFileCPU.c_str());
 
 	struct thd_cfg {
 		bool bDoubleMode;

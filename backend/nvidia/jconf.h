@@ -1,6 +1,7 @@
 #pragma once
 #include <stdlib.h>
 #include <string>
+#include "../../Params.hpp"
 
 namespace xmrstak
 {
@@ -16,7 +17,7 @@ public:
 		return oInst;
 	};
 
-	bool parse_config(const char* sFilename = "nvidia.txt");
+	bool parse_config(const char* sFilename = Params::inst().configFileNVIDIA.c_str());
 
 	struct thd_cfg {
 		uint32_t id;

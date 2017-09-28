@@ -8,6 +8,7 @@ namespace xmrstak
 {
 
 class GlobalStates;
+class Params;
 
 struct Environment
 {
@@ -24,6 +25,7 @@ struct Environment
 		this->pGlobalStates = env.pGlobalStates;
 		this->pJconfConfig = env.pJconfConfig;
 		this->pExecutor = env.pExecutor;
+		this->pParams = env.pParams;
 		return *this;
 	}
 
@@ -34,12 +36,10 @@ struct Environment
 
 
 	printer* pPrinter;
-
 	GlobalStates* pGlobalStates;
-
 	jconf* pJconfConfig;
-
 	executor* pExecutor;
+	Params* pParams;
 
 };
 

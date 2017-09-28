@@ -31,6 +31,7 @@
 #include "../IBackend.hpp"
 #include "../GlobalStates.hpp"
 #include "../../ConfigEditor.hpp"
+#include "../../Params.hpp"
 #include "../../jconf.h"
 
 #include "../../executor.h"
@@ -247,14 +248,14 @@ std::vector<IBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 {
 	std::vector<IBackend*> pvThreads;
 
-	if(!ConfigEditor::file_exist("cpu.txt"))
+	if(!ConfigEditor::file_exist(Params::inst().configFileCPU))
 	{
 		autoAdjust adjust;
 		if(!adjust.printConfig())
 			return pvThreads;
 	}
 
-	if(!xmrstak::cpu::jconf::inst()->parse_config("cpu.txt"))
+	if(!jconf::inst()->parse_config())
 	{
 		win_exit();
 	}

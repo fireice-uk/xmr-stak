@@ -28,6 +28,7 @@
 #include "../jconf.h"
 #include "../console.h"
 #include "../donate-level.h"
+#include "../Params.hpp"
 
 #include "../version.h"
 
@@ -37,7 +38,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
+#include <string>
 
 #include <time.h>
 
@@ -66,32 +67,114 @@ int main(int argc, char *argv[])
 
 	srand(time(0));
 
-	const char* sFilename = "config.txt";
-	bool benchmark_mode = false;
+	using namespace xmrstak;
 
-	if(argc >= 2)
+	std::string pathWithName(argv[0]);
+	auto pos = pathWithName.rfind("/");
+	if(pos == std::string::npos)
 	{
-		if(strcmp(argv[1], "-h") == 0)
+		// try windows "\"
+		pos = pathWithName.rfind("\\");
+	}
+	
+	Params::inst().executablePrefix = std::string(pathWithName, 0, pos);
+
+	for(int i = 1; i < argc; ++i)
+	{
+		std::string opName(argv[i]);
+		if(opName.compare("-h") == 0 || opName.compare("--help") == 0)
 		{
-			printer::inst()->print_msg(L0, "Usage %s [CONFIG FILE]", argv[0]);
+			printer::inst()->print_msg(L0, "Usage: %s [--help|-h] [--benchmark] [-c CONFIGFILE] [CONFIG FILE]", argv[0]);
 			win_exit();
 			return 0;
 		}
-
-		if(argc >= 3 && strcasecmp(argv[1], "-c") == 0)
+		else if(opName.compare("--noCPU") == 0)
 		{
-			sFilename = argv[2];
+			Params::inst().useCPU = false;
+			return 0;
 		}
-		else if(argc >= 3 && strcasecmp(argv[1], "benchmark_mode") == 0)
+		else if(opName.compare("--noAMD") == 0)
 		{
-			sFilename = argv[2];
-			benchmark_mode = true;
+			Params::inst().useAMD = false;
+			return 0;
+		}
+		else if(opName.compare("--noAMD") == 0)
+		{
+			Params::inst().useNVIDIA = false;
+			return 0;
+		}
+		else if(opName.compare("--cpu") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for opName '--cpu' given");
+				win_exit();
+				return 1;
+			}
+			Params::inst().configFileCPU = argv[i];
+		}
+		else if(opName.compare("--amd") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for opName '--amd' given");
+				win_exit();
+				return 1;
+			}
+			Params::inst().configFileAMD = argv[i];
+		}
+		else if(opName.compare("--nvidia") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for opName '--nvidia' given");
+				win_exit();
+				return 1;
+			}
+			Params::inst().configFileNVIDIA = argv[i];
+		}
+		else if(opName.compare("-o") == 0 || opName.compare("--url") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for opName '-o/--url' given");
+				win_exit();
+				return 1;
+			}
+			Params::inst().poolURL = argv[i];
+		}
+		else if(opName.compare("-u") == 0 || opName.compare("--user") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for opName '-u/--user' given");
+				win_exit();
+				return 1;
+			}
+			Params::inst().poolUsername = argv[i];
+		}
+		else if(opName.compare("-p") == 0 || opName.compare("--pass") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for opName '-p/--pass' given");
+				win_exit();
+				return 1;
+			}
+			Params::inst().poolPasswd = argv[i];
 		}
 		else
-			sFilename = argv[1];
+			Params::inst().configFile = argv[i];
 	}
+	
 
-	if(!jconf::inst()->parse_config(sFilename))
+	if(!jconf::inst()->parse_config(Params::inst().configFile.c_str()))
 	{
 		win_exit();
 		return 0;
@@ -99,13 +182,6 @@ int main(int argc, char *argv[])
 
 	if (!xmrstak::BackendConnector::self_test())
 	{
-		win_exit();
-		return 0;
-	}
-
-	if(benchmark_mode)
-	{
-		do_benchmark();
 		win_exit();
 		return 0;
 	}

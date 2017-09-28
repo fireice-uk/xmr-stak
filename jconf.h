@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string>
 #include "Environment.hpp"
+#include "Params.hpp"
 
 class jconf
 {
@@ -14,7 +15,7 @@ public:
 		return env.pJconfConfig;
 	};
 
-	bool parse_config(const char* sFilename);
+	bool parse_config(const char* sFilename = xmrstak::Params::inst().configFile.c_str());
 
 	struct thd_cfg {
 		bool bDoubleMode;

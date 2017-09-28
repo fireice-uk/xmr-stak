@@ -3,6 +3,7 @@
 #include "../../console.h"
 #include <hwloc.h>
 #include <stdio.h>
+#include "../../Params.hpp"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -74,8 +75,8 @@ public:
 		}
 
 		configTpl.replace("CPUCONFIG",conf);
-		configTpl.write("cpu.txt");
-		printer::inst()->print_msg(L0, "CPU configuration stored in file '%s'", "cpu.txt");
+		configTpl.write(Params::inst().configFileCPU);
+		printer::inst()->print_msg(L0, "CPU configuration stored in file '%s'", Params::inst().configFileCPU.c_str());
 		/* Destroy topology object. */
 		hwloc_topology_destroy(topology);
 

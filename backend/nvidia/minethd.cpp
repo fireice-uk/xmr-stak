@@ -30,6 +30,7 @@
 #include "../../console.h"
 #include "../../crypto/cryptonight_aesni.h"
 #include "../cpu/minethd.h"
+#include "../../Params.hpp"
 
 #include "../../executor.h"
 #include "minethd.h"
@@ -121,14 +122,14 @@ std::vector<IBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 {
 	std::vector<IBackend*>* pvThreads = new std::vector<IBackend*>();
 
-	if(!ConfigEditor::file_exist("nvidia.txt"))
+	if(!ConfigEditor::file_exist(Params::inst().configFileNVIDIA))
 	{
 		autoAdjust adjust;
 		if(!adjust.printConfig())
 			return pvThreads;
 	}
 
-	if(!jconf::inst()->parse_config("nvidia.txt"))
+	if(!jconf::inst()->parse_config())
 	{
 		win_exit();
 	}

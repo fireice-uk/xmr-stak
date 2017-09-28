@@ -40,6 +40,7 @@
 #include "../../jconf.h"
 #include "../../crypto/cryptonight.h"
 #include "../../Environment.hpp"
+#include "../../Params.hpp"
 #include "amd_gpu/gpu.h"
 
 
@@ -97,19 +98,13 @@ std::vector<IBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 {
 	std::vector<IBackend*>* pvThreads = new std::vector<IBackend*>();
 
-	if(!ConfigEditor::file_exist("amd.txt"))
+	if(!ConfigEditor::file_exist(Params::inst().configFileAMD))
 	{
 		autoAdjust adjust;
 		if(!adjust.printConfig())
 			return pvThreads;
 	}
-/*
-	if(!ConfigEditor::file_exist("amd.txt"))
-	{
-		printer::inst()->print_msg(L0, "WARNING: missing config file 'amd.txt'");
-		return pvThreads;
-	}
-*/
+
 	if(!jconf::inst()->parse_config())
 	{
 		win_exit();

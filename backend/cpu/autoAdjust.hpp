@@ -3,6 +3,7 @@
 #include "../../console.h"
 #include "../../jconf.h"
 #include "../../ConfigEditor.hpp"
+#include "../../Params.hpp"
 #include <string>
 
 #ifdef _WIN32
@@ -97,8 +98,8 @@ public:
 		}
 
 		configTpl.replace("CPUCONFIG",conf);
-		configTpl.write("cpu.txt");
-		printer::inst()->print_msg(L0, "CPU configuration stored in file '%s'", "cpu.txt");
+		configTpl.write(Params::inst().configFileCPU);
+		printer::inst()->print_msg(L0, "CPU configuration stored in file '%s'", Params::inst().configFileCPU.c_str());
 
 		return true;
 	}
