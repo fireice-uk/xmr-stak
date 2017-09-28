@@ -364,6 +364,9 @@ void keccakf1600_2(ulong *st)
     }
 }
 
+)==="
+R"===(
+
 void CNKeccak(ulong *output, ulong *input)
 {
 	ulong st[25];
@@ -608,130 +611,8 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 	mem_fence(CLK_GLOBAL_MEM_FENCE);
 }
 
-/*
-__kernel void cryptonight(__global ulong *input, __global uint4 *Scratchpad, __global ulong *states, __global uint *Branch0, __global uint *Branch1, __global uint *Branch2, __global uint *Branch3, ulong ThreadCount)
-{
-	uchar State[200];
-	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
-	uchar ExpandedKey1[256], ExpandedKey2[256];
-	ulong inbuf[10], a[2], b[2];
-	uint4 text[8];
-	
-	for(int i = 0; i < 256; ++i)
-	{
-		const uint tmp = AES0_C[i];
-		AES0[i] = tmp;
-		AES1[i] = rotate(tmp, 8U);
-		AES2[i] = rotate(tmp, 16U);
-		AES3[i] = rotate(tmp, 24U);
-	}
-	
-	((ulong8 *)inbuf)[0] = vload8(0, input);
-	inbuf[8] = input[8];
-	inbuf[9] = (ulong)((__global uint *)input)[18];
-	
-	((uint *)(((uchar *)inbuf) + 39))[0] = get_global_id(0);
-	CNKeccak((ulong *)State, inbuf);
-	
-	a[0] = ((ulong *)State)[0] ^ ((ulong *)State)[4];
-	b[0] = ((ulong *)State)[2] ^ ((ulong *)State)[6];
-	a[1] = ((ulong *)State)[1] ^ ((ulong *)State)[5];
-	b[1] = ((ulong *)State)[3] ^ ((ulong *)State)[7];
-	
-	for(uint i = 0; i < 8; ++i) text[i] = vload4(i + 4, (uint *)(State));
-	
-	for(int i = 0; i < 4; ++i) ((ulong *)ExpandedKey1)[i] = ((ulong *)State)[i];
-	for(int i = 0; i < 4; ++i) ((ulong *)ExpandedKey2)[i] = ((ulong *)State)[i + 4];
-		
-	AESExpandKey256(ExpandedKey1);
-	AESExpandKey256(ExpandedKey2);
-	
-	mem_fence(CLK_LOCAL_MEM_FENCE);
-	
-	Scratchpad += ((1 << 17) * (get_global_id(0) - get_global_offset(0)));
-	
-	//#pragma unroll 1
-	for(int i = 0; i < (1 << 17); i += 8)
-	{
-		#pragma unroll
-		for(int j = 0; j < 10; ++j)
-		{
-			#pragma unroll
-			for(int x = 0; x < 8; ++x)
-				text[x] = AES_Round(AES0, AES1, AES2, AES3, text[x], ((uint4 *)ExpandedKey1)[j]);
-		}
-		
-		for(int j = 0; j < 8; ++j) *(Scratchpad + i + j) = text[j];
-	}
-	
-	
-	uint4 b_x = ((uint4 *)b)[0];
-	
-	//#pragma unroll 1
-	for(int i = 0; i < 0x80000; ++i)
-	{
-		ulong c[2];
-		
-		((uint4 *)c)[0] = Scratchpad[(a[0] & 0x1FFFF0) >> 4];
-		((uint4 *)c)[0] = AES_Round(AES0, AES1, AES2, AES3, ((uint4 *)c)[0], ((uint4 *)a)[0]);
-		b_x ^= ((uint4 *)c)[0];
-		
-		Scratchpad[(a[0] & 0x1FFFF0) >> 4] = b_x;
-		
-		uint4 tmp;
-		tmp = Scratchpad[(c[0] & 0x1FFFF0) >> 4];
-		
-		a[1] += c[0] * as_ulong2(tmp).s0;
-		a[0] += mul_hi(c[0], as_ulong2(tmp).s0);
-		
-		Scratchpad[(c[0] & 0x1FFFF0) >> 4] = ((uint4 *)a)[0];
-		
-		((uint4 *)a)[0] ^= tmp;
-		
-		b_x = ((uint4 *)c)[0];
-	}
-	
-	for(uint i = 0; i < 8; ++i) text[i] = vload4(i + 4, (uint *)(State));
-	
-	for(int i = 0; i < (1 << 17); i += 8)
-	{
-		#pragma unroll
-		for(int j = 0; j < 8; ++j) text[j] ^= Scratchpad[i + j];
-		
-		#pragma unroll 1
-		for(int j = 0; j < 10; ++j)
-		{
-			#pragma unroll
-			for(int x = 0; x < 8; ++x)
-				text[x] = AES_Round(AES0, AES1, AES2, AES3, text[x], ((uint4 *)ExpandedKey2)[j]);
-		}
-	}
-	
-	for(uint i = 0; i < 8; ++i) vstore4(text[i], i + 4, (uint *)(State));
-	
-	keccakf1600((ulong *)State);
-		
-	states += (25 * (get_global_id(0) - get_global_offset(0)));
-	
-	for(int i = 0; i < 25; ++i) states[i] = ((ulong *)State)[i];
-	
-	switch(State[0] & 3)
-	{
-		case 0:
-			Branch0[atomic_inc(Branch0 + ThreadCount)] = get_global_id(0) - get_global_offset(0);
-			break;
-		case 1:
-			Branch1[atomic_inc(Branch1 + ThreadCount)] = get_global_id(0) - get_global_offset(0);
-			break;
-		case 2:
-			Branch2[atomic_inc(Branch2 + ThreadCount)] = get_global_id(0) - get_global_offset(0);
-			break;
-		case 3:
-			Branch3[atomic_inc(Branch3 + ThreadCount)] = get_global_id(0) - get_global_offset(0);
-			break;
-	}	
-}
-*/
+)==="
+R"===(
 
 #define VSWAP8(x)	(((x) >> 56) | (((x) >> 40) & 0x000000000000FF00UL) | (((x) >> 24) & 0x0000000000FF0000UL) \
           | (((x) >>  8) & 0x00000000FF000000UL) | (((x) <<  8) & 0x000000FF00000000UL) \

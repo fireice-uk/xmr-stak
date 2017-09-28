@@ -124,6 +124,9 @@ static const __constant ulong T0_G[] =
 	0x7bcbf646cb463d7bUL, 0xa8fc4b1ffc1fb7a8UL, 0x6dd6da61d6610c6dUL, 0x2c3a584e3a4e622cUL
 };
 
+)==="
+R"===(
+
 static const __constant ulong T4_G[] =
 {
 	0xA5F432C6C6A597F4UL, 0x84976FF8F884EB97UL, 0x99B05EEEEE99C7B0UL, 0x8D8C7AF6F68DF78CUL, 

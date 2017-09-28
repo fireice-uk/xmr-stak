@@ -399,9 +399,6 @@ else()
     set(WIN_OUTPUT_RELEASE "/Release")
 endif()
 
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/opencl"
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/bin${WIN_OUTPUT_RELEASE}")
-
 # avoid overwrite of user defined settings
 # install `config.txt`if file not exists in `${CMAKE_INSTALL_PREFIX}/bin`
 install(CODE " \
