@@ -249,12 +249,9 @@ void minethd::work_main()
 
 				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, cpu_ctx);
 				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
-				{
-					std::cout<<"found NVIDIA"<<std::endl;
 					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, foundNonce[i], bResult), oWork.iPoolId));
-				}
 				else
-					std::cout<<"wrong NVIDIA"<<std::endl;
+					executor::inst()->log_result_error("NVIDIA Invalid Result");
 			}
 
 			iCount += ctx.device_blocks * ctx.device_threads;

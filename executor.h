@@ -38,6 +38,7 @@ public:
 
 	inline void push_event(ex_event&& ev) { oEventQ.push(std::move(ev)); }
 	void push_timed_event(ex_event&& ev, size_t sec);
+	void log_result_error(std::string&& sError);
 
 	constexpr static size_t invalid_pool_id = 0;
 	constexpr static size_t dev_pool_id = 1;
@@ -169,7 +170,6 @@ private:
 	double fHighestHps = 0.0;
 
 	void log_socket_error(std::string&& sError);
-	void log_result_error(std::string&& sError);
 	void log_result_ok(uint64_t iActualDiff);
 
 	void sched_reconnect();
