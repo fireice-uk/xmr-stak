@@ -39,6 +39,7 @@
 #include "rapidjson/error/en.h"
 #include "jext.h"
 #include "console.h"
+#include "Params.hpp"
 
 using namespace rapidjson;
 
@@ -127,17 +128,27 @@ const char* jconf::GetTlsFingerprint()
 
 const char* jconf::GetPoolAddress()
 {
-	return prv->configValues[sPoolAddr]->GetString();
+	auto& poolURL = xmrstak::Params::inst().poolURL;
+	if(poolURL.empty())
+		poolURL = prv->configValues[sPoolAddr]->GetString();
+	return poolURL.c_str();
 }
 
 const char* jconf::GetPoolPwd()
 {
-	return prv->configValues[sPoolPwd]->GetString();
+	auto& poolPasswd = xmrstak::Params::inst().poolPasswd;
+	if(poolPasswd.empty())
+		poolPasswd = prv->configValues[sPoolPwd]->GetString();
+	return poolPasswd.c_str();
+
 }
 
 const char* jconf::GetWalletAddress()
 {
-	return prv->configValues[sWalletAddr]->GetString();
+	auto& poolUsername = xmrstak::Params::inst().poolUsername;
+	if(poolUsername.empty())
+		poolUsername = prv->configValues[sWalletAddr]->GetString();
+	return poolUsername.c_str();
 }
 
 bool jconf::PreferIpv4()
