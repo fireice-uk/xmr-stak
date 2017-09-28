@@ -45,6 +45,7 @@
 #include "Plugin.hpp"
 #include "../Environment.hpp"
 #include "../console.h"
+#include "../Params.hpp"
 
 namespace xmrstak
 {
@@ -65,26 +66,35 @@ std::vector<IBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 	std::vector<IBackend*>* pvThreads = new std::vector<IBackend*>;
 
 #ifndef CONF_NO_CUDA
-	Plugin nvidiaPlugin("NVIDIA", "xmrstak_cuda_backend");
-	std::vector<IBackend*>* nvidiaThreads = nvidiaPlugin.startBackend(static_cast<uint32_t>(pvThreads->size()), pWork, Environment::inst());
-	pvThreads->insert(std::end(*pvThreads), std::begin(*nvidiaThreads), std::end(*nvidiaThreads));
-	if(nvidiaThreads->size() == 0)
-		printer::inst()->print_msg(L0, "WARNING: backend NVIDIA disabled.");
+	if(Params::inst().useNVIDIA)
+	{
+		Plugin nvidiaPlugin("NVIDIA", "xmrstak_cuda_backend");
+		std::vector<IBackend*>* nvidiaThreads = nvidiaPlugin.startBackend(static_cast<uint32_t>(pvThreads->size()), pWork, Environment::inst());
+		pvThreads->insert(std::end(*pvThreads), std::begin(*nvidiaThreads), std::end(*nvidiaThreads));
+		if(nvidiaThreads->size() == 0)
+			printer::inst()->print_msg(L0, "WARNING: backend NVIDIA disabled.");
+	}
 #endif
 
 #ifndef CONF_NO_OPENCL
-	Plugin amdPlugin("AMD", "xmrstak_opencl_backend");
-	std::vector<IBackend*>* amdThreads = amdPlugin.startBackend(static_cast<uint32_t>(pvThreads->size()), pWork, Environment::inst());
-	pvThreads->insert(std::end(*pvThreads), std::begin(*amdThreads), std::end(*amdThreads));
-	if(amdThreads->size() == 0)
-		printer::inst()->print_msg(L0, "WARNING: backend AMD disabled.");
+	if(Params::inst().useAMD)
+	{
+		Plugin amdPlugin("AMD", "xmrstak_opencl_backend");
+		std::vector<IBackend*>* amdThreads = amdPlugin.startBackend(static_cast<uint32_t>(pvThreads->size()), pWork, Environment::inst());
+		pvThreads->insert(std::end(*pvThreads), std::begin(*amdThreads), std::end(*amdThreads));
+		if(amdThreads->size() == 0)
+			printer::inst()->print_msg(L0, "WARNING: backend AMD disabled.");
+	}
 #endif
 
 #ifndef CONF_NO_CPU
-	auto cpuThreads = cpu::minethd::thread_starter(static_cast<uint32_t>(pvThreads->size()), pWork);
-	pvThreads->insert(std::end(*pvThreads), std::begin(cpuThreads), std::end(cpuThreads));
-	if(cpuThreads.size() == 0)
-		printer::inst()->print_msg(L0, "WARNING: backend CPU disabled.");
+	if(Params::inst().useCPU)
+	{
+		auto cpuThreads = cpu::minethd::thread_starter(static_cast<uint32_t>(pvThreads->size()), pWork);
+		pvThreads->insert(std::end(*pvThreads), std::begin(cpuThreads), std::end(cpuThreads));
+		if(cpuThreads.size() == 0)
+			printer::inst()->print_msg(L0, "WARNING: backend CPU disabled.");
+	}
 #endif
 	
 	GlobalStates::inst().iThreadCount = pvThreads->size();
