@@ -293,6 +293,8 @@ endif()
 # Compile & Link
 ################################################################################
 
+include_directories(BEFORE .)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     # remove warnings that f_open() is not save and f_open_s should be used
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
@@ -313,7 +315,7 @@ if(CMAKE_LINK_STATIC)
     set(LIBS "-static-libgcc -static-libstdc++ ${LIBS}")
 endif()
 
-file(GLOB SRCFILES_C "backend/cpu/crypto/*.c")
+file(GLOB SRCFILES_C "xmrstak/backend/cpu/crypto/*.c")
 
 add_library(xmr-stak-c
     STATIC
@@ -321,13 +323,13 @@ add_library(xmr-stak-c
 )
 
 file(GLOB BACKEND_CPP
-    "*.cpp"
-    "backend/cpu/*.cpp"
-    "backend/*.cpp"
-    "backend/cpu/crypto/*.cpp"
-    "http/*.cpp"
-    "misc/*.cpp"
-    "net/*.cpp")
+    "xmrstak/*.cpp"
+    "xmrstak/backend/cpu/*.cpp"
+    "xmrstak/backend/*.cpp"
+    "xmrstak/backend/cpu/crypto/*.cpp"
+    "xmrstak/http/*.cpp"
+    "xmrstak/misc/*.cpp"
+    "xmrstak/net/*.cpp")
 
 add_library(xmr-stak-backend
     STATIC
@@ -337,8 +339,8 @@ target_link_libraries(xmr-stak-backend xmr-stak-c ${CMAKE_DL_LIBS})
 
 if(CUDA_FOUND)
     file(GLOB CUDASRCFILES 
-        "backend/nvidia/nvcc_code/*.cu"
-        "backend/nvidia/*.cpp")
+        "xmrstak/backend/nvidia/nvcc_code/*.cu"
+        "xmrstak/backend/nvidia/*.cpp")
 
     #  build device code with nvcc
     cuda_add_library(xmrstak_cuda_backend
@@ -353,8 +355,8 @@ endif()
 
 if(OpenCL_FOUND)
     file(GLOB OPENCLSRCFILES  
-        "backend/amd/amd_gpu/*.cpp"
-        "backend/amd/*.cpp")
+        "xmrstak/backend/amd/amd_gpu/*.cpp"
+        "xmrstak/backend/amd/*.cpp")
     add_library(xmrstak_opencl_backend
         SHARED
         ${OPENCLSRCFILES}
@@ -365,7 +367,7 @@ if(OpenCL_FOUND)
     endif()
 endif()
 
-file(GLOB SRCFILES_CPP "cli/*.cpp")
+file(GLOB SRCFILES_CPP "xmrstak/cli/*.cpp")
 set_source_files_properties(${SRCFILES_CPP} PROPERTIES LANGUAGE CXX)
 
 set_property(TARGET xmr-stak-c PROPERTY C_STANDARD 99)
