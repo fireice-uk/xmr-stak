@@ -60,8 +60,30 @@ void help()
 	using namespace std;
 	using namespace xmrstak;
 	
-	cout<<"Usage: "<<params::inst().binaryName<<" [OPTIONS] [CONFIG FILE]"<<endl;
-
+	cout<<"Usage: "<<params::inst().binaryName<<" [OPTION]... [CONFIGFILE]"<<endl;
+	cout<<" "<<endl;
+	cout<<"  CONFIGFILE            common miner configuration file"<<endl;
+	cout<<"  -h, --help            show this help"<<endl;
+#ifndef CONF_NO_CPU
+	cout<<"  --noCPU               disable the CPU miner backend"<<endl;
+	cout<<"  --cpu FILE            CPU backend miner config file"<<endl;
+#endif
+#ifndef CONF_NO_OPENCL
+	cout<<"  --noAMD               disable the AMD miner backend"<<endl;
+	cout<<"  --amd FILE            AMD backend miner config file"<<endl;
+#endif
+#ifndef CONF_NO_CUDA
+	cout<<"  --noNVIDIA            disable the NVIDIA miner backend"<<endl;
+	cout<<"  --nvidia FILE         NVIDIA backend miner config file"<<endl;
+#endif
+	cout<<" "<<endl;
+	cout<<"The Following options temporary overwrites the config file settings:"<<endl;
+	cout<<"  -o, --url URL         pool url and port, e.g. pool.usxmrpool.com:3333"<<endl;
+	cout<<"  -u, --user USERNAME   pool user name or wallet address"<<endl;
+	cout<<"  -p, --pass PASSWD     pool password, in the most cases x or empty \"\""<<endl;
+	cout<<" \n"<<endl;
+	cout<<XMR_STAK_NAME<<" "<<XMR_STAK_VERSION<<endl;
+	cout<<"Brought to by fireice_uk and psychocrypt under GPLv3."<<endl;
 }
 
 int main(int argc, char *argv[])
@@ -90,6 +112,7 @@ int main(int argc, char *argv[])
 	if(params::inst().binaryName.compare(pathWithName) != 0)
 		params::inst().executablePrefix = std::string(pathWithName, 0, pos);
 
+	bool userSetPasswd = false;
 	for(int i = 1; i < argc; ++i)
 	{
 		std::string opName(argv[i]);
@@ -175,6 +198,7 @@ int main(int argc, char *argv[])
 				win_exit();
 				return 1;
 			}
+			userSetPasswd = true;
 			params::inst().poolPasswd = argv[i];
 		}
 		else
@@ -203,7 +227,7 @@ int main(int argc, char *argv[])
 			std::cin >> userName;
 		}
 		auto& passwd = params::inst().poolPasswd;
-		if(passwd.empty())
+		if(passwd.empty() && (!userSetPasswd))
 		{
 			// clear everything from stdin to allow an empty password
 			std::cin.clear(); std::cin.ignore(INT_MAX,'\n');
