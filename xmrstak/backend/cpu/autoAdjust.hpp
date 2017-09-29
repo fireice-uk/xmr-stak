@@ -100,8 +100,8 @@ public:
 		}
 
 		configTpl.replace("CPUCONFIG",conf);
-		configTpl.write(Params::inst().configFileCPU);
-		printer::inst()->print_msg(L0, "CPU configuration stored in file '%s'", Params::inst().configFileCPU.c_str());
+		configTpl.write(params::inst().configFileCPU);
+		printer::inst()->print_msg(L0, "CPU configuration stored in file '%s'", params::inst().configFileCPU.c_str());
 
 		return true;
 	}

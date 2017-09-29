@@ -19,7 +19,7 @@ public:
 		return oInst;
 	};
 
-	bool parse_config(const char* sFilename = Params::inst().configFileAMD.c_str());
+	bool parse_config(const char* sFilename = params::inst().configFileAMD.c_str());
 
 	struct thd_cfg {
 		size_t index;

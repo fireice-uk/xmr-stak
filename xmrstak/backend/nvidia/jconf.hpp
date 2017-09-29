@@ -17,7 +17,7 @@ public:
 		return oInst;
 	};
 
-	bool parse_config(const char* sFilename = Params::inst().configFileNVIDIA.c_str());
+	bool parse_config(const char* sFilename = params::inst().configFileNVIDIA.c_str());
 
 	struct thd_cfg {
 		uint32_t id;

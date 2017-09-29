@@ -41,6 +41,7 @@
 #include <string>
 #include <iostream>
 #include <time.h>
+#include <iostream>
 
 #ifndef CONF_NO_TLS
 #include <openssl/ssl.h>
@@ -53,6 +54,14 @@
 #endif // _WIN32
 
 void do_benchmark();
+
+void help()
+{
+	using namespace std;
+	using namespace xmrstak;
+	
+	cout<<"Usage: "<<params::inst().executablePrefix<<" [--help|-h] [--benchmark] [-c CONFIGFILE] [CONFIG FILE]"<<endl;
+}
 
 int main(int argc, char *argv[])
 {
@@ -77,28 +86,28 @@ int main(int argc, char *argv[])
 		pos = pathWithName.rfind("\\");
 	}
 	
-	Params::inst().executablePrefix = std::string(pathWithName, 0, pos);
+	params::inst().executablePrefix = std::string(pathWithName, 0, pos);
 
 	for(int i = 1; i < argc; ++i)
 	{
 		std::string opName(argv[i]);
 		if(opName.compare("-h") == 0 || opName.compare("--help") == 0)
 		{
-			printer::inst()->print_msg(L0, "Usage: %s [--help|-h] [--benchmark] [-c CONFIGFILE] [CONFIG FILE]", argv[0]);
+			help();
 			win_exit();
 			return 0;
 		}
 		else if(opName.compare("--noCPU") == 0)
 		{
-			Params::inst().useCPU = false;
+			params::inst().useCPU = false;
 		}
 		else if(opName.compare("--noAMD") == 0)
 		{
-			Params::inst().useAMD = false;
+			params::inst().useAMD = false;
 		}
 		else if(opName.compare("--noAMD") == 0)
 		{
-			Params::inst().useNVIDIA = false;
+			params::inst().useNVIDIA = false;
 		}
 		else if(opName.compare("--cpu") == 0)
 		{
@@ -109,7 +118,7 @@ int main(int argc, char *argv[])
 				win_exit();
 				return 1;
 			}
-			Params::inst().configFileCPU = argv[i];
+			params::inst().configFileCPU = argv[i];
 		}
 		else if(opName.compare("--amd") == 0)
 		{
@@ -120,7 +129,7 @@ int main(int argc, char *argv[])
 				win_exit();
 				return 1;
 			}
-			Params::inst().configFileAMD = argv[i];
+			params::inst().configFileAMD = argv[i];
 		}
 		else if(opName.compare("--nvidia") == 0)
 		{
@@ -131,7 +140,7 @@ int main(int argc, char *argv[])
 				win_exit();
 				return 1;
 			}
-			Params::inst().configFileNVIDIA = argv[i];
+			params::inst().configFileNVIDIA = argv[i];
 		}
 		else if(opName.compare("-o") == 0 || opName.compare("--url") == 0)
 		{
@@ -142,7 +151,7 @@ int main(int argc, char *argv[])
 				win_exit();
 				return 1;
 			}
-			Params::inst().poolURL = argv[i];
+			params::inst().poolURL = argv[i];
 		}
 		else if(opName.compare("-u") == 0 || opName.compare("--user") == 0)
 		{
@@ -153,7 +162,7 @@ int main(int argc, char *argv[])
 				win_exit();
 				return 1;
 			}
-			Params::inst().poolUsername = argv[i];
+			params::inst().poolUsername = argv[i];
 		}
 		else if(opName.compare("-p") == 0 || opName.compare("--pass") == 0)
 		{
@@ -164,14 +173,14 @@ int main(int argc, char *argv[])
 				win_exit();
 				return 1;
 			}
-			Params::inst().poolPasswd = argv[i];
+			params::inst().poolPasswd = argv[i];
 		}
 		else
-			Params::inst().configFile = argv[i];
+			params::inst().configFile = argv[i];
 	}
 
 	// check if we need a guided start
-	if(!configEditor::file_exist(Params::inst().configFile))
+	if(!configEditor::file_exist(params::inst().configFile))
 	{
 		// load the template of the backend config into a char variable
 		const char *tpl =
@@ -179,19 +188,19 @@ int main(int argc, char *argv[])
 		;
 		configEditor configTpl{};
 		configTpl.set(std::string(tpl));
-		auto& pool = Params::inst().poolURL;
+		auto& pool = params::inst().poolURL;
 		if(pool.empty())
 		{
 			std::cout<<"Please enter:\n- pool address: e.g. pool.usxmrpool.com:3333"<<std::endl;
 			std::cin >> pool;
 		}
-		auto& userName = Params::inst().poolUsername;
+		auto& userName = params::inst().poolUsername;
 		if(userName.empty())
 		{
 			std::cout<<"- user name (wallet address or pool login):"<<std::endl;
 			std::cin >> userName;
 		}
-		auto& passwd = Params::inst().poolPasswd;
+		auto& passwd = params::inst().poolPasswd;
 		if(passwd.empty())
 		{
 			// clear everything from stdin to allow an empty password
@@ -202,11 +211,11 @@ int main(int argc, char *argv[])
 		configTpl.replace("POOLURL", pool);
 		configTpl.replace("POOLUSER", userName);
 		configTpl.replace("POOLPASSWD", passwd);
-		configTpl.write(Params::inst().configFile);
-		std::cout<<"Configuration stored in file '"<<Params::inst().configFile<<"'"<<std::endl;
+		configTpl.write(params::inst().configFile);
+		std::cout<<"Configuration stored in file '"<<params::inst().configFile<<"'"<<std::endl;
 	}
 
-	if(!jconf::inst()->parse_config(Params::inst().configFile.c_str()))
+	if(!jconf::inst()->parse_config(params::inst().configFile.c_str()))
 	{
 		win_exit();
 		return 0;

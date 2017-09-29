@@ -121,7 +121,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 {
 	std::vector<iBackend*>* pvThreads = new std::vector<iBackend*>();
 
-	if(!configEditor::file_exist(Params::inst().configFileNVIDIA))
+	if(!configEditor::file_exist(params::inst().configFileNVIDIA))
 	{
 		autoAdjust adjust;
 		if(!adjust.printConfig())

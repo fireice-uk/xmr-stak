@@ -18,7 +18,7 @@ public:
 		return env.pJconfConfig;
 	};
 
-	bool parse_config(const char* sFilename = xmrstak::Params::inst().configFile.c_str());
+	bool parse_config(const char* sFilename = xmrstak::params::inst().configFile.c_str());
 
 	struct thd_cfg {
 		bool bDoubleMode;

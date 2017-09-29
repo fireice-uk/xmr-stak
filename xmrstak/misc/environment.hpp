@@ -8,7 +8,7 @@ namespace xmrstak
 {
 
 class globalStates;
-class Params;
+class params;
 
 struct environment
 {
@@ -39,7 +39,7 @@ struct environment
 	globalStates* pglobalStates;
 	jconf* pJconfConfig;
 	executor* pExecutor;
-	Params* pParams;
+	params* pParams;
 
 };
 

@@ -251,7 +251,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 {
 	std::vector<iBackend*> pvThreads;
 
-	if(!configEditor::file_exist(Params::inst().configFileCPU))
+	if(!configEditor::file_exist(params::inst().configFileCPU))
 	{
 		autoAdjust adjust;
 		if(!adjust.printConfig())

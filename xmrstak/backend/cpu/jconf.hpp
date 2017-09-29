@@ -19,7 +19,7 @@ public:
 		return oInst;
 	};
 
-	bool parse_config(const char* sFilename = Params::inst().configFileCPU.c_str());
+	bool parse_config(const char* sFilename = params::inst().configFileCPU.c_str());
 
 	struct thd_cfg {
 		bool bDoubleMode;

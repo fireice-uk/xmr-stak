@@ -102,8 +102,8 @@ private:
 		configTpl.replace("PLATFORMINDEX",std::to_string(platformIndex));
 		configTpl.replace("NUMGPUS",std::to_string(devVec.size()));
 		configTpl.replace("GPUCONFIG",conf);
-		configTpl.write(Params::inst().configFileAMD);
-		printer::inst()->print_msg(L0, "AMD: GPU configuration stored in file '%s'", Params::inst().configFileAMD.c_str());
+		configTpl.write(params::inst().configFileAMD);
+		printer::inst()->print_msg(L0, "AMD: GPU configuration stored in file '%s'", params::inst().configFileAMD.c_str());
     }
 
     std::vector<GpuContext> devVec;

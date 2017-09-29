@@ -7,14 +7,14 @@
 namespace xmrstak
 {
 
-struct Params
+struct params
 {
 
-	static inline Params& inst()
+	static inline params& inst()
 	{
 		auto& env = environment::inst();
 		if(env.pParams == nullptr)
-			env.pParams = new Params;
+			env.pParams = new params;
 		return *env.pParams;
 	}
 
@@ -32,7 +32,7 @@ struct Params
 	std::string configFileNVIDIA;
 	std::string configFileCPU;
 
-	Params() :
+	params() :
 		useAMD(true),
 		useNVIDIA(true),
 		useCPU(true),

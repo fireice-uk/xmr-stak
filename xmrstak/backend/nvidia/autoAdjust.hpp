@@ -102,8 +102,8 @@ private:
         }
 
 		configTpl.replace("GPUCONFIG",conf);
-		configTpl.write(Params::inst().configFileNVIDIA);
-		printer::inst()->print_msg(L0, "NVIDIA: GPU configuration stored in file '%s'", Params::inst().configFileNVIDIA.c_str());
+		configTpl.write(params::inst().configFileNVIDIA);
+		printer::inst()->print_msg(L0, "NVIDIA: GPU configuration stored in file '%s'", params::inst().configFileNVIDIA.c_str());
     }
 
     std::vector<nvid_ctx> nvidCtxVec;

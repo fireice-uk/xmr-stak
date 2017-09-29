@@ -127,7 +127,7 @@ const char* jconf::GetTlsFingerprint()
 
 const char* jconf::GetPoolAddress()
 {
-	auto& poolURL = xmrstak::Params::inst().poolURL;
+	auto& poolURL = xmrstak::params::inst().poolURL;
 	if(poolURL.empty())
 		poolURL = prv->configValues[sPoolAddr]->GetString();
 	return poolURL.c_str();
@@ -135,7 +135,7 @@ const char* jconf::GetPoolAddress()
 
 const char* jconf::GetPoolPwd()
 {
-	auto& poolPasswd = xmrstak::Params::inst().poolPasswd;
+	auto& poolPasswd = xmrstak::params::inst().poolPasswd;
 	if(poolPasswd.empty())
 		poolPasswd = prv->configValues[sPoolPwd]->GetString();
 	return poolPasswd.c_str();
@@ -144,7 +144,7 @@ const char* jconf::GetPoolPwd()
 
 const char* jconf::GetWalletAddress()
 {
-	auto& poolUsername = xmrstak::Params::inst().poolUsername;
+	auto& poolUsername = xmrstak::params::inst().poolUsername;
 	if(poolUsername.empty())
 		poolUsername = prv->configValues[sWalletAddr]->GetString();
 	return poolUsername.c_str();
