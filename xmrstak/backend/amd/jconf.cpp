@@ -252,7 +252,7 @@ bool jconf::parse_config(const char* sFilename)
 			return false;
 		}
 	}
-
+	return true;
 }
 
 } // namespace amd

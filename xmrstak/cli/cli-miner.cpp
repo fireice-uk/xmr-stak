@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 		{
 			params::inst().useAMD = false;
 		}
-		else if(opName.compare("--noAMD") == 0)
+		else if(opName.compare("--noNVIDIA") == 0)
 		{
 			params::inst().useNVIDIA = false;
 		}

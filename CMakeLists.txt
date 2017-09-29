@@ -315,13 +315,17 @@ if(CMAKE_LINK_STATIC)
     set(LIBS "-static-libgcc -static-libstdc++ ${LIBS}")
 endif()
 
+# compile C files
 file(GLOB SRCFILES_C "xmrstak/backend/cpu/crypto/*.c")
 
 add_library(xmr-stak-c
     STATIC
     ${SRCFILES_C}
 )
+set_property(TARGET xmr-stak-c PROPERTY C_STANDARD 99)
+target_link_libraries(xmr-stak-c ${LIBS})
 
+# compile generic backend files
 file(GLOB BACKEND_CPP
     "xmrstak/*.cpp"
     "xmrstak/backend/cpu/*.cpp"
@@ -337,22 +341,37 @@ add_library(xmr-stak-backend
 )
 target_link_libraries(xmr-stak-backend xmr-stak-c ${CMAKE_DL_LIBS})
 
+# compile CUDA backend
 if(CUDA_FOUND)
     file(GLOB CUDASRCFILES 
         "xmrstak/backend/nvidia/nvcc_code/*.cu"
         "xmrstak/backend/nvidia/*.cpp")
 
-    #  build device code with nvcc
-    cuda_add_library(xmrstak_cuda_backend
-        SHARED
-        ${CUDASRCFILES}
-    )
+    if("${CUDA_COMPILER}" STREQUAL "clang")
+        # build device code with clang
+        add_library(
+            xmrstak_cuda_backend
+            SHARED
+            ${CUDASRCFILES}
+        )
+        set_target_properties(xmrstak_cuda_backend PROPERTIES COMPILE_FLAGS ${CLANG_BUILD_FLAGS})
+        set_target_properties(xmrstak_cuda_backend PROPERTIES LINKER_LANGUAGE CXX)
+        set_source_files_properties(${CUDASRCFILES} PROPERTIES LANGUAGE CXX)
+    else()
+        #  build device code with nvcc
+        cuda_add_library(
+            xmrstak_cuda_backend
+            SHARED
+            ${CUDASRCFILES}
+        )
+    endif()
     target_link_libraries(xmrstak_cuda_backend ${CUDA_LIBRARIES})
     if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         target_link_libraries(xmrstak_cuda_backend xmr-stak-backend)
     endif()
 endif()
 
+# compile AMD backend
 if(OpenCL_FOUND)
     file(GLOB OPENCLSRCFILES  
         "xmrstak/backend/amd/amd_gpu/*.cpp"
@@ -367,11 +386,9 @@ if(OpenCL_FOUND)
     endif()
 endif()
 
+# compile final binary
 file(GLOB SRCFILES_CPP "xmrstak/cli/*.cpp")
 set_source_files_properties(${SRCFILES_CPP} PROPERTIES LANGUAGE CXX)
-
-set_property(TARGET xmr-stak-c PROPERTY C_STANDARD 99)
-target_link_libraries(xmr-stak-c ${LIBS})
 
 add_executable(xmr-stak
     ${SRCFILES_CPP}
