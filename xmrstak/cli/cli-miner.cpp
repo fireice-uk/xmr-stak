@@ -60,7 +60,8 @@ void help()
 	using namespace std;
 	using namespace xmrstak;
 	
-	cout<<"Usage: "<<params::inst().executablePrefix<<" [--help|-h] [--benchmark] [-c CONFIGFILE] [CONFIG FILE]"<<endl;
+	cout<<"Usage: "<<params::inst().binaryName<<" [OPTIONS] [CONFIG FILE]"<<endl;
+
 }
 
 int main(int argc, char *argv[])
@@ -85,8 +86,9 @@ int main(int argc, char *argv[])
 		// try windows "\"
 		pos = pathWithName.rfind("\\");
 	}
-	
-	params::inst().executablePrefix = std::string(pathWithName, 0, pos);
+	params::inst().binaryName = std::string(pathWithName, pos + 1, std::string::npos);
+	if(params::inst().binaryName.compare(pathWithName) != 0)
+		params::inst().executablePrefix = std::string(pathWithName, 0, pos);
 
 	for(int i = 1; i < argc; ++i)
 	{

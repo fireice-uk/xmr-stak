@@ -1,6 +1,7 @@
 #pragma once
 
 #include "xmrstak/misc/environment.hpp"
+#include "xmrstak/params.hpp"
 
 #include <thread>
 #include <atomic>
@@ -36,7 +37,7 @@ struct plugin
 			return;
 		}
 #else
-		libBackend = dlopen((std::string("./lib") + libName + ".so").c_str(), RTLD_LAZY);
+		libBackend = dlopen((params::inst().executablePrefix + "/lib" + libName + ".so").c_str(), RTLD_LAZY);
 		if(!libBackend)
 		{
 			std::cerr << "WARNING: "<< m_backendName <<" cannot load backend library: " << dlerror() << std::endl;
