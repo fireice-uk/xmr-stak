@@ -121,7 +121,7 @@ void executor::sched_reconnect()
 		rt, int_port(iReconnectAttempts));
 
 	auto work = xmrstak::miner_work();
-	xmrstak::GlobalStates::inst().switch_work(work);
+	xmrstak::globalStates::inst().switch_work(work);
 
 	push_timed_event(ex_event(EV_RECONNECT, usr_pool_id), rt);
 }
@@ -239,7 +239,7 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 
 	oWork.iTarget32 = oPoolJob.iTarget32;
 	
-	xmrstak::GlobalStates::inst().switch_work(oWork);
+	xmrstak::globalStates::inst().switch_work(oWork);
 
 	if(pool_id == dev_pool_id)
 		return;
@@ -361,7 +361,7 @@ void executor::on_switch_pool(size_t pool_id)
 
 		oWork.iTarget32 = oPoolJob.iTarget32;
 
-		xmrstak::GlobalStates::inst().switch_work(oWork);
+		xmrstak::globalStates::inst().switch_work(oWork);
 
 		if(dev_pool->is_running())
 			push_timed_event(ex_event(EV_DEV_POOL_EXIT), 5);

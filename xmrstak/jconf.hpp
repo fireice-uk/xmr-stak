@@ -12,7 +12,7 @@ class jconf
 public:
 	static jconf* inst()
 	{
-		auto& env = xmrstak::Environment::inst();
+		auto& env = xmrstak::environment::inst();
 		if(env.pJconfConfig == nullptr)
 			env.pJconfConfig = new jconf;
 		return env.pJconfConfig;

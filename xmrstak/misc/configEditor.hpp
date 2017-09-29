@@ -10,11 +10,11 @@
 namespace xmrstak
 {
 
-struct ConfigEditor
+struct configEditor
 {
 	std::string m_fileContent;
 
-	ConfigEditor() 
+	configEditor() 
 	{
 	
 	}

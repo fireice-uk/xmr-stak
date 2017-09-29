@@ -56,19 +56,19 @@ bool BackendConnector::self_test()
 	return true;
 }
 
-std::vector<IBackend*>* BackendConnector::thread_starter(miner_work& pWork)
+std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 {
-    GlobalStates::inst().iGlobalJobNo = 0;
-	GlobalStates::inst().iConsumeCnt = 0;
+    globalStates::inst().iGlobalJobNo = 0;
+	globalStates::inst().iConsumeCnt = 0;
 
 
-	std::vector<IBackend*>* pvThreads = new std::vector<IBackend*>;
+	std::vector<iBackend*>* pvThreads = new std::vector<iBackend*>;
 
 #ifndef CONF_NO_CUDA
 	if(Params::inst().useNVIDIA)
 	{
-		Plugin nvidiaPlugin("NVIDIA", "xmrstak_cuda_backend");
-		std::vector<IBackend*>* nvidiaThreads = nvidiaPlugin.startBackend(static_cast<uint32_t>(pvThreads->size()), pWork, Environment::inst());
+		plugin nvidiaplugin("NVIDIA", "xmrstak_cuda_backend");
+		std::vector<iBackend*>* nvidiaThreads = nvidiaplugin.startBackend(static_cast<uint32_t>(pvThreads->size()), pWork, environment::inst());
 		pvThreads->insert(std::end(*pvThreads), std::begin(*nvidiaThreads), std::end(*nvidiaThreads));
 		if(nvidiaThreads->size() == 0)
 			printer::inst()->print_msg(L0, "WARNING: backend NVIDIA disabled.");
@@ -78,8 +78,8 @@ std::vector<IBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 #ifndef CONF_NO_OPENCL
 	if(Params::inst().useAMD)
 	{
-		Plugin amdPlugin("AMD", "xmrstak_opencl_backend");
-		std::vector<IBackend*>* amdThreads = amdPlugin.startBackend(static_cast<uint32_t>(pvThreads->size()), pWork, Environment::inst());
+		plugin amdplugin("AMD", "xmrstak_opencl_backend");
+		std::vector<iBackend*>* amdThreads = amdplugin.startBackend(static_cast<uint32_t>(pvThreads->size()), pWork, environment::inst());
 		pvThreads->insert(std::end(*pvThreads), std::begin(*amdThreads), std::end(*amdThreads));
 		if(amdThreads->size() == 0)
 			printer::inst()->print_msg(L0, "WARNING: backend AMD disabled.");
@@ -96,7 +96,7 @@ std::vector<IBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 	}
 #endif
 	
-	GlobalStates::inst().iThreadCount = pvThreads->size();
+	globalStates::inst().iThreadCount = pvThreads->size();
 	return pvThreads;
 }
 

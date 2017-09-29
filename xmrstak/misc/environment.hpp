@@ -7,22 +7,22 @@ class executor;
 namespace xmrstak
 {
 
-class GlobalStates;
+class globalStates;
 class Params;
 
-struct Environment
+struct environment
 {
 
-	static Environment& inst()
+	static environment& inst()
 	{
-		static Environment env;
+		static environment env;
 		return env;
 	}
 	
-	Environment& operator=(const Environment& env)
+	environment& operator=(const environment& env)
 	{
 		this->pPrinter = env.pPrinter;
-		this->pGlobalStates = env.pGlobalStates;
+		this->pglobalStates = env.pglobalStates;
 		this->pJconfConfig = env.pJconfConfig;
 		this->pExecutor = env.pExecutor;
 		this->pParams = env.pParams;
@@ -30,13 +30,13 @@ struct Environment
 	}
 
 
-	Environment() : pPrinter(nullptr), pGlobalStates(nullptr)
+	environment() : pPrinter(nullptr), pglobalStates(nullptr)
 	{
 	}
 
 
 	printer* pPrinter;
-	GlobalStates* pGlobalStates;
+	globalStates* pglobalStates;
 	jconf* pJconfConfig;
 	executor* pExecutor;
 	Params* pParams;

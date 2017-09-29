@@ -9,15 +9,15 @@
 namespace xmrstak
 {
 
-struct GlobalStates
+struct globalStates
 {
 
-	static inline GlobalStates& inst()
+	static inline globalStates& inst()
 	{
-		auto& env = Environment::inst();
-		if(env.pGlobalStates == nullptr)
-			env.pGlobalStates = new GlobalStates;
-		return *env.pGlobalStates;
+		auto& env = environment::inst();
+		if(env.pglobalStates == nullptr)
+			env.pglobalStates = new globalStates;
+		return *env.pglobalStates;
 	}
 
 	void switch_work(miner_work& pWork);
@@ -29,7 +29,7 @@ struct GlobalStates
 
 	private:
 
-	GlobalStates() : iThreadCount(0)
+	globalStates() : iThreadCount(0)
 	{
 	}
 	

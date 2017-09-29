@@ -21,23 +21,19 @@
   *
   */
 
-#include <assert.h>
-#include <cmath>
-#include <chrono>
-#include <cstring>
-#include <thread>
-#include <bitset>
+#include "crypto/cryptonight_aesni.h"
+
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/backend/iBackend.hpp"
 #include "xmrstak/backend//globalStates.hpp"
 #include "xmrstak/misc/configEditor.hpp"
 #include "xmrstak/params.hpp"
-#include "xmrstak/jconf.hpp"
+#include "jconf.hpp"
 
 #include "xmrstak/misc/executor.hpp"
 #include "minethd.hpp"
 #include "xmrstak/jconf.hpp"
-#include "xmrstak/backend/crypto/cryptonight_aesni.h"
+
 #include "hwlocMemory.hpp"
 #include "xmrstak/backend/miner_work.hpp"
 
@@ -46,6 +42,13 @@
 #else
 #   include "autoAdjust.hpp"
 #endif
+
+#include <assert.h>
+#include <cmath>
+#include <chrono>
+#include <cstring>
+#include <thread>
+#include <bitset>
 
 
 #ifdef _WIN32
@@ -244,11 +247,11 @@ bool minethd::self_test()
 	return bResult;
 }
 
-std::vector<IBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work& pWork)
+std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work& pWork)
 {
-	std::vector<IBackend*> pvThreads;
+	std::vector<iBackend*> pvThreads;
 
-	if(!ConfigEditor::file_exist(Params::inst().configFileCPU))
+	if(!configEditor::file_exist(Params::inst().configFileCPU))
 	{
 		autoAdjust adjust;
 		if(!adjust.printConfig())
@@ -286,9 +289,9 @@ std::vector<IBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 
 void minethd::consume_work()
 {
-	memcpy(&oWork, &GlobalStates::inst().inst().oGlobalWork, sizeof(miner_work));
+	memcpy(&oWork, &globalStates::inst().inst().oGlobalWork, sizeof(miner_work));
 	iJobNo++;
-	GlobalStates::inst().inst().iConsumeCnt++;
+	globalStates::inst().inst().iConsumeCnt++;
 }
 
 minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch)
@@ -343,7 +346,7 @@ void minethd::work_main()
 
 	piHashVal = (uint64_t*)(result.bResult + 24);
 	piNonce = (uint32_t*)(oWork.bWorkBlob + 39);
-	GlobalStates::inst().inst().iConsumeCnt++;
+	globalStates::inst().inst().iConsumeCnt++;
 
 	while (bQuit == 0)
 	{
@@ -353,7 +356,7 @@ void minethd::work_main()
 			    either because of network latency, or a socket problem. Since we are
 			    raison d'etre of this software it us sensible to just wait until we have something*/
 
-			while (GlobalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			while (globalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
@@ -368,7 +371,7 @@ void minethd::work_main()
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		memcpy(result.sJobID, oWork.sJobID, sizeof(job_result::sJobID));
 
-		while(GlobalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while(globalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			if ((iCount & 0xF) == 0) //Store stats every 16 hashes
 			{
@@ -441,7 +444,7 @@ void minethd::double_work_main()
 	piNonce0 = (uint32_t*)(bDoubleWorkBlob + 39);
 	piNonce1 = nullptr;
 
-	GlobalStates::inst().inst().iConsumeCnt++;
+	globalStates::inst().inst().iConsumeCnt++;
 
 	while (bQuit == 0)
 	{
@@ -451,7 +454,7 @@ void minethd::double_work_main()
 			either because of network latency, or a socket problem. Since we are
 			raison d'etre of this software it us sensible to just wait until we have something*/
 
-			while (GlobalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			while (globalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
@@ -468,7 +471,7 @@ void minethd::double_work_main()
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
-		while (GlobalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while (globalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			if ((iCount & 0x7) == 0) //Store stats every 16 hashes
 			{

@@ -76,7 +76,7 @@ private:
 			#include "./config.tpl"
 		;
 
-		ConfigEditor configTpl{};
+		configEditor configTpl{};
 		configTpl.set( std::string(tpl) );
 
 		std::string conf;

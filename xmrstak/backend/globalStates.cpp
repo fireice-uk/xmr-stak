@@ -34,7 +34,7 @@ namespace xmrstak
 {
 
 
-void GlobalStates::switch_work(miner_work& pWork)
+void globalStates::switch_work(miner_work& pWork)
 {
 	// iConsumeCnt is a basic lock-like polling mechanism just in case we happen to push work
 	// faster than threads can consume them. This should never happen in real life.

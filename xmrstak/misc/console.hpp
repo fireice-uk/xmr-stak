@@ -28,7 +28,7 @@ class printer
 public:
 	static inline printer* inst()
 	{
-		auto& env = xmrstak::Environment::inst();
+		auto& env = xmrstak::environment::inst();
 		if(env.pPrinter == nullptr)
 			env.pPrinter = new printer;
 		return env.pPrinter;

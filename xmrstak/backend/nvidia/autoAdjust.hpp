@@ -83,7 +83,7 @@ private:
 			#include "./config.tpl"
 		;
 
-		ConfigEditor configTpl{};
+		configEditor configTpl{};
 		configTpl.set( std::string(tpl) );
 
 		constexpr size_t byte2mib = 1024u * 1024u;

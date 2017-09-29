@@ -37,7 +37,7 @@ public:
 		hwloc_topology_load(topology);
 
 		std::string conf;
-		ConfigEditor configTpl{};
+		configEditor configTpl{};
 
 		// load the template of the backend config into a char variable
 		const char *tpl =

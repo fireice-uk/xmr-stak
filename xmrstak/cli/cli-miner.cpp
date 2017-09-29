@@ -171,13 +171,13 @@ int main(int argc, char *argv[])
 	}
 
 	// check if we need a guided start
-	if(!ConfigEditor::file_exist(Params::inst().configFile))
+	if(!configEditor::file_exist(Params::inst().configFile))
 	{
 		// load the template of the backend config into a char variable
 		const char *tpl =
 			#include "../config.tpl"
 		;
-		ConfigEditor configTpl{};
+		configEditor configTpl{};
 		configTpl.set(std::string(tpl));
 		auto& pool = Params::inst().poolURL;
 		if(pool.empty())
@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
 void do_benchmark()
 {
 	using namespace std::chrono;
-	std::vector<xmrstak::IBackend*>* pvThreads;
+	std::vector<xmrstak::iBackend*>* pvThreads;
 
 	printer::inst()->print_msg(L0, "Running a 60 second benchmark...");
 
@@ -303,7 +303,7 @@ void do_benchmark()
 	std::this_thread::sleep_for(std::chrono::seconds(60));
 
 	oWork = xmrstak::miner_work();
-	xmrstak::GlobalStates::inst().switch_work(oWork);
+	xmrstak::globalStates::inst().switch_work(oWork);
 
 	double fTotalHps = 0.0;
 	for (uint32_t i = 0; i < pvThreads->size(); i++)

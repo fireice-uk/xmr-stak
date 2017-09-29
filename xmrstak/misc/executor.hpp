@@ -28,7 +28,7 @@ class executor
 public:
 	static executor* inst()
 	{
-		auto& env = xmrstak::Environment::inst();
+		auto& env = xmrstak::environment::inst();
 		if(env.pExecutor == nullptr)
 			env.pExecutor = new executor;
 		return env.pExecutor;
@@ -67,7 +67,7 @@ private:
 	thdq<ex_event> oEventQ;
 
 	xmrstak::telemetry* telem;
-	std::vector<xmrstak::IBackend*>* pvThreads;
+	std::vector<xmrstak::iBackend*>* pvThreads;
 
 	size_t current_pool_id;
 

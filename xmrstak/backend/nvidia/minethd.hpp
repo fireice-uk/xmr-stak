@@ -2,9 +2,9 @@
 
 #include "xmrstak/jconf.hpp"
 #include "jconf.hpp"
-#include "nvcc_code/cryptonight.h"
+#include "nvcc_code/cryptonight.hpp"
 
-#include "xmrstak/bakcend/cpu/crypto/cryptonight.h"
+#include "xmrstak/backend/cpu/crypto/cryptonight.h"
 #include "xmrstak/backend/iBackend.hpp"
 #include "xmrstak/misc/environment.hpp"
 
@@ -19,33 +19,18 @@ namespace xmrstak
 namespace nvidia
 {
 
-class minethd : public IBackend
+class minethd : public iBackend
 {
 public:
 
 	static void switch_work(miner_work& pWork);
-	static std::vector<IBackend*>* thread_starter(uint32_t threadOffset, miner_work& pWork);
+	static std::vector<iBackend*>* thread_starter(uint32_t threadOffset, miner_work& pWork);
 	static bool self_test();
 
 private:
 	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx*);
 	
 	minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg);
-
-	// We use the top 10 bits of the nonce for thread and resume
-	// This allows us to resume up to 128 threads 4 times before
-	// we get nonce collisions
-	// Bottom 22 bits allow for an hour of work at 1000 H/s
-	inline uint32_t calc_start_nonce(uint32_t resume)
-	{
-		return reverseBits<uint32_t>(iThreadNo + GlobalStates::inst().iThreadCount * resume);
-	}
-
-	// Limited version of the nonce calc above
-	inline uint32_t calc_nicehash_nonce(uint32_t start, uint32_t resume)
-	{
-		return start | ( ( reverseBits(iThreadNo + GlobalStates::inst().iThreadCount * resume) >> 4u ) );
-	}
 
 	void work_main();
 	void consume_work();
@@ -59,7 +44,6 @@ private:
 	miner_work oWork;
 
 	std::thread oWorkThd;
-	uint8_t iThreadNo;
 
 	nvid_ctx ctx;
 

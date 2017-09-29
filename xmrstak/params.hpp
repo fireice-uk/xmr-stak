@@ -12,7 +12,7 @@ struct Params
 
 	static inline Params& inst()
 	{
-		auto& env = Environment::inst();
+		auto& env = environment::inst();
 		if(env.pParams == nullptr)
 			env.pParams = new Params;
 		return *env.pParams;

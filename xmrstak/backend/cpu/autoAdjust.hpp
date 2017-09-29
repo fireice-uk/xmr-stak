@@ -39,7 +39,7 @@ public:
 	bool printConfig()
 	{
 
-		ConfigEditor configTpl{};
+		configEditor configTpl{};
 
 		// load the template of the backend config into a char variable
 		const char *tpl =

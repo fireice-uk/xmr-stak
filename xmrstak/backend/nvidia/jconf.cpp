@@ -22,7 +22,7 @@
   */
 
 #include "jconf.hpp"
-#include "xmrstak/miscjext.hpp"
+#include "xmrstak/misc/jext.hpp"
 #include "xmrstak/misc/console.hpp"
 
 #include <stdio.h>

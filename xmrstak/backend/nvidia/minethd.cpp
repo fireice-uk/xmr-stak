@@ -26,7 +26,7 @@
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/backend/cpu/crypto/cryptonight_aesni.h"
 #include "xmrstak/backend/cpu/crypto/cryptonight.h"
-#include "xmrstak/backend/cpu//cpu/minethd.hpp"
+#include "xmrstak/backend/cpu/minethd.hpp"
 #include "xmrstak/params.hpp"
 #include "xmrstak/misc/executor.hpp"
 #include "xmrstak/jconf.hpp"
@@ -110,18 +110,18 @@ extern "C"
 #ifdef WIN32
 __declspec(dllexport)
 #endif
-std::vector<IBackend*>* xmrstak_start_backend(uint32_t threadOffset, miner_work& pWork, Environment& env)
+std::vector<iBackend*>* xmrstak_start_backend(uint32_t threadOffset, miner_work& pWork, environment& env)
 {
-	Environment::inst() = env;
+	environment::inst() = env;
 	return nvidia::minethd::thread_starter(threadOffset, pWork);
 }
 } // extern "C"
 
-std::vector<IBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_work& pWork)
+std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_work& pWork)
 {
-	std::vector<IBackend*>* pvThreads = new std::vector<IBackend*>();
+	std::vector<iBackend*>* pvThreads = new std::vector<iBackend*>();
 
-	if(!ConfigEditor::file_exist(Params::inst().configFileNVIDIA))
+	if(!configEditor::file_exist(Params::inst().configFileNVIDIA))
 	{
 		autoAdjust adjust;
 		if(!adjust.printConfig())
@@ -174,19 +174,19 @@ void minethd::switch_work(miner_work& pWork)
 	// faster than threads can consume them. This should never happen in real life.
 	// Pool cant physically send jobs faster than every 250ms or so due to net latency.
 
-	while (GlobalStates::inst().iConsumeCnt.load(std::memory_order_seq_cst) < GlobalStates::inst().iThreadCount)
+	while (globalStates::inst().iConsumeCnt.load(std::memory_order_seq_cst) < globalStates::inst().iThreadCount)
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-	GlobalStates::inst().oGlobalWork = pWork;
-	GlobalStates::inst().iConsumeCnt.store(0, std::memory_order_seq_cst);
-	GlobalStates::inst().iGlobalJobNo++;
+	globalStates::inst().oGlobalWork = pWork;
+	globalStates::inst().iConsumeCnt.store(0, std::memory_order_seq_cst);
+	globalStates::inst().iGlobalJobNo++;
 }
 
 void minethd::consume_work()
 {
-	memcpy(&oWork, &GlobalStates::inst().oGlobalWork, sizeof(miner_work));
+	memcpy(&oWork, &globalStates::inst().oGlobalWork, sizeof(miner_work));
 	iJobNo++;
-	GlobalStates::inst().iConsumeCnt++;
+	globalStates::inst().iConsumeCnt++;
 }
 
 void minethd::work_main()
@@ -197,7 +197,7 @@ void minethd::work_main()
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
 	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/);
 
-	GlobalStates::inst().iConsumeCnt++;
+	globalStates::inst().iConsumeCnt++;
 
 	if(/*cuda_get_deviceinfo(&ctx) != 1 ||*/ cryptonight_extra_cpu_init(&ctx) != 1)
 	{
@@ -213,7 +213,7 @@ void minethd::work_main()
 			    either because of network latency, or a socket problem. Since we are
 			    raison d'etre of this software it us sensible to just wait until we have something*/
 
-			while (GlobalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
@@ -225,7 +225,7 @@ void minethd::work_main()
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
-		while(GlobalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 
 			uint32_t foundNonce[10];
