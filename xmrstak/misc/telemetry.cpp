@@ -21,10 +21,12 @@
   *
   */
 
+#include "telemetry.hpp"
+
 #include <cmath>
 #include <cstring>
 #include <chrono>
-#include "telemetry.h"
+
 
 namespace xmrstak
 {

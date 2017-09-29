@@ -21,24 +21,23 @@
   *
   */
 
+#include "minethd.hpp"
+#include "autoAdjust.hpp"
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/backend/cpu/crypto/cryptonight_aesni.h"
+#include "xmrstak/backend/cpu/crypto/cryptonight.h"
+#include "xmrstak/backend/cpu//cpu/minethd.hpp"
+#include "xmrstak/params.hpp"
+#include "xmrstak/misc/executor.hpp"
+#include "xmrstak/jconf.hpp"
+#include "xmrstak/misc/environment.hpp"
+
 #include <assert.h>
 #include <cmath>
 #include <chrono>
 #include <thread>
 #include <bitset>
 #include <vector>
-#include "../../console.h"
-#include "../../crypto/cryptonight_aesni.h"
-#include "../cpu/minethd.h"
-#include "../../Params.hpp"
-
-#include "../../executor.h"
-#include "minethd.h"
-#include "../../jconf.h"
-#include "../../crypto/cryptonight.h"
-#include "../../Environment.hpp"
-#include "autoAdjust.hpp"
-
 
 #ifndef USE_PRECOMPILED_HEADERS
 #ifdef WIN32

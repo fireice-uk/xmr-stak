@@ -1,6 +1,6 @@
 #pragma once
 
-#include "console.h"
+#include "xmrstak/misc/console.hpp"
 
 #ifndef CONF_NO_HWLOC
 

@@ -1,14 +1,18 @@
 #pragma once
+
+#include "xmrstak/jconf.hpp"
+#include "jconf.hpp"
+#include "nvcc_code/cryptonight.h"
+
+#include "xmrstak/bakcend/cpu/crypto/cryptonight.h"
+#include "xmrstak/backend/iBackend.hpp"
+#include "xmrstak/misc/environment.hpp"
+
+#include <iostream>
 #include <thread>
 #include <atomic>
 #include <vector>
-#include "nvcc_code/cryptonight.h"
-#include "../../crypto/cryptonight.h"
-#include "../../jconf.h"
-#include "./jconf.h"
-#include "../IBackend.hpp"
-#include "../../Environment.hpp"
-#include <iostream>
+
 
 namespace xmrstak
 {

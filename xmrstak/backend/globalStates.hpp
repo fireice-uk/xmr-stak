@@ -1,7 +1,10 @@
 #pragma once
+
+#include "miner_work.hpp"
+#include "xmrstak/misc/environment.hpp"
+
 #include <atomic>
-#include "miner_work.h"
-#include "../Environment.hpp"
+
 
 namespace xmrstak
 {

@@ -1,5 +1,8 @@
 #pragma once
 
+#include "xmrstak/rapidjson/document.h"
+#include "xmrstak/rapidjson/error/en.h"
+
 using namespace rapidjson;
 
 /* This macro brings rapidjson more in line with other libs */

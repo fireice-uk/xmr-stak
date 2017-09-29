@@ -61,7 +61,7 @@ Performance is nearly identical to the closed source paid miners. Here are some 
 * **Dual E5640** - 365 H/s (same as above)
 
 ## Default dev donation
-By default the miner will donate 2% of the hashpower (2 minute in 100 minutes) to my pool. If you want to change that, edit **donate-level.h** before you build the binaries.
+By default the miner will donate 2% of the hashpower (2 minute in 100 minutes) to my pool. If you want to change that, edit **xmrstak/donate-level.hpp** before you build the binaries.
 
 If you want to donate directly to support further development, here is my wallet
 

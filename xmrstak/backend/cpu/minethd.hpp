@@ -1,13 +1,15 @@
 #pragma once
+
+#include "crypto/cryptonight.h"
+#include "xmrstak/backend/miner_work.hpp"
+#include "xmrstak/backend/iBackend.hpp"
+#include "xmrstak/backend/globalStates.hpp"
+
+#include <iostream>
 #include <thread>
 #include <vector>
 #include <atomic>
 #include <mutex>
-#include "../../crypto/cryptonight.h"
-#include "../miner_work.h"
-#include "../IBackend.hpp"
-#include "../GlobalStates.hpp"
-#include <iostream>
 
 namespace xmrstak
 {

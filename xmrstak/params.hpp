@@ -1,6 +1,8 @@
 #pragma once
+
+#include "xmrstak/misc/environment.hpp"
+
 #include <string>
-#include "Environment.hpp"
 
 namespace xmrstak
 {

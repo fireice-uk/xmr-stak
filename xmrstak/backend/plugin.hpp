@@ -1,21 +1,23 @@
 #pragma once
+
+#include "xmrstak/misc/environment.hpp"
+
 #include <thread>
 #include <atomic>
 #include <vector>
 #include <string>
-#include "IBackend.hpp"
+#include "iBackend.hpp"
 #include <iostream>
-#include "../Environment.hpp"
 
 #ifndef USE_PRECOMPILED_HEADERS
-#ifdef WIN32
-#include <direct.h>
-#include <windows.h>
-#else
-#include <sys/types.h>
-#include <dlfcn.h>
-#endif
-#include <iostream>
+#	ifdef WIN32
+#		include <direct.h>
+#		include <windows.h>
+#	else
+#		include <sys/types.h>
+#		include <dlfcn.h>
+#	endif
+#	include <iostream>
 #endif
 
 namespace xmrstak

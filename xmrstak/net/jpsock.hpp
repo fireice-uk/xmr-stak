@@ -1,11 +1,13 @@
 #pragma once
+
+#include "msgstruct.hpp"
+
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
 #include <thread>
 #include <string>
 
-#include "msgstruct.h"
 
 /* Our pool can have two kinds of errors:
 	- Parsing or connection error

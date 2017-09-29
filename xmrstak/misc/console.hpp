@@ -1,6 +1,9 @@
 #pragma once
+
+#include "xmrstak/misc/environment.hpp"
+
 #include <mutex>
-#include "Environment.hpp"
+
 
 enum out_colours { K_RED, K_GREEN, K_BLUE, K_YELLOW, K_CYAN, K_MAGENTA, K_WHITE, K_NONE };
 

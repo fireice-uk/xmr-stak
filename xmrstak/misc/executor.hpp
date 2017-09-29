@@ -1,16 +1,18 @@
 #pragma once
+
 #include "thdq.hpp"
-#include "msgstruct.h"
+#include "telemetry.hpp"
+#include "xmrstak/backend/iBackend.hpp"
+#include "xmrstak/misc/environment.hpp"
+#include "xmrstak/net/msgstruct.hpp"
+
 #include <atomic>
 #include <array>
 #include <list>
 #include <future>
-#include "telemetry.h"
-#include "backend/IBackend.hpp"
-#include "Environment.hpp"
+
 
 class jpsock;
-
 
 namespace xmrstak
 {

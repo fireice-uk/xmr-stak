@@ -21,13 +21,14 @@
   *
   */
 
-#include "jconf.h"
-#include "../../console.h"
-#include <iostream>
+#include "jconf.hpp"
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/misc/jext.hpp"
 
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 
 #ifdef _WIN32
 #define strcasecmp _stricmp
@@ -36,9 +37,6 @@
 #include <cpuid.h>
 #endif
 
-#include "../../rapidjson/document.h"
-#include "../../rapidjson/error/en.h"
-#include "../../jext.h"
 
 namespace xmrstak
 {

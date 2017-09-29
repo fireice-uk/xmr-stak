@@ -21,27 +21,25 @@
   *
   */
 
-#include "../executor.h"
-#include "../backend/miner_work.h"
-#include "../backend/GlobalStates.hpp"
-#include "../backend/BackendConnector.hpp"
-#include "../jconf.h"
-#include "../console.h"
-#include "../donate-level.h"
-#include "../Params.hpp"
-#include "../ConfigEditor.hpp"
-
-#include "../version.h"
+#include "xmrstak/misc/executor.hpp"
+#include "xmrstak/backend/miner_work.hpp"
+#include "xmrstak/backend/globalStates.hpp"
+#include "xmrstak/backend/backendConnector.hpp"
+#include "xmrstak/jconf.hpp"
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/donate-level.hpp"
+#include "xmrstak/params.hpp"
+#include "xmrstak/misc/configEditor.hpp"
+#include "xmrstak/version.hpp"
 
 #ifndef CONF_NO_HTTPD
-#	include "../httpd.h"
+#	include "xmrstak/http//httpd.hpp"
 #endif
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
 #include <iostream>
-
 #include <time.h>
 
 #ifndef CONF_NO_TLS

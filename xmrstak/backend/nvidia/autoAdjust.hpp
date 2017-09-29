@@ -3,11 +3,11 @@
 
 #include "autoAdjust.hpp"
 
-#include "nvcc_code/cryptonight.h"
-#include "jconf.h"
-#include "../../console.h"
-#include "../../ConfigEditor.hpp"
-#include "../../Params.hpp"
+#include "nvcc_code/cryptonight.hpp"
+#include "jconf.hpp"
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/misc/configEditor.hpp"
+#include "xmrstak/params.hpp"
 
 #include <vector>
 #include <cstdio>

@@ -21,6 +21,24 @@
   *
   */
 
+#include "iBackend.hpp"
+#include "backendConnector.hpp"
+#include "miner_work.hpp"
+#include "globalStates.hpp"
+#include "plugin.hpp"
+#include "xmrstak/misc/environment.hpp"
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/params.hpp"
+
+#include "cpu/minethd.hpp"
+#ifndef CONF_NO_CUDA
+#	include "nvidia/minethd.hpp"
+#endif
+#ifndef CONF_NO_OPENCL
+#	include "amd/minethd.hpp"
+#endif
+
+#include <cstdlib>
 #include <assert.h>
 #include <cmath>
 #include <chrono>
@@ -28,28 +46,9 @@
 #include <thread>
 #include <bitset>
 
-#include "IBackend.hpp"
-#include "BackendConnector.hpp"
-
-#include "cpu/minethd.h"
-#ifndef CONF_NO_CUDA
-#	include "nvidia/minethd.h"
-#endif
-#ifndef CONF_NO_OPENCL
-#	include "amd/minethd.h"
-#endif
-#include "miner_work.h"
-#include "GlobalStates.hpp"
- #include <cstdlib>
-
-#include "Plugin.hpp"
-#include "../Environment.hpp"
-#include "../console.h"
-#include "../Params.hpp"
 
 namespace xmrstak
 {
-
 
 bool BackendConnector::self_test()
 {

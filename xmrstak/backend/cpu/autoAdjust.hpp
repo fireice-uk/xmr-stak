@@ -1,9 +1,11 @@
 #pragma once
-#include "jconf.h"
-#include "../../console.h"
-#include "../../jconf.h"
-#include "../../ConfigEditor.hpp"
-#include "../../Params.hpp"
+
+#include "jconf.hpp"
+
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/jconf.hpp"
+#include "xmrstak/misc/configEditor.hpp"
+#include "xmrstak/params.hpp"
 #include <string>
 
 #ifdef _WIN32

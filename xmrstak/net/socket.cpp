@@ -21,11 +21,11 @@
   *
   */
 
-#include "socket.h"
-#include "jpsock.h"
-#include "jconf.h"
-#include "console.h"
-#include "executor.h"
+#include "socket.hpp"
+#include "jpsock.hpp"
+#include "xmrstak/jconf.hpp"
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/misc/executor.hpp"
 
 #ifndef CONF_NO_TLS
 #include <openssl/ssl.h>

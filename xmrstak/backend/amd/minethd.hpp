@@ -1,11 +1,12 @@
 #pragma once
+
+#include "amd_gpu/gpu.hpp"
+#include "jconf.hpp"
+#include "xmrstak/backend/iBackend.hpp"
+#include "xmrstak/misc/environment.hpp"
+
 #include <thread>
 #include <atomic>
-#include "./jconf.h"
-#include "../IBackend.hpp"
-#include "../../Environment.hpp"
-
-#include "amd_gpu/gpu.h"
 
 namespace xmrstak
 {

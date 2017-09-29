@@ -23,18 +23,18 @@
 
 #ifndef CONF_NO_HTTPD
 
+
+#include "httpd.hpp"
+#include "webdesign.hpp"
+#include "xmrstak/net/msgstruct.hpp"
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/misc/executor.hpp"
+#include "xmrstak/jconf.hpp"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <string>
-
-#include "msgstruct.h"
-#include "httpd.h"
-#include "console.h"
-#include "executor.h"
-#include "jconf.h"
-
-#include "webdesign.h"
 
 #include <microhttpd.h>
 #ifdef _WIN32

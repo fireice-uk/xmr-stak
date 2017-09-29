@@ -1,10 +1,13 @@
 #pragma once
+
+#include "iBackend.hpp"
+#include "miner_work.hpp"
+
 #include <thread>
 #include <vector>
 #include <atomic>
 #include <mutex>
-#include "IBackend.hpp"
-#include "miner_work.h"
+
 
 namespace xmrstak
 {

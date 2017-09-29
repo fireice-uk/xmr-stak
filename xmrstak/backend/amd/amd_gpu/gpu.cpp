@@ -23,7 +23,6 @@
 
 #ifdef _WIN32
 #include <windows.h>
-const char* sSourcePath = "opencl\\cryptonight.cl";
 
 static inline void port_sleep(size_t sec)
 {
@@ -31,7 +30,6 @@ static inline void port_sleep(size_t sec)
 }
 #else
 #include <unistd.h>
-const char* sSourcePath = "opencl/cryptonight.cl";
 
 static inline void port_sleep(size_t sec)
 {
@@ -46,7 +44,7 @@ static inline long long unsigned int int_port(size_t i)
 }
 #endif
 
-#include "gpu.h"
+#include "gpu.hpp"
 
 const char* err_to_str(cl_int ret)
 {

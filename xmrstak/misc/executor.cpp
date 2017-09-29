@@ -21,24 +21,25 @@
   *
   */
 
+#include "executor.hpp"
+#include "xmrstak/net/jpsock.hpp"
+
+#include "telemetry.hpp"
+#include "xmrstak/backend/miner_work.hpp"
+#include "xmrstak/backend/globalStates.hpp"
+#include "xmrstak/backend/backendConnector.hpp"
+
+#include "xmrstak/jconf.hpp"
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/donate-level.hpp"
+#include "xmrstak/http/webdesign.hpp"
+
 #include <thread>
 #include <string>
 #include <cmath>
 #include <algorithm>
 #include <assert.h>
 #include <time.h>
-#include "executor.h"
-#include "jpsock.h"
-
-#include "telemetry.h"
-#include "backend/miner_work.h"
-#include "backend/GlobalStates.hpp"
-#include "backend/BackendConnector.hpp"
-
-#include "jconf.h"
-#include "console.h"
-#include "donate-level.h"
-#include "webdesign.h"
 
 #ifdef _WIN32
 #define strncasecmp _strnicmp

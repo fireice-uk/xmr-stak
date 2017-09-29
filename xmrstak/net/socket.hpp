@@ -1,5 +1,7 @@
 #pragma once
-#include "socks.h"
+
+#include "socks.hpp"
+
 class jpsock;
 
 class base_socket

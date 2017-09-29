@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdlib.h>
+
 struct MHD_Daemon;
 struct MHD_Connection;
 

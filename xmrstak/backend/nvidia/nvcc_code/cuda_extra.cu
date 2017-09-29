@@ -25,8 +25,8 @@ uint64_t keccakf_rndc[24] ={
 typedef unsigned char BitSequence;
 typedef unsigned long long DataLength;
 
-#include "cryptonight.h"
-#include "cuda_extra.h"
+#include "cryptonight.hpp"
+#include "cuda_extra.hpp"
 #include "cuda_keccak.hpp"
 #include "cuda_blake.hpp"
 #include "cuda_groestl.hpp"

@@ -21,28 +21,25 @@
   *
   */
 
+#include "minethd.hpp"
+#include "autoAdjust.hpp"
+#include "amd_gpu/gpu.hpp"
+
+#include "xmrstak/backend/cpu/crypto/cryptonight_aesni.h"
+#include "xmrstak/backend/cpu/crypto/cryptonight.h"
+#include "xmrstak/misc/configEditor.hpp"
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/backend/cpu/minethd.hpp"
+#include "xmrstak/jconf.hpp"
+#include "xmrstak/misc/executor.hpp"
+#include "xmrstak/misc/environment.hpp"
+#include "xmrstak/params.hpp"
+
 #include <assert.h>
 #include <cmath>
 #include <chrono>
 #include <thread>
-
-#include "../../ConfigEditor.hpp"
-#include "autoAdjust.hpp"
-
 #include <vector>
-#include "../../console.h"
-#include "../../crypto/cryptonight_aesni.h"
-#include "../cpu/minethd.h"
-#include "../../jconf.h"
-
-#include "../../executor.h"
-#include "minethd.h"
-#include "../../jconf.h"
-#include "../../crypto/cryptonight.h"
-#include "../../Environment.hpp"
-#include "../../Params.hpp"
-#include "amd_gpu/gpu.h"
-
 
 namespace xmrstak
 {

@@ -1,9 +1,8 @@
 #pragma once
 
-#include "../../console.h"
-#include <hwloc.h>
-#include <stdio.h>
-#include "../../Params.hpp"
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/misc/configEditor.hpp"
+#include "xmrstak/params.hpp"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -12,7 +11,10 @@
 #endif // _WIN32
 
 #include <string>
-#include "../../ConfigEditor.hpp"
+
+#include <hwloc.h>
+#include <stdio.h>
+
 
 namespace xmrstak
 {

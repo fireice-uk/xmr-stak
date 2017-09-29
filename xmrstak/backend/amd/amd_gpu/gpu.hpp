@@ -1,5 +1,7 @@
 #pragma once
 
+#include "xmrstak/misc/console.hpp"
+
 #if defined(__APPLE__)
 #include <OpenCL/cl.h>
 #else
@@ -8,7 +10,6 @@
 
 #include <stdint.h>
 #include <vector>
-#include "../../../console.h"
 
 #define ERR_SUCCESS (0)
 #define ERR_OCL_API (2)

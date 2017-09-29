@@ -27,19 +27,19 @@
 #include <cstring>
 #include <thread>
 #include <bitset>
-#include "../../console.h"
-#include "../IBackend.hpp"
-#include "../GlobalStates.hpp"
-#include "../../ConfigEditor.hpp"
-#include "../../Params.hpp"
-#include "../../jconf.h"
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/backend/iBackend.hpp"
+#include "xmrstak/backend//globalStates.hpp"
+#include "xmrstak/misc/configEditor.hpp"
+#include "xmrstak/params.hpp"
+#include "xmrstak/jconf.hpp"
 
-#include "../../executor.h"
-#include "minethd.h"
-#include "./jconf.h"
-#include "../../crypto/cryptonight_aesni.h"
-#include "../../hwlocMemory.hpp"
-#include "../miner_work.h"
+#include "xmrstak/misc/executor.hpp"
+#include "minethd.hpp"
+#include "xmrstak/jconf.hpp"
+#include "xmrstak/backend/crypto/cryptonight_aesni.h"
+#include "hwlocMemory.hpp"
+#include "xmrstak/backend/miner_work.hpp"
 
 #ifndef CONF_NO_HWLOC
 #   include "autoAdjustHwloc.hpp"

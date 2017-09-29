@@ -21,8 +21,12 @@
   *
   */
 
-#include "jconf.h"
-#include "console.h"
+#include "jconf.hpp"
+#include "params.hpp"
+
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/misc/jext.hpp"
+#include "xmrstak/misc/console.hpp"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,11 +39,6 @@
 #include <cpuid.h>
 #endif
 
-#include "rapidjson/document.h"
-#include "rapidjson/error/en.h"
-#include "jext.h"
-#include "console.h"
-#include "Params.hpp"
 
 using namespace rapidjson;
 

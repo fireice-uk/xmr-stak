@@ -1,14 +1,13 @@
 
 #pragma once
 
+#include "amd_gpu/gpu.hpp"
 #include "autoAdjust.hpp"
+#include "jconf.hpp"
 
-
-#include "jconf.h"
-#include "../../console.h"
-#include "../../ConfigEditor.hpp"
-#include "amd_gpu/gpu.h"
-#include "../../Params.hpp"
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/misc/configEditor.hpp"
+#include "xmrstak/params.hpp"
 
 #include <vector>
 #include <cstdio>

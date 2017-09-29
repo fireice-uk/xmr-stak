@@ -24,15 +24,15 @@
 #include <stdarg.h>
 #include <assert.h>
 
-#include "jpsock.h"
-#include "executor.h"
-#include "jconf.h"
+#include "jpsock.hpp"
+#include "socks.hpp"
+#include "socket.hpp"
 
-#include "rapidjson/document.h"
-#include "jext.h"
-#include "socks.h"
-#include "socket.h"
-#include "version.h"
+#include "xmrstak/misc/executor.hpp"
+#include "xmrstak/jconf.hpp"
+#include "xmrstak/misc/jext.hpp"
+#include "xmrstak/version.hpp"
+
 
 #define AGENTID_STR XMR_STAK_NAME "/" XMR_STAK_VERSION
 

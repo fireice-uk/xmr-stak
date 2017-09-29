@@ -1,7 +1,9 @@
 #pragma once
+
+#include "xmrstak/params.hpp"
+
 #include <stdlib.h>
 #include <string>
-#include "../../Params.hpp"
 
 namespace xmrstak
 {
