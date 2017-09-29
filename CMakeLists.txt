@@ -373,14 +373,14 @@ set_source_files_properties(${SRCFILES_CPP} PROPERTIES LANGUAGE CXX)
 set_property(TARGET xmr-stak-c PROPERTY C_STANDARD 99)
 target_link_libraries(xmr-stak-c ${LIBS})
 
-add_executable(xmr-stak-cpu
+add_executable(xmr-stak
     ${SRCFILES_CPP}
 )
 
 set(EXECUTABLE_OUTPUT_PATH "bin")
 set(LIBRARY_OUTPUT_PATH "bin")
 
-target_link_libraries(xmr-stak-cpu ${LIBS} xmr-stak-c xmr-stak-backend)
+target_link_libraries(xmr-stak ${LIBS} xmr-stak-c xmr-stak-backend)
 
 ################################################################################
 # Install
@@ -389,7 +389,7 @@ target_link_libraries(xmr-stak-cpu ${LIBS} xmr-stak-c xmr-stak-backend)
 
 # do not install the binary if the project and install are equal
 if( NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "${PROJECT_BINARY_DIR}" )
-    install(TARGETS xmr-stak-cpu
+    install(TARGETS xmr-stak
             RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
     if(CUDA_FOUND)
         if(WIN32)
@@ -410,5 +410,6 @@ if( NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "${PROJECT_BINARY_DIR}" )
         endif()
     endif()
 else()
-    set(WIN_OUTPUT_RELEASE "/Release")
+    # this rule is used if the install prefix is the build directory
+    install(CODE "MESSAGE(\"xmr-stak installed to folder 'bin'\")")
 endif()
