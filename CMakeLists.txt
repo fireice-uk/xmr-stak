@@ -313,14 +313,22 @@ if(CMAKE_LINK_STATIC)
     set(LIBS "-static-libgcc -static-libstdc++ ${LIBS}")
 endif()
 
-file(GLOB SRCFILES_C "crypto/*.c")
+file(GLOB SRCFILES_C "backend/cpu/crypto/*.c")
 
 add_library(xmr-stak-c
     STATIC
     ${SRCFILES_C}
 )
 
-file(GLOB BACKEND_CPP  "*.cpp" "backend/cpu/*.cpp" "backend/*.cpp"  "crypto/*.cpp")
+file(GLOB BACKEND_CPP
+    "*.cpp"
+    "backend/cpu/*.cpp"
+    "backend/*.cpp"
+    "backend/cpu/crypto/*.cpp"
+    "http/*.cpp"
+    "misc/*.cpp"
+    "net/*.cpp")
+
 add_library(xmr-stak-backend
     STATIC
     ${BACKEND_CPP}
@@ -328,7 +336,9 @@ add_library(xmr-stak-backend
 target_link_libraries(xmr-stak-backend xmr-stak-c ${CMAKE_DL_LIBS})
 
 if(CUDA_FOUND)
-    file(GLOB CUDASRCFILES "backend/nvidia/nvcc_code/*.cu" "backend/nvidia/*.cpp")
+    file(GLOB CUDASRCFILES 
+        "backend/nvidia/nvcc_code/*.cu"
+        "backend/nvidia/*.cpp")
 
     #  build device code with nvcc
     cuda_add_library(xmrstak_cuda_backend
@@ -342,10 +352,12 @@ if(CUDA_FOUND)
 endif()
 
 if(OpenCL_FOUND)
-    file(GLOB OPENCLSRCFILES_C  "backend/amd/amd_gpu/*.cpp" "backend/amd/*.cpp")
+    file(GLOB OPENCLSRCFILES  
+        "backend/amd/amd_gpu/*.cpp"
+        "backend/amd/*.cpp")
     add_library(xmrstak_opencl_backend
         SHARED
-        ${OPENCLSRCFILES_C}
+        ${OPENCLSRCFILES}
     )
     target_link_libraries(xmrstak_opencl_backend ${OpenCL_LIBRARY} )
     if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
