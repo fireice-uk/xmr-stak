@@ -38,7 +38,7 @@ public:
     {
 		int deviceCount = 0;
         if(cuda_get_devicecount(&deviceCount) == 0)
-            std::exit(0);
+            return false;
         // evaluate config parameter for if auto adjustment is needed
                 // evaluate config parameter for if auto adjustment is needed
         for(int i = 0; i < deviceCount; i++)

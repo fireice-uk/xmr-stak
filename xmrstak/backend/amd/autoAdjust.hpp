@@ -44,7 +44,6 @@ public:
      */
     bool printConfig()
     {
-
 		int platformIndex = getAMDPlatformIdx();
 
 		if(platformIndex == -1)
@@ -58,13 +57,12 @@ public:
 
 		int deviceCount = devVec.size();
 
-        if(deviceCount == 0)
+		if(deviceCount == 0)
             return false;
 
- 
+
         generateThreadConfig(platformIndex);
 		return true;
-
     }
 
 private:
