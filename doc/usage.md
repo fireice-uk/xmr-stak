@@ -29,9 +29,9 @@ The number of files depends on the available backends.
 The miner allow to overwrite some of the settings via command line options.
 
 ```
-Usage: xmr-stak [OPTION]... [CONFIGFILE]
+Usage: xmr-stak [OPTION]...
 
-  -c, --config          common miner configuration file
+  -c, --config FILE     common miner configuration file
   -h, --help            show this help
   --noCPU               disable the CPU miner backend
   --cpu FILE            CPU backend miner config file

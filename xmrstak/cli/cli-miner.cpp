@@ -60,9 +60,9 @@ void help()
 	using namespace std;
 	using namespace xmrstak;
 	
-	cout<<"Usage: "<<params::inst().binaryName<<" [OPTION]... [CONFIGFILE]"<<endl;
+	cout<<"Usage: "<<params::inst().binaryName<<" [OPTION]..."<<endl;
 	cout<<" "<<endl;
-	cout<<"  CONFIGFILE            common miner configuration file"<<endl;
+	cout<<"  -c, --config FILE     common miner configuration file"<<endl;
 	cout<<"  -h, --help            show this help"<<endl;
 #ifndef CONF_NO_CPU
 	cout<<"  --noCPU               disable the CPU miner backend"<<endl;
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 			++i;
 			if( i >=argc )
 			{
-				printer::inst()->print_msg(L0, "No argument for opName '--cpu' given");
+				printer::inst()->print_msg(L0, "No argument for parameter '--cpu' given");
 				win_exit();
 				return 1;
 			}
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 			++i;
 			if( i >=argc )
 			{
-				printer::inst()->print_msg(L0, "No argument for opName '--amd' given");
+				printer::inst()->print_msg(L0, "No argument for parameter '--amd' given");
 				win_exit();
 				return 1;
 			}
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 			++i;
 			if( i >=argc )
 			{
-				printer::inst()->print_msg(L0, "No argument for opName '--nvidia' given");
+				printer::inst()->print_msg(L0, "No argument for parameter '--nvidia' given");
 				win_exit();
 				return 1;
 			}
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
 			++i;
 			if( i >=argc )
 			{
-				printer::inst()->print_msg(L0, "No argument for opName '-o/--url' given");
+				printer::inst()->print_msg(L0, "No argument for parameter '-o/--url' given");
 				win_exit();
 				return 1;
 			}
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
 			++i;
 			if( i >=argc )
 			{
-				printer::inst()->print_msg(L0, "No argument for opName '-u/--user' given");
+				printer::inst()->print_msg(L0, "No argument for parameter '-u/--user' given");
 				win_exit();
 				return 1;
 			}
@@ -194,15 +194,30 @@ int main(int argc, char *argv[])
 			++i;
 			if( i >=argc )
 			{
-				printer::inst()->print_msg(L0, "No argument for opName '-p/--pass' given");
+				printer::inst()->print_msg(L0, "No argument for parameter '-p/--pass' given");
 				win_exit();
 				return 1;
 			}
 			userSetPasswd = true;
 			params::inst().poolPasswd = argv[i];
 		}
-		else
+		else if(opName.compare("-c") == 0 || opName.compare("--config") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '-c/--config' given");
+				win_exit();
+				return 1;
+			}
 			params::inst().configFile = argv[i];
+		}
+		else
+		{
+			printer::inst()->print_msg(L0, "Parameter unknown '%s'",argv[i]);
+			win_exit();
+			return 1;
+		}
 	}
 
 	// check if we need a guided start
