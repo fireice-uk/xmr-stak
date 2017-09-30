@@ -82,19 +82,19 @@ before_install:
 install:
 
   # CUDA
-  - NVCC_FOUND=$(which nvcc >/dev/null && { echo 0; } || { echo 1; })
-  - which nvcc
-  - echo $NVCC_FOUND
-  - if [ $NVCC_FOUND -ne 0 ]; then
-      mkdir -p $CUDA_ROOT &&
-      cd $CUDA_ROOT &&
-      travis_retry wget https://developer.nvidia.com/compute/cuda/8.0/prod/local_installers/cuda_8.0.44_linux-run &&
-      ls -la &&
-      chmod u+x *-run &&
-      ./cuda_8.0.44_linux-run --silent --toolkit --toolkitpath=$CUDA_ROOT &&
-      rm -rf ./cuda_8.0.44_linux-run $CUDA_ROOT/{samples,jre,doc,share} &&
-      cd -;
-    fi
+  - if [ $TRAVIS_OS_NAME != osx ]; then
+      NVCC_FOUND=$(which nvcc >/dev/null && { echo 0; } || { echo 1; });
+      if [ $NVCC_FOUND -ne 0 ]; then
+        mkdir -p $CUDA_ROOT &&
+        cd $CUDA_ROOT &&
+        travis_retry wget https://developer.nvidia.com/compute/cuda/8.0/prod/local_installers/cuda_8.0.44_linux-run &&
+        ls -la &&
+        chmod u+x *-run &&
+        ./cuda_8.0.44_linux-run --silent --toolkit --toolkitpath=$CUDA_ROOT &&
+        rm -rf ./cuda_8.0.44_linux-run $CUDA_ROOT/{samples,jre,doc,share} &&
+        cd -;
+      fi
+    fi;
 
 script:
   - if [ $TRAVIS_OS_NAME = osx ]; then
