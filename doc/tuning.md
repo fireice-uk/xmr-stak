@@ -1,0 +1,67 @@
+# Tuning Guide
+
+## Content Overview
+* [NVIDIA Backend](#nvidia-backend)
+  * [Choose Value for `threads` and `blocks`](#choose-value-for-threads-and-blocks)
+  * [Add more GPUs](#add-more-gpus)
+* [AMD Backend](#amd-backend)
+  * [Choose `intensity` and `worksize`](#choose-intensity-and-worksize)
+  * [Add more GPUs](#add-more-gpus)
+
+## NVIDIA Backend
+
+By default the NVIDIA backend can be tuned in the config file `nvidia.txt`
+
+### Choose Value for `threads` and `blocks`
+
+The optimal parameter for the `threads` and `blocks` option in `config.txt` depend on your GPU.
+For all GPU's with a compute capability `>=2.0` and `<6.0` there is a restriction of the amount of RAM that can be used for the mining algorithm.
+The maximum RAM that can be used must be less than 2GB (e.g. GTX TITAN) or 1GB (e.g. GTX 750-TI).
+The amount of RAM used for mining can be changed with `"threads" : T, "blocks : B"`.
+  - `T` = threads used per block
+  - `B` = CUDA blocks started (should be a multiple of the multiprocessors `M` on the GPU)
+
+For the 2GB limit the equations must be full filled: `T * B * 2 <= 1900` and ` B mod M == 0`.
+The value `1900` is used because there is a little data overhead for administration.
+The GTX Titan X has 24 multiprocessors `M`, this means a valid and good starting configuration is `"threads" : 16, "blocks : 48"`
+and full fill all restrictions `16 * 48 * 2 = 1536` and `48 mod 24 = 0`.
+
+The memory limit for NVIDIA Pascal GPUs is `16` GiB if the newest CUDA driver is used.
+
+### Add More GPUs
+
+To add a new GPU you need to add a new config set to `gpu_threads_conf`.
+`index` is the number of the gpu, the index order not follow the order from `nvidia-smi` or the order shown in windows.
+
+```
+"gpu_threads_conf" :
+[
+    { "index" : 0, "threads" : 17, "blocks" : 60, "bfactor" : 0, "bsleep" :  0, "affine_to_cpu" : false},
+    { "index" : 1, "threads" : 17, "blocks" : 60, "bfactor" : 0, "bsleep" :  0, "affine_to_cpu" : false},
+],
+```
+
+## AMD Backend
+
+By default the NVIDIA backend can be tuned in the config file `nvidia.txt`
+
+### Choose `intensity` and `worksize`
+
+Intensity means the number of threads used to mine.
+`worksize` is the number of threads working together to increase the miner performance.
+In the most cases a `worksize` of `16` or `8` is optimal.
+
+### Add More GPUs
+
+To add a new GPU you need to add a new config set to `gpu_threads_conf` and increase `gpu_thread_num"` to the number of gpus (entries in `gpu_threads_conf`).
+`index` is the number of the gpu.
+
+```
+"gpu_thread_num" : 2,
+
+"gpu_threads_conf" :
+[
+    { "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false },
+    { "index" : 1, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false },
+],
+```

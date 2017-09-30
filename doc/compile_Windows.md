@@ -58,7 +58,7 @@
 
 ## Compile
 
-- download and unzip `xmr-stak-cpu`
+- download and unzip `xmr-stak
 - open the command line terminal `cmd`
 - `cd` to your unzipped source code directory
 - execute the following commands (NOTE: path to VS2017 can be different)
@@ -71,4 +71,3 @@
   cmake --build . --config Release --target install
   cd bin\Release
   ```
-- customize your `config.txt` file by adding the pool, username and password

@@ -37,8 +37,7 @@
     make install
 ```
 
-- g++ version 5.1 or higher is required for full C++11 support. CMake release compile scripts, as well as CodeBlocks build environment for debug builds is included.
-
+- g++ version 5.1 or higher is required for full C++11 support. 
 If you want to compile the binary without installing libraries / compiler or just compile binary for some other distribution, please check the [build_xmr-stak_docker.sh script](scripts/build_xmr-stak_docker/build_xmr-stak_docker.sh).
 
 ### To do a static build for a system without gcc 5.1+
@@ -47,6 +46,3 @@ If you want to compile the binary without installing libraries / compiler or jus
     make install
 ```
 Note - cmake caches variables, so if you want to do a dynamic build later you need to specify '-DCMAKE_LINK_STATIC=OFF'
-
-
-
