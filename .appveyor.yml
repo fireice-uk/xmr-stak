@@ -22,6 +22,6 @@ build_script:
   - cmake --build . --config Release --target install
 
 test_script:
-  - cd c:\xmr-stak-cpu\build\bin\Release
+  - cd c:\xmr-stak\build\bin\Release
   - dir
 #  - xmr-stak.exe

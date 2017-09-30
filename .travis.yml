@@ -6,6 +6,11 @@ sudo: false
 
 language: cpp
 
+cache:
+  apt: true
+  directories:
+    - $HOME/.cache/cuda
+
 addons:
   apt:
     packages: &default_packages
@@ -14,6 +19,10 @@ addons:
       - libssl-dev
       - libhwloc-dev
 
+env:
+  global:
+    - CUDA_ROOT: $HOME/.cache/cuda
+    
 matrix:
   include:
     - os: linux
@@ -29,6 +38,7 @@ matrix:
       env:
         - CMAKE_CXX_COMPILER=g++-5
         - CMAKE_C_COMPILER=gcc-5
+        - XMRSTAK_CMAKE_FLAGS="-DCUDA_ARCH=30 -DOpenCL_ENABLE=OFF"
 
     - os: linux
       compiler: gcc
@@ -43,6 +53,7 @@ matrix:
       env:
         - CMAKE_CXX_COMPILER=g++-6
         - CMAKE_C_COMPILER=gcc-6
+        - XMRSTAK_CMAKE_FLAGS="-DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF"
 
     - os: linux
       compiler: gcc
@@ -57,19 +68,38 @@ matrix:
       env:
         - CMAKE_CXX_COMPILER=g++-7
         - CMAKE_C_COMPILER=gcc-7
+        - XMRSTAK_CMAKE_FLAGS="-DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF"
 
     - os: osx
       compiler: gcc
+      env:
+        - XMRSTAK_CMAKE_FLAGS="-DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF"
 
 before_install:
   - if [ $TRAVIS_OS_NAME = osx ]; then brew tap homebrew/science; fi
+  - export PATH=$CUDA_ROOT/bin:$PATH
+
+install:
+
+  # CUDA
+  - NVCC_FOUND=$(which nvcc >/dev/null && { echo 0; } || { echo 1; })
+  - if [ $NVCC_FOUND -ne 0 ]; then
+      mkdir -p $CUDA_ROOT &&
+      cd $CUDA_ROOT &&
+      travis_retry wget https://developer.nvidia.com/compute/cuda/8.0/prod/local_installers/cuda_8.0.44_linux-run &&
+      ls -la &&
+      chmod u+x *-run &&
+      ./cuda_8.0.44_linux-run --silent --toolkit --toolkitpath=$CUDA_ROOT &&
+      rm -rf ./cuda_8.0.44_linux-run $CUDA_ROOT/{samples,jre,doc,share} &&
+      cd -;
+    fi
 
 script:
   - if [ $TRAVIS_OS_NAME = osx ]; then
       brew install hwloc;
-      cmake -DMICROHTTPD_ENABLE=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF  .;
-    else
-      cmake -D CMAKE_C_COMPILER=${CMAKE_C_COMPILER} -D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF .;
+      cmake -DMICROHTTPD_ENABLE=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl ${XMRSTAK_CMAKE_FLAGS} .;
+    else    
+      cmake -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} ${XMRSTAK_CMAKE_FLAGS} .;
     fi;
   - make VERBOSE=1
-  - ./bin/xmr-stak-cpu -c ./config.txt
+  - ./bin/xmr-stak --help
