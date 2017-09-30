@@ -67,9 +67,9 @@ before_install:
 script:
   - if [ $TRAVIS_OS_NAME = osx ]; then
       brew install hwloc;
-      cmake -DMICROHTTPD_ENABLE=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl .;
+      cmake -DMICROHTTPD_ENABLE=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF  .;
     else
-      cmake -D CMAKE_C_COMPILER=${CMAKE_C_COMPILER} -D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} .;
+      cmake -D CMAKE_C_COMPILER=${CMAKE_C_COMPILER} -D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF .;
     fi;
   - make VERBOSE=1
   - ./bin/xmr-stak-cpu -c ./config.txt

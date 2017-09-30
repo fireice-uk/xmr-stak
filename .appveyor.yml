@@ -5,7 +5,7 @@ image: Visual Studio 2017
 platform: x64
 
 # clone directory
-clone_folder: c:\xmr-stak-cpu
+clone_folder: c:\xmr-stak
 
 install:
   - mkdir c:\xmr-stak-dep
@@ -14,15 +14,14 @@ install:
 
 build_script:
   - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsMSBuildCmd.bat"
-  - cd c:\xmr-stak-cpu
+  - cd c:\xmr-stak
   - mkdir build
   - cd build
   - set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc;C:\xmr-stak-dep\libmicrohttpd;C:\xmr-stak-dep\openssl;
-  - cmake -G "Visual Studio 15 2017 Win64" -T v141,host=x64 ..
-  - msbuild xmr-stak-cpu.sln /p:Configuration=Release
+  - cmake -G "Visual Studio 15 2017 Win64" -T v140,host=x64 -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF ..
+  - cmake --build . --config Release --target install
 
 test_script:
   - cd c:\xmr-stak-cpu\build\bin\Release
   - dir
-  - copy ..\..\..\config.txt .
-#  - xmr-stak-cpu.exe
+#  - xmr-stak.exe
