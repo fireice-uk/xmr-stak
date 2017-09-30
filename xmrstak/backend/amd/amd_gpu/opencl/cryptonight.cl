@@ -235,7 +235,8 @@ void keccakf1600_1(ulong *st)
         st[0] ^= keccakf_rndc[round];
     }
 }
-
+)==="
+R"===(
 void keccakf1600_2(ulong *st)
 {
     int i, round;
