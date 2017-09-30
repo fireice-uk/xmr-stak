@@ -262,8 +262,6 @@ bool jconf::parse_config(const char* sFilename)
 			return false;
 		}
 	}
-	if(NeedsAutoconf())
-		return true;
 
 	return true;
 }
