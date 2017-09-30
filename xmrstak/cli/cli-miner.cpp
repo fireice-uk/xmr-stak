@@ -119,7 +119,8 @@ int main(int argc, char *argv[])
 		if(opName.compare("-h") == 0 || opName.compare("--help") == 0)
 		{
 			help();
-			win_exit();
+			// \todo give return code to win_exit to allow passing CI
+			//win_exit();
 			return 0;
 		}
 		else if(opName.compare("--noCPU") == 0)

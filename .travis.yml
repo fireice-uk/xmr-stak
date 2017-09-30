@@ -83,6 +83,8 @@ install:
 
   # CUDA
   - NVCC_FOUND=$(which nvcc >/dev/null && { echo 0; } || { echo 1; })
+  - which nvcc
+  - echo $NVCC_FOUND
   - if [ $NVCC_FOUND -ne 0 ]; then
       mkdir -p $CUDA_ROOT &&
       cd $CUDA_ROOT &&
@@ -101,5 +103,5 @@ script:
     else    
       cmake -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} ${XMRSTAK_CMAKE_FLAGS} .;
     fi;
-  - make VERBOSE=1
+  - make VERBOSE=1 install
   - ./bin/xmr-stak --help
