@@ -173,6 +173,7 @@ void minethd::work_main()
 	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/);
 	
 	globalStates::inst().iConsumeCnt++;
+	uint32_t* piNonce = (uint32_t*)(oWork.bWorkBlob + 39);
 	
 	while (bQuit == 0)
 	{
@@ -189,8 +190,12 @@ void minethd::work_main()
 			continue;
 		}
 
+		if(oWork.bNiceHash)
+			pGpuCtx->Nonce = calc_nicehash_nonce(*piNonce, oWork.iResumeCnt);
+		else
+			pGpuCtx->Nonce = calc_start_nonce(oWork.iResumeCnt);
+
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
-		pGpuCtx->Nonce = calc_start_nonce(oWork.iResumeCnt);
 		uint32_t target = oWork.iTarget32;
 		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target);
 
