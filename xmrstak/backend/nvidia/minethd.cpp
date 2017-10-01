@@ -196,6 +196,7 @@ void minethd::work_main()
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
 	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/);
+	uint32_t* piNonce = (uint32_t*)(oWork.bWorkBlob + 39);
 
 	globalStates::inst().iConsumeCnt++;
 
@@ -221,7 +222,10 @@ void minethd::work_main()
 		}
 
 		cryptonight_extra_cpu_set_data(&ctx, oWork.bWorkBlob, oWork.iWorkSize);
-		iNonce = calc_start_nonce(oWork.iResumeCnt);
+		if(oWork.bNiceHash)
+			iNonce = calc_nicehash_nonce(*piNonce, oWork.iResumeCnt);
+		else
+			iNonce = calc_start_nonce(oWork.iResumeCnt);
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
