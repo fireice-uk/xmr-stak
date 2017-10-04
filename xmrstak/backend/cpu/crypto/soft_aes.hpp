@@ -34,7 +34,7 @@
 
 #include <inttypes.h>
 
-#define sb_data(w) {\
+#define saes_data(w) {\
     w(0x63), w(0x7c), w(0x77), w(0x7b), w(0xf2), w(0x6b), w(0x6f), w(0xc5),\
     w(0x30), w(0x01), w(0x67), w(0x2b), w(0xfe), w(0xd7), w(0xab), w(0x76),\
     w(0xca), w(0x82), w(0xc9), w(0x7d), w(0xfa), w(0x59), w(0x47), w(0xf0),\
@@ -68,22 +68,22 @@
     w(0x8c), w(0xa1), w(0x89), w(0x0d), w(0xbf), w(0xe6), w(0x42), w(0x68),\
     w(0x41), w(0x99), w(0x2d), w(0x0f), w(0xb0), w(0x54), w(0xbb), w(0x16) }
 
-#define WPOLY           0x011b
+#define SAES_WPOLY           0x011b
 
-#define bytes2word(b0, b1, b2, b3) (((uint32_t)(b3) << 24) | \
+#define saes_b2w(b0, b1, b2, b3) (((uint32_t)(b3) << 24) | \
     ((uint32_t)(b2) << 16) | ((uint32_t)(b1) << 8) | (b0))
 
-#define f2(x)   ((x<<1) ^ (((x>>7) & 1) * WPOLY))
-#define f3(x)   (f2(x) ^ x)
-#define h0(x)   (x)
+#define saes_f2(x)   ((x<<1) ^ (((x>>7) & 1) * SAES_WPOLY))
+#define saes_f3(x)   (saes_f2(x) ^ x)
+#define saes_h0(x)   (x)
 
-#define u0(p)   bytes2word(f2(p), p, p, f3(p))
-#define u1(p)   bytes2word(f3(p), f2(p), p, p)
-#define u2(p)   bytes2word(p, f3(p), f2(p), p)
-#define u3(p)   bytes2word(p, p, f3(p), f2(p))
+#define saes_u0(p)   saes_b2w(saes_f2(p),          p,          p, saes_f3(p))
+#define saes_u1(p)   saes_b2w(saes_f3(p), saes_f2(p),          p,          p)
+#define saes_u2(p)   saes_b2w(         p, saes_f3(p), saes_f2(p),          p)
+#define saes_u3(p)   saes_b2w(         p,          p, saes_f3(p), saes_f2(p))
 
-alignas(16) const uint32_t t_fn[4][256] = { sb_data(u0), sb_data(u1), sb_data(u2), sb_data(u3) };
-alignas(16) const uint8_t aes_sbox[256] = sb_data(h0);
+alignas(16) const uint32_t saes_table[4][256] = { saes_data(saes_u0), saes_data(saes_u1), saes_data(saes_u2), saes_data(saes_u3) };
+alignas(16) const uint8_t  saes_sbox[256] = saes_data(saes_h0);
 
 static inline __m128i soft_aesenc(__m128i in, __m128i key)
 {
@@ -94,20 +94,20 @@ static inline __m128i soft_aesenc(__m128i in, __m128i key)
 	x3 = _mm_cvtsi128_si32(_mm_shuffle_epi32(in, 0xFF));
 
 	__m128i out = _mm_set_epi32(
-		(t_fn[0][x3 & 0xff] ^ t_fn[1][(x0 >> 8) & 0xff] ^ t_fn[2][(x1 >> 16) & 0xff] ^ t_fn[3][x2 >> 24]),
-		(t_fn[0][x2 & 0xff] ^ t_fn[1][(x3 >> 8) & 0xff] ^ t_fn[2][(x0 >> 16) & 0xff] ^ t_fn[3][x1 >> 24]),
-		(t_fn[0][x1 & 0xff] ^ t_fn[1][(x2 >> 8) & 0xff] ^ t_fn[2][(x3 >> 16) & 0xff] ^ t_fn[3][x0 >> 24]),
-		(t_fn[0][x0 & 0xff] ^ t_fn[1][(x1 >> 8) & 0xff] ^ t_fn[2][(x2 >> 16) & 0xff] ^ t_fn[3][x3 >> 24]));
+		(saes_table[0][x3 & 0xff] ^ saes_table[1][(x0 >> 8) & 0xff] ^ saes_table[2][(x1 >> 16) & 0xff] ^ saes_table[3][x2 >> 24]),
+		(saes_table[0][x2 & 0xff] ^ saes_table[1][(x3 >> 8) & 0xff] ^ saes_table[2][(x0 >> 16) & 0xff] ^ saes_table[3][x1 >> 24]),
+		(saes_table[0][x1 & 0xff] ^ saes_table[1][(x2 >> 8) & 0xff] ^ saes_table[2][(x3 >> 16) & 0xff] ^ saes_table[3][x0 >> 24]),
+		(saes_table[0][x0 & 0xff] ^ saes_table[1][(x1 >> 8) & 0xff] ^ saes_table[2][(x2 >> 16) & 0xff] ^ saes_table[3][x3 >> 24]));
 
 	return _mm_xor_si128(out, key);
 }
 
-static inline void sub_word(uint8_t* key)
+static inline uint32_t sub_word(uint32_t key)
 {
-	key[0] = aes_sbox[key[0]];
-	key[1] = aes_sbox[key[1]];
-	key[2] = aes_sbox[key[2]];
-	key[3] = aes_sbox[key[3]];
+	return (saes_sbox[key >> 24 ] << 24)   | 
+		(saes_sbox[(key >> 16) & 0xff] << 16 ) | 
+		(saes_sbox[(key >> 8)  & 0xff] << 8  ) | 
+		 saes_sbox[key & 0xff];
 }
 
 #ifdef __clang__
@@ -119,9 +119,7 @@ static inline uint32_t _rotr(uint32_t value, uint32_t amount)
 
 static inline __m128i soft_aeskeygenassist(__m128i key, uint8_t rcon)
 {
-	uint32_t X1 = _mm_cvtsi128_si32(_mm_shuffle_epi32(key, 0x55));
-	uint32_t X3 = _mm_cvtsi128_si32(_mm_shuffle_epi32(key, 0xFF));
-	sub_word((uint8_t*)&X1);
-	sub_word((uint8_t*)&X3);
+	uint32_t X1 = sub_word(_mm_cvtsi128_si32(_mm_shuffle_epi32(key, 0x55)));
+	uint32_t X3 = sub_word(_mm_cvtsi128_si32(_mm_shuffle_epi32(key, 0xFF)));
 	return _mm_set_epi32(_rotr(X3, 8) ^ rcon, X3,_rotr(X1, 8) ^ rcon, X1);
 }
