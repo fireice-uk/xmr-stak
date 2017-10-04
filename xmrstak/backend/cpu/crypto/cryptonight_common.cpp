@@ -164,6 +164,7 @@ BOOL AddLargePageRights()
 }
 #endif
 
+BOOL bRebootDesirable = FALSE; //If VirtualAlloc fails, suggest a reboot
 size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 {
 #ifdef _WIN32
@@ -173,12 +174,17 @@ size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 	if(AddPrivilege(TEXT("SeLockMemoryPrivilege")) == 0)
 	{
 		if(AddLargePageRights())
+		{
 			msg->warning = "Added SeLockMemoryPrivilege to the current account. You need to reboot for it to work";
+			bRebootDesirable = TRUE;
+		}
 		else
 			msg->warning = "Obtaning SeLockMemoryPrivilege failed.";
 
 		return 0;
 	}
+	
+	bRebootDesirable = TRUE;
 	return 1;
 #else
 	return 1;
@@ -210,7 +216,10 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 	if(ptr->long_state == NULL)
 	{
 		_mm_free(ptr);
-		msg->warning = "VirtualAlloc failed.";
+		if(bRebootDesirable)
+			msg->warning = "VirtualAlloc failed. Reboot might help.";
+		else
+			msg->warning = "VirtualAlloc failed.";
 		return NULL;
 	}
 	else
