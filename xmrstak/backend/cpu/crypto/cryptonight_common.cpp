@@ -45,6 +45,7 @@ extern "C"
 
 #ifdef _WIN32
 #include <windows.h>
+#include <ntsecapi.h>
 #else
 #include <sys/mman.h>
 #include <errno.h>
@@ -92,14 +93,90 @@ BOOL AddPrivilege(TCHAR* pszPrivilege)
 	CloseHandle(hToken);
 	return TRUE;
 }
+
+BOOL AddLargePageRights()
+{
+	HANDLE hToken;
+	PTOKEN_USER user = NULL;
+
+	if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken) == TRUE)
+	{
+		TOKEN_ELEVATION Elevation;
+		DWORD cbSize = sizeof(TOKEN_ELEVATION);
+		BOOL bIsElevated = FALSE;
+
+		if (GetTokenInformation(hToken, TokenElevation, &Elevation, sizeof(Elevation), &cbSize))
+			bIsElevated = Elevation.TokenIsElevated;
+
+		DWORD size = 0;
+		GetTokenInformation(hToken, TokenUser, NULL, 0, &size);
+		
+		if (size > 0 && bIsElevated)
+		{
+			user = (PTOKEN_USER)LocalAlloc(LPTR, size);
+			GetTokenInformation(hToken, TokenUser, user, size, &size);
+		}
+
+		CloseHandle(hToken);
+	}
+
+	if (!user)
+		return FALSE;
+
+	LSA_HANDLE handle;
+	LSA_OBJECT_ATTRIBUTES attributes;
+	ZeroMemory(&attributes, sizeof(attributes));
+
+	BOOL result = FALSE;
+	if (LsaOpenPolicy(NULL, &attributes, POLICY_ALL_ACCESS, &handle) == 0) 
+	{
+		LSA_UNICODE_STRING lockmem;
+		lockmem.Buffer = L"SeLockMemoryPrivilege";
+		lockmem.Length = 42;
+		lockmem.MaximumLength = 44;
+
+		PLSA_UNICODE_STRING rights = NULL;
+		ULONG cnt = 0;
+		BOOL bHasRights = FALSE;
+		if (LsaEnumerateAccountRights(handle, user->User.Sid, &rights, &cnt) == 0)
+		{
+			for (size_t i = 0; i < cnt; i++)
+			{
+				if (rights[i].Length == lockmem.Length &&
+					memcmp(rights[i].Buffer, lockmem.Buffer, 42) == 0)
+				{
+					bHasRights = TRUE;
+					break;
+				}
+			}
+
+			LsaFreeMemory(rights);
+		}
+
+		if(!bHasRights)
+			result = LsaAddAccountRights(handle, user->User.Sid, &lockmem, 1) == 0;
+
+		LsaClose(handle);
+	}
+
+	LocalFree(user);
+	return result;
+}
 #endif
 
 size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 {
 #ifdef _WIN32
-	if (AddPrivilege(TEXT("SeLockMemoryPrivilege")) == 0)
+	if(use_fast_mem == 0)
+		return 1;
+
+	if(AddPrivilege(TEXT("SeLockMemoryPrivilege")) == 0)
 	{
-		msg->warning = "Obtaning SeLockMemoryPrivilege failed.";
+		if(AddLargePageRights())
+			msg->warning = "Added SeLockMemoryPrivilege to the current account. You need to reboot for it to work";
+		else
+			msg->warning = "Obtaning SeLockMemoryPrivilege failed.";
+
 		return 0;
 	}
 	return 1;

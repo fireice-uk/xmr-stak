@@ -52,8 +52,7 @@ namespace xmrstak
 
 bool BackendConnector::self_test()
 {
-	
-	return true;
+	return cpu::minethd::self_test();
 }
 
 std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
