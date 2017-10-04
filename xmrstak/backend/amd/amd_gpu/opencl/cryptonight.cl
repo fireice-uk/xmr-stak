@@ -414,16 +414,19 @@ void AESExpandKey256(uint *keybuf)
 #define IDX(x)	(x)
 
 __attribute__((reqd_work_group_size(WORKSIZE, 8, 1)))
-__kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ulong *states)
+__kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ulong *states, ulong Threads)
 {
 	ulong State[25];
 	uint ExpandedKey1[256];
 	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
 	uint4 text;
-	
-	states += (25 * (get_global_id(0) - get_global_offset(0)));
-	Scratchpad += ((get_global_id(0) - get_global_offset(0))) * (0x80000 >> 2);
-	
+
+	const ulong gIdx = get_global_id(0) - get_global_offset(0);
+	if(gIdx >= Threads) return;
+
+	states += 25 * gIdx;
+	Scratchpad += gIdx * (0x80000 >> 2);
+
 	for(int i = get_local_id(0); i < 256; i += WORKSIZE)
 	{
 		const uint tmp = AES0_C[i];
@@ -479,13 +482,16 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 }
 
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
-__kernel void cn1(__global uint4 *Scratchpad, __global ulong *states)
+__kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Threads)
 {
 	ulong a[2], b[2];
 	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
-	
-	Scratchpad += ((get_global_id(0) - get_global_offset(0))) * (0x80000 >> 2);
-	states += (25 * (get_global_id(0) - get_global_offset(0)));
+
+	const ulong gIdx = get_global_id(0) - get_global_offset(0);
+	if(gIdx >= Threads) return;
+
+	states += 25 * gIdx;
+	Scratchpad += gIdx * (0x80000 >> 2);
 	
 	for(int i = get_local_id(0); i < 256; i += WORKSIZE)
 	{
@@ -534,15 +540,18 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states)
 }
 
 __attribute__((reqd_work_group_size(WORKSIZE, 8, 1)))
-__kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global uint *Branch0, __global uint *Branch1, __global uint *Branch2, __global uint *Branch3)
+__kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global uint *Branch0, __global uint *Branch1, __global uint *Branch2, __global uint *Branch3, ulong Threads)
 {
 	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
 	uint ExpandedKey2[256];
 	ulong State[25];
 	uint4 text;
 	
-	Scratchpad += ((get_global_id(0) - get_global_offset(0))) * (0x80000 >> 2);
-	states += (25 * (get_global_id(0) - get_global_offset(0)));
+	const ulong gIdx = get_global_id(0) - get_global_offset(0);
+	if(gIdx >= Threads) return;
+
+	states += 25 * gIdx;
+	Scratchpad += gIdx * (0x80000 >> 2);
 	
 	for(int i = get_local_id(0); i < 256; i += WORKSIZE)
 	{
@@ -595,16 +604,16 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 		switch(State[0] & 3)
 		{
 			case 0:
-				Branch0[atomic_inc(Branch0 + get_global_size(0))] = get_global_id(0) - get_global_offset(0);
+				Branch0[atomic_inc(Branch0 + Threads)] = get_global_id(0) - get_global_offset(0);
 				break;
 			case 1:
-				Branch1[atomic_inc(Branch1 + get_global_size(0))] = get_global_id(0) - get_global_offset(0);
+				Branch1[atomic_inc(Branch1 + Threads)] = get_global_id(0) - get_global_offset(0);
 				break;
 			case 2:
-				Branch2[atomic_inc(Branch2 + get_global_size(0))] = get_global_id(0) - get_global_offset(0);
+				Branch2[atomic_inc(Branch2 + Threads)] = get_global_id(0) - get_global_offset(0);
 				break;
 			case 3:
-				Branch3[atomic_inc(Branch3 + get_global_size(0))] = get_global_id(0) - get_global_offset(0);
+				Branch3[atomic_inc(Branch3 + Threads)] = get_global_id(0) - get_global_offset(0);
 				break;
 		}
 	}
