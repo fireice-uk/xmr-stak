@@ -10,9 +10,10 @@ From the root shell, run the following commands:
 
 Type 'y' and hit enter to proceed with installing the packages.
 
-    git clone https://github.com/fireice-uk/xmr-stak-cpu.git
-    cd xmr-stak-cpu
-    cmake .
+    git clone https://github.com/fireice-uk/xmr-stak.git
+    mkdir xmr-stak/build
+    cd xmr-stak/build
+    cmake ..
     make install
 
 Now you have the binary located at "bin/xmr-stak" and the needed shared libraries.

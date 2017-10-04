@@ -43,11 +43,11 @@ To add a new GPU you need to add a new config set to `gpu_threads_conf`.
 
 ## AMD Backend
 
-By default the NVIDIA backend can be tuned in the config file `nvidia.txt`
+By default the AMD backend can be tuned in the config file `amd.txt`
 
 ### Choose `intensity` and `worksize`
 
-Intensity means the number of threads used to mine.
+Intensity means the number of threads used to mine. The maximum intensity is GPU_MEMORY_MB / 2 - 128, however for cards with 4GB and more, the optimum is likely to be lower than that.
 `worksize` is the number of threads working together to increase the miner performance.
 In the most cases a `worksize` of `16` or `8` is optimal.
 
