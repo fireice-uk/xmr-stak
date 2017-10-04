@@ -71,6 +71,8 @@ void do_skein_hash(const void* input, size_t len, char* output) {
 void (* const extra_hashes[4])(const void *, size_t, char *) = {do_blake_hash, do_groestl_hash, do_jh_hash, do_skein_hash};
 
 #ifdef _WIN32
+BOOL bRebootDesirable = FALSE; //If VirtualAlloc fails, suggest a reboot
+
 BOOL AddPrivilege(TCHAR* pszPrivilege)
 {
 	HANDLE           hToken;
@@ -164,7 +166,6 @@ BOOL AddLargePageRights()
 }
 #endif
 
-BOOL bRebootDesirable = FALSE; //If VirtualAlloc fails, suggest a reboot
 size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 {
 #ifdef _WIN32
