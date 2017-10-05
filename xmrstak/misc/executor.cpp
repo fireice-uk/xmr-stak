@@ -911,8 +911,8 @@ void executor::http_json_report(std::string& out)
 	if(iPoolCallTimes.size() > 0)
 		fAvgResTime = double(iConnSec) / iPoolCallTimes.size();
 
+	char buffer[2048];
 	res_error.reserve((vMineResults.size() - 1) * 128);
-	char buffer[256];
 	for(size_t i=1; i < vMineResults.size(); i++)
 	{
 		using namespace std::chrono;
@@ -933,7 +933,7 @@ void executor::http_json_report(std::string& out)
 		iPoolPing = iPoolCallTimes[n_calls/2];
 	}
 
-	cn_error.reserve(vSocketLog.size() * 128);
+	cn_error.reserve(vSocketLog.size() * 256);
 	for(size_t i=0; i < vSocketLog.size(); i++)
 	{
 		using namespace std::chrono;
