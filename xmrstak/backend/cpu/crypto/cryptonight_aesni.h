@@ -36,14 +36,13 @@ static inline uint64_t _umul128(uint64_t a, uint64_t b, uint64_t* hi)
 #error You are trying to do a 32-bit build. This will all end in tears. I know it.
 #endif
 
+#include "soft_aes.hpp"
+
 extern "C"
 {
 	void keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen);
 	void keccakf(uint64_t st[25], int rounds);
 	extern void(*const extra_hashes[4])(const void *, size_t, char *);
-
-	__m128i soft_aesenc(__m128i in, __m128i key);
-	__m128i soft_aeskeygenassist(__m128i key, uint8_t rcon);
 }
 
 // This will shift and xor tmp1 into itself as 4 32-bit vals such as
