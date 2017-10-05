@@ -26,8 +26,8 @@ namespace xmrstak
 		miner_work() : iWorkSize(0), bNiceHash(false), bStall(true), iPoolId(0) { }
 
 		miner_work(const char* sJobID, const uint8_t* bWork, uint32_t iWorkSize, uint32_t iResumeCnt,
-			uint64_t iTarget, size_t iPoolId) : iWorkSize(iWorkSize), iResumeCnt(iResumeCnt),
-			iTarget(iTarget), bNiceHash(false), bStall(false), iPoolId(iPoolId)
+			uint64_t iTarget, bool bNiceHash, size_t iPoolId) : iWorkSize(iWorkSize), iResumeCnt(iResumeCnt),
+			iTarget(iTarget), bNiceHash(bNiceHash), bStall(false), iPoolId(iPoolId)
 		{
 			assert(iWorkSize <= sizeof(bWorkBlob));
 			memcpy(this->sJobID, sJobID, sizeof(miner_work::sJobID));

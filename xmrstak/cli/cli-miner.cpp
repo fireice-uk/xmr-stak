@@ -346,7 +346,7 @@ void do_benchmark()
 	printer::inst()->print_msg(L0, "Running a 60 second benchmark...");
 
 	uint8_t work[76] = {0};
-	xmrstak::miner_work oWork = xmrstak::miner_work("", work, sizeof(work), 0, 0, 0);
+	xmrstak::miner_work oWork = xmrstak::miner_work("", work, sizeof(work), 0, 0, false, 0);
 	pvThreads = xmrstak::BackendConnector::thread_starter(oWork);
 
 	uint64_t iStartStamp = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();

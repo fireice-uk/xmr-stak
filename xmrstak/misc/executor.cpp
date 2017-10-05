@@ -235,6 +235,7 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 
 	xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob,
 		oPoolJob.iWorkLen, oPoolJob.iResumeCnt, oPoolJob.iTarget,
+		pool_id != dev_pool_id && ::jconf::inst()->NiceHashMode(),
 		pool_id);
 
 	oWork.iTarget32 = oPoolJob.iTarget32;
@@ -357,7 +358,7 @@ void executor::on_switch_pool(size_t pool_id)
 
 		xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob,
 			oPoolJob.iWorkLen, oPoolJob.iResumeCnt, oPoolJob.iTarget,
-			pool_id);
+			::jconf::inst()->NiceHashMode(), pool_id);
 
 		oWork.iTarget32 = oPoolJob.iTarget32;
 
