@@ -20,6 +20,7 @@
 #include <vector>
 #include <algorithm>
 #include <regex>
+#include <cassert>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -807,6 +808,8 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 	size_t w_size = ctx->workSize;
 	// round up to next multiple of w_size
 	size_t g_thd = ((g_intensity + w_size - 1u) / w_size) * w_size;
+	// number of global threads must be a multiple of the work group size (w_size)
+	assert(g_thd%w_size == 0);
 
 	for(int i = 2; i < 6; ++i)
 	{
@@ -892,6 +895,8 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 
 			// round up to next multiple of w_size
 			BranchNonces[i] = ((BranchNonces[i] + w_size - 1u) / w_size) * w_size;
+			// number of global threads must be a multiple of the work group size (w_size)
+			assert(BranchNonces%w_size == 0);
 			if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, ctx->Kernels[i + 3], 1, &ctx->Nonce, BranchNonces + i, &w_size, 0, NULL, NULL)) != CL_SUCCESS)
 			{
 				printer::inst()->print_msg(L1,"Error %s when calling clEnqueueNDRangeKernel for kernel %d.", err_to_str(ret), i + 3);
