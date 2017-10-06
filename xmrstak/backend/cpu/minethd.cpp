@@ -419,6 +419,13 @@ minethd::cn_hash_fun_dbl minethd::func_dbl_selector(bool bHaveAes, bool bNoPrefe
 	return func_table[digit.to_ulong()];
 }
 
+uint32_t* minethd::prep_double_work(uint8_t bDoubleWorkBlob[sizeof(miner_work::bWorkBlob) * 2])
+{
+	memcpy(bDoubleWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
+	memcpy(bDoubleWorkBlob + oWork.iWorkSize, oWork.bWorkBlob, oWork.iWorkSize);
+	return (uint32_t*)(bDoubleWorkBlob + oWork.iWorkSize + 39);
+}
+
 void minethd::double_work_main()
 {
 	if(affinity >= 0) //-1 means no affinity
@@ -431,7 +438,7 @@ void minethd::double_work_main()
 	uint64_t *piHashVal0, *piHashVal1;
 	uint32_t *piNonce0, *piNonce1;
 	uint8_t bDoubleHashOut[64];
-	uint8_t	bDoubleWorkBlob[sizeof(miner_work::bWorkBlob) * 2];
+	uint8_t bDoubleWorkBlob[sizeof(miner_work::bWorkBlob) * 2];
 	uint32_t iNonce;
 	job_result res;
 
@@ -442,7 +449,11 @@ void minethd::double_work_main()
 	piHashVal0 = (uint64_t*)(bDoubleHashOut + 24);
 	piHashVal1 = (uint64_t*)(bDoubleHashOut + 32 + 24);
 	piNonce0 = (uint32_t*)(bDoubleWorkBlob + 39);
-	piNonce1 = nullptr;
+
+	if(!oWork.bStall)
+		piNonce1 = prep_double_work(bDoubleWorkBlob);
+	else
+		piNonce1 = nullptr;
 
 	globalStates::inst().inst().iConsumeCnt++;
 
@@ -460,7 +471,7 @@ void minethd::double_work_main()
 			consume_work();
 			memcpy(bDoubleWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
 			memcpy(bDoubleWorkBlob + oWork.iWorkSize, oWork.bWorkBlob, oWork.iWorkSize);
-			piNonce1 = (uint32_t*)(bDoubleWorkBlob + oWork.iWorkSize + 39);
+			piNonce1 = prep_double_work(bDoubleWorkBlob);
 			continue;
 		}
 
@@ -500,7 +511,7 @@ void minethd::double_work_main()
 		consume_work();
 		memcpy(bDoubleWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
 		memcpy(bDoubleWorkBlob + oWork.iWorkSize, oWork.bWorkBlob, oWork.iWorkSize);
-		piNonce1 = (uint32_t*)(bDoubleWorkBlob + oWork.iWorkSize + 39);
+		piNonce1 = prep_double_work(bDoubleWorkBlob);
 	}
 
 	cryptonight_free_ctx(ctx0);
