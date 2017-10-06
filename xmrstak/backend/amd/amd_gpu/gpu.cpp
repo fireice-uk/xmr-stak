@@ -20,6 +20,7 @@
 #include <vector>
 #include <algorithm>
 #include <regex>
+#include <cassert>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -653,6 +654,8 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint32_t tar
 
 	input[input_len] = 0x01;
 	memset(input + input_len + 1, 0, 88 - input_len - 1);
+	
+	size_t numThreads = ctx->rawIntensity;
 
 	if((ret = clEnqueueWriteBuffer(ctx->CommandQueues, ctx->InputBuffer, CL_TRUE, 0, 88, input, 0, NULL, NULL)) != CL_SUCCESS)
 	{
@@ -680,6 +683,13 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint32_t tar
 		return ERR_OCL_API;
 	}
 
+	// Threads
+	if((ret = clSetKernelArg(ctx->Kernels[0], 3, sizeof(cl_ulong), &numThreads)) != CL_SUCCESS)
+	{
+		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 0, argument 3.", err_to_str(ret));
+		return(ERR_OCL_API);
+	}
+
 	// CN2 Kernel
 
 	// Scratchpads
@@ -694,6 +704,13 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint32_t tar
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 1, argument 1.", err_to_str(ret));
 		return ERR_OCL_API;
+	}
+
+	// Threads
+	if((ret = clSetKernelArg(ctx->Kernels[1], 2, sizeof(cl_ulong), &numThreads)) != CL_SUCCESS)
+	{
+		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 1, argument 2.", err_to_str(ret));
+		return(ERR_OCL_API);
 	}
 
 	// CN3 Kernel
@@ -739,6 +756,13 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint32_t tar
 		return ERR_OCL_API;
 	}
 
+	// Threads
+	if((ret = clSetKernelArg(ctx->Kernels[2], 6, sizeof(cl_ulong), &numThreads)) != CL_SUCCESS)
+	{
+		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 2, argument 6.", err_to_str(ret));
+		return(ERR_OCL_API);
+	}
+
 	for(int i = 0; i < 4; ++i)
 	{
 		// States
@@ -780,12 +804,16 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 	size_t BranchNonces[4];
 	memset(BranchNonces,0,sizeof(size_t)*4);
 
-	size_t g_thd = ctx->rawIntensity;
+	size_t g_intensity = ctx->rawIntensity;
 	size_t w_size = ctx->workSize;
+	// round up to next multiple of w_size
+	size_t g_thd = ((g_intensity + w_size - 1u) / w_size) * w_size;
+	// number of global threads must be a multiple of the work group size (w_size)
+	assert(g_thd%w_size == 0);
 
 	for(int i = 2; i < 6; ++i)
 	{
-		if((ret = clEnqueueWriteBuffer(ctx->CommandQueues, ctx->ExtraBuffers[i], CL_FALSE, sizeof(cl_uint) * g_thd, sizeof(cl_uint), &zero, 0, NULL, NULL)) != CL_SUCCESS)
+		if((ret = clEnqueueWriteBuffer(ctx->CommandQueues, ctx->ExtraBuffers[i], CL_FALSE, sizeof(cl_uint) * g_intensity, sizeof(cl_uint), &zero, 0, NULL, NULL)) != CL_SUCCESS)
 		{
 			printer::inst()->print_msg(L1,"Error %s when calling clEnqueueWriteBuffer to zero branch buffer counter %d.", err_to_str(ret), i - 2);
 			return ERR_OCL_API;
@@ -828,25 +856,25 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 		return ERR_OCL_API;
 	}
 
-	if((ret = clEnqueueReadBuffer(ctx->CommandQueues, ctx->ExtraBuffers[2], CL_FALSE, sizeof(cl_uint) * g_thd, sizeof(cl_uint), BranchNonces, 0, NULL, NULL)) != CL_SUCCESS)
+	if((ret = clEnqueueReadBuffer(ctx->CommandQueues, ctx->ExtraBuffers[2], CL_FALSE, sizeof(cl_uint) * g_intensity, sizeof(cl_uint), BranchNonces, 0, NULL, NULL)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueReadBuffer to fetch results.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
 
-	if((ret = clEnqueueReadBuffer(ctx->CommandQueues, ctx->ExtraBuffers[3], CL_FALSE, sizeof(cl_uint) * g_thd, sizeof(cl_uint), BranchNonces + 1, 0, NULL, NULL)) != CL_SUCCESS)
+	if((ret = clEnqueueReadBuffer(ctx->CommandQueues, ctx->ExtraBuffers[3], CL_FALSE, sizeof(cl_uint) * g_intensity, sizeof(cl_uint), BranchNonces + 1, 0, NULL, NULL)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueReadBuffer to fetch results.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
 
-	if((ret = clEnqueueReadBuffer(ctx->CommandQueues, ctx->ExtraBuffers[4], CL_FALSE, sizeof(cl_uint) * g_thd, sizeof(cl_uint), BranchNonces + 2, 0, NULL, NULL)) != CL_SUCCESS)
+	if((ret = clEnqueueReadBuffer(ctx->CommandQueues, ctx->ExtraBuffers[4], CL_FALSE, sizeof(cl_uint) * g_intensity, sizeof(cl_uint), BranchNonces + 2, 0, NULL, NULL)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueReadBuffer to fetch results.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
 
-	if((ret = clEnqueueReadBuffer(ctx->CommandQueues, ctx->ExtraBuffers[5], CL_FALSE, sizeof(cl_uint) * g_thd, sizeof(cl_uint), BranchNonces + 3, 0, NULL, NULL)) != CL_SUCCESS)
+	if((ret = clEnqueueReadBuffer(ctx->CommandQueues, ctx->ExtraBuffers[5], CL_FALSE, sizeof(cl_uint) * g_intensity, sizeof(cl_uint), BranchNonces + 3, 0, NULL, NULL)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueReadBuffer to fetch results.", err_to_str(ret));
 		return ERR_OCL_API;
@@ -865,7 +893,10 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 				return(ERR_OCL_API);
 			}
 
-			BranchNonces[i] = ((size_t)ceil( (double)BranchNonces[i] / (double)w_size) ) * w_size;
+			// round up to next multiple of w_size
+			BranchNonces[i] = ((BranchNonces[i] + w_size - 1u) / w_size) * w_size;
+			// number of global threads must be a multiple of the work group size (w_size)
+			assert(BranchNonces%w_size == 0);
 			if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, ctx->Kernels[i + 3], 1, &ctx->Nonce, BranchNonces + i, &w_size, 0, NULL, NULL)) != CL_SUCCESS)
 			{
 				printer::inst()->print_msg(L1,"Error %s when calling clEnqueueNDRangeKernel for kernel %d.", err_to_str(ret), i + 3);
@@ -881,7 +912,7 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 	}
 
 	clFinish(ctx->CommandQueues);
-	ctx->Nonce += g_thd;
+	ctx->Nonce += g_intensity;
 
 	return ERR_SUCCESS;
 }
