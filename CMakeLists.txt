@@ -47,7 +47,7 @@ option(CMAKE_LINK_STATIC "link as much as possible libraries static" OFF)
 
 option(CUDA_ENABLE "Enable or disable CUDA support (NVIDIA backend)" ON)
 if(CUDA_ENABLE)
-    find_package(CUDA 7.5 QUIET)
+    find_package(CUDA 7.5)
 
     if(CUDA_FOUND)
 
@@ -70,8 +70,16 @@ if(CUDA_ENABLE)
             message(STATUS "xmr-stak-nvidia: set max threads per block to ${XMR-STAK_THREADS}")
             add_definitions("-DXMR_STAK_THREADS=${XMR-STAK_THREADS}")
         endif()
-
-        set(CUDA_ARCH "20;30;35;37;50;52;60;61;62" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
+        set(DEFAULT_CUDA_ARCH "30;35;37;50;52")
+        # Fermi GPUs are only supported with CUDA < 9.0
+        if(CUDA_VERSION VERSION_LESS 9.0)
+            list(APPEND DEFAULT_CUDA_ARCH "20")
+        endif()
+        # add Pascal support for CUDA >= 8.0
+        if(NOT CUDA_VERSION VERSION_LESS 8.0)
+            list(APPEND DEFAULT_CUDA_ARCH "60" "61" "62")
+        endif()
+        set(CUDA_ARCH "${DEFAULT_CUDA_ARCH}" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
 
         # validate architectures (only numbers are allowed)
         foreach(CUDA_ARCH_ELEM ${CUDA_ARCH})
@@ -164,7 +172,7 @@ list(APPEND CMAKE_PREFIX_PATH "$ENV{CMAKE_PREFIX_PATH}")
 
 option(OpenCL_ENABLE "Enable or disable OpenCL spport (AMD GPU support)" ON)
 if(OpenCL_ENABLE)
-    find_package(OpenCL QUIET)
+    find_package(OpenCL)
     if(OpenCL_FOUND)
         include_directories(SYSTEM ${OpenCL_INCLUDE_DIRS})
         #set(LIBS ${LIBS} ${OpenCL_LIBRARY})
