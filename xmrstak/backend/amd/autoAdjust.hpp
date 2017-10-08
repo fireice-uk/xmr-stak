@@ -79,6 +79,8 @@ private:
 		configEditor configTpl{};
 		configTpl.set( std::string(tpl) );
 
+		constexpr size_t byteToMiB = 1024u * 1024u;
+
 		std::string conf;
         int i = 0;
         for(auto& ctx : devVec)
@@ -89,8 +91,11 @@ private:
 			size_t perThread = (size_t(1u)<<21) + 224u;
 			size_t max_intensity = availableMem / perThread;
 			// 1000 is a magic selected limit \todo select max intensity depending of the gpu type
-			size_t intensity = std::min( size_t(1000u) , max_intensity );
-			conf += std::string("  // gpu: ") + ctx.name + "\n";
+			size_t possibleIntensity = std::min( size_t(1000u) , max_intensity );
+			// map intensity to a multiple of the compute unit count, 8 is the number of threads per work group
+			size_t intensity = (possibleIntensity / (8 * ctx.computeUnits)) * ctx.computeUnits * 8;
+			conf += std::string("  // gpu: ") + ctx.name + " memory:" + std::to_string(availableMem / byteToMiB) + "\n";
+			conf += std::string("  // compute units: ") + std::to_string(ctx.computeUnits) + "\n";
 			// set 8 threads per block (this is a good value for the most gpus)
             conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
                 "    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
