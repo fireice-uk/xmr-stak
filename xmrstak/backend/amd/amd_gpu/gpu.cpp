@@ -912,6 +912,10 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 	}
 
 	clFinish(ctx->CommandQueues);
+	auto & numHashValues = HashOutput[0xFF];
+	// avoid out of memory read, we have only storage for 0xFF results
+	if(numHashValues > 0xFF)
+		numHashValues = 0xFF;
 	ctx->Nonce += g_intensity;
 
 	return ERR_SUCCESS;

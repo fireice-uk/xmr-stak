@@ -552,7 +552,7 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 
 	states += 25 * gIdx;
 	Scratchpad += gIdx * (0x80000 >> 2);
-	
+
 	for(int i = get_local_id(0); i < 256; i += WORKSIZE)
 	{
 		const uint tmp = AES0_C[i];
@@ -562,7 +562,7 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 		AES3[i] = rotate(tmp, 24U);
 	}
 	barrier(CLK_LOCAL_MEM_FENCE);
-	
+
 	#if defined(__Tahiti__) || defined(__Pitcairn__)
 	
 	for(int i = 0; i < 4; ++i) ((ulong *)ExpandedKey2)[i] = states[i + 4];
@@ -677,8 +677,12 @@ __kernel void Skein(__global ulong *states, __global uint *BranchBuf, __global u
 	
 	//vstore8(p, 0, output);
 	
-	if(as_uint16(p).s7 <= Target) output[atomic_inc(output + 0xFF)] = BranchBuf[idx] + get_global_offset(0);
-	
+	if(as_uint16(p).s7 <= Target)
+	{
+		ulong outIdx = atomic_inc(output + 0xFF);
+		if(outIdx < 0xFF)
+			output[outIdx] = BranchBuf[idx] + get_global_offset(0);
+	}
 	mem_fence(CLK_GLOBAL_MEM_FENCE);	
 }
 
@@ -743,7 +747,12 @@ __kernel void JH(__global ulong *states, __global uint *BranchBuf, __global uint
 	//output[2] = h7h;
 	//output[3] = h7l;
 	
-	if(as_uint2(h7l).s1 <= Target) output[atomic_inc(output + 0xFF)] = BranchBuf[idx] + get_global_offset(0);
+	if(as_uint2(h7l).s1 <= Target)
+	{
+		ulong outIdx = atomic_inc(output + 0xFF);
+		if(outIdx < 0xFF)
+			output[outIdx] = BranchBuf[idx] + get_global_offset(0);
+	}
 }
 
 #define SWAP4(x)	as_uint(as_uchar4(x).s3210)
@@ -811,7 +820,12 @@ __kernel void Blake(__global ulong *states, __global uint *BranchBuf, __global u
 	for(int i = 0; i < 8; ++i) h[i] = SWAP4(h[i]);
 	
 	//for(int i = 0; i < 4; ++i) output[i] = ((ulong *)h)[i];
-	if(h[7] <= Target) output[atomic_inc(output + 0xFF)] = BranchBuf[idx] + get_global_offset(0);
+	if(h[7] <= Target)
+	{
+		ulong outIdx = atomic_inc(output + 0xFF);
+		if(outIdx < 0xFF)
+			output[outIdx] = BranchBuf[idx] + get_global_offset(0);
+	}
 }
 
 __kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global uint *output, uint Target, ulong Threads)
@@ -863,7 +877,12 @@ __kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global
 	for(int i = 0; i < 8; ++i) State[i] ^= tmp[i];
 	
 	//for(int i = 0; i < 4; ++i) output[i] = State[i + 4];
-	if(as_uint2(State[7]).s1 <= Target) output[atomic_inc(output + 0xFF)] = BranchBuf[idx] + get_global_offset(0);
+	if(as_uint2(State[7]).s1 <= Target)
+	{
+		ulong outIdx = atomic_inc(output + 0xFF);
+		if(outIdx < 0xFF)
+			output[outIdx] = BranchBuf[idx] + get_global_offset(0);
+	}
 }
 
 )==="
