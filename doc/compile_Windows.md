@@ -58,7 +58,7 @@
 
 ## Compile
 
-- download and unzip `xmr-stak
+- download and unzip `xmr-stak`
 - open the command line terminal `cmd`
 - `cd` to your unzipped source code directory
 - execute the following commands (NOTE: path to VS2017 can be different)
