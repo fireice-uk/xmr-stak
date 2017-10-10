@@ -45,10 +45,6 @@ private:
 	static miner_work oGlobalWork;
 	miner_work oWork;
 
-	void pin_thd_affinity();
-	// Held by the creating context to prevent a race cond with oWorkThd = std::thread(...)
-	std::mutex work_thd_mtx;
-
 	std::thread oWorkThd;
 	int64_t affinity;
 
