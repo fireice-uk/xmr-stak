@@ -22,7 +22,7 @@ addons:
 env:
   global:
     - CUDA_ROOT: $HOME/.cache/cuda
-    
+
 matrix:
   include:
     - os: linux
@@ -76,7 +76,10 @@ matrix:
         - XMRSTAK_CMAKE_FLAGS="-DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF"
 
 before_install:
-  - if [ $TRAVIS_OS_NAME = osx ]; then brew tap homebrew/science; fi
+  - if [ $TRAVIS_OS_NAME = osx ]; then
+      brew update;
+      brew tap homebrew/science;
+    fi
   - export PATH=$CUDA_ROOT/bin:$PATH
 
 install:
@@ -100,7 +103,7 @@ script:
   - if [ $TRAVIS_OS_NAME = osx ]; then
       brew install hwloc;
       cmake -DMICROHTTPD_ENABLE=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl ${XMRSTAK_CMAKE_FLAGS} .;
-    else    
+    else
       cmake -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} ${XMRSTAK_CMAKE_FLAGS} .;
     fi;
   - make VERBOSE=1 install
