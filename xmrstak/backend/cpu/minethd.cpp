@@ -50,22 +50,8 @@
 #include <thread>
 #include <bitset>
 
-
 #ifdef _WIN32
 #include <windows.h>
-
-namespace xmrstak
-{
-namespace cpu
-{
-void minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
-{
-	SetThreadAffinityMask(h, 1ULL << cpu_id);
-}
-
-} // namespace cpu
-} // namespace xmrstak
-
 #else
 #include <pthread.h>
 
@@ -75,43 +61,36 @@ void minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 #define SYSCTL_CORE_COUNT   "machdep.cpu.core_count"
 #elif defined(__FreeBSD__)
 #include <pthread_np.h>
-#endif
+#endif //__APPLE__
+
+#endif //_WIN32
 
 namespace xmrstak
 {
 namespace cpu
 {
 
-void minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
+bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 {
-#if defined(__APPLE__)
+#if defined(_WIN32)
+	return SetThreadAffinityMask(h, 1ULL << cpu_id) != 0;
+#elif defined(__APPLE__)
 	thread_port_t mach_thread;
 	thread_affinity_policy_data_t policy = { static_cast<integer_t>(cpu_id) };
 	mach_thread = pthread_mach_thread_np(h);
-	thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
+	return thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1) == KERN_SUCCESS;
 #elif defined(__FreeBSD__)
 	cpuset_t mn;
 	CPU_ZERO(&mn);
 	CPU_SET(cpu_id, &mn);
-	pthread_setaffinity_np(h, sizeof(cpuset_t), &mn);
+	return pthread_setaffinity_np(h, sizeof(cpuset_t), &mn) == 0;
 #else
 	cpu_set_t mn;
 	CPU_ZERO(&mn);
 	CPU_SET(cpu_id, &mn);
-	pthread_setaffinity_np(h, sizeof(cpu_set_t), &mn);
+	return pthread_setaffinity_np(h, sizeof(cpu_set_t), &mn) == 0;
 #endif
 }
-
-} // namespace cpu
-} // namespace xmrstak
-
-#endif // _WIN32
-
-
-namespace xmrstak
-{
-namespace cpu
-{
 
 minethd::minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefetch, int64_t affinity)
 {
