@@ -299,14 +299,14 @@ void minethd::pin_thd_affinity()
 	//Lock is needed because we need to use oWorkThd
 	std::lock_guard<std::mutex> lock(work_thd_mtx);
 
-	// pin memory to NUMA node
-	bindMemoryToNUMANode(affinity);
-
 #if defined(__APPLE__)
 	printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory.");
 #endif
 	if(!thd_setaffinity(oWorkThd.native_handle(), affinity))
 		printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
+
+	// pin memory to NUMA node
+	bindMemoryToNUMANode(affinity);
 }
 
 void minethd::work_main()
