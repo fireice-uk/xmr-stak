@@ -262,7 +262,8 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 			printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory.");
 #endif
 			printer::inst()->print_msg(L1, "Starting %s thread, affinity: %d.", cfg.bDoubleMode ? "double" : "single", (int)cfg.iCpuAff);
-			cpu::minethd::thd_setaffinity(thd->oWorkThd.native_handle(), cfg.iCpuAff);
+			if(!cpu::minethd::thd_setaffinity(thd->oWorkThd.native_handle(), cfg.iCpuAff))
+				printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
 		}
 		else
 			printer::inst()->print_msg(L1, "Starting %s thread, no affinity.", cfg.bDoubleMode ? "double" : "single");
