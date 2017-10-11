@@ -142,7 +142,11 @@ if(CUDA_ENABLE)
             if(CUDA_KEEP_FILES)
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" --keep --keep-dir "${PROJECT_BINARY_DIR}")
             endif(CUDA_KEEP_FILES)
-
+        
+            if(CUDA_VERSION VERSION_LESS 8.0)
+                # for CUDA 7.5 fix compile error: https://github.com/fireice-uk/xmr-stak/issues/34
+                set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" "-D_MWAITXINTRIN_H_INCLUDED")
+            endif()
         else()
             message(FATAL_ERROR "selected CUDA compiler '${CUDA_COMPILER}' is not supported")
         endif()
