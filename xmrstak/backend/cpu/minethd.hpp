@@ -8,7 +8,7 @@
 #include <thread>
 #include <vector>
 #include <atomic>
-#include <mutex>
+#include <future>
 
 namespace xmrstak
 {
@@ -46,7 +46,7 @@ private:
 	miner_work oWork;
 
 	void pin_thd_affinity();
-	std::mutex work_thd_mtx;
+	std::promise<void> order_fix;
 
 	std::thread oWorkThd;
 	int64_t affinity;
