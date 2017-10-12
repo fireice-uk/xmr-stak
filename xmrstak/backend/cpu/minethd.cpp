@@ -106,6 +106,9 @@ minethd::minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefet
 		oWorkThd = std::thread(&minethd::double_work_main, this);
 	else
 		oWorkThd = std::thread(&minethd::work_main, this);
+
+	if(!thd_setaffinity(oWorkThd.native_handle(), affinity))
+		printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
 }
 
 cryptonight_ctx* minethd::minethd_alloc_ctx()
@@ -258,7 +261,13 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		pvThreads.push_back(thd);
 
 		if(cfg.iCpuAff >= 0)
+		{
+#if defined(__APPLE__)
+			printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory.");
+#endif
+
 			printer::inst()->print_msg(L1, "Starting %s thread, affinity: %d.", cfg.bDoubleMode ? "double" : "single", (int)cfg.iCpuAff);
+		}
 		else
 			printer::inst()->print_msg(L1, "Starting %s thread, no affinity.", cfg.bDoubleMode ? "double" : "single");
 	}
@@ -296,14 +305,7 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch)
 
 void minethd::pin_thd_affinity()
 {
-	//Lock is needed because we need to use oWorkThd
 	std::lock_guard<std::mutex> lock(work_thd_mtx);
-
-#if defined(__APPLE__)
-	printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory.");
-#endif
-	if(!thd_setaffinity(oWorkThd.native_handle(), affinity))
-		printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
 
 	// pin memory to NUMA node
 	bindMemoryToNUMANode(affinity);
