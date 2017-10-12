@@ -12,35 +12,30 @@ class params;
 
 struct environment
 {
+	static inline environment& inst(environment* init = nullptr)
+	{
+		static environment* env = nullptr;
 
-	static environment& inst()
-	{
-		static environment env;
-		return env;
-	}
-	
-	environment& operator=(const environment& env)
-	{
-		this->pPrinter = env.pPrinter;
-		this->pglobalStates = env.pglobalStates;
-		this->pJconfConfig = env.pJconfConfig;
-		this->pExecutor = env.pExecutor;
-		this->pParams = env.pParams;
-		return *this;
+		if(env == nullptr)
+		{
+			if(init != nullptr)
+				env = new environment;
+			else
+				env = init;
+		}
+
+		return *env;
 	}
 
-
-	environment() : pPrinter(nullptr), pglobalStates(nullptr)
+	environment()
 	{
 	}
 
-
-	printer* pPrinter;
-	globalStates* pglobalStates;
-	jconf* pJconfConfig;
-	executor* pExecutor;
-	params* pParams;
-
+	printer* pPrinter = nullptr;
+	globalStates* pglobalStates = nullptr;
+	jconf* pJconfConfig = nullptr;
+	executor* pExecutor = nullptr;
+	params* pParams = nullptr;
 };
 
 } // namepsace xmrstak
