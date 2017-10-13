@@ -15,11 +15,11 @@ struct pool_job
 	// \todo remove workaround needed for amd
 	uint32_t	iTarget32;
 	uint32_t	iWorkLen;
-	uint32_t	iResumeCnt;
+	uint32_t	iSavedNonce;
 
-	pool_job() : iWorkLen(0), iResumeCnt(0) {}
+	pool_job() : iWorkLen(0), iSavedNonce(0) {}
 	pool_job(const char* sJobID, uint64_t iTarget, const uint8_t* bWorkBlob, uint32_t iWorkLen) :
-		iTarget(iTarget), iWorkLen(iWorkLen), iResumeCnt(0)
+		iTarget(iTarget), iWorkLen(iWorkLen), iSavedNonce(0)
 	{
 		assert(iWorkLen <= sizeof(pool_job::bWorkBlob));
 		memcpy(this->sJobID, sJobID, sizeof(pool_job::sJobID));

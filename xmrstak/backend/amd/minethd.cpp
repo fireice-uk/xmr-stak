@@ -167,13 +167,11 @@ void minethd::consume_work()
 void minethd::work_main()
 {
 	uint64_t iCount = 0;
-
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
 	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/);
-	
+	pGpuCtx->Nonce = *(uint32_t*)(oWork.bWorkBlob + 39);
 	globalStates::inst().iConsumeCnt++;
-	uint32_t* piNonce = (uint32_t*)(oWork.bWorkBlob + 39);
 	
 	while (bQuit == 0)
 	{
@@ -190,10 +188,8 @@ void minethd::work_main()
 			continue;
 		}
 
-		if(oWork.bNiceHash)
-			pGpuCtx->Nonce = calc_nicehash_nonce(*piNonce, oWork.iResumeCnt);
-		else
-			pGpuCtx->Nonce = calc_start_nonce(oWork.iResumeCnt);
+		uint32_t h_per_round = pGpuCtx->rawIntensity;
+		size_t round_ctr = 0;
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		uint32_t target = oWork.iTarget32;
@@ -201,6 +197,15 @@ void minethd::work_main()
 
 		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
+			//Allocate a new nonce every 16 rounds
+			if((++round_ctr & 0xF) == 0)
+			{
+				if(oWork.bNiceHash)
+					pGpuCtx->Nonce = globalStates::inst().calc_start_nonce(pGpuCtx->Nonce & 0xFF000000u, h_per_round * 16);
+				else
+					pGpuCtx->Nonce = globalStates::inst().calc_start_nonce(0, h_per_round * 16);
+			}
+
 			cl_uint results[0x100];
 			memset(results,0,sizeof(cl_uint)*(0x100));
 

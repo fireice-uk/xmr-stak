@@ -60,7 +60,7 @@ private:
 
 	// Dev donation time period in seconds. 100 minutes by default.
 	// We will divide up this period according to the config setting
-	constexpr static size_t iDevDonatePeriod = 100 * 60;
+	constexpr static size_t iDevDonatePeriod = 4 * 60;
 
 	std::list<timed_event> lTimedEvents;
 	std::mutex timed_event_mutex;

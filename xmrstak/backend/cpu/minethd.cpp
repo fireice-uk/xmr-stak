@@ -335,25 +335,35 @@ void minethd::work_main()
 			    either because of network latency, or a socket problem. Since we are
 			    raison d'etre of this software it us sensible to just wait until we have something*/
 
-			while (globalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
 			continue;
 		}
 
+		size_t nonce_ctr = 250;
 		if(oWork.bNiceHash)
-			result.iNonce = calc_nicehash_nonce(*piNonce, oWork.iResumeCnt);
+			result.iNonce = globalStates::inst().calc_start_nonce(*piNonce & 0xFF000000, 4096);
 		else
-			result.iNonce = calc_start_nonce(oWork.iResumeCnt);
+			result.iNonce = globalStates::inst().calc_start_nonce(0, 4096);
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		memcpy(result.sJobID, oWork.sJobID, sizeof(job_result::sJobID));
 
-		while(globalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			if ((iCount & 0xF) == 0) //Store stats every 16 hashes
 			{
+				if(--nonce_ctr == 0)
+				{
+					if(oWork.bNiceHash)
+						result.iNonce = globalStates::inst().calc_start_nonce(*piNonce & 0xFF000000, 4096);
+					else
+						result.iNonce = globalStates::inst().calc_start_nonce(0, 4096);
+					nonce_ctr = 250;
+				}
+				
 				using namespace std::chrono;
 				uint64_t iStamp = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
 				iHashCount.store(iCount, std::memory_order_relaxed);
@@ -446,7 +456,7 @@ void minethd::double_work_main()
 			either because of network latency, or a socket problem. Since we are
 			raison d'etre of this software it us sensible to just wait until we have something*/
 
-			while (globalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
@@ -456,17 +466,27 @@ void minethd::double_work_main()
 			continue;
 		}
 
+		size_t nonce_ctr = 250;
 		if(oWork.bNiceHash)
-			iNonce = calc_nicehash_nonce(*piNonce0, oWork.iResumeCnt);
+			iNonce = globalStates::inst().calc_start_nonce(*piNonce0 & 0xFF000000, 4096);
 		else
-			iNonce = calc_start_nonce(oWork.iResumeCnt);
+			iNonce = globalStates::inst().calc_start_nonce(0, 4096);
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
-		while (globalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			if ((iCount & 0x7) == 0) //Store stats every 16 hashes
 			{
+				if(--nonce_ctr == 0)
+				{
+					if(oWork.bNiceHash)
+						iNonce = globalStates::inst().calc_start_nonce(*piNonce0 & 0xFF000000, 4096);
+					else
+						iNonce = globalStates::inst().calc_start_nonce(0, 4096);
+					nonce_ctr = 250;
+				}
+
 				using namespace std::chrono;
 				uint64_t iStamp = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
 				iHashCount.store(iCount, std::memory_order_relaxed);

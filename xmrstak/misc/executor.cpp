@@ -121,7 +121,9 @@ void executor::sched_reconnect()
 		rt, int_port(iReconnectAttempts));
 
 	auto work = xmrstak::miner_work();
-	xmrstak::globalStates::inst().switch_work(work);
+	xmrstak::pool_data dat;
+
+	xmrstak::globalStates::inst().switch_work(work, dat);
 
 	push_timed_event(ex_event(EV_RECONNECT, usr_pool_id), rt);
 }
@@ -166,7 +168,8 @@ void executor::log_result_ok(uint64_t iActualDiff)
 
 jpsock* executor::pick_pool_by_id(size_t pool_id)
 {
-	assert(pool_id != invalid_pool_id);
+	if(pool_id == invalid_pool_id)
+		return nullptr;
 
 	if(pool_id == dev_pool_id)
 		return dev_pool;
@@ -233,14 +236,23 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 
 	jpsock* pool = pick_pool_by_id(pool_id);
 
-	xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob,
-		oPoolJob.iWorkLen, oPoolJob.iResumeCnt, oPoolJob.iTarget,
-		pool_id != dev_pool_id && ::jconf::inst()->NiceHashMode(),
-		pool_id);
+	xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob, oPoolJob.iWorkLen, oPoolJob.iTarget,
+		pool_id != dev_pool_id && ::jconf::inst()->NiceHashMode(), pool_id);
 
 	oWork.iTarget32 = oPoolJob.iTarget32;
 	
-	xmrstak::globalStates::inst().switch_work(oWork);
+	xmrstak::pool_data dat;
+	dat.iSavedNonce = oPoolJob.iSavedNonce;
+	dat.pool_id = pool_id;
+
+	xmrstak::globalStates::inst().switch_work(oWork, dat);
+
+	if(dat.pool_id != pool_id)
+	{
+		jpsock* prev_pool;
+		if((prev_pool = pick_pool_by_id(dat.pool_id)) != nullptr)
+			prev_pool->save_nonce(dat.iSavedNonce);
+	}
 
 	if(pool_id == dev_pool_id)
 		return;
@@ -251,7 +263,10 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 		printer::inst()->print_msg(L2, "Difficulty changed. Now: %llu.", int_port(iPoolDiff));
 	}
 
-	printer::inst()->print_msg(L3, "New block detected.");
+	if(dat.pool_id == pool_id)
+		printer::inst()->print_msg(L3, "New block detected.");
+	else
+		printer::inst()->print_msg(L3, "Pool switched.");
 }
 
 void executor::on_miner_result(size_t pool_id, job_result& oResult)
@@ -356,13 +371,7 @@ void executor::on_switch_pool(size_t pool_id)
 			return;
 		}
 
-		xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob,
-			oPoolJob.iWorkLen, oPoolJob.iResumeCnt, oPoolJob.iTarget,
-			::jconf::inst()->NiceHashMode(), pool_id);
-
-		oWork.iTarget32 = oPoolJob.iTarget32;
-
-		xmrstak::globalStates::inst().switch_work(oWork);
+		on_pool_have_job(current_pool_id, oPoolJob);
 
 		if(dev_pool->is_running())
 			push_timed_event(ex_event(EV_DEV_POOL_EXIT), 5);
