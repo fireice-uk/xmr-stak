@@ -37,6 +37,7 @@ struct globalStates
 	{
 		uint32_t debug_nonce = nicehash_nonce | iGlobalNonce.fetch_add(reserve_count);
 		printer::inst()->print_msg(L1, "DEBUG: start_nonce assigned nh: %.8x rc: %.8x nonce: %.8x", nicehash_nonce, reserve_count, debug_nonce);
+		return debug_nonce;
 	}
 
 	miner_work oGlobalWork;
