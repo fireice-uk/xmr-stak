@@ -18,7 +18,7 @@ struct environment
 
 		if(env == nullptr)
 		{
-			if(init != nullptr)
+			if(init == nullptr)
 				env = new environment;
 			else
 				env = init;
