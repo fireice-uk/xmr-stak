@@ -7,8 +7,8 @@ class executor;
 namespace xmrstak
 {
 
-class globalStates;
-class params;
+struct globalStates;
+struct params;
 
 struct environment
 {
