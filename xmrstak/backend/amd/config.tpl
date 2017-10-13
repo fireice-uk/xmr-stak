@@ -1,10 +1,4 @@
 R"===(
-
-/* 
- * Number of GPUs that you have in your system. Each GPU will get its own CPU thread.
- */
-"gpu_thread_num" : NUMGPUS,
-
 /*
  * GPU configuration. You should play around with intensity and worksize as the fastest settings will vary.
  *      index    - GPU index number usually starts from 0
