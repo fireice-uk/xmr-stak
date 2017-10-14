@@ -44,6 +44,9 @@ After the configuration you need to compile the miner, follow the guide for your
   - there is no *http* interface available if option is disabled: `cmake .. -DMICROHTTPD_ENABLE=OFF`
 - `OpenSSL_ENABLE` allow to disable/enable the dependency *OpenSSL*
   - it is not possible to connect to a *https* secured pool if option is disabled: `cmake .. -DOpenSSL_ENABLE=OFF`
+- `WIN_UAC` will enable or disable the "Run As Administrator" prompt on Windows.
+  - UAC confirmation is needed to use large pages on Windows 7.
+  - On Windows 10 it is only needed once to set up the account to use them.
 
 ## CPU Build Options
 
