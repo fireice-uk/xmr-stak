@@ -466,7 +466,7 @@ void minethd::double_work_main()
 			continue;
 		}
 
-		size_t nonce_ctr = 250;
+		size_t nonce_ctr = 256;
 		if(oWork.bNiceHash)
 			iNonce = globalStates::inst().calc_start_nonce(*piNonce0 & 0xFF000000, 4096);
 		else
@@ -484,7 +484,7 @@ void minethd::double_work_main()
 						iNonce = globalStates::inst().calc_start_nonce(*piNonce0 & 0xFF000000, 4096);
 					else
 						iNonce = globalStates::inst().calc_start_nonce(0, 4096);
-					nonce_ctr = 250;
+					nonce_ctr = 256;
 				}
 
 				using namespace std::chrono;

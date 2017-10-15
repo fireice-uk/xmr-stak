@@ -230,7 +230,7 @@ void minethd::work_main()
 		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			//Allocate a new nonce every 16 rounds
-			if((++round_ctr & 0xF) == 0)
+			if((round_ctr++ & 0xF) == 0)
 			{
 				if(oWork.bNiceHash)
 					iNonce = globalStates::inst().calc_start_nonce(iNonce & 0xFF000000u, h_per_round * 16);
