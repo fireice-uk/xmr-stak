@@ -65,7 +65,7 @@ __declspec(dllexport)
 #endif
 std::vector<iBackend*>* xmrstak_start_backend(uint32_t threadOffset, miner_work& pWork, environment& env)
 {
-	environment::inst() = env;
+	environment::inst(&env);
 	return amd::minethd::thread_starter(threadOffset, pWork);
 }
 } // extern "C"
