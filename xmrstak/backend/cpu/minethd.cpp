@@ -50,22 +50,8 @@
 #include <thread>
 #include <bitset>
 
-
 #ifdef _WIN32
 #include <windows.h>
-
-namespace xmrstak
-{
-namespace cpu
-{
-void minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
-{
-	SetThreadAffinityMask(h, 1ULL << cpu_id);
-}
-
-} // namespace cpu
-} // namespace xmrstak
-
 #else
 #include <pthread.h>
 
@@ -75,43 +61,36 @@ void minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 #define SYSCTL_CORE_COUNT   "machdep.cpu.core_count"
 #elif defined(__FreeBSD__)
 #include <pthread_np.h>
-#endif
+#endif //__APPLE__
+
+#endif //_WIN32
 
 namespace xmrstak
 {
 namespace cpu
 {
 
-void minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
+bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 {
-#if defined(__APPLE__)
+#if defined(_WIN32)
+	return SetThreadAffinityMask(h, 1ULL << cpu_id) != 0;
+#elif defined(__APPLE__)
 	thread_port_t mach_thread;
 	thread_affinity_policy_data_t policy = { static_cast<integer_t>(cpu_id) };
 	mach_thread = pthread_mach_thread_np(h);
-	thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
+	return thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1) == KERN_SUCCESS;
 #elif defined(__FreeBSD__)
 	cpuset_t mn;
 	CPU_ZERO(&mn);
 	CPU_SET(cpu_id, &mn);
-	pthread_setaffinity_np(h, sizeof(cpuset_t), &mn);
+	return pthread_setaffinity_np(h, sizeof(cpuset_t), &mn) == 0;
 #else
 	cpu_set_t mn;
 	CPU_ZERO(&mn);
 	CPU_SET(cpu_id, &mn);
-	pthread_setaffinity_np(h, sizeof(cpu_set_t), &mn);
+	return pthread_setaffinity_np(h, sizeof(cpu_set_t), &mn) == 0;
 #endif
 }
-
-} // namespace cpu
-} // namespace xmrstak
-
-#endif // _WIN32
-
-
-namespace xmrstak
-{
-namespace cpu
-{
 
 minethd::minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefetch, int64_t affinity)
 {
@@ -122,11 +101,17 @@ minethd::minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefet
 	bNoPrefetch = no_prefetch;
 	this->affinity = affinity;
 
-	std::lock_guard<std::mutex> lock(work_thd_mtx);
+	std::future<void> order_guard = order_fix.get_future();
+
 	if(double_work)
 		oWorkThd = std::thread(&minethd::double_work_main, this);
 	else
 		oWorkThd = std::thread(&minethd::work_main, this);
+
+	order_guard.wait();
+
+	if(!thd_setaffinity(oWorkThd.native_handle(), affinity))
+		printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
 }
 
 cryptonight_ctx* minethd::minethd_alloc_ctx()
@@ -279,7 +264,13 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		pvThreads.push_back(thd);
 
 		if(cfg.iCpuAff >= 0)
+		{
+#if defined(__APPLE__)
+			printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory.");
+#endif
+
 			printer::inst()->print_msg(L1, "Starting %s thread, affinity: %d.", cfg.bDoubleMode ? "double" : "single", (int)cfg.iCpuAff);
+		}
 		else
 			printer::inst()->print_msg(L1, "Starting %s thread, no affinity.", cfg.bDoubleMode ? "double" : "single");
 	}
@@ -315,24 +306,12 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch)
 	return func_table[digit.to_ulong()];
 }
 
-void minethd::pin_thd_affinity()
-{
-	//Lock is needed because we need to use oWorkThd
-	std::lock_guard<std::mutex> lock(work_thd_mtx);
-
-	// pin memory to NUMA node
-	bindMemoryToNUMANode(affinity);
-
-#if defined(__APPLE__)
-	printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory.");
-#endif
-	thd_setaffinity(oWorkThd.native_handle(), affinity);
-}
-
 void minethd::work_main()
 {
 	if(affinity >= 0) //-1 means no affinity
-		pin_thd_affinity();
+		bindMemoryToNUMANode(affinity);
+
+	order_fix.set_value();
 
 	cn_hash_fun hash_fun;
 	cryptonight_ctx* ctx;
@@ -429,7 +408,7 @@ uint32_t* minethd::prep_double_work(uint8_t bDoubleWorkBlob[sizeof(miner_work::b
 void minethd::double_work_main()
 {
 	if(affinity >= 0) //-1 means no affinity
-		pin_thd_affinity();
+		bindMemoryToNUMANode(affinity);
 
 	cn_hash_fun_dbl hash_fun;
 	cryptonight_ctx* ctx0;

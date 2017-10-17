@@ -8,7 +8,7 @@
 #include <thread>
 #include <vector>
 #include <atomic>
-#include <mutex>
+#include <future>
 
 namespace xmrstak
 {
@@ -24,7 +24,7 @@ public:
 	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx*);
 
 	static cn_hash_fun func_selector(bool bHaveAes, bool bNoPrefetch);
-	static void thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id);
+	static bool thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id);
 
 	static cryptonight_ctx* minethd_alloc_ctx();
 
@@ -45,9 +45,7 @@ private:
 	static miner_work oGlobalWork;
 	miner_work oWork;
 
-	void pin_thd_affinity();
-	// Held by the creating context to prevent a race cond with oWorkThd = std::thread(...)
-	std::mutex work_thd_mtx;
+	std::promise<void> order_fix;
 
 	std::thread oWorkThd;
 	int64_t affinity;
