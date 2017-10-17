@@ -36,10 +36,6 @@
 #	include "xmrstak/http/httpd.hpp"
 #endif
 
-#ifdef _WIN32
-#	include "xmrstak/misc/uac.hpp"
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
@@ -92,11 +88,6 @@ void help()
 
 int main(int argc, char *argv[])
 {
-#ifdef _WIN32
-	if (!IsElevated() && SelfElevate(argv[0]))
-		return 0;
-#endif
-
 #ifndef CONF_NO_TLS
 	SSL_library_init();
 	SSL_load_error_strings();
