@@ -348,6 +348,9 @@ void minethd::work_main()
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		memcpy(result.sJobID, oWork.sJobID, sizeof(job_result::sJobID));
 
+		if(oWork.bNiceHash)
+			result.iNonce = *piNonce;
+
 		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			if ((iCount++ & 0xF) == 0) //Store stats every 16 hashes
@@ -360,10 +363,7 @@ void minethd::work_main()
 
 			if((nonce_ctr++ & (nonce_chunk-1)) == 0)
 			{
-				if(oWork.bNiceHash)
-					result.iNonce = globalStates::inst().calc_start_nonce(*piNonce & 0xFF000000, nonce_chunk);
-				else
-					result.iNonce = globalStates::inst().calc_start_nonce(0, nonce_chunk);
+				globalStates::inst().calc_start_nonce(result.iNonce, oWork.bNiceHash, nonce_chunk);
 			}
 
 			*piNonce = ++result.iNonce;
@@ -466,6 +466,9 @@ void minethd::double_work_main()
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
+		if(oWork.bNiceHash)
+			iNonce = *piNonce0;
+
 		while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			if ((iCount & 0x7) == 0) //Store stats every 16 hashes
@@ -480,10 +483,7 @@ void minethd::double_work_main()
 			
 			if((nonce_ctr++ & (nonce_chunk/2 - 1)) == 0)
 			{
-				if(oWork.bNiceHash)
-					iNonce = globalStates::inst().calc_start_nonce(*piNonce0 & 0xFF000000, nonce_chunk);
-				else
-					iNonce = globalStates::inst().calc_start_nonce(0, nonce_chunk);
+				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, nonce_chunk);
 			}
 
 

@@ -33,11 +33,14 @@ struct globalStates
 	//pool_data is in-out winapi style
 	void switch_work(miner_work& pWork, pool_data& dat);
 
-	inline uint32_t calc_start_nonce(uint32_t nicehash_nonce, uint32_t reserve_count)
+	inline void calc_start_nonce(uint32_t& nonce, bool use_nicehash, uint32_t reserve_count)
 	{
-		uint32_t debug_nonce = nicehash_nonce | iGlobalNonce.fetch_add(reserve_count);
-		printer::inst()->print_msg(L1, "DEBUG: start_nonce assigned nh: %.8x rc: %.8x nonce: %.8x", nicehash_nonce, reserve_count, debug_nonce);
-		return debug_nonce;
+		if(use_nicehash)
+			nonce = (nonce & 0xFF000000) | iGlobalNonce.fetch_add(reserve_count);
+		else
+			nonce = iGlobalNonce.fetch_add(reserve_count);
+
+		printer::inst()->print_msg(L1, "DEBUG: start_nonce assigned rc: %.8x nonce: %.8x", reserve_count, nonce);
 	}
 
 	miner_work oGlobalWork;

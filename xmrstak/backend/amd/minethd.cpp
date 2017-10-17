@@ -200,10 +200,7 @@ void minethd::work_main()
 			//Allocate a new nonce every 16 rounds
 			if((round_ctr++ & 0xF) == 0)
 			{
-				if(oWork.bNiceHash)
-					pGpuCtx->Nonce = globalStates::inst().calc_start_nonce(pGpuCtx->Nonce & 0xFF000000u, h_per_round * 16);
-				else
-					pGpuCtx->Nonce = globalStates::inst().calc_start_nonce(0, h_per_round * 16);
+				globalStates::inst().calc_start_nonce(pGpuCtx->Nonce, oWork.bNiceHash, h_per_round * 16);
 			}
 
 			cl_uint results[0x100];
