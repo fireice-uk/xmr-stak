@@ -235,7 +235,7 @@ void minethd::work_main()
 			//Allocate a new nonce every 16 rounds
 			if((round_ctr++ & 0xF) == 0)
 			{
-				iNonce = globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, h_per_round * 16);
+				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, h_per_round * 16);
 			}
 			
 			uint32_t foundNonce[10];
