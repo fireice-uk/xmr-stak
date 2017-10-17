@@ -342,34 +342,29 @@ void minethd::work_main()
 			continue;
 		}
 
-		size_t nonce_ctr = 250;
-		if(oWork.bNiceHash)
-			result.iNonce = globalStates::inst().calc_start_nonce(*piNonce & 0xFF000000, 4096);
-		else
-			result.iNonce = globalStates::inst().calc_start_nonce(0, 4096);
+		size_t nonce_ctr = 0;
+		constexpr size_t nonce_chunk = 4096; // Needs to be a power of 2
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		memcpy(result.sJobID, oWork.sJobID, sizeof(job_result::sJobID));
 
-		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		1while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
-			if ((iCount & 0xF) == 0) //Store stats every 16 hashes
+			if ((iCount++ & 0xF) == 0) //Store stats every 16 hashes
 			{
-				if(--nonce_ctr == 0)
-				{
-					if(oWork.bNiceHash)
-						result.iNonce = globalStates::inst().calc_start_nonce(*piNonce & 0xFF000000, 4096);
-					else
-						result.iNonce = globalStates::inst().calc_start_nonce(0, 4096);
-					nonce_ctr = 250;
-				}
-				
 				using namespace std::chrono;
 				uint64_t iStamp = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
 				iHashCount.store(iCount, std::memory_order_relaxed);
 				iTimestamp.store(iStamp, std::memory_order_relaxed);
 			}
-			iCount++;
+
+			if((nonce_ctr++ & (nonce_chunk-1)) == 0)
+			{
+				if(oWork.bNiceHash)
+					result.iNonce = globalStates::inst().calc_start_nonce(*piNonce & 0xFF000000, nonce_chunk);
+				else
+					result.iNonce = globalStates::inst().calc_start_nonce(0, nonce_chunk);
+			}
 
 			*piNonce = ++result.iNonce;
 
@@ -466,11 +461,8 @@ void minethd::double_work_main()
 			continue;
 		}
 
-		size_t nonce_ctr = 256;
-		if(oWork.bNiceHash)
-			iNonce = globalStates::inst().calc_start_nonce(*piNonce0 & 0xFF000000, 4096);
-		else
-			iNonce = globalStates::inst().calc_start_nonce(0, 4096);
+		size_t nonce_ctr = 0;
+		constexpr size_t nonce_chunk = 4096; //Needs to be a power of 2
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
@@ -478,22 +470,22 @@ void minethd::double_work_main()
 		{
 			if ((iCount & 0x7) == 0) //Store stats every 16 hashes
 			{
-				if(--nonce_ctr == 0)
-				{
-					if(oWork.bNiceHash)
-						iNonce = globalStates::inst().calc_start_nonce(*piNonce0 & 0xFF000000, 4096);
-					else
-						iNonce = globalStates::inst().calc_start_nonce(0, 4096);
-					nonce_ctr = 256;
-				}
-
 				using namespace std::chrono;
 				uint64_t iStamp = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
 				iHashCount.store(iCount, std::memory_order_relaxed);
 				iTimestamp.store(iStamp, std::memory_order_relaxed);
 			}
-
 			iCount += 2;
+			
+			
+			if((nonce_ctr++ & (nonce_chunk/2 - 1)) == 0)
+			{
+				if(oWork.bNiceHash)
+					iNonce = globalStates::inst().calc_start_nonce(*piNonce0 & 0xFF000000, nonce_chunk);
+				else
+					iNonce = globalStates::inst().calc_start_nonce(0, nonce_chunk);
+			}
+
 
 			*piNonce0 = ++iNonce;
 			*piNonce1 = ++iNonce;
