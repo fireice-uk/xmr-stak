@@ -45,7 +45,6 @@ private:
 	static miner_work oGlobalWork;
 	miner_work oWork;
 
-	void pin_thd_affinity();
 	std::promise<void> order_fix;
 
 	std::thread oWorkThd;

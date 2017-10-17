@@ -306,16 +306,10 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch)
 	return func_table[digit.to_ulong()];
 }
 
-void minethd::pin_thd_affinity()
-{
-	// pin memory to NUMA node
-	bindMemoryToNUMANode(affinity);
-}
-
 void minethd::work_main()
 {
 	if(affinity >= 0) //-1 means no affinity
-		pin_thd_affinity();
+		bindMemoryToNUMANode(affinity);
 
 	order_fix.set_value();
 
@@ -414,7 +408,7 @@ uint32_t* minethd::prep_double_work(uint8_t bDoubleWorkBlob[sizeof(miner_work::b
 void minethd::double_work_main()
 {
 	if(affinity >= 0) //-1 means no affinity
-		pin_thd_affinity();
+		bindMemoryToNUMANode(affinity);
 
 	cn_hash_fun_dbl hash_fun;
 	cryptonight_ctx* ctx0;
