@@ -170,7 +170,6 @@ void minethd::work_main()
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
 	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/);
-	pGpuCtx->Nonce = *(uint32_t*)(oWork.bWorkBlob + 39);
 	globalStates::inst().iConsumeCnt++;
 	
 	while (bQuit == 0)
@@ -194,6 +193,9 @@ void minethd::work_main()
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		uint32_t target = oWork.iTarget32;
 		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target);
+
+		if(oWork.bNiceHash)
+			pGpuCtx->Nonce = *(uint32_t*)(oWork.bWorkBlob + 39);
 
 		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{

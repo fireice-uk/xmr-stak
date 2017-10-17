@@ -195,7 +195,7 @@ void minethd::work_main()
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
 	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/);
-	uint32_t iNonce = *(uint32_t*)(oWork.bWorkBlob + 39);
+	uint32_t iNonce;
 
 	globalStates::inst().iConsumeCnt++;
 
@@ -226,6 +226,9 @@ void minethd::work_main()
 		size_t round_ctr = 0;
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
+
+		if(oWork.bNiceHash)
+			iNonce = *(uint32_t*)(oWork.bWorkBlob + 39);
 
 		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
