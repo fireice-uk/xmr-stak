@@ -410,6 +410,8 @@ void minethd::double_work_main()
 	if(affinity >= 0) //-1 means no affinity
 		bindMemoryToNUMANode(affinity);
 
+	order_fix.set_value();
+
 	cn_hash_fun_dbl hash_fun;
 	cryptonight_ctx* ctx0;
 	cryptonight_ctx* ctx1;
