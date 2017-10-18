@@ -21,6 +21,13 @@ void bindMemoryToNUMANode( size_t puId )
 	hwloc_topology_init(&topology);
 	hwloc_topology_load(topology);
 
+	if(!hwloc_topology_get_support(topology)->membind->set_thisthread_membind)
+	{
+		printer::inst()->print_msg(L0, "hwloc: set_thisthread_membind not supported");
+		hwloc_topology_destroy(topology);
+		return;
+	}
+
 	depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PU);
 
 	for( size_t i = 0;
@@ -45,6 +52,8 @@ void bindMemoryToNUMANode( size_t puId )
 			}
 		}
 	}
+
+	hwloc_topology_destroy(topology);
 }
 #else
 
