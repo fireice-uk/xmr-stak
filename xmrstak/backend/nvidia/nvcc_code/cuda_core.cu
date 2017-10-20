@@ -156,7 +156,11 @@ __forceinline__ __device__ uint32_t shuffle(volatile uint32_t* ptr,const uint32_
 #else
     unusedVar( ptr );
     unusedVar( sub );
-    return __shfl( val, src, 4 );
+#   if(__CUDACC_VER_MAJOR__ >= 9)
+    return __shfl_sync(0xFFFFFFFF, val, src, 4 );
+#	else
+	return __shfl( val, src, 4 );
+#	endif
 #endif
 }
 
