@@ -79,6 +79,10 @@ if(CUDA_ENABLE)
         if(NOT CUDA_VERSION VERSION_LESS 8.0)
             list(APPEND DEFAULT_CUDA_ARCH "60" "61" "62")
         endif()
+        # add Volta support for CUDA >= 9.0
+        if(NOT CUDA_VERSION VERSION_LESS 9.0)
+            list(APPEND DEFAULT_CUDA_ARCH "70")
+        endif()
         set(CUDA_ARCH "${DEFAULT_CUDA_ARCH}" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
 
         # validate architectures (only numbers are allowed)
