@@ -57,9 +57,8 @@ void executor::push_timed_event(ex_event&& ev, size_t sec)
 
 void executor::ex_clock_thd()
 {
-	double donationLevel = jconf::inst()->GetDonationLevel();
 	size_t iSwitchPeriod = sec_to_ticks(iDevDonatePeriod);
-	size_t iDevPortion = (size_t)floor(((double)iSwitchPeriod) * donationLevel);
+	size_t iDevPortion = (size_t)floor(((double)iSwitchPeriod) * fDevDonationLevel);
 
 	//No point in bothering with less than 10 sec
 	if(iDevPortion < sec_to_ticks(10))
@@ -240,7 +239,7 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 		pool_id);
 
 	oWork.iTarget32 = oPoolJob.iTarget32;
-
+	
 	xmrstak::globalStates::inst().switch_work(oWork);
 
 	if(pool_id == dev_pool_id)
