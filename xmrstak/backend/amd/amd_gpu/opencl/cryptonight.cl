@@ -482,7 +482,7 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 	if(gIdx < Threads)
 	{
 		#pragma unroll 2
-		for(int i = 0; i < 0x4000; ++i)
+		for(int i = 0; i < 0x2000; ++i)
 		{
 			#pragma unroll
 			for(int j = 0; j < 10; ++j)
@@ -611,7 +611,7 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 	if(gIdx < Threads)
 	{
 		#pragma unroll 2
-		for(int i = 0; i < 0x4000; ++i)
+		for(int i = 0; i < 0x2000; ++i)
 		{
 			text ^= Scratchpad[IDX((i << 3) + get_local_id(1))];
 

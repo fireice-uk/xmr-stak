@@ -57,6 +57,7 @@ public:
 
 	bool PreferIpv4();
 
+	double GetDonationLevel();
 
 	bool NiceHashMode();
 

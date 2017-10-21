@@ -121,13 +121,13 @@ __global__ void cryptonight_core_gpu_phase1( int threads, int bfactor, int parti
 	else
 	{
 		// load previous text data
-		MEMCPY8( text, &long_state[( (uint64_t) thread << 19 ) + sub + start - 32], 2 );
+		MEMCPY8( text, &long_state[( (uint64_t) thread << 18 ) + sub + start - 32], 2 );
 	}
 	__syncthreads( );
 	for ( int i = start; i < end; i += 32 )
 	{
 		cn_aes_pseudo_round_mut( sharedMemory, text, key );
-		MEMCPY8(&long_state[((uint64_t) thread << 19) + (sub + i)], text, 2);
+		MEMCPY8(&long_state[((uint64_t) thread << 18) + (sub + i)], text, 2);
 	}
 }
 
@@ -189,7 +189,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 	const int batchsize = ITER >> ( 2 + bfactor );
 	const int start = partidx * batchsize;
 	const int end = start + batchsize;
-	uint32_t * long_state = &d_long_state[(IndexType) thread << 19];
+	uint32_t * long_state = &d_long_state[(IndexType) thread << 18];
 	uint32_t * ctx_a = d_ctx_a + thread * 4;
 	uint32_t * ctx_b = d_ctx_b + thread * 4;
 	uint32_t a, d[2];
@@ -203,7 +203,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 		#pragma unroll 2
 		for ( int x = 0; x < 2; ++x )
 		{
-			j = ( ( shuffle(sPtr,sub, a, 0) & 0x1FFFF0 ) >> 2 ) + sub;
+			j = ( ( shuffle(sPtr,sub, a, 0) & 0x0FFFF0 ) >> 2 ) + sub;
 
 			const uint32_t x_0 = loadGlobal32<uint32_t>( long_state + j );
 			const uint32_t x_1 = shuffle(sPtr,sub, x_0, sub + 1);
@@ -221,8 +221,8 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 			//long_state[j] = d[0] ^ d[1];
 			storeGlobal32( long_state + j, d[0] ^ d[1] );
 
-			//MUL_SUM_XOR_DST(c, a, &long_state[((uint32_t *)c)[0] & 0x1FFFF0]);
-			j = ( ( *t1 & 0x1FFFF0 ) >> 2 ) + sub;
+			//MUL_SUM_XOR_DST(c, a, &long_state[((uint32_t *)c)[0] & 0x0FFFF0]);
+			j = ( ( *t1 & 0x0FFFF0 ) >> 2 ) + sub;
 
 			uint32_t yy[2];
 			*( (uint64_t*) yy ) = loadGlobal64<uint64_t>( ( (uint64_t *) long_state )+( j >> 1 ) );
@@ -261,7 +261,7 @@ __global__ void cryptonight_core_gpu_phase3( int threads, int bfactor, int parti
 	int thread = ( blockDim.x * blockIdx.x + threadIdx.x ) >> 3;
 	int sub = ( threadIdx.x & 7 ) << 2;
 
-	const int batchsize = 0x80000 >> bfactor;
+	const int batchsize = 0x40000 >> bfactor;
 	const int start = partidx * batchsize;
 	const int end = start + batchsize;
 
@@ -277,7 +277,7 @@ __global__ void cryptonight_core_gpu_phase3( int threads, int bfactor, int parti
 	{
 #pragma unroll
 		for ( int j = 0; j < 4; ++j )
-			text[j] ^= long_state[((IndexType) thread << 19) + (sub + i + j)];
+			text[j] ^= long_state[((IndexType) thread << 18) + (sub + i + j)];
 
 		cn_aes_pseudo_round_mut( sharedMemory, text, key );
 	}

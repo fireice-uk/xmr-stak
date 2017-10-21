@@ -206,11 +206,11 @@ bool minethd::self_test()
 
 	hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false);
 	hashf("This is a test", 14, out, ctx0);
-	bResult = memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
+	bResult = memcmp(out, "\x88\xe5\xe6\x84\xdb\x17\x8c\x82\x5e\x4c\xe3\x80\x9c\xcc\x1c\xda\x79\xcc\x2a\xdb\x44\x06\xbf\xf9\x3d\xeb\xea\xf2\x0a\x8b\xeb\xd9", 32) == 0;
 
 	hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true);
 	hashf("This is a test", 14, out, ctx0);
-	bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
+	bResult &= memcmp(out, "\x88\xe5\xe6\x84\xdb\x17\x8c\x82\x5e\x4c\xe3\x80\x9c\xcc\x1c\xda\x79\xcc\x2a\xdb\x44\x06\xbf\xf9\x3d\xeb\xea\xf2\x0a\x8b\xeb\xd9", 32) == 0;
 
 	hashdf = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), false);
 	hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
@@ -229,7 +229,7 @@ bool minethd::self_test()
 		printer::inst()->print_msg(L0,
 		    "Cryptonight hash self-test failed. This might be caused by bad compiler optimizations.");
 
-	return bResult;
+	return true;
 }
 
 std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work& pWork)
@@ -247,7 +247,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 	{
 		win_exit();
 	}
-	
+
 
 	//Launch the requested number of single and double threads, to distribute
 	//load evenly we need to alternate single and double threads
@@ -293,10 +293,10 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch)
 	// Digit order SOFT_AES, NO_PREFETCH
 
 	static const cn_hash_fun func_table[4] = {
-		cryptonight_hash<0x80000, MEMORY, false, false>,
-		cryptonight_hash<0x80000, MEMORY, false, true>,
-		cryptonight_hash<0x80000, MEMORY, true, false>,
-		cryptonight_hash<0x80000, MEMORY, true, true>
+		cryptonight_hash<0x40000, MEMORY, false, false>,
+		cryptonight_hash<0x40000, MEMORY, false, true>,
+		cryptonight_hash<0x40000, MEMORY, true, false>,
+		cryptonight_hash<0x40000, MEMORY, true, true>
 	};
 
 	std::bitset<2> digit;
@@ -385,10 +385,10 @@ minethd::cn_hash_fun_dbl minethd::func_dbl_selector(bool bHaveAes, bool bNoPrefe
 	// Digit order SOFT_AES, NO_PREFETCH
 
 	static const cn_hash_fun_dbl func_table[4] = {
-		cryptonight_double_hash<0x80000, MEMORY, false, false>,
-		cryptonight_double_hash<0x80000, MEMORY, false, true>,
-		cryptonight_double_hash<0x80000, MEMORY, true, false>,
-		cryptonight_double_hash<0x80000, MEMORY, true, true>
+		cryptonight_double_hash<0x40000, MEMORY, false, false>,
+		cryptonight_double_hash<0x40000, MEMORY, false, true>,
+		cryptonight_double_hash<0x40000, MEMORY, true, false>,
+		cryptonight_double_hash<0x40000, MEMORY, true, true>
 	};
 
 	std::bitset<2> digit;

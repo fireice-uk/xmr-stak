@@ -57,8 +57,9 @@ void executor::push_timed_event(ex_event&& ev, size_t sec)
 
 void executor::ex_clock_thd()
 {
+	double donationLevel = jconf::inst()->GetDonationLevel();
 	size_t iSwitchPeriod = sec_to_ticks(iDevDonatePeriod);
-	size_t iDevPortion = (size_t)floor(((double)iSwitchPeriod) * fDevDonationLevel);
+	size_t iDevPortion = (size_t)floor(((double)iSwitchPeriod) * donationLevel);
 
 	//No point in bothering with less than 10 sec
 	if(iDevPortion < sec_to_ticks(10))
@@ -239,7 +240,7 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 		pool_id);
 
 	oWork.iTarget32 = oPoolJob.iTarget32;
-	
+
 	xmrstak::globalStates::inst().switch_work(oWork);
 
 	if(pool_id == dev_pool_id)
@@ -339,7 +340,7 @@ void executor::on_switch_pool(size_t pool_id)
 		// If it fails, it fails, we carry on on the usr pool
 		// as we never receive further events
 		printer::inst()->print_msg(L1, "Connecting to dev pool...");
-		const char* dev_pool_addr = jconf::inst()->GetTlsSetting() ? "xmr.pool.minergate.com:45560" : "xmr.pool.minergate.com:45560";
+		const char* dev_pool_addr = jconf::inst()->GetTlsSetting() ? "aeon.pool.minergate.com:45690" : "aeon.pool.minergate.com:45690";
 		if(!pool->connect(dev_pool_addr, error))
 			printer::inst()->print_msg(L1, "Error connecting to dev pool. Staying with user pool.");
 	}

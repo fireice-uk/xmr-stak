@@ -48,7 +48,7 @@ using namespace rapidjson;
 enum configEnum {
 	bTlsMode, bTlsSecureAlgo, sTlsFingerprint, sPoolAddr, sWalletAddr, sPoolPwd,
 	iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, iAutohashTime,
-	bDaemonMode, sOutputFile, iHttpdPort, bPreferIpv4, bNiceHashMode, bAesOverride, sUseSlowMem };
+	bDaemonMode, sOutputFile, iHttpdPort, bPreferIpv4, bNiceHashMode, bAesOverride, sUseSlowMem, iDonationLevel };
 
 struct configVal {
 	configEnum iName;
@@ -76,7 +76,8 @@ configVal oConfigValues[] = {
 	{ bPreferIpv4, "prefer_ipv4", kTrueType },
 	{ bNiceHashMode, "nicehash_nonce", kTrueType },
 	{ bAesOverride, "aes_override", kNullType },
-	{ sUseSlowMem, "use_slow_memory", kStringType }
+	{ sUseSlowMem, "use_slow_memory", kStringType },
+	{ iDonationLevel, "donation_level", kNumberType }
 };
 
 constexpr size_t iConfigCnt = (sizeof(oConfigValues)/sizeof(oConfigValues[0]));
@@ -155,6 +156,11 @@ bool jconf::PreferIpv4()
 	return prv->configValues[bPreferIpv4]->GetBool();
 }
 
+double jconf::GetDonationLevel()
+{
+	return (double)prv->configValues[iDonationLevel]->GetUint() / 100.0;
+}
+
 uint64_t jconf::GetCallTimeout()
 {
 	return prv->configValues[iCallTimeout]->GetUint64();
@@ -199,7 +205,6 @@ bool jconf::NiceHashMode()
 {
 	return prv->configValues[bNiceHashMode]->GetBool();
 }
-
 
 void jconf::cpuid(uint32_t eax, int32_t ecx, int32_t val[4])
 {

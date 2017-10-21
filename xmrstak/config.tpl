@@ -12,8 +12,8 @@ R"===(
 
 /*
  * Network timeouts.
- * Because of the way this client is written it doesn't need to constantly talk (keep-alive) to the server to make 
- * sure it is there. We detect a buggy / overloaded server by the call timeout. The default values will be ok for 
+ * Because of the way this client is written it doesn't need to constantly talk (keep-alive) to the server to make
+ * sure it is there. We detect a buggy / overloaded server by the call timeout. The default values will be ok for
  * nearly all cases. If they aren't the pool has most likely overload issues. Low call timeout values are preferable -
  * long timeouts mean that we waste hashes on potentially stale jobs. Connection report will tell you how long the
  * server usually takes to process our calls.
@@ -157,5 +157,20 @@ R"===(
  */
 "prefer_ipv4" : true,
 
+/*
+ * Dev donation.
+ * Percentage of your hashing power that you want to donate to the developer, can be 0 if you don't want to do that.
+ * Example of how it works for the default setting of 2:
+ * You miner will mine into your usual pool for 98 minutes, then switch to the developer's pool for 2 minute.
+ * Switching is instant, and only happens after a successful connection, so you never loose any hashes.
+ *
+ * If you plan on changing this setting to 0 please consider making a one off donation to our wallets:
+ * fireice-uk:
+ * 4581HhZkQHgZrZjKeCfCJxZff9E3xCgHGF25zABZz7oR71TnbbgiS7sK9jveE6Dx6uMs2LwszDuvQJgRZQotdpHt1fTdDhk
+ * psychocrypt:
+ * 43NoJVEXo21hGZ6tDG6Z3g4qimiGdJPE6GRxAmiWwm26gwr62Lqo7zRiCJFSBmbkwTGNuuES9ES5TgaVHceuYc4Y75txCTU
+ *
+ */
+"donation_level" : 2,
+
 )==="
-		
