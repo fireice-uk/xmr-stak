@@ -48,7 +48,7 @@ using namespace rapidjson;
 /*
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
-enum configEnum { iGpuThreadNum, aGpuThreadsConf, iPlatformIdx };
+enum configEnum { aGpuThreadsConf, iPlatformIdx };
 
 struct configVal {
 	configEnum iName;
@@ -58,7 +58,6 @@ struct configVal {
 
 //Same order as in configEnum, as per comment above
 configVal oConfigValues[] = {
-	{ iGpuThreadNum, "gpu_thread_num", kNumberType },
 	{ aGpuThreadsConf, "gpu_threads_conf", kArrayType },
 	{ iPlatformIdx, "platform_index", kNumberType }
 };
@@ -235,14 +234,6 @@ bool jconf::parse_config(const char* sFilename)
 	}
 
 	size_t n_thd = prv->configValues[aGpuThreadsConf]->Size();
-	if(prv->configValues[iGpuThreadNum]->GetUint64() != n_thd)
-	{
-		printer::inst()->print_msg(L0,
-			"Invalid config file. Your GPU config array has %llu members, while you want to use %llu threads.",
-			int_port(n_thd), int_port(prv->configValues[iGpuThreadNum]->GetUint64()));
-		return false;
-	}
-
 	thd_cfg c;
 	for(size_t i=0; i < n_thd; i++)
 	{
