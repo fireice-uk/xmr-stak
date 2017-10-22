@@ -39,8 +39,6 @@ struct globalStates
 			nonce = (nonce & 0xFF000000) | iGlobalNonce.fetch_add(reserve_count);
 		else
 			nonce = iGlobalNonce.fetch_add(reserve_count);
-
-		printer::inst()->print_msg(L1, "DEBUG: start_nonce assigned rc: %.8x nonce: %.8x", reserve_count, nonce);
 	}
 
 	miner_work oGlobalWork;
