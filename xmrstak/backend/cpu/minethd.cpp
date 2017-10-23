@@ -455,8 +455,6 @@ void minethd::double_work_main()
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
-			memcpy(bDoubleWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
-			memcpy(bDoubleWorkBlob + oWork.iWorkSize, oWork.bWorkBlob, oWork.iWorkSize);
 			piNonce1 = prep_double_work(bDoubleWorkBlob);
 			continue;
 		}
@@ -502,8 +500,6 @@ void minethd::double_work_main()
 		}
 
 		consume_work();
-		memcpy(bDoubleWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
-		memcpy(bDoubleWorkBlob + oWork.iWorkSize, oWork.bWorkBlob, oWork.iWorkSize);
 		piNonce1 = prep_double_work(bDoubleWorkBlob);
 	}
 
