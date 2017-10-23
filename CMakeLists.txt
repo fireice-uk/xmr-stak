@@ -45,7 +45,7 @@ option(CMAKE_LINK_STATIC "link as much as possible libraries static" OFF)
 #option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" OFF)
 #set(CUDA_USE_STATIC_CUDA_RUNTIME OFF CACHE BOOL "Use the static version of the CUDA runtime library if available" FORCE)
 
-option(CUDA_ENABLE "Enable or disable CUDA support (NVIDIA backend)" ON)
+option(CUDA_ENABLE "Enable or disable CUDA support (NVIDIA backend)" OFF)
 if(CUDA_ENABLE)
     find_package(CUDA 7.5)
 
@@ -78,6 +78,10 @@ if(CUDA_ENABLE)
         # add Pascal support for CUDA >= 8.0
         if(NOT CUDA_VERSION VERSION_LESS 8.0)
             list(APPEND DEFAULT_CUDA_ARCH "60" "61" "62")
+        endif()
+        # add Volta support for CUDA >= 9.0
+        if(NOT CUDA_VERSION VERSION_LESS 9.0)
+            list(APPEND DEFAULT_CUDA_ARCH "70")
         endif()
         set(CUDA_ARCH "${DEFAULT_CUDA_ARCH}" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
 
@@ -176,6 +180,38 @@ list(APPEND CMAKE_PREFIX_PATH "$ENV{CMAKE_PREFIX_PATH}")
 
 option(OpenCL_ENABLE "Enable or disable OpenCL spport (AMD GPU support)" ON)
 if(OpenCL_ENABLE)
+    # try to find AMD OpenCL before NVIDIA OpenCL
+    find_path(OpenCL_INCLUDE_DIR
+        NAMES
+            CL/cl.h
+            OpenCL/cl.h
+        NO_DEFAULT_PATH
+        PATHS
+            ENV "OpenCL_ROOT"
+            ENV AMDAPPSDKROOT
+            ENV ATISTREAMSDKROOT
+            ENV "PROGRAMFILES(X86)"
+        PATH_SUFFIXES
+            include
+            OpenCL/common/inc
+            "AMD APP/include")
+
+    find_library(OpenCL_LIBRARY
+        NAMES 
+            OpenCL
+            OpenCL.lib
+        NO_DEFAULT_PATH
+        PATHS
+            ENV "OpenCL_ROOT"
+            ENV AMDAPPSDKROOT
+            ENV ATISTREAMSDKROOT
+            ENV "PROGRAMFILES(X86)"
+        PATH_SUFFIXES
+            "AMD APP/lib/x86_64"
+            lib/x86_64
+            lib/x64
+            OpenCL/common/lib/x64)
+    # find package will use the previews searched path variables
     find_package(OpenCL)
     if(OpenCL_FOUND)
         include_directories(SYSTEM ${OpenCL_INCLUDE_DIRS})
