@@ -93,9 +93,10 @@ public:
 					aff_id++;
 
 				if(double_mode)
-					L3KB_size -= 4096;
-				else
+
 					L3KB_size -= 2048;
+  			else
+		  		L3KB_size -= 1024;          
 			}
 		}
 
