@@ -45,7 +45,7 @@ option(CMAKE_LINK_STATIC "link as much as possible libraries static" OFF)
 #option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" OFF)
 #set(CUDA_USE_STATIC_CUDA_RUNTIME OFF CACHE BOOL "Use the static version of the CUDA runtime library if available" FORCE)
 
-option(CUDA_ENABLE "Enable or disable CUDA support (NVIDIA backend)" OFF)
+option(CUDA_ENABLE "Enable or disable CUDA support (NVIDIA backend)" ON)
 if(CUDA_ENABLE)
     find_package(CUDA 7.5)
 
@@ -178,7 +178,7 @@ list(APPEND CMAKE_PREFIX_PATH "$ENV{CMAKE_PREFIX_PATH}")
 # Find OpenCL
 ###############################################################################
 
-option(OpenCL_ENABLE "Enable or disable OpenCL spport (AMD GPU support)" ON)
+option(OpenCL_ENABLE "Enable or disable OpenCL spport (AMD GPU support)" OFF)
 if(OpenCL_ENABLE)
     # try to find AMD OpenCL before NVIDIA OpenCL
     find_path(OpenCL_INCLUDE_DIR
