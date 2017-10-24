@@ -8,7 +8,7 @@ extern "C" {
 #include <stddef.h>
 #include <inttypes.h>
 
-#define MEMORY  2097152/2
+#define MEMORY  2097152 / 2
 
 typedef struct {
 	uint8_t hash_state[224]; // Need only 200, explicit align

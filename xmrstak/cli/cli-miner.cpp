@@ -297,7 +297,7 @@ int main(int argc, char *argv[])
 	printer::inst()->print_str("'h' - hashrate\n");
 	printer::inst()->print_str("'r' - results\n");
 	printer::inst()->print_str("'c' - connection\n");
-  printer::inst()->print_str("-----------------------------Compiled by Indeed Miners-----------------------------\n");
+  printer::inst()->print_str("-----------------------------AEON port by Indeed Miners-----------------------------\n");
   printer::inst()->print_str("88 88b 88 8888b.  888888 888888 8888b.      8b    d8 88 88b 88 888888 88''Yb .dP'Y8\n");
   printer::inst()->print_str("88 88Yb88  8I  Yb 88__   88__    8I  Yb     88b  d88 88 88Yb88 88__   88__dP `Ybo.'\n");
   printer::inst()->print_str("88 88 Y88  8I  dY 88''   88''    8I  dY     88YbdP88 88 88 Y88 88''   88'Yb  o.`Y8b\n");
@@ -351,7 +351,7 @@ void do_benchmark()
 	printer::inst()->print_msg(L0, "Running a 60 second benchmark...");
 
 	uint8_t work[76] = {0};
-	xmrstak::miner_work oWork = xmrstak::miner_work("", work, sizeof(work), 0, 0, false, 0);
+	xmrstak::miner_work oWork = xmrstak::miner_work("", work, sizeof(work), 0, false, 0);
 	pvThreads = xmrstak::BackendConnector::thread_starter(oWork);
 
 	uint64_t iStartStamp = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
@@ -359,7 +359,8 @@ void do_benchmark()
 	std::this_thread::sleep_for(std::chrono::seconds(60));
 
 	oWork = xmrstak::miner_work();
-	xmrstak::globalStates::inst().switch_work(oWork);
+	xmrstak::pool_data dat;
+	xmrstak::globalStates::inst().switch_work(oWork, dat);
 
 	double fTotalHps = 0.0;
 	for (uint32_t i = 0; i < pvThreads->size(); i++)

@@ -197,7 +197,7 @@ bool minethd::self_test()
 		cryptonight_free_ctx(ctx0);
 		return false;
 	}
-  	if((ctx2 = minethd_alloc_ctx()) == nullptr)
+	if((ctx2 = minethd_alloc_ctx()) == nullptr)
 	{
 		cryptonight_free_ctx(ctx0);
 		cryptonight_free_ctx(ctx1);
@@ -227,20 +227,20 @@ bool minethd::self_test()
 
 	hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false);
 	hashf("This is a test", 14, out, ctx0);
-	// bResult = memcmp(out, "\x88\xe5\xe6\x84\xdb\x17\x8c\x82\x5e\x4c\xe3\x80\x9c\xcc\x1c\xda\x79\xcc\x2a\xdb\x44\x06\xbf\xf9\x3d\xeb\xea\xf2\x0a\x8b\xeb\xd9", 32) == 0;
+	// bResult = memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
 	hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true);
 	hashf("This is a test", 14, out, ctx0);
-	// bResult &= memcmp(out, "\x88\xe5\xe6\x84\xdb\x17\x8c\x82\x5e\x4c\xe3\x80\x9c\xcc\x1c\xda\x79\xcc\x2a\xdb\x44\x06\xbf\xf9\x3d\xeb\xea\xf2\x0a\x8b\xeb\xd9", 32) == 0;
+	// bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
 	hashdf = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), false);
-	// hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
-	// bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
+	hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
+	//bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
 	//	                   "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
 
 	hashdf = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), true);
-	// hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
-	// bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
+	hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
+	//bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
 	//	                   "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
 
 	cryptonight_free_ctx(ctx0);
@@ -253,7 +253,7 @@ bool minethd::self_test()
 		printer::inst()->print_msg(L0,
 		    "Cryptonight hash self-test failed. This might be caused by bad compiler optimizations.");
 
-	return true;
+	return bResult;
 }
 
 std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work& pWork)
@@ -271,7 +271,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 	{
 		win_exit();
 	}
-
+	
 
 	//Launch the requested number of single and double threads, to distribute
 	//load evenly we need to alternate single and double threads
@@ -359,31 +359,36 @@ void minethd::work_main()
 			    either because of network latency, or a socket problem. Since we are
 			    raison d'etre of this software it us sensible to just wait until we have something*/
 
-			while (globalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
 			continue;
 		}
 
-		if(oWork.bNiceHash)
-			result.iNonce = calc_nicehash_nonce(*piNonce, oWork.iResumeCnt);
-		else
-			result.iNonce = calc_start_nonce(oWork.iResumeCnt);
+		size_t nonce_ctr = 0;
+		constexpr size_t nonce_chunk = 4096; // Needs to be a power of 2
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		memcpy(result.sJobID, oWork.sJobID, sizeof(job_result::sJobID));
 
-		while(globalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		if(oWork.bNiceHash)
+			result.iNonce = *piNonce;
+
+		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
-			if ((iCount & 0x7) == 0) //Store stats every 16 hashes
+			if ((iCount++ & 0x7) == 0) //Store stats every 16 hashes
 			{
 				using namespace std::chrono;
 				uint64_t iStamp = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
 				iHashCount.store(iCount, std::memory_order_relaxed);
 				iTimestamp.store(iStamp, std::memory_order_relaxed);
 			}
-			iCount++;
+
+			if((nonce_ctr++ & (nonce_chunk-1)) == 0)
+			{
+				globalStates::inst().calc_start_nonce(result.iNonce, oWork.bNiceHash, nonce_chunk);
+			}
 
 			*piNonce = ++result.iNonce;
 
@@ -470,24 +475,23 @@ void minethd::double_work_main()
 			either because of network latency, or a socket problem. Since we are
 			raison d'etre of this software it us sensible to just wait until we have something*/
 
-			while (globalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
-			memcpy(bDoubleWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
-			memcpy(bDoubleWorkBlob + oWork.iWorkSize, oWork.bWorkBlob, oWork.iWorkSize);
 			piNonce1 = prep_double_work(bDoubleWorkBlob);
 			continue;
 		}
 
-		if(oWork.bNiceHash)
-			iNonce = calc_nicehash_nonce(*piNonce0, oWork.iResumeCnt);
-		else
-			iNonce = calc_start_nonce(oWork.iResumeCnt);
+		size_t nonce_ctr = 0;
+		constexpr size_t nonce_chunk = 4096; //Needs to be a power of 2
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
-		while (globalStates::inst().inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		if(oWork.bNiceHash)
+			iNonce = *piNonce0;
+
+		while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			if ((iCount & 0x7) == 0) //Store stats every 16 hashes
 			{
@@ -496,8 +500,14 @@ void minethd::double_work_main()
 				iHashCount.store(iCount, std::memory_order_relaxed);
 				iTimestamp.store(iStamp, std::memory_order_relaxed);
 			}
-
 			iCount += 2;
+			
+			
+			if((nonce_ctr++ & (nonce_chunk/2 - 1)) == 0)
+			{
+				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, nonce_chunk);
+			}
+
 
 			*piNonce0 = ++iNonce;
 			*piNonce1 = ++iNonce;
@@ -514,8 +524,6 @@ void minethd::double_work_main()
 		}
 
 		consume_work();
-		memcpy(bDoubleWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
-		memcpy(bDoubleWorkBlob + oWork.iWorkSize, oWork.bWorkBlob, oWork.iWorkSize);
 		piNonce1 = prep_double_work(bDoubleWorkBlob);
 	}
 

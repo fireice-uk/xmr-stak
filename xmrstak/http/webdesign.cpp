@@ -97,7 +97,7 @@ extern const char sHtmlCommonHeader [] =
 	"<link rel='stylesheet' href='style.css' /><title>%s</title></head>"
 	"<body>"
 	"<div class='all'>"
-	"<div class='header'><span style='color: rgb(255, 160, 0)'>AEON</span>-Stak Monero Miner</div>"
+	"<div class='header'><span style='color: rgb(255, 160, 0)'>XMR</span>-Stak Monero Miner</div>"
 
 	"<div class='flex-container'>"
 		"<div class='links flex-item'>"

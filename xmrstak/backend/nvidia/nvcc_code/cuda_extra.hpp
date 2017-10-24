@@ -18,8 +18,8 @@ struct uint3  blockDim;
 #define __shfl(a,b,c) 1
 #endif
 
-#define MEMORY         (1 << 20) // 1 MiB / 1048576 B
-#define ITER           (1 << 19) // 524288
+#define MEMORY         (1 << 20) // 2 MiB / 2097152 B
+#define ITER           (1 << 19) // 1048576
 #define AES_BLOCK_SIZE  16
 #define AES_KEY_SIZE    32
 #define INIT_SIZE_BLK   8
@@ -36,8 +36,8 @@ __forceinline__ __device__ uint64_t cuda_ROTL64(const uint64_t value, const int 
 	{
 		asm("shf.l.wrap.b32 %0, %1, %2, %3;" : "=r"(result.x) : "r"(__double2loint(__longlong_as_double(value))), "r"(__double2hiint(__longlong_as_double(value))), "r"(offset));
 		asm("shf.l.wrap.b32 %0, %1, %2, %3;" : "=r"(result.y) : "r"(__double2hiint(__longlong_as_double(value))), "r"(__double2loint(__longlong_as_double(value))), "r"(offset));
-	}
-	else
+	} 
+	else 
 	{
 		asm("shf.l.wrap.b32 %0, %1, %2, %3;" : "=r"(result.x) : "r"(__double2hiint(__longlong_as_double(value))), "r"(__double2loint(__longlong_as_double(value))), "r"(offset));
 		asm("shf.l.wrap.b32 %0, %1, %2, %3;" : "=r"(result.y) : "r"(__double2loint(__longlong_as_double(value))), "r"(__double2hiint(__longlong_as_double(value))), "r"(offset));

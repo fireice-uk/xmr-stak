@@ -74,7 +74,7 @@ public:
 				if(L3KB_size <= 0)
 					break;
 
-				double_mode = L3KB_size / 2048 > (int32_t)(corecnt-i);
+				double_mode = L3KB_size / 1024 > (int32_t)(corecnt-i);
 
 				conf += std::string("    { \"low_power_mode\" : ");
 				conf += std::string(double_mode ? "true" : "false");
@@ -93,10 +93,9 @@ public:
 					aff_id++;
 
 				if(double_mode)
-
 					L3KB_size -= 2048;
-  			else
-		  		L3KB_size -= 1024;          
+				else
+					L3KB_size -= 1024;
 			}
 		}
 

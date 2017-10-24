@@ -1,4 +1,4 @@
-project(xmr-stak)
+project(aeon-stak)
 
 cmake_minimum_required(VERSION 3.0.1)
 
@@ -178,7 +178,7 @@ list(APPEND CMAKE_PREFIX_PATH "$ENV{CMAKE_PREFIX_PATH}")
 # Find OpenCL
 ###############################################################################
 
-option(OpenCL_ENABLE "Enable or disable OpenCL spport (AMD GPU support)" OFF)
+option(OpenCL_ENABLE "Enable or disable OpenCL spport (AMD GPU support)" ON)
 if(OpenCL_ENABLE)
     # try to find AMD OpenCL before NVIDIA OpenCL
     find_path(OpenCL_INCLUDE_DIR
