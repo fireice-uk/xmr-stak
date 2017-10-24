@@ -6,6 +6,7 @@
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/configEditor.hpp"
 #include "xmrstak/params.hpp"
+#include "../cryptonight.hpp"
 #include <string>
 
 #ifdef _WIN32
@@ -32,8 +33,21 @@ class autoAdjust
 {
 public:
 
+	size_t hashMemSize;
+	size_t halfHashMemSize;
+
 	autoAdjust()
 	{
+		if(::jconf::inst()->IsCurrencyXMR())
+		{
+			hashMemSize = XMR_MEMORY;
+			halfHashMemSize = hashMemSize / 2u;
+		}
+		else
+		{
+			hashMemSize = AEON_MEMORY;
+			halfHashMemSize = hashMemSize / 2u;
+		}
 	}
 
 	bool printConfig()
@@ -49,9 +63,9 @@ public:
 
 		std::string conf;
 
-		if(!detectL3Size() || L3KB_size < 1024 || L3KB_size > 102400)
+		if(!detectL3Size() || L3KB_size < halfHashMemSize || L3KB_size > (halfHashMemSize * 100u))
 		{
-			if(L3KB_size < 1024 || L3KB_size > 102400)
+			if(L3KB_size < halfHashMemSize || L3KB_size > (halfHashMemSize * 100))
 				printer::inst()->print_msg(L0, "Autoconf failed: L3 size sanity check failed - %u KB.", L3KB_size);
 
 			conf += std::string("    { \"low_power_mode\" : false, \"no_prefetch\" : true, \"affine_to_cpu\" : false },\n");
@@ -74,7 +88,7 @@ public:
 				if(L3KB_size <= 0)
 					break;
 
-				double_mode = L3KB_size / 2048 > (int32_t)(corecnt-i);
+				double_mode = L3KB_size / hashMemSize > (int32_t)(corecnt-i);
 
 				conf += std::string("    { \"low_power_mode\" : ");
 				conf += std::string(double_mode ? "true" : "false");
@@ -93,9 +107,9 @@ public:
 					aff_id++;
 
 				if(double_mode)
-					L3KB_size -= 4096;
+					L3KB_size -= hashMemSize * 2u;
 				else
-					L3KB_size -= 2048;
+					L3KB_size -= hashMemSize;
 			}
 		}
 
@@ -128,7 +142,7 @@ private:
 			}
 
 			L3KB_size = ((get_masked(cpu_info[1], 31, 22) + 1) * (get_masked(cpu_info[1], 21, 12) + 1) *
-				(get_masked(cpu_info[1], 11, 0) + 1) * (cpu_info[2] + 1)) / 1024;
+				(get_masked(cpu_info[1], 11, 0) + 1) * (cpu_info[2] + 1)) / halfHashMemSize;
 
 			return true;
 		}

@@ -199,30 +199,34 @@ bool minethd::self_test()
 		return false;
 	}
 
-	unsigned char out[64];
-	bool bResult;
+	bool bResult = true;
 
-	cn_hash_fun hashf;
-	cn_hash_fun_dbl hashdf;
+	bool useXmr = ::jconf::inst()->IsCurrencyXMR();
+	if(useXmr)
+	{
+		unsigned char out[64];
+		cn_hash_fun hashf;
+		cn_hash_fun_dbl hashdf;
 
-	hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false);
-	hashf("This is a test", 14, out, ctx0);
-	bResult = memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
-	hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true);
-	hashf("This is a test", 14, out, ctx0);
-	bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
+		hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, useXmr);
+		hashf("This is a test", 14, out, ctx0);
+		bResult = memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
-	hashdf = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), false);
-	hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
-	bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
-		                   "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
+		hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, useXmr);
+		hashf("This is a test", 14, out, ctx0);
+		bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
-	hashdf = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), true);
-	hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
-	bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
-		                   "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
+		hashdf = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), false, useXmr);
+		hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
+		bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
+							   "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
 
+		hashdf = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), true, useXmr);
+		hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
+		bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
+							   "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
+	}
 	cryptonight_free_ctx(ctx0);
 	cryptonight_free_ctx(ctx1);
 
@@ -285,23 +289,43 @@ void minethd::consume_work()
 	globalStates::inst().inst().iConsumeCnt++;
 }
 
-minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch)
+minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, bool useXMR)
 {
 	// We have two independent flag bits in the functions
 	// therefore we will build a binary digit and select the
 	// function as a two digit binary
-	// Digit order SOFT_AES, NO_PREFETCH
+	// Digit order SOFT_AES, NO_PREFETCH, MINER_ALGO
 
-	static const cn_hash_fun func_table[4] = {
-		cryptonight_hash<0x80000, MEMORY, false, false>,
-		cryptonight_hash<0x80000, MEMORY, false, true>,
-		cryptonight_hash<0x80000, MEMORY, true, false>,
-		cryptonight_hash<0x80000, MEMORY, true, true>
+	static const cn_hash_fun func_table[] = {
+#ifndef CONF_NO_XMR
+		cryptonight_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, false, false>,
+		cryptonight_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, false, true>,
+		cryptonight_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, true, false>,
+		cryptonight_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, true, true>
+#endif
+#if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_XMR))
+		,
+#endif
+#ifndef CONF_NO_AEON
+		cryptonight_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false>,
+		cryptonight_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true>,
+		cryptonight_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false>,
+		cryptonight_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true>
+#endif
 	};
 
-	std::bitset<2> digit;
+	std::bitset<3> digit;
 	digit.set(0, !bNoPrefetch);
 	digit.set(1, !bHaveAes);
+	//miner algo true = XMR, false = AEON
+	digit.set(2, useXMR);
+
+	// define aeon settings
+#if defined(CONF_NO_AEON) || defined(CONF_NO_XMR)
+	digit.set(2, 0);
+#else
+	digit.set(2, !useXMR);
+#endif
 
 	return func_table[digit.to_ulong()];
 }
@@ -320,7 +344,7 @@ void minethd::work_main()
 	uint32_t* piNonce;
 	job_result result;
 
-	hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch);
+	hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyXMR());
 	ctx = minethd_alloc_ctx();
 
 	piHashVal = (uint64_t*)(result.bResult + 24);
@@ -382,23 +406,43 @@ void minethd::work_main()
 	cryptonight_free_ctx(ctx);
 }
 
-minethd::cn_hash_fun_dbl minethd::func_dbl_selector(bool bHaveAes, bool bNoPrefetch)
+minethd::cn_hash_fun_dbl minethd::func_dbl_selector(bool bHaveAes, bool bNoPrefetch, bool useXMR)
 {
 	// We have two independent flag bits in the functions
 	// therefore we will build a binary digit and select the
 	// function as a two digit binary
-	// Digit order SOFT_AES, NO_PREFETCH
+	// Digit order SOFT_AES, NO_PREFETCH, MINER_ALGO
 
-	static const cn_hash_fun_dbl func_table[4] = {
-		cryptonight_double_hash<0x80000, MEMORY, false, false>,
-		cryptonight_double_hash<0x80000, MEMORY, false, true>,
-		cryptonight_double_hash<0x80000, MEMORY, true, false>,
-		cryptonight_double_hash<0x80000, MEMORY, true, true>
+	static const cn_hash_fun_dbl func_table[] = {
+#ifndef CONF_NO_XMR
+		cryptonight_double_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, false, false>,
+		cryptonight_double_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, false, true>,
+		cryptonight_double_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, true, false>,
+		cryptonight_double_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, true, true>
+#endif
+#if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_XMR))
+		,
+#endif
+#ifndef CONF_NO_AEON
+		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false>,
+		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true>,
+		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false>,
+		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true>
+#endif
 	};
 
-	std::bitset<2> digit;
+	std::bitset<3> digit;
 	digit.set(0, !bNoPrefetch);
 	digit.set(1, !bHaveAes);
+	//miner algo true = XMR, false = AEON
+	digit.set(2, useXMR);
+
+	// define aeon settings
+#if defined(CONF_NO_AEON) || defined(CONF_NO_XMR)
+	digit.set(2, 0);
+#else
+	digit.set(2, !useXMR);
+#endif
 
 	return func_table[digit.to_ulong()];
 }
@@ -428,7 +472,7 @@ void minethd::double_work_main()
 	uint32_t iNonce;
 	job_result res;
 
-	hash_fun = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch);
+	hash_fun = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyXMR());
 	ctx0 = minethd_alloc_ctx();
 	ctx1 = minethd_alloc_ctx();
 

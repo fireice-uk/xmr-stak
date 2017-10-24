@@ -287,7 +287,7 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 	_mm_store_si128(output + 11, xout7);
 }
 
-template<size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
+template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
 void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_ctx* ctx0)
 {
 	keccak((const uint8_t *)input, len, ctx0->hash_state, 200);
@@ -308,36 +308,36 @@ void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_c
 	for(size_t i = 0; i < ITERATIONS; i++)
 	{
 		__m128i cx;
-		cx = _mm_load_si128((__m128i *)&l0[idx0 & 0x1FFFF0]);
+		cx = _mm_load_si128((__m128i *)&l0[idx0 & MASK]);
 
 		if(SOFT_AES)
 			cx = soft_aesenc(cx, _mm_set_epi64x(ah0, al0));
 		else
 			cx = _mm_aesenc_si128(cx, _mm_set_epi64x(ah0, al0));
 
-		_mm_store_si128((__m128i *)&l0[idx0 & 0x1FFFF0], _mm_xor_si128(bx0, cx));
+		_mm_store_si128((__m128i *)&l0[idx0 & MASK], _mm_xor_si128(bx0, cx));
 		idx0 = _mm_cvtsi128_si64(cx);
 		bx0 = cx;
 
 		if(PREFETCH)
-			_mm_prefetch((const char*)&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
+			_mm_prefetch((const char*)&l0[idx0 & MASK], _MM_HINT_T0);
 
 		uint64_t hi, lo, cl, ch;
-		cl = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[0];
-		ch = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[1];
+		cl = ((uint64_t*)&l0[idx0 & MASK])[0];
+		ch = ((uint64_t*)&l0[idx0 & MASK])[1];
 
 		lo = _umul128(idx0, cl, &hi);
 
 		al0 += hi;
 		ah0 += lo;
-		((uint64_t*)&l0[idx0 & 0x1FFFF0])[0] = al0;
-		((uint64_t*)&l0[idx0 & 0x1FFFF0])[1] = ah0;
+		((uint64_t*)&l0[idx0 & MASK])[0] = al0;
+		((uint64_t*)&l0[idx0 & MASK])[1] = ah0;
 		ah0 ^= ch;
 		al0 ^= cl;
 		idx0 = al0;
 
 		if(PREFETCH)
-			_mm_prefetch((const char*)&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
+			_mm_prefetch((const char*)&l0[idx0 & MASK], _MM_HINT_T0);
 	}
 
 	// Optim - 90% time boundary
@@ -352,7 +352,7 @@ void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_c
 // This lovely creation will do 2 cn hashes at a time. We have plenty of space on silicon
 // to fit temporary vars for two contexts. Function will read len*2 from input and write 64 bytes to output
 // We are still limited by L3 cache, so doubling will only work with CPUs where we have more than 2MB to core (Xeons)
-template<size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
+template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
 void cryptonight_double_hash(const void* input, size_t len, void* output, cryptonight_ctx* __restrict ctx0, cryptonight_ctx* __restrict ctx1)
 {
 	keccak((const uint8_t *)input, len, ctx0->hash_state, 200);
@@ -381,66 +381,66 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 	for (size_t i = 0; i < ITERATIONS; i++)
 	{
 		__m128i cx;
-		cx = _mm_load_si128((__m128i *)&l0[idx0 & 0x1FFFF0]);
+		cx = _mm_load_si128((__m128i *)&l0[idx0 & MASK]);
 
 		if(SOFT_AES)
 			cx = soft_aesenc(cx, _mm_set_epi64x(axh0, axl0));
 		else
 			cx = _mm_aesenc_si128(cx, _mm_set_epi64x(axh0, axl0));
 
-		_mm_store_si128((__m128i *)&l0[idx0 & 0x1FFFF0], _mm_xor_si128(bx0, cx));
+		_mm_store_si128((__m128i *)&l0[idx0 & MASK], _mm_xor_si128(bx0, cx));
 		idx0 = _mm_cvtsi128_si64(cx);
 		bx0 = cx;
 
 		if(PREFETCH)
-			_mm_prefetch((const char*)&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
+			_mm_prefetch((const char*)&l0[idx0 & MASK], _MM_HINT_T0);
 
-		cx = _mm_load_si128((__m128i *)&l1[idx1 & 0x1FFFF0]);
+		cx = _mm_load_si128((__m128i *)&l1[idx1 & MASK]);
 
 		if(SOFT_AES)
 			cx = soft_aesenc(cx, _mm_set_epi64x(axh1, axl1));
 		else
 			cx = _mm_aesenc_si128(cx, _mm_set_epi64x(axh1, axl1));
 
-		_mm_store_si128((__m128i *)&l1[idx1 & 0x1FFFF0], _mm_xor_si128(bx1, cx));
+		_mm_store_si128((__m128i *)&l1[idx1 & MASK], _mm_xor_si128(bx1, cx));
 		idx1 = _mm_cvtsi128_si64(cx);
 		bx1 = cx;
 
 		if(PREFETCH)
-			_mm_prefetch((const char*)&l1[idx1 & 0x1FFFF0], _MM_HINT_T0);
+			_mm_prefetch((const char*)&l1[idx1 & MASK], _MM_HINT_T0);
 
 		uint64_t hi, lo, cl, ch;
-		cl = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[0];
-		ch = ((uint64_t*)&l0[idx0 & 0x1FFFF0])[1];
+		cl = ((uint64_t*)&l0[idx0 & MASK])[0];
+		ch = ((uint64_t*)&l0[idx0 & MASK])[1];
 
 		lo = _umul128(idx0, cl, &hi);
 
 		axl0 += hi;
 		axh0 += lo;
-		((uint64_t*)&l0[idx0 & 0x1FFFF0])[0] = axl0;
-		((uint64_t*)&l0[idx0 & 0x1FFFF0])[1] = axh0;
+		((uint64_t*)&l0[idx0 & MASK])[0] = axl0;
+		((uint64_t*)&l0[idx0 & MASK])[1] = axh0;
 		axh0 ^= ch;
 		axl0 ^= cl;
 		idx0 = axl0;
 
 		if(PREFETCH)
-			_mm_prefetch((const char*)&l0[idx0 & 0x1FFFF0], _MM_HINT_T0);
+			_mm_prefetch((const char*)&l0[idx0 & MASK], _MM_HINT_T0);
 
-		cl = ((uint64_t*)&l1[idx1 & 0x1FFFF0])[0];
-		ch = ((uint64_t*)&l1[idx1 & 0x1FFFF0])[1];
+		cl = ((uint64_t*)&l1[idx1 & MASK])[0];
+		ch = ((uint64_t*)&l1[idx1 & MASK])[1];
 
 		lo = _umul128(idx1, cl, &hi);
 
 		axl1 += hi;
 		axh1 += lo;
-		((uint64_t*)&l1[idx1 & 0x1FFFF0])[0] = axl1;
-		((uint64_t*)&l1[idx1 & 0x1FFFF0])[1] = axh1;
+		((uint64_t*)&l1[idx1 & MASK])[0] = axl1;
+		((uint64_t*)&l1[idx1 & MASK])[1] = axh1;
 		axh1 ^= ch;
 		axl1 ^= cl;
 		idx1 = axl1;
 
 		if(PREFETCH)
-			_mm_prefetch((const char*)&l1[idx1 & 0x1FFFF0], _MM_HINT_T0);
+			_mm_prefetch((const char*)&l1[idx1 & MASK], _MM_HINT_T0);
 	}
 
 	// Optim - 90% time boundary

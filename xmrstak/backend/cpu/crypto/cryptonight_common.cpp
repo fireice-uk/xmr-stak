@@ -30,6 +30,8 @@ extern "C"
 }
 #include "cryptonight.h"
 #include "cryptonight_aesni.h"
+#include "../../../jconf.hpp"
+#include "../../cryptonight.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -194,12 +196,21 @@ size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 
 cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 {
+	size_t hashMemSize;
+	if(::jconf::inst()->IsCurrencyXMR())
+	{
+		hashMemSize = XMR_MEMORY;
+	}
+	else
+	{
+		hashMemSize = AEON_MEMORY;
+	}
 	cryptonight_ctx* ptr = (cryptonight_ctx*)_mm_malloc(sizeof(cryptonight_ctx), 4096);
 
 	if(use_fast_mem == 0)
 	{
 		// use 2MiB aligned memory
-		ptr->long_state = (uint8_t*)_mm_malloc(MEMORY, 2*1024*1024);
+		ptr->long_state = (uint8_t*)_mm_malloc(hashMemSize, hashMemSize);
 		ptr->ctx_info[0] = 0;
 		ptr->ctx_info[1] = 0;
 		return ptr;
@@ -208,7 +219,7 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 #ifdef _WIN32
 	SIZE_T iLargePageMin = GetLargePageMinimum();
 
-	if(MEMORY > iLargePageMin)
+	if(hashMemSize > iLargePageMin)
 		iLargePageMin *= 2;
 
 	ptr->long_state = (uint8_t*)VirtualAlloc(NULL, iLargePageMin,
@@ -231,13 +242,13 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 #else
 
 #if defined(__APPLE__)
-	ptr->long_state  = (uint8_t*)mmap(0, MEMORY, PROT_READ | PROT_WRITE,
+	ptr->long_state  = (uint8_t*)mmap(0, hashMemSize, PROT_READ | PROT_WRITE,
 		MAP_PRIVATE | MAP_ANON, VM_FLAGS_SUPERPAGE_SIZE_2MB, 0);
 #elif defined(__FreeBSD__)
-	ptr->long_state = (uint8_t*)mmap(0, MEMORY, PROT_READ | PROT_WRITE,
+	ptr->long_state = (uint8_t*)mmap(0, hashMemSize, PROT_READ | PROT_WRITE,
 		MAP_PRIVATE | MAP_ANONYMOUS | MAP_ALIGNED_SUPER | MAP_PREFAULT_READ, -1, 0);
 #else
-	ptr->long_state = (uint8_t*)mmap(0, MEMORY, PROT_READ | PROT_WRITE,
+	ptr->long_state = (uint8_t*)mmap(0, hashMemSize, PROT_READ | PROT_WRITE,
 		MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, 0, 0);
 #endif
 
@@ -250,11 +261,11 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 
 	ptr->ctx_info[0] = 1;
 
-	if(madvise(ptr->long_state, MEMORY, MADV_RANDOM|MADV_WILLNEED) != 0)
+	if(madvise(ptr->long_state, hashMemSize, MADV_RANDOM|MADV_WILLNEED) != 0)
 		msg->warning = "madvise failed";
 
 	ptr->ctx_info[1] = 0;
-	if(use_mlock != 0 && mlock(ptr->long_state, MEMORY) != 0)
+	if(use_mlock != 0 && mlock(ptr->long_state, hashMemSize) != 0)
 		msg->warning = "mlock failed";
 	else
 		ptr->ctx_info[1] = 1;
@@ -265,14 +276,23 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 
 void cryptonight_free_ctx(cryptonight_ctx* ctx)
 {
+	size_t hashMemSize;
+	if(::jconf::inst()->IsCurrencyXMR())
+	{
+		hashMemSize = XMR_MEMORY;
+	}
+	else
+	{
+		hashMemSize = AEON_MEMORY;
+	}
 	if(ctx->ctx_info[0] != 0)
 	{
 #ifdef _WIN32
 		VirtualFree(ctx->long_state, 0, MEM_RELEASE);
 #else
 		if(ctx->ctx_info[1] != 0)
-			munlock(ctx->long_state, MEMORY);
-		munmap(ctx->long_state, MEMORY);
+			munlock(ctx->long_state, hashMemSize);
+		munmap(ctx->long_state, hashMemSize);
 #endif // _WIN32
 	}
 	else
