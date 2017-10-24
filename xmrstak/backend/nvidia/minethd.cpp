@@ -32,6 +32,7 @@
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/environment.hpp"
 #include "xmrstak/backend/cpu/hwlocMemory.hpp"
+#include "../cryptonight.hpp"
 
 #include <assert.h>
 #include <cmath>
@@ -208,7 +209,7 @@ void minethd::work_main()
 	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
-	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/);
+	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, ::jconf::inst()->IsCurrencyXMR());
 	uint32_t iNonce;
 
 	globalStates::inst().iConsumeCnt++;
@@ -218,6 +219,9 @@ void minethd::work_main()
 		printer::inst()->print_msg(L0, "Setup failed for GPU %d. Exitting.\n", (int)iThreadNo);
 		std::exit(0);
 	}
+
+	bool useXMR = ::jconf::inst()->GetCurrency().compare("xmr") == 0;
+	bool useAEON = ::jconf::inst()->GetCurrency().compare("aeon") == 0;
 	
 	while (bQuit == 0)
 	{
@@ -256,7 +260,18 @@ void minethd::work_main()
 			uint32_t foundCount;
 
 			cryptonight_extra_cpu_prepare(&ctx, iNonce);
-			cryptonight_core_cpu_hash(&ctx);
+#ifndef CONF_NO_XMR
+			if(useXMR)
+			{
+				cryptonight_core_cpu_hash<XMR_ITER, XMR_MASK, 19>(&ctx);
+			}
+#endif
+#ifndef CONF_NO_AEON
+			if(useAEON)
+			{
+				cryptonight_core_cpu_hash<XMR_ITER, XMR_MASK, 18>(&ctx);
+			}
+#endif
 			cryptonight_extra_cpu_final(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce);
 
 			for(size_t i = 0; i < foundCount; i++)

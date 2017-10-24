@@ -5,6 +5,7 @@
 #include <cuda_runtime.h>
 #include <device_functions.hpp>
 #include  <algorithm>
+#include "../../../jconf.hpp"
 
 #ifdef __CUDACC__
 __constant__
@@ -188,8 +189,18 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync);
 	cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
 
+	size_t hashMemSize;
+	if(::jconf::inst()->IsCurrencyXMR())
+	{
+		hashMemSize = XMR_MEMORY;
+	}
+	else
+	{
+		hashMemSize = AEON_MEMORY;
+	}
+
 	size_t wsize = ctx->device_blocks * ctx->device_threads;
-	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_long_state, (size_t)MEMORY * wsize));
+	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_long_state, hashMemSize * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state, 50 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key1, 40 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key2, 40 * sizeof(uint32_t) * wsize));
@@ -343,13 +354,23 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		ctx->total_device_memory = totalMemory;
 		ctx->free_device_memory = freeMemory;
 
+		size_t hashMemSize;
+		if(::jconf::inst()->IsCurrencyXMR())
+		{
+			hashMemSize = XMR_MEMORY;
+		}
+		else
+		{
+			hashMemSize = AEON_MEMORY;
+		}
+
 		// keep 64MiB memory free (value is randomly chosen)
 		// 200byte are meta data memory (result nonce, ...)
 		size_t availableMem = freeMemory - (64u * 1024 * 1024) - 200u;
 		size_t limitedMemory = std::min(availableMem, maxMemUsage);
 		// up to 920bytes extra memory is used per thread for some kernel (lmem/local memory)
 		// 680bytes are extra meta data memory per hash
-		size_t perThread = size_t(MEMORY) + 740u + 680u;
+		size_t perThread = hashMemSize + 740u + 680u;
 		size_t max_intensity = limitedMemory / perThread;
 		ctx->device_threads = max_intensity / ctx->device_blocks;
 		// use only odd number of threads
