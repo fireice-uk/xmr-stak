@@ -183,7 +183,7 @@ void minethd::work_main()
 	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
-	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/);
+	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, ::jconf::inst()->IsCurrencyXMR());
 	globalStates::inst().iConsumeCnt++;
 	
 	while (bQuit == 0)

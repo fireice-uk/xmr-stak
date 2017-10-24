@@ -8,6 +8,8 @@
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/misc/configEditor.hpp"
 #include "xmrstak/params.hpp"
+#include "../cryptonight.hpp"
+#include "../../jconf.hpp"
 
 #include <vector>
 #include <cstdio>
@@ -81,6 +83,16 @@ private:
 
 		constexpr size_t byteToMiB = 1024u * 1024u;
 
+		size_t hashMemSize;
+		if(::jconf::inst()->IsCurrencyXMR())
+		{
+			hashMemSize = XMR_MEMORY;
+		}
+		else
+		{
+			hashMemSize = AEON_MEMORY;
+		}
+
 		std::string conf;
         int i = 0;
         for(auto& ctx : devVec)
@@ -88,7 +100,7 @@ private:
 			// keep 64MiB memory free (value is randomly chosen)
 			size_t availableMem = ctx.freeMem - (64u * 1024 * 1024);
 			// 224byte extra memory is used per thread for meta data
-			size_t perThread = (size_t(1u)<<21) + 224u;
+			size_t perThread = hashMemSize + 224u;
 			size_t max_intensity = availableMem / perThread;
 			// 1000 is a magic selected limit \todo select max intensity depending of the gpu type
 			size_t possibleIntensity = std::min( size_t(1000u) , max_intensity );
