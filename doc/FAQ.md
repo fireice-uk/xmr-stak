@@ -7,6 +7,7 @@
 * [Error: MEMORY ALLOC FAILED: mmap failed](#error-memory-alloc-failed-mmap-failed)
 * [Illegal instruction (core dumped)](#illegal-instruction)
 * [Virus Protection Alert](#virus-protection-alert)
+* [Change Currency to Mine](#change-currency-to-mine)
 
 ## SeLockMemoryPrivilege failed
 
@@ -59,3 +60,9 @@ Some Virus protection software flag the miner binary as *Male Ware*.
 In this case the binary is moved to the quarantine area of the protection software.
 This is a wrong alert and not avoid by use.
 Add the binary to to protection software white list to solve this issue.s
+
+## Change Currency to Mine
+
+If the miner is compiled for Monero and Aeon than you can change
+ - the value `currency` in the config *or*
+ - start the miner with the [command line option](usage.md) `--currency xmr` or `--currency aeon`
