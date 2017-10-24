@@ -36,6 +36,19 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "${BUILD_TYPE}")
 
+set(XMR-STAK_CURRENCY "all" CACHE STRING "select miner currency")
+set_property(CACHE XMR-STAK_CURRENCY PROPERTY STRINGS "all;xmr;aeon")
+
+if("${XMR-STAK_CURRENCY}" STREQUAL "all")
+    message(STATUS "set miner currency to 'xmr' and 'aeon'")
+elseif("${XMR-STAK_CURRENCY}" STREQUAL "aeon")
+    message(STATUS "set miner currency to 'aeon'")
+    add_definitions("-DCONF_NO_XMR=1")
+elseif("${XMR-STAK_CURRENCY}" STREQUAL "xmr")
+    message(STATUS "set miner currency to 'xmr'")
+    add_definitions("-DCONF_NO_AEON=1")
+endif()
+
 # option to add static libgcc and libstdc++
 option(CMAKE_LINK_STATIC "link as much as possible libraries static" OFF)
 
