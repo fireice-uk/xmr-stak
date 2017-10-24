@@ -46,7 +46,7 @@ using namespace rapidjson;
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
 enum configEnum {
-	bTlsMode, bTlsSecureAlgo, sTlsFingerprint, sPoolAddr, sWalletAddr, sPoolPwd,
+	bTlsMode, bTlsSecureAlgo, sTlsFingerprint, sPoolAddr, sWalletAddr, sPoolPwd,sCurrency,
 	iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, iAutohashTime,
 	bDaemonMode, sOutputFile, iHttpdPort, bPreferIpv4, bNiceHashMode, bAesOverride, sUseSlowMem };
 
@@ -65,6 +65,7 @@ configVal oConfigValues[] = {
 	{ sPoolAddr, "pool_address", kStringType },
 	{ sWalletAddr, "wallet_address", kStringType },
 	{ sPoolPwd, "pool_password", kStringType },
+	{ sCurrency, "currency", kStringType },
 	{ iCallTimeout, "call_timeout", kNumberType },
 	{ iNetRetry, "retry_time", kNumberType },
 	{ iGiveUpLimit, "giveup_limit", kNumberType },
@@ -148,6 +149,43 @@ const char* jconf::GetWalletAddress()
 	if(poolUsername.empty())
 		poolUsername = prv->configValues[sWalletAddr]->GetString();
 	return poolUsername.c_str();
+}
+
+const std::string jconf::GetCurrency()
+{
+	auto& currency = xmrstak::params::inst().currency;
+	if(currency.empty())
+		currency = prv->configValues[sCurrency]->GetString();
+	if(
+#ifndef CONF_NO_XMR
+			currency.compare("xmr") != 0
+#else
+			true
+#endif
+			&&
+#ifndef CONF_NO_AEON
+			currency.compare("aeon") != 0
+#else
+			true
+#endif
+	)
+	{
+		printer::inst()->print_msg(L0, "ERROR: Wrong currency selected - '%s'.", currency.c_str());
+		win_exit();
+	}
+	return currency;
+}
+
+bool jconf::IsCurrencyXMR()
+{
+	if(::jconf::inst()->GetCurrency().compare("xmr") == 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 bool jconf::PreferIpv4()

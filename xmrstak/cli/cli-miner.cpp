@@ -62,8 +62,11 @@ void help()
 	
 	cout<<"Usage: "<<params::inst().binaryName<<" [OPTION]..."<<endl;
 	cout<<" "<<endl;
-	cout<<"  -c, --config FILE     common miner configuration file"<<endl;
 	cout<<"  -h, --help            show this help"<<endl;
+	cout<<"  -c, --config FILE     common miner configuration file"<<endl;
+#if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_XMR))
+	cout<<"  --currency NAME       currency to mine: xmr or aeon"<<endl;
+#endif
 #ifndef CONF_NO_CPU
 	cout<<"  --noCPU               disable the CPU miner backend"<<endl;
 	cout<<"  --cpu FILE            CPU backend miner config file"<<endl;
@@ -168,6 +171,17 @@ int main(int argc, char *argv[])
 			}
 			params::inst().configFileNVIDIA = argv[i];
 		}
+		else if(opName.compare("--currency") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--currency' given");
+				win_exit();
+				return 1;
+			}
+			params::inst().currency = argv[i];
+		}
 		else if(opName.compare("-o") == 0 || opName.compare("--url") == 0)
 		{
 			++i;
@@ -230,10 +244,30 @@ int main(int argc, char *argv[])
 		;
 		configEditor configTpl{};
 		configTpl.set(std::string(tpl));
+		std::cout<<"Please enter:"<<std::endl;
+		auto& currency = params::inst().currency;
+		if(currency.empty())
+		{
+			std::string tmp;
+#if defined(CONF_NO_AEON)
+			tmp = "xmr";
+#elif defined(CONF_NO_XMR)
+			tmp = "aeon";
+#endif
+			while(tmp.compare("xmr") != 0 && tmp.compare("aeon") != 0)
+			{
+				std::cout<<"- currency: 'xmr' or 'aeon'"<<std::endl;
+				std::cin >> tmp;
+			} 
+			currency = tmp;
+		}
 		auto& pool = params::inst().poolURL;
 		if(pool.empty())
 		{
-			std::cout<<"Please enter:\n- pool address: e.g. pool.usxmrpool.com:3333"<<std::endl;
+			if(currency.compare("xmr") != 0)
+				std::cout<<"- pool address: e.g. pool.usxmrpool.com:3333"<<std::endl;
+			else
+				std::cout<<"- pool address: e.g. mine.aeon-pool.com:5555"<<std::endl;
 			std::cin >> pool;
 		}
 		auto& userName = params::inst().poolUsername;
@@ -253,6 +287,7 @@ int main(int argc, char *argv[])
 		configTpl.replace("POOLURL", pool);
 		configTpl.replace("POOLUSER", userName);
 		configTpl.replace("POOLPASSWD", passwd);
+		configTpl.replace("CURRENCY", currency);
 		configTpl.write(params::inst().configFile);
 		std::cout<<"Configuration stored in file '"<<params::inst().configFile<<"'"<<std::endl;
 	}
@@ -298,6 +333,10 @@ int main(int argc, char *argv[])
 	printer::inst()->print_str("'r' - results\n");
 	printer::inst()->print_str("'c' - connection\n");
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
+	if(::jconf::inst()->IsCurrencyXMR())
+		printer::inst()->print_msg(L0,"Start mining: XMR");
+	else
+		printer::inst()->print_msg(L0,"Start mining: AEON");
 
 	if(strlen(jconf::inst()->GetOutputFile()) != 0)
 		printer::inst()->open_logfile(jconf::inst()->GetOutputFile());
