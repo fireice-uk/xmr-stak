@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../cryptonight.hpp"
+#include "xmrstak/backend/cryptonight.hpp"
 
 #ifdef __INTELLISENSE__
 #define __CUDA_ARCH__ 520

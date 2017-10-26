@@ -32,7 +32,8 @@
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/environment.hpp"
 #include "xmrstak/backend/cpu/hwlocMemory.hpp"
-#include "../cryptonight.hpp"
+#include "xmrstak/backend/cryptonight.hpp"
+#include "xmrstak/misc/utility.hpp"
 
 #include <assert.h>
 #include <cmath>
@@ -209,7 +210,7 @@ void minethd::work_main()
 	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
-	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, ::jconf::inst()->IsCurrencyXMR());
+	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, ::jconf::inst()->IsCurrencyMonero());
 	uint32_t iNonce;
 
 	globalStates::inst().iConsumeCnt++;
@@ -220,8 +221,8 @@ void minethd::work_main()
 		std::exit(0);
 	}
 
-	bool useXMR = ::jconf::inst()->GetCurrency().compare("xmr") == 0;
-	bool useAEON = ::jconf::inst()->GetCurrency().compare("aeon") == 0;
+	bool mineMonero = strcmp_i(::jconf::inst()->GetCurrency(), "monero");
+	bool useAEON = strcmp_i(::jconf::inst()->GetCurrency(), "aeon");
 	
 	while (bQuit == 0)
 	{
@@ -260,16 +261,16 @@ void minethd::work_main()
 			uint32_t foundCount;
 
 			cryptonight_extra_cpu_prepare(&ctx, iNonce);
-#ifndef CONF_NO_XMR
-			if(useXMR)
+#ifndef CONF_NO_MONERO
+			if(mineMonero)
 			{
-				cryptonight_core_cpu_hash<XMR_ITER, XMR_MASK, 19>(&ctx);
+				cryptonight_core_cpu_hash<MONERO_ITER, MONERO_MASK, 19>(&ctx);
 			}
 #endif
 #ifndef CONF_NO_AEON
 			if(useAEON)
 			{
-				cryptonight_core_cpu_hash<XMR_ITER, XMR_MASK, 18>(&ctx);
+				cryptonight_core_cpu_hash<MONERO_ITER, MONERO_MASK, 18>(&ctx);
 			}
 #endif
 			cryptonight_extra_cpu_final(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce);

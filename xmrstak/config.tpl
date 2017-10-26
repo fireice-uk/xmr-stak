@@ -12,7 +12,7 @@ R"===(
 
 /*
  * currency to mine
- * allowed values: 'xmr' or 'aeon'
+ * allowed values: 'monero' or 'aeon'
  */
 "currency" : "CURRENCY",
 

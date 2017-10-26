@@ -27,6 +27,7 @@
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/misc/jext.hpp"
 #include "xmrstak/misc/console.hpp"
+#include "xmrstak/misc/utility.hpp"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -157,14 +158,14 @@ const std::string jconf::GetCurrency()
 	if(currency.empty())
 		currency = prv->configValues[sCurrency]->GetString();
 	if(
-#ifndef CONF_NO_XMR
-			currency.compare("xmr") != 0
+#ifndef CONF_NO_MONERO
+			xmrstak::strcmp_i(currency, "monero")
 #else
 			true
 #endif
 			&&
 #ifndef CONF_NO_AEON
-			currency.compare("aeon") != 0
+			xmrstak::strcmp_i(currency, "aeon")
 #else
 			true
 #endif
@@ -176,9 +177,9 @@ const std::string jconf::GetCurrency()
 	return currency;
 }
 
-bool jconf::IsCurrencyXMR()
+bool jconf::IsCurrencyMonero()
 {
-	if(::jconf::inst()->GetCurrency().compare("xmr") == 0)
+	if(xmrstak::strcmp_i(::jconf::inst()->GetCurrency(), "monero"))
 	{
 		return true;
 	}

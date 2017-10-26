@@ -6,7 +6,7 @@
 #define AEON_ITER 0x40000
 
 // define xmr settings
-#define XMR_MEMORY 2097152llu
-#define XMR_MASK 0x1FFFF0
-#define XMR_ITER 0x80000
+#define MONERO_MEMORY 2097152llu
+#define MONERO_MASK 0x1FFFF0
+#define MONERO_ITER 0x80000
 

@@ -8,8 +8,8 @@
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/misc/configEditor.hpp"
 #include "xmrstak/params.hpp"
-#include "../cryptonight.hpp"
-#include "../../jconf.hpp"
+#include "xmrstak/backend/cryptonight.hpp"
+#include "xmrstak/jconf.hpp"
 
 #include <vector>
 #include <cstdio>
@@ -84,9 +84,9 @@ private:
 		constexpr size_t byteToMiB = 1024u * 1024u;
 
 		size_t hashMemSize;
-		if(::jconf::inst()->IsCurrencyXMR())
+		if(::jconf::inst()->IsCurrencyMonero())
 		{
-			hashMemSize = XMR_MEMORY;
+			hashMemSize = MONERO_MEMORY;
 		}
 		else
 		{

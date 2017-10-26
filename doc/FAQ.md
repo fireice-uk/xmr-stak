@@ -65,4 +65,4 @@ Add the binary to to protection software white list to solve this issue.s
 
 If the miner is compiled for Monero and Aeon than you can change
  - the value `currency` in the config *or*
- - start the miner with the [command line option](usage.md) `--currency xmr` or `--currency aeon`
+ - start the miner with the [command line option](usage.md) `--currency monero` or `--currency aeon`

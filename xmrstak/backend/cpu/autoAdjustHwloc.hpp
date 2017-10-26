@@ -3,7 +3,7 @@
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/misc/configEditor.hpp"
 #include "xmrstak/params.hpp"
-#include "../cryptonight.hpp"
+#include "xmrstak/backend/cryptonight.hpp"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -28,9 +28,9 @@ public:
 
 	autoAdjust()
 	{
-		if(::jconf::inst()->IsCurrencyXMR())
+		if(::jconf::inst()->IsCurrencyMonero())
 		{
-			hashMemSize = XMR_MEMORY;
+			hashMemSize = MONERO_MEMORY;
 			halfHashMemSize = hashMemSize / 2u;
 		}
 		else

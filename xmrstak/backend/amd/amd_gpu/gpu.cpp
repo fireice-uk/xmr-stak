@@ -13,8 +13,8 @@
   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
   */
 
-#include "../../cryptonight.hpp"
-#include "../../../jconf.hpp"
+#include "xmrstak/backend/cryptonight.hpp"
+#include "xmrstak/jconf.hpp"
 
 #include <stdio.h>
 #include <string.h>
@@ -251,11 +251,11 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	size_t hashMemSize;
 	int threadMemMask;
 	int hasIterations;
-	if(::jconf::inst()->IsCurrencyXMR())
+	if(::jconf::inst()->IsCurrencyMonero())
 	{
-		hashMemSize = XMR_MEMORY;
-		threadMemMask = XMR_MASK;
-		hasIterations = XMR_ITER;
+		hashMemSize = MONERO_MEMORY;
+		threadMemMask = MONERO_MASK;
+		hasIterations = MONERO_ITER;
 	}
 	else
 	{

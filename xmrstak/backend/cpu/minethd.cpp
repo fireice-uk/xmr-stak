@@ -201,28 +201,28 @@ bool minethd::self_test()
 
 	bool bResult = true;
 
-	bool useXmr = ::jconf::inst()->IsCurrencyXMR();
-	if(useXmr)
+	bool mineMonero = ::jconf::inst()->IsCurrencyMonero();
+	if(mineMonero)
 	{
 		unsigned char out[64];
 		cn_hash_fun hashf;
 		cn_hash_fun_dbl hashdf;
 
 
-		hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, useXmr);
+		hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, mineMonero);
 		hashf("This is a test", 14, out, ctx0);
 		bResult = memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
-		hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, useXmr);
+		hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, mineMonero);
 		hashf("This is a test", 14, out, ctx0);
 		bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
-		hashdf = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), false, useXmr);
+		hashdf = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), false, mineMonero);
 		hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
 		bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
 							   "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
 
-		hashdf = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), true, useXmr);
+		hashdf = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), true, mineMonero);
 		hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
 		bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
 							   "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
@@ -289,7 +289,7 @@ void minethd::consume_work()
 	globalStates::inst().inst().iConsumeCnt++;
 }
 
-minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, bool useXMR)
+minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, bool mineMonero)
 {
 	// We have two independent flag bits in the functions
 	// therefore we will build a binary digit and select the
@@ -297,13 +297,17 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, boo
 	// Digit order SOFT_AES, NO_PREFETCH, MINER_ALGO
 
 	static const cn_hash_fun func_table[] = {
-#ifndef CONF_NO_XMR
-		cryptonight_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, false, false>,
-		cryptonight_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, false, true>,
-		cryptonight_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, true, false>,
-		cryptonight_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, true, true>
+		/* there will be 8 function entries if `CONF_NO_MONERO` and `CONF_NO_AEON`
+		 * is not defined. If one is defined there will be 4 entries.
+		 */
+#ifndef CONF_NO_MONERO
+		cryptonight_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
+		cryptonight_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
+		cryptonight_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
+		cryptonight_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>
 #endif
-#if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_XMR))
+#if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_MONERO))
+		// comma will be added only if Monero and Aeon is build
 		,
 #endif
 #ifndef CONF_NO_AEON
@@ -317,14 +321,13 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, boo
 	std::bitset<3> digit;
 	digit.set(0, !bNoPrefetch);
 	digit.set(1, !bHaveAes);
-	//miner algo true = XMR, false = AEON
-	digit.set(2, useXMR);
 
 	// define aeon settings
-#if defined(CONF_NO_AEON) || defined(CONF_NO_XMR)
+#if defined(CONF_NO_AEON) || defined(CONF_NO_MONERO)
+	// ignore 3rd bit if only on currency is active
 	digit.set(2, 0);
 #else
-	digit.set(2, !useXMR);
+	digit.set(2, !mineMonero);
 #endif
 
 	return func_table[digit.to_ulong()];
@@ -344,7 +347,7 @@ void minethd::work_main()
 	uint32_t* piNonce;
 	job_result result;
 
-	hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyXMR());
+	hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero());
 	ctx = minethd_alloc_ctx();
 
 	piHashVal = (uint64_t*)(result.bResult + 24);
@@ -406,7 +409,7 @@ void minethd::work_main()
 	cryptonight_free_ctx(ctx);
 }
 
-minethd::cn_hash_fun_dbl minethd::func_dbl_selector(bool bHaveAes, bool bNoPrefetch, bool useXMR)
+minethd::cn_hash_fun_dbl minethd::func_dbl_selector(bool bHaveAes, bool bNoPrefetch, bool mineMonero)
 {
 	// We have two independent flag bits in the functions
 	// therefore we will build a binary digit and select the
@@ -414,13 +417,17 @@ minethd::cn_hash_fun_dbl minethd::func_dbl_selector(bool bHaveAes, bool bNoPrefe
 	// Digit order SOFT_AES, NO_PREFETCH, MINER_ALGO
 
 	static const cn_hash_fun_dbl func_table[] = {
-#ifndef CONF_NO_XMR
-		cryptonight_double_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, false, false>,
-		cryptonight_double_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, false, true>,
-		cryptonight_double_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, true, false>,
-		cryptonight_double_hash<XMR_MASK, XMR_ITER, XMR_MEMORY, true, true>
+		/* there will be 8 function entries if `CONF_NO_MONERO` and `CONF_NO_AEON`
+		 * is not defined. If one is defined there will be 4 entries.
+		 */
+#ifndef CONF_NO_MONERO
+		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
+		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
+		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
+		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>
 #endif
-#if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_XMR))
+#if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_MONERO))
+		// comma will be added only if Monero and Aeon is build
 		,
 #endif
 #ifndef CONF_NO_AEON
@@ -434,14 +441,13 @@ minethd::cn_hash_fun_dbl minethd::func_dbl_selector(bool bHaveAes, bool bNoPrefe
 	std::bitset<3> digit;
 	digit.set(0, !bNoPrefetch);
 	digit.set(1, !bHaveAes);
-	//miner algo true = XMR, false = AEON
-	digit.set(2, useXMR);
 
 	// define aeon settings
-#if defined(CONF_NO_AEON) || defined(CONF_NO_XMR)
+#if defined(CONF_NO_AEON) || defined(CONF_NO_MONERO)
+	// ignore 3rd bit if only on currency is active
 	digit.set(2, 0);
 #else
-	digit.set(2, !useXMR);
+	digit.set(2, !mineMonero);
 #endif
 
 	return func_table[digit.to_ulong()];
@@ -472,7 +478,7 @@ void minethd::double_work_main()
 	uint32_t iNonce;
 	job_result res;
 
-	hash_fun = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyXMR());
+	hash_fun = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero());
 	ctx0 = minethd_alloc_ctx();
 	ctx1 = minethd_alloc_ctx();
 

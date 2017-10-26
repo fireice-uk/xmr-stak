@@ -5,7 +5,7 @@
 #include <cuda_runtime.h>
 #include <device_functions.hpp>
 #include  <algorithm>
-#include "../../../jconf.hpp"
+#include "xmrstak/jconf.hpp"
 
 #ifdef __CUDACC__
 __constant__
@@ -190,9 +190,9 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
 
 	size_t hashMemSize;
-	if(::jconf::inst()->IsCurrencyXMR())
+	if(::jconf::inst()->IsCurrencyMonero())
 	{
-		hashMemSize = XMR_MEMORY;
+		hashMemSize = MONERO_MEMORY;
 	}
 	else
 	{
@@ -355,9 +355,9 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		ctx->free_device_memory = freeMemory;
 
 		size_t hashMemSize;
-		if(::jconf::inst()->IsCurrencyXMR())
+		if(::jconf::inst()->IsCurrencyMonero())
 		{
-			hashMemSize = XMR_MEMORY;
+			hashMemSize = MONERO_MEMORY;
 		}
 		else
 		{

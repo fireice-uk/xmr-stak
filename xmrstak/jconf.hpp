@@ -42,7 +42,7 @@ public:
 	const char* GetPoolPwd();
 	const char* GetWalletAddress();
 	const std::string GetCurrency();
-	bool IsCurrencyXMR();
+	bool IsCurrencyMonero();
 
 	uint64_t GetVerboseLevel();
 	uint64_t GetAutohashTime();

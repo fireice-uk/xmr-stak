@@ -21,7 +21,7 @@
   *
   */
 
-#include "../jconf.hpp"
+#include "xmrstak/jconf.hpp"
 #include "executor.hpp"
 #include "xmrstak/net/jpsock.hpp"
 
@@ -184,7 +184,7 @@ void executor::on_sock_ready(size_t pool_id)
 
 	if(pool_id == dev_pool_id)
 	{
-		if(::jconf::inst()->IsCurrencyXMR())
+		if(::jconf::inst()->IsCurrencyMonero())
 		{
 			if(!pool->cmd_login("", ""))
 				pool->disconnect();
@@ -362,7 +362,7 @@ void executor::on_switch_pool(size_t pool_id)
 		// as we never receive further events
 		printer::inst()->print_msg(L1, "Connecting to dev pool...");
 		std::string dev_pool_addr;
-		if(::jconf::inst()->IsCurrencyXMR())
+		if(::jconf::inst()->IsCurrencyMonero())
 			dev_pool_addr = jconf::inst()->GetTlsSetting() ? "donate.xmr-stak.net:6666" : "donate.xmr-stak.net:3333";
 		else
 			dev_pool_addr = jconf::inst()->GetTlsSetting() ? "mine.aeon-pool.com:443" : "mine.aeon-pool.com:5555";

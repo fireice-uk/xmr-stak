@@ -31,6 +31,7 @@
 #include "xmrstak/params.hpp"
 #include "xmrstak/misc/configEditor.hpp"
 #include "xmrstak/version.hpp"
+#include "xmrstak/misc/utility.hpp"
 
 #ifndef CONF_NO_HTTPD
 #	include "xmrstak/http/httpd.hpp"
@@ -64,8 +65,8 @@ void help()
 	cout<<" "<<endl;
 	cout<<"  -h, --help            show this help"<<endl;
 	cout<<"  -c, --config FILE     common miner configuration file"<<endl;
-#if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_XMR))
-	cout<<"  --currency NAME       currency to mine: xmr or aeon"<<endl;
+#if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_MONERO))
+	cout<<"  --currency NAME       currency to mine: monero or aeon"<<endl;
 #endif
 #ifndef CONF_NO_CPU
 	cout<<"  --noCPU               disable the CPU miner backend"<<endl;
@@ -250,13 +251,13 @@ int main(int argc, char *argv[])
 		{
 			std::string tmp;
 #if defined(CONF_NO_AEON)
-			tmp = "xmr";
-#elif defined(CONF_NO_XMR)
+			tmp = "monero";
+#elif defined(CONF_NO_MONERO)
 			tmp = "aeon";
 #endif
-			while(tmp.compare("xmr") != 0 && tmp.compare("aeon") != 0)
+			while(xmrstak::strcmp_i(tmp, "monero") && xmrstak::strcmp_i(tmp, "aeon"))
 			{
-				std::cout<<"- currency: 'xmr' or 'aeon'"<<std::endl;
+				std::cout<<"- currency: 'monero' or 'aeon'"<<std::endl;
 				std::cin >> tmp;
 			} 
 			currency = tmp;
@@ -264,7 +265,7 @@ int main(int argc, char *argv[])
 		auto& pool = params::inst().poolURL;
 		if(pool.empty())
 		{
-			if(currency.compare("xmr") != 0)
+			if(xmrstak::strcmp_i(currency, "monero"))
 				std::cout<<"- pool address: e.g. pool.usxmrpool.com:3333"<<std::endl;
 			else
 				std::cout<<"- pool address: e.g. mine.aeon-pool.com:5555"<<std::endl;
@@ -333,8 +334,8 @@ int main(int argc, char *argv[])
 	printer::inst()->print_str("'r' - results\n");
 	printer::inst()->print_str("'c' - connection\n");
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
-	if(::jconf::inst()->IsCurrencyXMR())
-		printer::inst()->print_msg(L0,"Start mining: XMR");
+	if(::jconf::inst()->IsCurrencyMonero())
+		printer::inst()->print_msg(L0,"Start mining: MONERO");
 	else
 		printer::inst()->print_msg(L0,"Start mining: AEON");
 
