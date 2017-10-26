@@ -12,6 +12,7 @@
 #include <thread>
 #include <atomic>
 #include <vector>
+#include <future>
 
 
 namespace xmrstak
@@ -43,7 +44,10 @@ private:
 	static miner_work oGlobalWork;
 	miner_work oWork;
 
+	std::promise<void> order_fix;
+
 	std::thread oWorkThd;
+	int64_t affinity;
 
 	nvid_ctx ctx;
 

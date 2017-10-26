@@ -259,10 +259,6 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 	{
 		jconf::inst()->GetThreadConfig(i, cfg);
 
-		// \todo need thread offset
-		minethd* thd = new minethd(pWork, i + threadOffset, cfg.bDoubleMode, cfg.bNoPrefetch, cfg.iCpuAff);
-		pvThreads.push_back(thd);
-
 		if(cfg.iCpuAff >= 0)
 		{
 #if defined(__APPLE__)
@@ -273,8 +269,12 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		}
 		else
 			printer::inst()->print_msg(L1, "Starting %s thread, no affinity.", cfg.bDoubleMode ? "double" : "single");
+		
+		// \todo need thread offset
+		minethd* thd = new minethd(pWork, i + threadOffset, cfg.bDoubleMode, cfg.bNoPrefetch, cfg.iCpuAff);
+		pvThreads.push_back(thd);
 	}
-
+	
 	return pvThreads;
 }
 

@@ -31,6 +31,7 @@
 #include "xmrstak/misc/executor.hpp"
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/environment.hpp"
+#include "xmrstak/backend/cpu/hwlocMemory.hpp"
 
 #include <assert.h>
 #include <cmath>
@@ -73,8 +74,16 @@ minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 	ctx.device_threads = (int)cfg.threads;
 	ctx.device_bfactor = (int)cfg.bfactor;
 	ctx.device_bsleep = (int)cfg.bsleep;
+	this->affinity = cfg.cpu_aff;
+
+	std::future<void> order_guard = order_fix.get_future();
 	
 	oWorkThd = std::thread(&minethd::work_main, this);
+
+	order_guard.wait();
+
+	if(!cpu::minethd::thd_setaffinity(oWorkThd.native_handle(), affinity))
+		printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
 }
 
 
@@ -147,22 +156,21 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 	for (i = 0; i < n; i++)
 	{
 		jconf::inst()->GetGPUThreadConfig(i, cfg);
-		minethd* thd = new minethd(pWork, i + threadOffset, cfg);
 
 		if(cfg.cpu_aff >= 0)
 		{
 #if defined(__APPLE__)
 			printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory.");
 #endif
-			cpu::minethd::thd_setaffinity(thd->oWorkThd.native_handle(), cfg.cpu_aff);
-		}
 
+			printer::inst()->print_msg(L1, "Starting NVIDIA GPU thread %d, affinity: %d.", i, (int)cfg.cpu_aff);
+		}
+		else
+			printer::inst()->print_msg(L1, "Starting NVIDIA GPU thread %d, no affinity.", i);
+		
+		minethd* thd = new minethd(pWork, i + threadOffset, cfg);
 		pvThreads->push_back(thd);
 
-		if(cfg.cpu_aff >= 0)
-			printer::inst()->print_msg(L1, "Starting GPU thread, affinity: %d.", (int)cfg.cpu_aff);
-		else
-			printer::inst()->print_msg(L1, "Starting GPU thread, no affinity.");
 	}
 
 	return pvThreads;
@@ -191,6 +199,11 @@ void minethd::consume_work()
 
 void minethd::work_main()
 {
+	if(affinity >= 0) //-1 means no affinity
+		bindMemoryToNUMANode(affinity);
+
+	order_fix.set_value();
+	
 	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
