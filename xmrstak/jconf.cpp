@@ -159,13 +159,15 @@ const std::string jconf::GetCurrency()
 		currency = prv->configValues[sCurrency]->GetString();
 	if(
 #ifndef CONF_NO_MONERO
-			xmrstak::strcmp_i(currency, "monero")
+			// if monero is disabled at compile time, enable error message if selected currency is `monero`
+			!xmrstak::strcmp_i(currency, "monero")
 #else
 			true
 #endif
 			&&
 #ifndef CONF_NO_AEON
-			xmrstak::strcmp_i(currency, "aeon")
+			// if aeon is disabled at compile time, enable error message if selected currency is `aeon`
+			!xmrstak::strcmp_i(currency, "aeon")
 #else
 			true
 #endif

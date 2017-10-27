@@ -255,7 +255,7 @@ int main(int argc, char *argv[])
 #elif defined(CONF_NO_MONERO)
 			tmp = "aeon";
 #endif
-			while(xmrstak::strcmp_i(tmp, "monero") && xmrstak::strcmp_i(tmp, "aeon"))
+			while(!xmrstak::strcmp_i(tmp, "monero") && !xmrstak::strcmp_i(tmp, "aeon"))
 			{
 				std::cout<<"- currency: 'monero' or 'aeon'"<<std::endl;
 				std::cin >> tmp;
