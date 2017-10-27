@@ -110,8 +110,9 @@ minethd::minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefet
 
 	order_guard.wait();
 
-	if(!thd_setaffinity(oWorkThd.native_handle(), affinity))
-		printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
+	if(affinity >= 0) //-1 means no affinity
+		if(!thd_setaffinity(oWorkThd.native_handle(), affinity))
+			printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
 }
 
 cryptonight_ctx* minethd::minethd_alloc_ctx()
@@ -259,10 +260,6 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 	{
 		jconf::inst()->GetThreadConfig(i, cfg);
 
-		// \todo need thread offset
-		minethd* thd = new minethd(pWork, i + threadOffset, cfg.bDoubleMode, cfg.bNoPrefetch, cfg.iCpuAff);
-		pvThreads.push_back(thd);
-
 		if(cfg.iCpuAff >= 0)
 		{
 #if defined(__APPLE__)
@@ -273,8 +270,11 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		}
 		else
 			printer::inst()->print_msg(L1, "Starting %s thread, no affinity.", cfg.bDoubleMode ? "double" : "single");
+		
+		minethd* thd = new minethd(pWork, i + threadOffset, cfg.bDoubleMode, cfg.bNoPrefetch, cfg.iCpuAff);
+		pvThreads.push_back(thd);
 	}
-
+	
 	return pvThreads;
 }
 
