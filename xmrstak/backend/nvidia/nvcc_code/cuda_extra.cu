@@ -332,19 +332,19 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		 * `8 * ctx->device_threads` threads per block
 		 */
 		ctx->device_threads = 64;
-		constexpr size_t byte2mib = 1024u * 1024u;
+		constexpr size_t byteToMiB = 1024u * 1024u;
 		
 		// no limit by default 1TiB
-		size_t maxMemUsage = byte2mib * byte2mib;
+		size_t maxMemUsage = byteToMiB * byteToMiB;
 		if(props.major < 6)
 		{
 			// limit memory usage for GPUs before pascal
-			maxMemUsage = size_t(2048u) * byte2mib;
+			maxMemUsage = size_t(2048u) * byteToMiB;
 		}
 		if(props.major == 2)
 		{
 			// limit memory usage for sm 20 GPUs
-			maxMemUsage = size_t(1024u) * byte2mib;
+			maxMemUsage = size_t(1024u) * byteToMiB;
 		}
 
 		size_t freeMemory = 0;
@@ -364,13 +364,13 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			hashMemSize = AEON_MEMORY;
 		}
 
-		// keep 64MiB memory free (value is randomly chosen)
+		// keep 128MiB memory free (value is randomly chosen)
 		// 200byte are meta data memory (result nonce, ...)
-		size_t availableMem = freeMemory - (64u * 1024 * 1024) - 200u;
+		size_t availableMem = freeMemory - (128u * byteToMiB) - 200u;
 		size_t limitedMemory = std::min(availableMem, maxMemUsage);
-		// up to 920bytes extra memory is used per thread for some kernel (lmem/local memory)
+		// up to 1kibyte extra memory is used per thread for some kernel (lmem/local memory)
 		// 680bytes are extra meta data memory per hash
-		size_t perThread = hashMemSize + 740u + 680u;
+		size_t perThread = hashMemSize + 1024u + 680u;
 		size_t max_intensity = limitedMemory / perThread;
 		ctx->device_threads = max_intensity / ctx->device_blocks;
 		// use only odd number of threads

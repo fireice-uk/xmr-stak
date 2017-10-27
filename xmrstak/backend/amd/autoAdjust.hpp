@@ -97,8 +97,8 @@ private:
         int i = 0;
         for(auto& ctx : devVec)
         {
-			// keep 64MiB memory free (value is randomly chosen)
-			size_t availableMem = ctx.freeMem - (64u * 1024 * 1024);
+			// keep 128MiB memory free (value is randomly chosen)
+			size_t availableMem = ctx.freeMem - (128u * byteToMiB);
 			// 224byte extra memory is used per thread for meta data
 			size_t perThread = hashMemSize + 224u;
 			size_t max_intensity = availableMem / perThread;
