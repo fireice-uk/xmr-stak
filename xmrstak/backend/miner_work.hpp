@@ -16,8 +16,6 @@ namespace xmrstak
 		uint8_t     bWorkBlob[112];
 		uint32_t    iWorkSize;
 		uint64_t    iTarget;
-		// \todo remove workaround needed for amd
-		uint32_t    iTarget32;
 		bool        bNiceHash;
 		bool        bStall;
 		size_t      iPoolId;
@@ -41,7 +39,6 @@ namespace xmrstak
 
 			iWorkSize = from.iWorkSize;
 			iTarget = from.iTarget;
-			iTarget32 = from.iTarget32;
 			bNiceHash = from.bNiceHash;
 			bStall = from.bStall;
 			iPoolId = from.iPoolId;
@@ -53,7 +50,7 @@ namespace xmrstak
 			return *this;
 		}
 
-		miner_work(miner_work&& from) : iWorkSize(from.iWorkSize), iTarget(from.iTarget),iTarget32(from.iTarget32),
+		miner_work(miner_work&& from) : iWorkSize(from.iWorkSize), iTarget(from.iTarget),
 			bStall(from.bStall), iPoolId(from.iPoolId)
 		{
 			assert(iWorkSize <= sizeof(bWorkBlob));
@@ -67,7 +64,6 @@ namespace xmrstak
 
 			iWorkSize = from.iWorkSize;
 			iTarget = from.iTarget;
-			iTarget32 = from.iTarget32;
 			bNiceHash = from.bNiceHash;
 			bStall = from.bStall;
 			iPoolId = from.iPoolId;

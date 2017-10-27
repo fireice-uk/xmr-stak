@@ -665,7 +665,7 @@ R"===(
 
 #define VSWAP4(x)	((((x) >> 24) & 0xFFU) | (((x) >> 8) & 0xFF00U) | (((x) << 8) & 0xFF0000U) | (((x) << 24) & 0xFF000000U))
 
-__kernel void Skein(__global ulong *states, __global uint *BranchBuf, __global uint *output, uint Target, ulong Threads)
+__kernel void Skein(__global ulong *states, __global uint *BranchBuf, __global uint *output, ulong Target, ulong Threads)
 {
 	const ulong idx = get_global_id(0) - get_global_offset(0);
 	
@@ -713,7 +713,9 @@ __kernel void Skein(__global ulong *states, __global uint *BranchBuf, __global u
 
 		//vstore8(p, 0, output);
 
-		if(as_uint16(p).s7 <= Target)
+		// Note that comparison is equivalent to subtraction - we can't just compare 8 32-bit values
+		// and expect an accurate result for target > 32-bit without implementing carries
+		if(p.s3 <= Target)
 		{
 			ulong outIdx = atomic_inc(output + 0xFF);
 			if(outIdx < 0xFF)
@@ -725,7 +727,7 @@ __kernel void Skein(__global ulong *states, __global uint *BranchBuf, __global u
 
 #define SWAP8(x)	as_ulong(as_uchar8(x).s76543210)
 
-__kernel void JH(__global ulong *states, __global uint *BranchBuf, __global uint *output, uint Target, ulong Threads)
+__kernel void JH(__global ulong *states, __global uint *BranchBuf, __global uint *output, ulong Target, ulong Threads)
 {
 	const uint idx = get_global_id(0) - get_global_offset(0);
 	
@@ -785,7 +787,9 @@ __kernel void JH(__global ulong *states, __global uint *BranchBuf, __global uint
 		//output[2] = h7h;
 		//output[3] = h7l;
 
-		if(as_uint2(h7l).s1 <= Target)
+		// Note that comparison is equivalent to subtraction - we can't just compare 8 32-bit values
+		// and expect an accurate result for target > 32-bit without implementing carries
+		if(h7l <= Target)
 		{
 			ulong outIdx = atomic_inc(output + 0xFF);
 			if(outIdx < 0xFF)
@@ -796,7 +800,7 @@ __kernel void JH(__global ulong *states, __global uint *BranchBuf, __global uint
 
 #define SWAP4(x)	as_uint(as_uchar4(x).s3210)
 
-__kernel void Blake(__global ulong *states, __global uint *BranchBuf, __global uint *output, uint Target, ulong Threads)
+__kernel void Blake(__global ulong *states, __global uint *BranchBuf, __global uint *output, ulong Target, ulong Threads)
 {
 	const uint idx = get_global_id(0) - get_global_offset(0);
 	
@@ -859,7 +863,10 @@ __kernel void Blake(__global ulong *states, __global uint *BranchBuf, __global u
 
 		for(int i = 0; i < 8; ++i) h[i] = SWAP4(h[i]);
 
-		if(h[7] <= Target)
+		// Note that comparison is equivalent to subtraction - we can't just compare 8 32-bit values
+		// and expect an accurate result for target > 32-bit without implementing carries
+		uint2 t = (uint2)(h[6],h[7]);
+		if( as_ulong(t) <= Target)
 		{
 			ulong outIdx = atomic_inc(output + 0xFF);
 			if(outIdx < 0xFF)
@@ -868,7 +875,7 @@ __kernel void Blake(__global ulong *states, __global uint *BranchBuf, __global u
 	}
 }
 
-__kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global uint *output, uint Target, ulong Threads)
+__kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global uint *output, ulong Target, ulong Threads)
 {
 	const uint idx = get_global_id(0) - get_global_offset(0);
 	
@@ -917,7 +924,9 @@ __kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global
 
 		for(int i = 0; i < 8; ++i) State[i] ^= tmp[i];
 
-		if(as_uint2(State[7]).s1 <= Target)
+		// Note that comparison is equivalent to subtraction - we can't just compare 8 32-bit values
+		// and expect an accurate result for target > 32-bit without implementing carries
+		if(State[7] <= Target)
 		{
 			ulong outIdx = atomic_inc(output + 0xFF);
 			if(outIdx < 0xFF)

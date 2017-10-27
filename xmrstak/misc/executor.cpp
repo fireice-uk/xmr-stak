@@ -238,8 +238,6 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 
 	xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob, oPoolJob.iWorkLen, oPoolJob.iTarget,
 		pool_id != dev_pool_id && ::jconf::inst()->NiceHashMode(), pool_id);
-
-	oWork.iTarget32 = oPoolJob.iTarget32;
 	
 	xmrstak::pool_data dat;
 	dat.iSavedNonce = oPoolJob.iSavedNonce;

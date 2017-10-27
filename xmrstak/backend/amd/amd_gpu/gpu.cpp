@@ -645,7 +645,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	return ERR_SUCCESS;
 }
 
-size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint32_t target)
+size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target)
 {
 	cl_int ret;
 
@@ -787,7 +787,7 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint32_t tar
 		}
 
 		// Target
-		if((ret = clSetKernelArg(ctx->Kernels[i + 3], 3, sizeof(cl_uint), &target)) != CL_SUCCESS)
+		if((ret = clSetKernelArg(ctx->Kernels[i + 3], 3, sizeof(cl_ulong), &target)) != CL_SUCCESS)
 		{
 			printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel %d, argument %d.", err_to_str(ret), i + 3, 3);
 			return ERR_OCL_API;

@@ -191,7 +191,7 @@ void minethd::work_main()
 		size_t round_ctr = 0;
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
-		uint32_t target = oWork.iTarget32;
+		uint64_t target = oWork.iTarget;
 		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target);
 
 		if(oWork.bNiceHash)

@@ -12,8 +12,6 @@ struct pool_job
 	char		sJobID[64];
 	uint8_t		bWorkBlob[112];
 	uint64_t	iTarget;
-	// \todo remove workaround needed for amd
-	uint32_t	iTarget32;
 	uint32_t	iWorkLen;
 	uint32_t	iSavedNonce;
 
