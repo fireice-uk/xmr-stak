@@ -53,15 +53,16 @@ In the most cases a `worksize` of `16` or `8` is optimal.
 
 ### Add More GPUs
 
-To add a new GPU you need to add a new config set to `gpu_threads_conf` and increase `gpu_thread_num"` to the number of gpus (entries in `gpu_threads_conf`).
-`index` is the number of the gpu.
+To add a new GPU you need to add a new config set to `gpu_threads_conf`. `index` is the OpenCL index of the gpu.
+`platform_index`is the index of the OpenCL platform (Intel / AMD / Nvidia).
+If you are unsure of either GPU or platform index value, you can use `clinfo` tool that comes with AMD APP SDK to dump the values.
 
 ```
-"gpu_thread_num" : 2,
-
 "gpu_threads_conf" :
 [
     { "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false },
     { "index" : 1, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false },
 ],
+
+"platform_index" : 0,
 ```

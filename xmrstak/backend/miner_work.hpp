@@ -15,7 +15,6 @@ namespace xmrstak
 		char        sJobID[64];
 		uint8_t     bWorkBlob[112];
 		uint32_t    iWorkSize;
-		uint32_t    iResumeCnt;
 		uint64_t    iTarget;
 		// \todo remove workaround needed for amd
 		uint32_t    iTarget32;
@@ -25,8 +24,8 @@ namespace xmrstak
 
 		miner_work() : iWorkSize(0), bNiceHash(false), bStall(true), iPoolId(0) { }
 
-		miner_work(const char* sJobID, const uint8_t* bWork, uint32_t iWorkSize, uint32_t iResumeCnt,
-			uint64_t iTarget, bool bNiceHash, size_t iPoolId) : iWorkSize(iWorkSize), iResumeCnt(iResumeCnt),
+		miner_work(const char* sJobID, const uint8_t* bWork, uint32_t iWorkSize,
+			uint64_t iTarget, bool bNiceHash, size_t iPoolId) : iWorkSize(iWorkSize),
 			iTarget(iTarget), bNiceHash(bNiceHash), bStall(false), iPoolId(iPoolId)
 		{
 			assert(iWorkSize <= sizeof(bWorkBlob));
@@ -41,7 +40,6 @@ namespace xmrstak
 			assert(this != &from);
 
 			iWorkSize = from.iWorkSize;
-			iResumeCnt = from.iResumeCnt;
 			iTarget = from.iTarget;
 			iTarget32 = from.iTarget32;
 			bNiceHash = from.bNiceHash;
@@ -68,7 +66,6 @@ namespace xmrstak
 			assert(this != &from);
 
 			iWorkSize = from.iWorkSize;
-			iResumeCnt = from.iResumeCnt;
 			iTarget = from.iTarget;
 			iTarget32 = from.iTarget32;
 			bNiceHash = from.bNiceHash;

@@ -50,6 +50,7 @@ public:
 
 	inline uint64_t get_current_diff() { return iJobDiff; }
 
+	void save_nonce(uint32_t nonce);
 	bool get_current_job(pool_job& job);
 
 	size_t pool_id;

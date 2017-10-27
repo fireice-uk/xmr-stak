@@ -192,11 +192,10 @@ void minethd::consume_work()
 void minethd::work_main()
 {
 	uint64_t iCount = 0;
-	uint32_t iNonce;
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
 	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/);
-	uint32_t* piNonce = (uint32_t*)(oWork.bWorkBlob + 39);
+	uint32_t iNonce;
 
 	globalStates::inst().iConsumeCnt++;
 
@@ -222,16 +221,23 @@ void minethd::work_main()
 		}
 
 		cryptonight_extra_cpu_set_data(&ctx, oWork.bWorkBlob, oWork.iWorkSize);
-		if(oWork.bNiceHash)
-			iNonce = calc_nicehash_nonce(*piNonce, oWork.iResumeCnt);
-		else
-			iNonce = calc_start_nonce(oWork.iResumeCnt);
+
+		uint32_t h_per_round = ctx.device_blocks * ctx.device_threads;
+		size_t round_ctr = 0;
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
+		if(oWork.bNiceHash)
+			iNonce = *(uint32_t*)(oWork.bWorkBlob + 39);
+
 		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
-
+			//Allocate a new nonce every 16 rounds
+			if((round_ctr++ & 0xF) == 0)
+			{
+				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, h_per_round * 16);
+			}
+			
 			uint32_t foundNonce[10];
 			uint32_t foundCount;
 
@@ -257,8 +263,8 @@ void minethd::work_main()
 					executor::inst()->log_result_error("NVIDIA Invalid Result");
 			}
 
-			iCount += ctx.device_blocks * ctx.device_threads;
-			iNonce += ctx.device_blocks * ctx.device_threads;
+			iCount += h_per_round;
+			iNonce += h_per_round;
 
 			using namespace std::chrono;
 			uint64_t iStamp = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
