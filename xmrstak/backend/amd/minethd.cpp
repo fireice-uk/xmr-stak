@@ -64,8 +64,9 @@ minethd::minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::th
 
 	order_guard.wait();
 
-	if(!cpu::minethd::thd_setaffinity(oWorkThd.native_handle(), affinity))
-		printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
+	if(affinity >= 0) //-1 means no affinity
+		if(!cpu::minethd::thd_setaffinity(oWorkThd.native_handle(), affinity))
+			printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
 }
 
 extern "C"  {
