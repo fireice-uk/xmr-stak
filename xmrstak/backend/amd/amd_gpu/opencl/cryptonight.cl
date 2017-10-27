@@ -91,7 +91,7 @@ static const __constant ulong keccakf_rndc[24] =
     0x8000000080008081, 0x8000000000008009, 0x000000000000008a,
     0x0000000000000088, 0x0000000080008009, 0x000000008000000a,
     0x000000008000808b, 0x800000000000008b, 0x8000000000008089,
-    0x8000000000008003, 0x8000000000008002, 0x8000000000000080, 
+    0x8000000000008003, 0x8000000000008002, 0x8000000000000080,
     0x000000000000800a, 0x800000008000000a, 0x8000000080008081,
     0x8000000000008080, 0x0000000080000001, 0x8000000080008008
 };
@@ -440,7 +440,7 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 	if(gIdx < Threads)
 	{
 		states += 25 * gIdx;
-		Scratchpad += gIdx * (0x80000 >> 2);
+		Scratchpad += gIdx * (ITERATIONS >> 2);
 
 		((ulong8 *)State)[0] = vload8(0, input);
 		State[8] = input[8];
@@ -482,7 +482,7 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 	if(gIdx < Threads)
 	{
 		#pragma unroll 2
-		for(int i = 0; i < 0x4000; ++i)
+		for(int i = 0; i < (ITERATIONS >> 5); ++i)
 		{
 			#pragma unroll
 			for(int j = 0; j < 10; ++j)
@@ -519,7 +519,7 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 	if(gIdx < Threads)
 	{
 		states += 25 * gIdx;
-		Scratchpad += gIdx * (0x80000 >> 2);
+		Scratchpad += gIdx * (ITERATIONS >> 2);
 
 		a[0] = states[0] ^ states[4];
 		b[0] = states[2] ^ states[6];
@@ -535,23 +535,23 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 	if(gIdx < Threads)
 	{
 		#pragma unroll 8
-		for(int i = 0; i < 0x80000; ++i)
+		for(int i = 0; i < ITERATIONS; ++i)
 		{
 			ulong c[2];
 
-			((uint4 *)c)[0] = Scratchpad[IDX((a[0] & 0x1FFFF0) >> 4)];
+			((uint4 *)c)[0] = Scratchpad[IDX((a[0] & MASK) >> 4)];
 			((uint4 *)c)[0] = AES_Round(AES0, AES1, AES2, AES3, ((uint4 *)c)[0], ((uint4 *)a)[0]);
 			//b_x ^= ((uint4 *)c)[0];
 
-			Scratchpad[IDX((a[0] & 0x1FFFF0) >> 4)] = b_x ^ ((uint4 *)c)[0];
+			Scratchpad[IDX((a[0] & MASK) >> 4)] = b_x ^ ((uint4 *)c)[0];
 
 			uint4 tmp;
-			tmp = Scratchpad[IDX((c[0] & 0x1FFFF0) >> 4)];
+			tmp = Scratchpad[IDX((c[0] & MASK) >> 4)];
 
 			a[1] += c[0] * as_ulong2(tmp).s0;
 			a[0] += mul_hi(c[0], as_ulong2(tmp).s0);
 
-			Scratchpad[IDX((c[0] & 0x1FFFF0) >> 4)] = ((uint4 *)a)[0];
+			Scratchpad[IDX((c[0] & MASK) >> 4)] = ((uint4 *)a)[0];
 
 			((uint4 *)a)[0] ^= tmp;
 
@@ -588,7 +588,7 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 	if(gIdx < Threads)
 	{
 		states += 25 * gIdx;
-		Scratchpad += gIdx * (0x80000 >> 2);
+		Scratchpad += gIdx * (ITERATIONS >> 2);
 
 		#if defined(__Tahiti__) || defined(__Pitcairn__)
 
@@ -611,7 +611,7 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 	if(gIdx < Threads)
 	{
 		#pragma unroll 2
-		for(int i = 0; i < 0x4000; ++i)
+		for(int i = 0; i < (ITERATIONS >> 5); ++i)
 		{
 			text ^= Scratchpad[IDX((i << 3) + get_local_id(1))];
 

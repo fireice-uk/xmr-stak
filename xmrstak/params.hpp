@@ -28,6 +28,8 @@ struct params
 	std::string poolPasswd;
 	std::string poolUsername;
 
+	std::string currency;
+
 	std::string configFile;
 	std::string configFileAMD;
 	std::string configFileNVIDIA;

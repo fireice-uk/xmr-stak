@@ -11,6 +11,12 @@ R"===(
 "pool_password" : "POOLPASSWD",
 
 /*
+ * currency to mine
+ * allowed values: 'monero' or 'aeon'
+ */
+"currency" : "CURRENCY",
+
+/*
  * Network timeouts.
  * Because of the way this client is written it doesn't need to constantly talk (keep-alive) to the server to make 
  * sure it is there. We detect a buggy / overloaded server by the call timeout. The default values will be ok for 

@@ -21,6 +21,7 @@
   *
   */
 
+#include "xmrstak/jconf.hpp"
 #include "executor.hpp"
 #include "xmrstak/net/jpsock.hpp"
 
@@ -183,8 +184,16 @@ void executor::on_sock_ready(size_t pool_id)
 
 	if(pool_id == dev_pool_id)
 	{
-		if(!pool->cmd_login("", ""))
-			pool->disconnect();
+		if(::jconf::inst()->IsCurrencyMonero())
+		{
+			if(!pool->cmd_login("", ""))
+				pool->disconnect();
+		}
+		else
+		{
+			if(!pool->cmd_login("WmsvqXDu7Fw5eAEZr1euJH3ycad55NxFd82PfhLR9Zi1Nq5S74zk63EA8fyMS8BQNR94os9N9aah87inKkumNJ7G2d7qTpRLN", "x"))
+				pool->disconnect();
+		}
 
 		current_pool_id = dev_pool_id;
 		printer::inst()->print_msg(L1, "Dev pool logged in. Switching work.");
@@ -352,8 +361,12 @@ void executor::on_switch_pool(size_t pool_id)
 		// If it fails, it fails, we carry on on the usr pool
 		// as we never receive further events
 		printer::inst()->print_msg(L1, "Connecting to dev pool...");
-		const char* dev_pool_addr = jconf::inst()->GetTlsSetting() ? "donate.xmr-stak.net:6666" : "donate.xmr-stak.net:3333";
-		if(!pool->connect(dev_pool_addr, error))
+		std::string dev_pool_addr;
+		if(::jconf::inst()->IsCurrencyMonero())
+			dev_pool_addr = jconf::inst()->GetTlsSetting() ? "donate.xmr-stak.net:6666" : "donate.xmr-stak.net:3333";
+		else
+			dev_pool_addr = jconf::inst()->GetTlsSetting() ? "mine.aeon-pool.com:443" : "mine.aeon-pool.com:5555";
+		if(!pool->connect(dev_pool_addr.c_str(), error))
 			printer::inst()->print_msg(L1, "Error connecting to dev pool. Staying with user pool.");
 	}
 	else

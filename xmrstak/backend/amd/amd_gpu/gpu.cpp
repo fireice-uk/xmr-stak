@@ -13,6 +13,9 @@
   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
   */
 
+#include "xmrstak/backend/cryptonight.hpp"
+#include "xmrstak/jconf.hpp"
+
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -245,8 +248,24 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
+	size_t hashMemSize;
+	int threadMemMask;
+	int hasIterations;
+	if(::jconf::inst()->IsCurrencyMonero())
+	{
+		hashMemSize = MONERO_MEMORY;
+		threadMemMask = MONERO_MASK;
+		hasIterations = MONERO_ITER;
+	}
+	else
+	{
+		hashMemSize = AEON_MEMORY;
+		threadMemMask = AEON_MASK;
+		hasIterations = AEON_ITER;
+	}
+
 	size_t g_thd = ctx->rawIntensity;
-	ctx->ExtraBuffers[0] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, (1 << 21) * g_thd, NULL, &ret);
+	ctx->ExtraBuffers[0] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, hashMemSize * g_thd, NULL, &ret);
 	if(ret != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clCreateBuffer to create hash scratchpads buffer.", err_to_str(ret));
@@ -307,8 +326,9 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	char options[32];
-	snprintf(options, sizeof(options), "-I. -DWORKSIZE=%llu", int_port(ctx->workSize));
+	char options[256];
+	snprintf(options, sizeof(options), 
+		"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu", hasIterations, threadMemMask, int_port(ctx->workSize));
 	ret = clBuildProgram(ctx->Program, 1, &ctx->DeviceID, options, NULL, NULL);
 	if(ret != CL_SUCCESS)
 	{
