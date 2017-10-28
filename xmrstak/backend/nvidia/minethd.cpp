@@ -222,7 +222,6 @@ void minethd::work_main()
 	}
 
 	bool mineMonero = strcmp_i(::jconf::inst()->GetCurrency(), "monero");
-	bool useAEON = strcmp_i(::jconf::inst()->GetCurrency(), "aeon");
 	
 	while (bQuit == 0)
 	{
@@ -261,18 +260,9 @@ void minethd::work_main()
 			uint32_t foundCount;
 
 			cryptonight_extra_cpu_prepare(&ctx, iNonce);
-#ifndef CONF_NO_MONERO
-			if(mineMonero)
-			{
-				cryptonight_core_cpu_hash<MONERO_ITER, MONERO_MASK, 19>(&ctx);
-			}
-#endif
-#ifndef CONF_NO_AEON
-			if(useAEON)
-			{
-				cryptonight_core_cpu_hash<MONERO_ITER, MONERO_MASK, 18>(&ctx);
-			}
-#endif
+
+			cryptonight_core_cpu_hash(&ctx, mineMonero);
+
 			cryptonight_extra_cpu_final(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce);
 
 			for(size_t i = 0; i < foundCount; i++)
