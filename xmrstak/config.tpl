@@ -140,6 +140,14 @@ R"===(
 "daemon_mode" : false,
 
 /*
+ * Buffered output control.
+ * When running the miner through a pipe, standard output is buffered. This means that the pipe won't read
+ * each output line immediately. This can cause delays when running in background.
+ * Set this option to true to flush stdout after each line, so it can be read immediately.
+ */
+ "flush_stdout" : false,
+
+/*
  * Output file
  *
  * output_file  - This option will log all output to a file.
