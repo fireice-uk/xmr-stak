@@ -44,6 +44,4 @@ void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce);
 void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce);
 }
 
-template<size_t ITERATIONS, size_t THREAD_SHIFT, uint32_t MASK>
-void cryptonight_core_cpu_hash(nvid_ctx* ctx);
-
+void cryptonight_core_cpu_hash(nvid_ctx* ctx, bool mineMonero);

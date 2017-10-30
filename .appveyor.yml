@@ -1,5 +1,5 @@
 # image
-image: Visual Studio 2017
+image: Visual Studio 2015
 
 # build platform
 platform: x64
@@ -11,17 +11,21 @@ install:
   - mkdir c:\xmr-stak-dep
   - curl -sL https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip -o xmr-stak-dep.zip
   - 7z x xmr-stak-dep.zip -o"c:\xmr-stak-dep" -y > nul
+  - appveyor DownloadFile  https://developer.nvidia.com/compute/cuda/8.0/prod/local_installers/cuda_8.0.44_windows-exe -FileName cuda_8.0.44_windows.exe
+  - cuda_8.0.44_windows.exe -s compiler_8.0 cudart_8.0
+  - set PATH=%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v8.0\bin;%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v8.0\libnvvp;%PATH%
+  - nvcc -V
 
 build_script:
-  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsMSBuildCmd.bat"
+  - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsMSBuildCmd.bat"
   - cd c:\xmr-stak
   - mkdir build
   - cd build
   - set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc;C:\xmr-stak-dep\libmicrohttpd;C:\xmr-stak-dep\openssl;
-  - cmake -G "Visual Studio 15 2017 Win64" -T v140,host=x64 -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF ..
+  - cmake -G "Visual Studio 14 2015 Win64" -T v140,host=x64 .. -DWIN_UAC=OFF -DCUDA_ARCH=30
   - cmake --build . --config Release --target install
 
 test_script:
   - cd c:\xmr-stak\build\bin\Release
   - dir
-#  - xmr-stak.exe
+  - xmr-stak.exe --help

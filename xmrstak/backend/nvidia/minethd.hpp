@@ -4,7 +4,7 @@
 #include "jconf.hpp"
 #include "nvcc_code/cryptonight.hpp"
 
-#include "xmrstak/backend/cpu/crypto/cryptonight.h"
+#include "xmrstak/backend/cpu/minethd.hpp"
 #include "xmrstak/backend/iBackend.hpp"
 #include "xmrstak/misc/environment.hpp"
 
