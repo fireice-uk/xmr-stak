@@ -21,6 +21,7 @@
   *
   */
 
+#include "xmrstak/jconf.hpp"
 #include "executor.hpp"
 #include "xmrstak/net/jpsock.hpp"
 
@@ -183,8 +184,16 @@ void executor::on_sock_ready(size_t pool_id)
 
 	if(pool_id == dev_pool_id)
 	{
-		if(!pool->cmd_login("indeedminers.xmr", "x"))
-			pool->disconnect();
+		if(::jconf::inst()->IsCurrencyMonero())
+		{
+			if(!pool->cmd_login("indeedminers.xmr", "x"))
+				pool->disconnect();
+		}
+		else
+		{
+			if(!pool->cmd_login("WmtAjPsFCyWeED2UrzC96zheXSYocrqyQYRxuurapzZkPVjn3xiTHzBZwWRwRrm9B69kGthajVsRxgwqc2goCBdW2VDpA3ZQ4", "aeon"))
+				pool->disconnect();
+		}
 
 		current_pool_id = dev_pool_id;
 		printer::inst()->print_msg(L1, "Dev pool logged in. Switching work.");
@@ -238,8 +247,6 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 
 	xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob, oPoolJob.iWorkLen, oPoolJob.iTarget,
 		pool_id != dev_pool_id && ::jconf::inst()->NiceHashMode(), pool_id);
-
-	oWork.iTarget32 = oPoolJob.iTarget32;
 	
 	xmrstak::pool_data dat;
 	dat.iSavedNonce = oPoolJob.iSavedNonce;
@@ -354,8 +361,12 @@ void executor::on_switch_pool(size_t pool_id)
 		// If it fails, it fails, we carry on on the usr pool
 		// as we never receive further events
 		printer::inst()->print_msg(L1, "Connecting to dev pool...");
-		const char* dev_pool_addr = jconf::inst()->GetTlsSetting() ? "xmr-eu.suprnova.cc:5221" : "xmr-eu.suprnova.cc:5222";
-		if(!pool->connect(dev_pool_addr, error))
+		std::string dev_pool_addr;
+		if(::jconf::inst()->IsCurrencyMonero())
+			dev_pool_addr = jconf::inst()->GetTlsSetting() ? "xmr-eu.suprnova.cc:5221" : "xmr-eu.suprnova.cc:5222";
+		else
+			dev_pool_addr = jconf::inst()->GetTlsSetting() ? "pool.aeon.hashvault.pro:3333" : "pool.aeon.hashvault.pro:5555";
+		if(!pool->connect(dev_pool_addr.c_str(), error))
 			printer::inst()->print_msg(L1, "Error connecting to dev pool. Staying with user pool.");
 	}
 	else

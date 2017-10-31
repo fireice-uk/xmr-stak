@@ -8,6 +8,8 @@
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/misc/configEditor.hpp"
 #include "xmrstak/params.hpp"
+#include "xmrstak/backend/cryptonight.hpp"
+#include "xmrstak/jconf.hpp"
 
 #include <vector>
 #include <cstdio>
@@ -81,17 +83,39 @@ private:
 
 		constexpr size_t byteToMiB = 1024u * 1024u;
 
+		size_t hashMemSize;
+		if(::jconf::inst()->IsCurrencyMonero())
+		{
+			hashMemSize = MONERO_MEMORY;
+		}
+		else
+		{
+			hashMemSize = AEON_MEMORY;
+		}
+
 		std::string conf;
         int i = 0;
         for(auto& ctx : devVec)
         {
-			// keep 64MiB memory free (value is randomly chosen)
-			size_t availableMem = ctx.freeMem - (64u * 1024 * 1024);
+			/* 1000 is a magic selected limit, the reason is that more than 2GiB memory
+			 * sowing down the memory performance because of TLB cache misses
+			 */
+			size_t maxThreads = 1000u;
+			if(ctx.name.compare("gfx901") == 0)
+			{
+				/* Increase the number of threads for AMD VEGA gpus.
+				 * Limit the number of threads based on the issue: https://github.com/fireice-uk/xmr-stak/issues/5#issuecomment-339425089
+				 * to avoid out of memory errors
+				 */
+				maxThreads = 2024u;
+			}
+
+			// keep 128MiB memory free (value is randomly chosen)
+			size_t availableMem = ctx.freeMem - (128u * byteToMiB);
 			// 224byte extra memory is used per thread for meta data
-			size_t perThread = (size_t(1u)<<21) + 224u;
-			size_t max_intensity = availableMem / perThread;
-			// 1000 is a magic selected limit \todo select max intensity depending of the gpu type
-			size_t possibleIntensity = std::min( size_t(1000u) , max_intensity );
+			size_t perThread = hashMemSize + 224u;
+			size_t maxIntensity = availableMem / perThread;
+			size_t possibleIntensity = std::min( maxThreads , maxIntensity );
 			// map intensity to a multiple of the compute unit count, 8 is the number of threads per work group
 			size_t intensity = (possibleIntensity / (8 * ctx.computeUnits)) * ctx.computeUnits * 8;
 			conf += std::string("  // gpu: ") + ctx.name + " memory:" + std::to_string(availableMem / byteToMiB) + "\n";

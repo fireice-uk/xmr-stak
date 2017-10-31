@@ -41,6 +41,8 @@ public:
 	const char* GetPoolAddress();
 	const char* GetPoolPwd();
 	const char* GetWalletAddress();
+	const std::string GetCurrency();
+	bool IsCurrencyMonero();
 
 	uint64_t GetVerboseLevel();
 	uint64_t GetAutohashTime();

@@ -4,7 +4,7 @@
 #include "jconf.hpp"
 #include "nvcc_code/cryptonight.hpp"
 
-#include "xmrstak/backend/cpu/crypto/cryptonight.h"
+#include "xmrstak/backend/cpu/minethd.hpp"
 #include "xmrstak/backend/iBackend.hpp"
 #include "xmrstak/misc/environment.hpp"
 
@@ -12,6 +12,7 @@
 #include <thread>
 #include <atomic>
 #include <vector>
+#include <future>
 
 
 namespace xmrstak
@@ -43,7 +44,10 @@ private:
 	static miner_work oGlobalWork;
 	miner_work oWork;
 
+	std::promise<void> order_fix;
+
 	std::thread oWorkThd;
+	int64_t affinity;
 
 	nvid_ctx ctx;
 

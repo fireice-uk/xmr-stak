@@ -9,6 +9,7 @@
 
 #include <thread>
 #include <atomic>
+#include <future>
 
 namespace xmrstak
 {
@@ -26,10 +27,9 @@ public:
 private:
 	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx*);
 	
-	minethd(miner_work& pWork, size_t iNo, GpuContext* ctx);
+	minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::thd_cfg cfg);
 	
 	void work_main();
-	void double_work_main();
 	void consume_work();
 
 	uint64_t iJobNo;
@@ -37,7 +37,10 @@ private:
 	static miner_work oGlobalWork;
 	miner_work oWork;
 
+	std::promise<void> order_fix;
+
 	std::thread oWorkThd;
+	int64_t affinity;
 
 	bool bQuit;
 	bool bNoPrefetch;

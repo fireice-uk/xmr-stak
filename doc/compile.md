@@ -47,6 +47,7 @@ After the configuration you need to compile the miner, follow the guide for your
 - `WIN_UAC` will enable or disable the "Run As Administrator" prompt on Windows.
   - UAC confirmation is needed to use large pages on Windows 7.
   - On Windows 10 it is only needed once to set up the account to use them.
+- `XMR-STAK_CURRENCY` - compile for Monero(XMR) or Aeon(AEON) usage only e.g. `cmake .. -DXMR-STAK_CURRENCY=monero`
 
 ## CPU Build Options
 

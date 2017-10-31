@@ -156,6 +156,7 @@ printer::printer()
 {
 	verbose_level = LINF;
 	logfile = nullptr;
+	b_flush_stdout = false;
 }
 
 bool printer::open_logfile(const char* file)
@@ -192,6 +193,11 @@ void printer::print_msg(verbosity verbose, const char* fmt, ...)
 
 	std::unique_lock<std::mutex> lck(print_mutex);
 	fputs(buf, stdout);
+
+	if (b_flush_stdout)
+	{
+		fflush(stdout);
+	}
 
 	if(logfile != nullptr)
 	{

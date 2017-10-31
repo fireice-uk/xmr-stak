@@ -3,6 +3,7 @@
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/misc/configEditor.hpp"
 #include "xmrstak/params.hpp"
+#include "xmrstak/backend/cryptonight.hpp"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -27,6 +28,16 @@ public:
 
 	autoAdjust()
 	{
+		if(::jconf::inst()->IsCurrencyMonero())
+		{
+			hashMemSize = MONERO_MEMORY;
+			halfHashMemSize = hashMemSize / 2u;
+		}
+		else
+		{
+			hashMemSize = AEON_MEMORY;
+			halfHashMemSize = hashMemSize / 2u;
+		}
 	}
 
 	bool printConfig()
@@ -86,7 +97,9 @@ public:
 	}
 
 private:
-	static constexpr size_t hashSize = 2 * 1024 * 1024;
+	size_t hashMemSize;
+	size_t halfHashMemSize;
+
 	std::vector<uint32_t> results;
 
 	template<typename func>
@@ -161,8 +174,8 @@ private:
 			{
 				hwloc_obj_t l2obj = obj->children[i];
 				//If L2 is exclusive and greater or equal to 2MB add room for one more hash
-				if(isCacheObject(l2obj) && l2obj->attr != nullptr && l2obj->attr->cache.size >= hashSize)
-					cacheSize += hashSize;
+				if(isCacheObject(l2obj) && l2obj->attr != nullptr && l2obj->attr->cache.size >= hashMemSize)
+					cacheSize += hashMemSize;
 			}
 		}
 
@@ -170,7 +183,7 @@ private:
 		cores.reserve(16);
 		findChildrenByType(obj, HWLOC_OBJ_CORE, [&cores](hwloc_obj_t found) { cores.emplace_back(found); } );
 
-		size_t cacheHashes = (cacheSize + hashSize/2) / hashSize;
+		size_t cacheHashes = (cacheSize + halfHashMemSize) / hashMemSize;
 
 		//Firstly allocate PU 0 of every CORE, then PU 1 etc.
 		size_t pu_id = 0;

@@ -34,6 +34,7 @@
 #include "xmrstak/misc/executor.hpp"
 #include "xmrstak/misc/environment.hpp"
 #include "xmrstak/params.hpp"
+#include "xmrstak/backend/cpu/hwlocMemory.hpp"
 
 #include <assert.h>
 #include <cmath>
@@ -46,7 +47,7 @@ namespace xmrstak
 namespace amd
 {
 
-minethd::minethd(miner_work& pWork, size_t iNo, GpuContext* ctx)
+minethd::minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::thd_cfg cfg)
 {
 	oWork = pWork;
 	bQuit = 0;
@@ -55,8 +56,17 @@ minethd::minethd(miner_work& pWork, size_t iNo, GpuContext* ctx)
 	iHashCount = 0;
 	iTimestamp = 0;
 	pGpuCtx = ctx;
+	this->affinity = cfg.cpu_aff;
 
+	std::future<void> order_guard = order_fix.get_future();
+	
 	oWorkThd = std::thread(&minethd::work_main, this);
+
+	order_guard.wait();
+
+	if(affinity >= 0) //-1 means no affinity
+		if(!cpu::minethd::thd_setaffinity(oWorkThd.native_handle(), affinity))
+			printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
 }
 
 extern "C"  {
@@ -122,21 +132,20 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 	for (i = 0; i < n; i++)
 	{
 		jconf::inst()->GetThreadConfig(i, cfg);
-		minethd* thd = new minethd(pWork, i + threadOffset, &vGpuData[i]);
-
+		
 		if(cfg.cpu_aff >= 0)
 		{
 #if defined(__APPLE__)
 			printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory.");
 #endif
-			cpu::minethd::thd_setaffinity(thd->oWorkThd.native_handle(), cfg.cpu_aff);
-		}
 
-		pvThreads->push_back(thd);
-		if(cfg.cpu_aff >= 0)
-			printer::inst()->print_msg(L1, "Starting GPU thread, affinity: %d.", (int)cfg.cpu_aff);
+			printer::inst()->print_msg(L1, "Starting AMD GPU thread %d, affinity: %d.", i, (int)cfg.cpu_aff);
+		}
 		else
-			printer::inst()->print_msg(L1, "Starting GPU thread, no affinity.");
+			printer::inst()->print_msg(L1, "Starting AMD GPU thread %d, no affinity.", i);
+
+		minethd* thd = new minethd(pWork, i + threadOffset, &vGpuData[i], cfg);
+		pvThreads->push_back(thd);
 	}
 
 	return pvThreads;
@@ -166,10 +175,15 @@ void minethd::consume_work()
 
 void minethd::work_main()
 {
+	if(affinity >= 0) //-1 means no affinity
+		bindMemoryToNUMANode(affinity);
+
+	order_fix.set_value();
+	
 	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
-	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/);
+	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, ::jconf::inst()->IsCurrencyMonero());
 	globalStates::inst().iConsumeCnt++;
 	
 	while (bQuit == 0)
@@ -191,7 +205,7 @@ void minethd::work_main()
 		size_t round_ctr = 0;
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
-		uint32_t target = oWork.iTarget32;
+		uint64_t target = oWork.iTarget;
 		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target);
 
 		if(oWork.bNiceHash)

@@ -91,7 +91,7 @@ static const __constant ulong keccakf_rndc[24] =
     0x8000000080008081, 0x8000000000008009, 0x000000000000008a,
     0x0000000000000088, 0x0000000080008009, 0x000000008000000a,
     0x000000008000808b, 0x800000000000008b, 0x8000000000008089,
-    0x8000000000008003, 0x8000000000008002, 0x8000000000000080, 
+    0x8000000000008003, 0x8000000000008002, 0x8000000000000080,
     0x000000000000800a, 0x800000008000000a, 0x8000000080008081,
     0x8000000000008080, 0x0000000080000001, 0x8000000080008008
 };
@@ -440,7 +440,7 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 	if(gIdx < Threads)
 	{
 		states += 25 * gIdx;
-		Scratchpad += gIdx * (0x80000 >> 2);
+		Scratchpad += gIdx * (ITERATIONS >> 2);
 
 		((ulong8 *)State)[0] = vload8(0, input);
 		State[8] = input[8];
@@ -482,7 +482,7 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 	if(gIdx < Threads)
 	{
 		#pragma unroll 2
-		for(int i = 0; i < 0x4000; ++i)
+		for(int i = 0; i < (ITERATIONS >> 5); ++i)
 		{
 			#pragma unroll
 			for(int j = 0; j < 10; ++j)
@@ -519,7 +519,7 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 	if(gIdx < Threads)
 	{
 		states += 25 * gIdx;
-		Scratchpad += gIdx * (0x80000 >> 2);
+		Scratchpad += gIdx * (ITERATIONS >> 2);
 
 		a[0] = states[0] ^ states[4];
 		b[0] = states[2] ^ states[6];
@@ -535,23 +535,23 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 	if(gIdx < Threads)
 	{
 		#pragma unroll 8
-		for(int i = 0; i < 0x80000; ++i)
+		for(int i = 0; i < ITERATIONS; ++i)
 		{
 			ulong c[2];
 
-			((uint4 *)c)[0] = Scratchpad[IDX((a[0] & 0x1FFFF0) >> 4)];
+			((uint4 *)c)[0] = Scratchpad[IDX((a[0] & MASK) >> 4)];
 			((uint4 *)c)[0] = AES_Round(AES0, AES1, AES2, AES3, ((uint4 *)c)[0], ((uint4 *)a)[0]);
 			//b_x ^= ((uint4 *)c)[0];
 
-			Scratchpad[IDX((a[0] & 0x1FFFF0) >> 4)] = b_x ^ ((uint4 *)c)[0];
+			Scratchpad[IDX((a[0] & MASK) >> 4)] = b_x ^ ((uint4 *)c)[0];
 
 			uint4 tmp;
-			tmp = Scratchpad[IDX((c[0] & 0x1FFFF0) >> 4)];
+			tmp = Scratchpad[IDX((c[0] & MASK) >> 4)];
 
 			a[1] += c[0] * as_ulong2(tmp).s0;
 			a[0] += mul_hi(c[0], as_ulong2(tmp).s0);
 
-			Scratchpad[IDX((c[0] & 0x1FFFF0) >> 4)] = ((uint4 *)a)[0];
+			Scratchpad[IDX((c[0] & MASK) >> 4)] = ((uint4 *)a)[0];
 
 			((uint4 *)a)[0] ^= tmp;
 
@@ -588,7 +588,7 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 	if(gIdx < Threads)
 	{
 		states += 25 * gIdx;
-		Scratchpad += gIdx * (0x80000 >> 2);
+		Scratchpad += gIdx * (ITERATIONS >> 2);
 
 		#if defined(__Tahiti__) || defined(__Pitcairn__)
 
@@ -611,7 +611,7 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 	if(gIdx < Threads)
 	{
 		#pragma unroll 2
-		for(int i = 0; i < 0x4000; ++i)
+		for(int i = 0; i < (ITERATIONS >> 5); ++i)
 		{
 			text ^= Scratchpad[IDX((i << 3) + get_local_id(1))];
 
@@ -665,7 +665,7 @@ R"===(
 
 #define VSWAP4(x)	((((x) >> 24) & 0xFFU) | (((x) >> 8) & 0xFF00U) | (((x) << 8) & 0xFF0000U) | (((x) << 24) & 0xFF000000U))
 
-__kernel void Skein(__global ulong *states, __global uint *BranchBuf, __global uint *output, uint Target, ulong Threads)
+__kernel void Skein(__global ulong *states, __global uint *BranchBuf, __global uint *output, ulong Target, ulong Threads)
 {
 	const ulong idx = get_global_id(0) - get_global_offset(0);
 	
@@ -713,7 +713,9 @@ __kernel void Skein(__global ulong *states, __global uint *BranchBuf, __global u
 
 		//vstore8(p, 0, output);
 
-		if(as_uint16(p).s7 <= Target)
+		// Note that comparison is equivalent to subtraction - we can't just compare 8 32-bit values
+		// and expect an accurate result for target > 32-bit without implementing carries
+		if(p.s3 <= Target)
 		{
 			ulong outIdx = atomic_inc(output + 0xFF);
 			if(outIdx < 0xFF)
@@ -725,7 +727,7 @@ __kernel void Skein(__global ulong *states, __global uint *BranchBuf, __global u
 
 #define SWAP8(x)	as_ulong(as_uchar8(x).s76543210)
 
-__kernel void JH(__global ulong *states, __global uint *BranchBuf, __global uint *output, uint Target, ulong Threads)
+__kernel void JH(__global ulong *states, __global uint *BranchBuf, __global uint *output, ulong Target, ulong Threads)
 {
 	const uint idx = get_global_id(0) - get_global_offset(0);
 	
@@ -785,7 +787,9 @@ __kernel void JH(__global ulong *states, __global uint *BranchBuf, __global uint
 		//output[2] = h7h;
 		//output[3] = h7l;
 
-		if(as_uint2(h7l).s1 <= Target)
+		// Note that comparison is equivalent to subtraction - we can't just compare 8 32-bit values
+		// and expect an accurate result for target > 32-bit without implementing carries
+		if(h7l <= Target)
 		{
 			ulong outIdx = atomic_inc(output + 0xFF);
 			if(outIdx < 0xFF)
@@ -796,7 +800,7 @@ __kernel void JH(__global ulong *states, __global uint *BranchBuf, __global uint
 
 #define SWAP4(x)	as_uint(as_uchar4(x).s3210)
 
-__kernel void Blake(__global ulong *states, __global uint *BranchBuf, __global uint *output, uint Target, ulong Threads)
+__kernel void Blake(__global ulong *states, __global uint *BranchBuf, __global uint *output, ulong Target, ulong Threads)
 {
 	const uint idx = get_global_id(0) - get_global_offset(0);
 	
@@ -859,7 +863,10 @@ __kernel void Blake(__global ulong *states, __global uint *BranchBuf, __global u
 
 		for(int i = 0; i < 8; ++i) h[i] = SWAP4(h[i]);
 
-		if(h[7] <= Target)
+		// Note that comparison is equivalent to subtraction - we can't just compare 8 32-bit values
+		// and expect an accurate result for target > 32-bit without implementing carries
+		uint2 t = (uint2)(h[6],h[7]);
+		if( as_ulong(t) <= Target)
 		{
 			ulong outIdx = atomic_inc(output + 0xFF);
 			if(outIdx < 0xFF)
@@ -868,7 +875,7 @@ __kernel void Blake(__global ulong *states, __global uint *BranchBuf, __global u
 	}
 }
 
-__kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global uint *output, uint Target, ulong Threads)
+__kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global uint *output, ulong Target, ulong Threads)
 {
 	const uint idx = get_global_id(0) - get_global_offset(0);
 	
@@ -917,7 +924,9 @@ __kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global
 
 		for(int i = 0; i < 8; ++i) State[i] ^= tmp[i];
 
-		if(as_uint2(State[7]).s1 <= Target)
+		// Note that comparison is equivalent to subtraction - we can't just compare 8 32-bit values
+		// and expect an accurate result for target > 32-bit without implementing carries
+		if(State[7] <= Target)
 		{
 			ulong outIdx = atomic_inc(output + 0xFF);
 			if(outIdx < 0xFF)

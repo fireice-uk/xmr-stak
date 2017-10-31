@@ -31,6 +31,7 @@
 #include "xmrstak/params.hpp"
 #include "xmrstak/misc/configEditor.hpp"
 #include "xmrstak/version.hpp"
+#include "xmrstak/misc/utility.hpp"
 
 #ifndef CONF_NO_HTTPD
 #	include "xmrstak/http/httpd.hpp"
@@ -62,8 +63,11 @@ void help()
 	
 	cout<<"Usage: "<<params::inst().binaryName<<" [OPTION]..."<<endl;
 	cout<<" "<<endl;
-	cout<<"  -c, --config FILE     common miner configuration file"<<endl;
 	cout<<"  -h, --help            show this help"<<endl;
+	cout<<"  -c, --config FILE     common miner configuration file"<<endl;
+#if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_MONERO))
+	cout<<"  --currency NAME       currency to mine: monero or aeon"<<endl;
+#endif
 #ifndef CONF_NO_CPU
 	cout<<"  --noCPU               disable the CPU miner backend"<<endl;
 	cout<<"  --cpu FILE            CPU backend miner config file"<<endl;
@@ -168,6 +172,17 @@ int main(int argc, char *argv[])
 			}
 			params::inst().configFileNVIDIA = argv[i];
 		}
+		else if(opName.compare("--currency") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--currency' given");
+				win_exit();
+				return 1;
+			}
+			params::inst().currency = argv[i];
+		}
 		else if(opName.compare("-o") == 0 || opName.compare("--url") == 0)
 		{
 			++i;
@@ -230,10 +245,30 @@ int main(int argc, char *argv[])
 		;
 		configEditor configTpl{};
 		configTpl.set(std::string(tpl));
+		std::cout<<"Please enter:"<<std::endl;
+		auto& currency = params::inst().currency;
+		if(currency.empty())
+		{
+			std::string tmp;
+#if defined(CONF_NO_AEON)
+			tmp = "monero";
+#elif defined(CONF_NO_MONERO)
+			tmp = "aeon";
+#endif
+			while(!xmrstak::strcmp_i(tmp, "monero") && !xmrstak::strcmp_i(tmp, "aeon"))
+			{
+				std::cout<<"- currency: 'monero' or 'aeon'"<<std::endl;
+				std::cin >> tmp;
+			} 
+			currency = tmp;
+		}
 		auto& pool = params::inst().poolURL;
 		if(pool.empty())
 		{
-			std::cout<<"Please enter:\n- pool address: e.g. pool.usxmrpool.com:3333"<<std::endl;
+			if(xmrstak::strcmp_i(currency, "monero"))
+				std::cout<<"- pool address: e.g. pool.usxmrpool.com:3333"<<std::endl;
+			else
+				std::cout<<"- pool address: e.g. mine.aeon-pool.com:5555"<<std::endl;
 			std::cin >> pool;
 		}
 		auto& userName = params::inst().poolUsername;
@@ -253,6 +288,7 @@ int main(int argc, char *argv[])
 		configTpl.replace("POOLURL", pool);
 		configTpl.replace("POOLUSER", userName);
 		configTpl.replace("POOLPASSWD", passwd);
+		configTpl.replace("CURRENCY", currency);
 		configTpl.write(params::inst().configFile);
 		std::cout<<"Configuration stored in file '"<<params::inst().configFile<<"'"<<std::endl;
 	}
@@ -303,6 +339,10 @@ int main(int argc, char *argv[])
   printer::inst()->print_str("88 88 Y88  8I  dY 88''   88''    8I  dY     88YbdP88 88 88 Y88 88''   88'Yb  o.`Y8b\n");
   printer::inst()->print_str("88 88  Y8 8888Y'  888888 888888 8888Y'      88 YY 88 88 88  Y8 888888 88  Yb 8bodP'\n");
 	printer::inst()->print_str("\n");
+	if(::jconf::inst()->IsCurrencyMonero())
+		printer::inst()->print_msg(L0,"Start mining: MONERO");
+	else
+		printer::inst()->print_msg(L0,"Start mining: AEON");
 
 	if(strlen(jconf::inst()->GetOutputFile()) != 0)
 		printer::inst()->open_logfile(jconf::inst()->GetOutputFile());

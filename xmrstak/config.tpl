@@ -11,6 +11,12 @@ R"===(
 "pool_password" : "POOLPASSWD",
 
 /*
+ * currency to mine
+ * allowed values: 'monero' or 'aeon'
+ */
+"currency" : "CURRENCY",
+
+/*
  * Network timeouts.
  * Because of the way this client is written it doesn't need to constantly talk (keep-alive) to the server to make 
  * sure it is there. We detect a buggy / overloaded server by the call timeout. The default values will be ok for 
@@ -132,6 +138,14 @@ R"===(
  * This should solve the hashrate problems on some emulated terminals.
  */
 "daemon_mode" : false,
+
+/*
+ * Buffered output control.
+ * When running the miner through a pipe, standard output is buffered. This means that the pipe won't read
+ * each output line immediately. This can cause delays when running in background.
+ * Set this option to true to flush stdout after each line, so it can be read immediately.
+ */
+ "flush_stdout" : false,
 
 /*
  * Output file

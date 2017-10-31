@@ -7,8 +7,8 @@ extern "C" {
 
 #include <stddef.h>
 #include <inttypes.h>
+#include "xmrstak/backend/cryptonight.hpp"
 
-#define MEMORY  2097152
 
 typedef struct {
 	uint8_t hash_state[224]; // Need only 200, explicit align

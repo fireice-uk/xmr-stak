@@ -27,6 +27,7 @@
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/misc/jext.hpp"
 #include "xmrstak/misc/console.hpp"
+#include "xmrstak/misc/utility.hpp"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,8 +47,8 @@ using namespace rapidjson;
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
 enum configEnum {
-	bTlsMode, bTlsSecureAlgo, sTlsFingerprint, sPoolAddr, sWalletAddr, sPoolPwd,
-	iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, iAutohashTime,
+	bTlsMode, bTlsSecureAlgo, sTlsFingerprint, sPoolAddr, sWalletAddr, sPoolPwd,sCurrency,
+	iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, iAutohashTime,bFlushStdout,
 	bDaemonMode, sOutputFile, iHttpdPort, bPreferIpv4, bNiceHashMode, bAesOverride, sUseSlowMem };
 
 struct configVal {
@@ -65,11 +66,13 @@ configVal oConfigValues[] = {
 	{ sPoolAddr, "pool_address", kStringType },
 	{ sWalletAddr, "wallet_address", kStringType },
 	{ sPoolPwd, "pool_password", kStringType },
+	{ sCurrency, "currency", kStringType },
 	{ iCallTimeout, "call_timeout", kNumberType },
 	{ iNetRetry, "retry_time", kNumberType },
 	{ iGiveUpLimit, "giveup_limit", kNumberType },
 	{ iVerboseLevel, "verbose_level", kNumberType },
 	{ iAutohashTime, "h_print_time", kNumberType },
+	{ bFlushStdout, "flush_stdout", kTrueType},
 	{ bDaemonMode, "daemon_mode", kTrueType },
 	{ sOutputFile, "output_file", kStringType },
 	{ iHttpdPort, "httpd_port", kNumberType },
@@ -148,6 +151,45 @@ const char* jconf::GetWalletAddress()
 	if(poolUsername.empty())
 		poolUsername = prv->configValues[sWalletAddr]->GetString();
 	return poolUsername.c_str();
+}
+
+const std::string jconf::GetCurrency()
+{
+	auto& currency = xmrstak::params::inst().currency;
+	if(currency.empty())
+		currency = prv->configValues[sCurrency]->GetString();
+	if(
+#ifndef CONF_NO_MONERO
+			// if monero is disabled at compile time, enable error message if selected currency is `monero`
+			!xmrstak::strcmp_i(currency, "monero")
+#else
+			true
+#endif
+			&&
+#ifndef CONF_NO_AEON
+			// if aeon is disabled at compile time, enable error message if selected currency is `aeon`
+			!xmrstak::strcmp_i(currency, "aeon")
+#else
+			true
+#endif
+	)
+	{
+		printer::inst()->print_msg(L0, "ERROR: Wrong currency selected - '%s'.", currency.c_str());
+		win_exit();
+	}
+	return currency;
+}
+
+bool jconf::IsCurrencyMonero()
+{
+	if(xmrstak::strcmp_i(::jconf::inst()->GetCurrency(), "monero"))
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 bool jconf::PreferIpv4()
@@ -406,6 +448,16 @@ bool jconf::parse_config(const char* sFilename)
 		return false;
 	}
 #endif // _WIN32
+
+	if (prv->configValues[bFlushStdout]->IsBool())
+	{
+		bool bflush = prv->configValues[bFlushStdout]->GetBool();
+		printer::inst()->set_flush_stdout(bflush);
+		if (bflush)
+		{
+			printer::inst()->print_msg(L0, "Flush stdout forced.");
+		}
+	}
 
 	return true;
 }

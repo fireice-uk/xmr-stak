@@ -396,8 +396,6 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 
 		
 		oPoolJob.iTarget = t32_to_t64(iTempInt);
-		oPoolJob.iTarget32 = iTempInt;
-
 	}
 	else if(target_slen <= 16)
 	{
