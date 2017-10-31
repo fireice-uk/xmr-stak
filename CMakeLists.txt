@@ -429,9 +429,7 @@ if(CUDA_FOUND)
         )
     endif()
     target_link_libraries(xmrstak_cuda_backend ${CUDA_LIBRARIES})
-    if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-        target_link_libraries(xmrstak_cuda_backend xmr-stak-backend)
-    endif()
+    target_link_libraries(xmrstak_cuda_backend xmr-stak-backend)
 endif()
 
 # compile AMD backend
@@ -444,9 +442,7 @@ if(OpenCL_FOUND)
         ${OPENCLSRCFILES}
     )
     target_link_libraries(xmrstak_opencl_backend ${OpenCL_LIBRARY} )
-    if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-        target_link_libraries(xmrstak_opencl_backend xmr-stak-backend)
-    endif()
+    target_link_libraries(xmrstak_opencl_backend xmr-stak-backend)
 endif()
 
 # compile final binary
