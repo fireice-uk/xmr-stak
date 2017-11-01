@@ -358,6 +358,8 @@ endif()
 
 include_directories(BEFORE .)
 
+set (CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     # remove warnings that f_open() is not save and f_open_s should be used
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
