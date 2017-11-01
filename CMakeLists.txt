@@ -358,6 +358,8 @@ endif()
 
 include_directories(BEFORE .)
 
+set (CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     # remove warnings that f_open() is not save and f_open_s should be used
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
@@ -429,9 +431,7 @@ if(CUDA_FOUND)
         )
     endif()
     target_link_libraries(xmrstak_cuda_backend ${CUDA_LIBRARIES})
-    if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-        target_link_libraries(xmrstak_cuda_backend xmr-stak-backend)
-    endif()
+    target_link_libraries(xmrstak_cuda_backend xmr-stak-backend)
 endif()
 
 # compile AMD backend
@@ -444,9 +444,7 @@ if(OpenCL_FOUND)
         ${OPENCLSRCFILES}
     )
     target_link_libraries(xmrstak_opencl_backend ${OpenCL_LIBRARY} )
-    if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-        target_link_libraries(xmrstak_opencl_backend xmr-stak-backend)
-    endif()
+    target_link_libraries(xmrstak_opencl_backend xmr-stak-backend)
 endif()
 
 # compile final binary
