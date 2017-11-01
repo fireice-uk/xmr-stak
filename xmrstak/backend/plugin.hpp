@@ -43,7 +43,14 @@ struct plugin
 		// `.dylib` Mac OS X file extention for dynamic libraries
 		fileExtension = ".dylib";
 #	endif
-		libBackend = dlopen((params::inst().executablePrefix + "/lib" + libName + fileExtension).c_str(), RTLD_LAZY);
+		// search library in working directory
+		libBackend = dlopen(("./lib" + libName + fileExtension).c_str(), RTLD_LAZY);
+		// fallback to binary directory
+		if(!libBackend)
+			libBackend = dlopen((params::inst().executablePrefix + "lib" + libName + fileExtension).c_str(), RTLD_LAZY);
+		// try use LD_LIBRARY_PATH
+		if(!libBackend)
+			libBackend = dlopen(("lib" + libName + fileExtension).c_str(), RTLD_LAZY);
 		if(!libBackend)
 		{
 			std::cerr << "WARNING: "<< m_backendName <<" cannot load backend library: " << dlerror() << std::endl;

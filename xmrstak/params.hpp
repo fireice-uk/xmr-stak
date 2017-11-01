@@ -37,7 +37,7 @@ struct params
 
 	params() :
 		binaryName("xmr-stak"),
-		executablePrefix("./"),
+		executablePrefix(""),
 		useAMD(true),
 		useNVIDIA(true),
 		useCPU(true),
