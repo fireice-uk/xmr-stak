@@ -364,6 +364,26 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			hashMemSize = AEON_MEMORY;
 		}
 
+#ifdef WIN32
+		/* We use in windows bfactor (split slow kernel into smaller parts) to avoid
+		 * that windows is killing long running kernel.
+		 * In the case there is already memory used on the gpu than we
+		 * assume that other application are running between the split kernel,
+		 * this can result into TLB memory flushes and can strongly reduce the performance
+		 * and the result can be that windows is killing the miner.
+		 * Be reducing maxMemUsage we try to avoid this effect.
+		 */
+		size_t usedMem = totalMemory - freeMemory;
+		if(usedMem >= maxMemUsage)
+		{
+			printf("WARNING: NVIDIA GPU %d: already %s MiB memory in use, skip GPU.\n",
+				ctx->device_id,
+				std::to_string(usedMem/byteToMiB).c_str());
+		}
+		else
+			maxMemUsage -= usedMem;
+
+#endif
 		// keep 128MiB memory free (value is randomly chosen)
 		// 200byte are meta data memory (result nonce, ...)
 		size_t availableMem = freeMemory - (128u * byteToMiB) - 200u;
