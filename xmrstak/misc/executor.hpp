@@ -79,7 +79,7 @@ private:
 	std::vector<xmrstak::iBackend*>* pvThreads;
 
 	size_t current_pool_id = invalid_pool_id;
-    size_t dev_timestamp;
+	size_t dev_timestamp;
 
 	std::list<jpsock> pools;
 
@@ -183,8 +183,8 @@ private:
 	void on_sock_error(size_t pool_id, std::string&& sError);
 	void on_pool_have_job(size_t pool_id, pool_job& oPoolJob);
 	void on_miner_result(size_t pool_id, job_result& oResult);
-    void connect_to_pools(std::list<jpsock*>& eval_pools);
-    bool get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev);
+	void connect_to_pools(std::list<jpsock*>& eval_pools);
+	bool get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev);
 	void eval_pool_choice();
 
 	inline size_t sec_to_ticks(size_t sec) { return sec * (1000 / iTickTime); }

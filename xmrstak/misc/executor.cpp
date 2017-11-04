@@ -206,7 +206,6 @@ void executor::eval_pool_choice()
 		}
 	}
 
-
 	if(!dev_time)
 	{
 		for(jpsock& pool : pools)
@@ -224,7 +223,7 @@ void executor::log_socket_error(std::string&& sError)
 {
 	vSocketLog.emplace_back(std::move(sError));
 	printer::inst()->print_msg(L1, "SOCKET ERROR - %s", vSocketLog.back().msg.c_str());
-	
+
 	eval_pool_choice();
 }
 
@@ -418,7 +417,7 @@ void executor::ex_main()
 	}
 
 	telem = new xmrstak::telemetry(pvThreads->size());
-    
+
 	dev_timestamp = get_timestamp();
 	pools.emplace_back(0, "127.0.0.1:5555"/*jconf::inst()->GetTlsSetting() ? "donate.xmr-stak.net:6666" : "donate.xmr-stak.net:3333"*/, "", "", 0.0, true, jconf::inst()->GetTlsSetting());
 	pools.emplace_back(1, "127.0.0.1:3333", jconf::inst()->GetWalletAddress(), jconf::inst()->GetPoolPwd(), 1.0, false, jconf::inst()->GetTlsSetting());
@@ -426,8 +425,8 @@ void executor::ex_main()
 
 	ex_event ev;
 	std::thread clock_thd(&executor::ex_clock_thd, this);
-    
-    eval_pool_choice();
+
+	eval_pool_choice();
 
 	// Place the default success result at position 0, it needs to
 	// be here even if our first result is a failure
