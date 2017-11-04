@@ -59,7 +59,6 @@ public:
 
 	bool PreferIpv4();
 
-
 	bool NiceHashMode();
 
 	inline bool HaveHardwareAes() { return bHaveAes; }

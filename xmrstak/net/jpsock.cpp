@@ -94,7 +94,8 @@ struct jpsock::opq_json_val
 	opq_json_val(const Value* val) : val(val) {}
 };
 
-jpsock::jpsock(size_t id, bool tls) : pool_id(id)
+jpsock::jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sPassword, double pool_weight, bool dev_pool, bool tls) :
+    net_addr(sAddr), usr_login(sLogin), usr_pass(sPassword), pool_id(id), pool_weight(pool_weight), dev_pool(dev_pool), connect_attempts(0), disconnect_time(0)
 {
 	sock_init();
 
@@ -417,16 +418,18 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 	return true;
 }
 
-bool jpsock::connect(const char* sAddr, std::string& sConnectError)
+bool jpsock::connect(std::string& sConnectError)
 {
 	bHaveSocketError = false;
 	sSocketError.clear();
 	iJobDiff = 0;
+	connect_attempts++;
 
-	if(sck->set_hostname(sAddr))
+	if(sck->set_hostname(net_addr.c_str()))
 	{
 		bRunning = true;
 		oRecvThd = new std::thread(&jpsock::jpsock_thread, this);
+		disconnect_time = 0;
 		return true;
 	}
 
@@ -443,6 +446,10 @@ void jpsock::disconnect()
 		oRecvThd->join();
 		delete oRecvThd;
 		oRecvThd = nullptr;
+		if(bHaveSocketError)
+			disconnect_time = get_timestamp();
+		else
+			disconnect_time = 0;
 	}
 
 	sck->close(true);
@@ -493,12 +500,12 @@ bool jpsock::cmd_ret_wait(const char* sPacket, opq_json_val& poResult)
 	return bSuccess;
 }
 
-bool jpsock::cmd_login(const char* sLogin, const char* sPassword)
+bool jpsock::cmd_login()
 {
 	char cmd_buffer[1024];
 
 	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"login\",\"params\":{\"login\":\"%s\",\"pass\":\"%s\",\"agent\":\"" AGENTID_STR "\"},\"id\":1}\n",
-		sLogin, sPassword);
+		usr_login.c_str(), usr_pass.c_str());
 
 	opq_json_val oResult(nullptr);
 
@@ -541,6 +548,7 @@ bool jpsock::cmd_login(const char* sLogin, const char* sPassword)
 	}
 
 	bLoggedIn = true;
+	connect_attempts = 0;
 
 	return true;
 }

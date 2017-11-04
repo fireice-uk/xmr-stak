@@ -41,9 +41,9 @@ struct job_result
 
 
 enum ex_event_name { EV_INVALID_VAL, EV_SOCK_READY, EV_SOCK_ERROR,
-	EV_POOL_HAVE_JOB, EV_MINER_HAVE_RESULT, EV_PERF_TICK, EV_RECONNECT,
-	EV_SWITCH_POOL, EV_DEV_POOL_EXIT, EV_USR_HASHRATE, EV_USR_RESULTS, EV_USR_CONNSTAT,
-	EV_HASHRATE_LOOP, EV_HTML_HASHRATE, EV_HTML_RESULTS, EV_HTML_CONNSTAT, EV_HTML_JSON };
+	EV_POOL_HAVE_JOB, EV_MINER_HAVE_RESULT, EV_PERF_TICK, EV_EVAL_POOL_CHOICE, 
+	EV_USR_HASHRATE, EV_USR_RESULTS, EV_USR_CONNSTAT, EV_HASHRATE_LOOP, 
+	EV_HTML_HASHRATE, EV_HTML_RESULTS, EV_HTML_CONNSTAT, EV_HTML_JSON };
 
 /*
    This is how I learned to stop worrying and love c++11 =).
@@ -132,4 +132,12 @@ struct ex_event
 		if(iName == EV_SOCK_ERROR)
 			sSocketError.~basic_string();
 	}
+};
+
+#include <chrono>
+//Get steady_clock timestamp - misc helper function
+inline size_t get_timestamp()
+{
+    using namespace std::chrono;
+    return time_point_cast<seconds>(steady_clock::now()).time_since_epoch().count();
 };

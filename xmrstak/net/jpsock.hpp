@@ -26,20 +26,34 @@ class base_socket;
 class jpsock
 {
 public:
-	jpsock(size_t id, bool tls);
+	jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sPassword, double pool_weight, bool dev_pool, bool tls);
 	~jpsock();
 
-	bool connect(const char* sAddr, std::string& sConnectError);
+	bool connect(std::string& sConnectError);
 	void disconnect();
 
-	bool cmd_login(const char* sLogin, const char* sPassword);
+	bool cmd_login();
 	bool cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult);
 
 	static bool hex2bin(const char* in, unsigned int len, unsigned char* out);
 	static void bin2hex(const unsigned char* in, unsigned int len, char* out);
 
+	inline double get_pool_weight() 
+	{ 
+		double ret = pool_weight; 
+		if(bRunning)
+			ret += 10.0;
+		if(bLoggedIn)
+			ret += 10.0;
+		return ret;
+	}
+
 	inline bool is_running() { return bRunning; }
 	inline bool is_logged_in() { return bLoggedIn; }
+	inline bool is_dev_pool() { return dev_pool; }
+	inline size_t get_pool_id() { return pool_id; }
+	inline void get_disconnects(size_t& att, size_t& time) { att = connect_attempts; time = disconnect_time != 0 ? get_timestamp() - disconnect_time + 1 : 0; }
+	inline const char* get_pool_addr() { return net_addr.c_str(); }
 
 	std::string&& get_call_error();
 	bool have_sock_error() { return bHaveSocketError; }
@@ -53,8 +67,6 @@ public:
 	void save_nonce(uint32_t nonce);
 	bool get_current_job(pool_job& job);
 
-	size_t pool_id;
-
 	bool set_socket_error(const char* a);
 	bool set_socket_error(const char* a, const char* b);
 	bool set_socket_error(const char* a, size_t len);
@@ -62,6 +74,15 @@ public:
 	bool set_socket_error_strerr(const char* a, int res);
 
 private:
+	std::string net_addr;
+	std::string usr_login;
+	std::string usr_pass;
+	size_t pool_id;
+	double pool_weight;
+	bool dev_pool;
+	size_t connect_attempts;
+	size_t disconnect_time;
+
 	std::atomic<bool> bRunning;
 	std::atomic<bool> bLoggedIn;
 

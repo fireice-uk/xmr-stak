@@ -13,3 +13,7 @@ config-debug.txt
 
 # merge original backup files
 *.orig
+
+# KDevelop files
+.kdev4/
+xmr-stak.kdev4
