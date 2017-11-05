@@ -143,7 +143,6 @@ void executor::eval_pool_choice()
 		return;
 
 	size_t running = 0;
-
 	for(jpsock* pool : eval_pools)
 	{
 		if(pool->is_running())
@@ -203,7 +202,7 @@ void executor::eval_pool_choice()
 			if(prev_pool == nullptr || (!prev_pool->is_dev_pool() && !goal->is_dev_pool()))
 				reset_stats();
 
-			if(goal->is_dev_pool() && !prev_pool->is_dev_pool())
+			if(goal->is_dev_pool() && (prev_pool != nullptr && !prev_pool->is_dev_pool()))
 				last_usr_pool_id = prev_pool_id;
 			else
 				last_usr_pool_id = invalid_pool_id;
@@ -320,7 +319,9 @@ void executor::on_sock_error(size_t pool_id, std::string&& sError)
 	jpsock* pool = pick_pool_by_id(pool_id);
 
 	pool->disconnect();
-	current_pool_id = invalid_pool_id;
+	
+	if(pool_id == current_pool_id)
+		current_pool_id = invalid_pool_id;
 
 	if(!pool->is_dev_pool())
 		log_socket_error(std::move(sError));

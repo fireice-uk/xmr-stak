@@ -80,8 +80,9 @@ private:
 	size_t pool_id;
 	double pool_weight;
 	bool dev_pool;
-	size_t connect_attempts;
-	size_t disconnect_time;
+
+	std::atomic<size_t> connect_attempts;
+	std::atomic<size_t> disconnect_time;
 
 	std::atomic<bool> bRunning;
 	std::atomic<bool> bLoggedIn;

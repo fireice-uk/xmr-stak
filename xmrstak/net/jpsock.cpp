@@ -210,6 +210,11 @@ void jpsock::jpsock_thread()
 	bRunning = false;
 	bLoggedIn = false;
 
+	if(bHaveSocketError)
+		disconnect_time = get_timestamp();
+	else
+		disconnect_time = 0;
+
 	std::unique_lock<std::mutex>(job_mutex);
 	memset(&oCurrentJob, 0, sizeof(oCurrentJob));
 }
@@ -428,8 +433,8 @@ bool jpsock::connect(std::string& sConnectError)
 	if(sck->set_hostname(net_addr.c_str()))
 	{
 		bRunning = true;
-		oRecvThd = new std::thread(&jpsock::jpsock_thread, this);
 		disconnect_time = 0;
+		oRecvThd = new std::thread(&jpsock::jpsock_thread, this);
 		return true;
 	}
 
@@ -446,10 +451,6 @@ void jpsock::disconnect()
 		oRecvThd->join();
 		delete oRecvThd;
 		oRecvThd = nullptr;
-		if(bHaveSocketError)
-			disconnect_time = get_timestamp();
-		else
-			disconnect_time = 0;
 	}
 
 	sck->close(true);
