@@ -298,7 +298,7 @@ bool tls_socket::connect()
 		return false;
 	}
 
-	if(pCallback->is_dev_pool())
+	if(!pCallback->is_dev_pool())
 	{
 		//Base64 encode digest
 		BIO *bmem, *b64;
