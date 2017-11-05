@@ -168,7 +168,7 @@ void executor::eval_pool_choice()
 		return;
 	}
 
-	std::sort(eval_pools.begin(), eval_pools.end(), [](jpsock* a, jpsock* b) { return b->get_pool_weight() < a->get_pool_weight(); });
+	std::sort(eval_pools.begin(), eval_pools.end(), [](jpsock* a, jpsock* b) { return b->get_pool_weight(true) < a->get_pool_weight(true); });
 	jpsock* goal = eval_pools[0];
 
 	if(goal->get_pool_id() != xmrstak::globalStates::inst().pool_id)
@@ -202,7 +202,32 @@ void executor::eval_pool_choice()
 			jpsock* prev_pool = pick_pool_by_id(prev_pool_id);
 			if(prev_pool == nullptr || (!prev_pool->is_dev_pool() && !goal->is_dev_pool()))
 				reset_stats();
+
+			if(goal->is_dev_pool() && !prev_pool->is_dev_pool())
+				last_usr_pool_id = prev_pool_id;
+			else
+				last_usr_pool_id = invalid_pool_id;
+
 			return;
+		}
+	}
+	else
+	{
+		/* All is good - but check if we can do better */
+		std::sort(eval_pools.begin(), eval_pools.end(), [](jpsock* a, jpsock* b) { return b->get_pool_weight(false) < a->get_pool_weight(false); }); 
+		jpsock* goal2 = eval_pools[0];
+		
+		if(goal->get_pool_id() != goal2->get_pool_id())
+		{
+			if(!goal2->is_running())
+			{
+				std::string error;
+				if(!goal2->connect(error))
+					log_socket_error(std::move(error));
+				else
+					printer::inst()->print_msg(L1, "Connected to %s pool ...", goal2->get_pool_addr());
+				return;
+			}
 		}
 	}
 
@@ -677,10 +702,12 @@ void executor::connection_report(std::string& out)
 	out.reserve(512);
 
 	jpsock* pool = pick_pool_by_id(current_pool_id);
+	if(pool != nullptr && pool->is_dev_pool())
+		pool = pick_pool_by_id(last_usr_pool_id);
 
 	out.append("CONNECTION REPORT\n");
-	out.append("Pool address    : ").append(jconf::inst()->GetPoolAddress()).append(1, '\n');
-	if (pool->is_running() && pool->is_logged_in())
+	out.append("Pool address    : ").append(pool != nullptr ? pool->get_pool_addr() : "<not connected>").append(1, '\n');
+	if(pool != nullptr && pool->is_running() && pool->is_logged_in())
 		out.append("Connected since : ").append(time_format(date, sizeof(date), tPoolConnTime)).append(1, '\n');
 	else
 		out.append("Connected since : <not connected>\n");
@@ -838,8 +865,11 @@ void executor::http_connection_report(std::string& out)
 	out.append(buffer);
 
 	jpsock* pool = pick_pool_by_id(current_pool_id);
+	if(pool != nullptr && pool->is_dev_pool())
+		pool = pick_pool_by_id(last_usr_pool_id);
+
 	const char* cdate = "not connected";
-	if (pool->is_running() && pool->is_logged_in())
+	if (pool != nullptr && pool->is_running() && pool->is_logged_in())
 		cdate = time_format(date, sizeof(date), tPoolConnTime);
 
 	size_t n_calls = iPoolCallTimes.size();
@@ -923,9 +953,11 @@ void executor::http_json_report(std::string& out)
 		iTotalRes += vMineResults[i].count;
 
 	jpsock* pool = pick_pool_by_id(current_pool_id);
+	if(pool != nullptr && pool->is_dev_pool())
+		pool = pick_pool_by_id(last_usr_pool_id);
 
 	size_t iConnSec = 0;
-	if(pool->is_running() && pool->is_logged_in())
+	if(pool != nullptr && pool->is_running() && pool->is_logged_in())
 	{
 		using namespace std::chrono;
 		iConnSec = duration_cast<seconds>(system_clock::now() - tPoolConnTime).count();

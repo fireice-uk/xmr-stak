@@ -38,12 +38,12 @@ public:
 	static bool hex2bin(const char* in, unsigned int len, unsigned char* out);
 	static void bin2hex(const unsigned char* in, unsigned int len, char* out);
 
-	inline double get_pool_weight() 
+	inline double get_pool_weight(bool gross_weight) 
 	{ 
 		double ret = pool_weight; 
-		if(bRunning)
+		if(gross_weight && bRunning)
 			ret += 10.0;
-		if(bLoggedIn)
+		if(gross_weight && bLoggedIn)
 			ret += 10.0;
 		return ret;
 	}

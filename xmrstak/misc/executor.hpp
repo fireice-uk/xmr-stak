@@ -79,6 +79,7 @@ private:
 	std::vector<xmrstak::iBackend*>* pvThreads;
 
 	size_t current_pool_id = invalid_pool_id;
+	size_t last_usr_pool_id = invalid_pool_id;
 	size_t dev_timestamp;
 
 	std::list<jpsock> pools;
