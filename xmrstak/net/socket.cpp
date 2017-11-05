@@ -185,7 +185,15 @@ void tls_socket::print_error()
 	char *buf = nullptr;
 	size_t len = BIO_get_mem_data(err_bio, &buf);
 
-	pCallback->set_socket_error(buf, len);
+	if(buf == nullptr)
+	{
+		if(jconf::inst()->TlsSecureAlgos())
+			pCallback->set_socket_error("Unknown TLS error. Secure TLS maybe unspported, try setting tls_secure_algo to false.");
+		else
+			pCallback->set_socket_error("Unknown TLS error.");
+	}
+	else
+		pCallback->set_socket_error(buf, len);
 
 	BIO_free(err_bio);
 }
