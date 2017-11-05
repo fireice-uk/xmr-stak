@@ -6,9 +6,9 @@ R"===(
  *
  * We feature pools up to 1MH/s. For a more complete list see M5M400's pool list at www.moneropools.com
  */
-"pool_address" : "POOLURL",
-"wallet_address" : "POOLUSER",
-"pool_password" : "POOLPASSWD",
+"pool_list" :
+[
+POOLCONF],
 
 /*
  * currency to mine
