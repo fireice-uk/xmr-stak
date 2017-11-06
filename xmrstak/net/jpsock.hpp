@@ -26,7 +26,7 @@ class base_socket;
 class jpsock
 {
 public:
-	jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sPassword, double pool_weight, bool dev_pool, bool tls);
+	jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sPassword, double pool_weight, bool dev_pool, bool tls, bool nicehash);
 	~jpsock();
 
 	bool connect(std::string& sConnectError);
@@ -54,6 +54,7 @@ public:
 	inline size_t get_pool_id() { return pool_id; }
 	inline void get_disconnects(size_t& att, size_t& time) { att = connect_attempts; time = disconnect_time != 0 ? get_timestamp() - disconnect_time + 1 : 0; }
 	inline const char* get_pool_addr() { return net_addr.c_str(); }
+	inline bool is_nicehash() { return nicehash; }
 
 	std::string&& get_call_error();
 	bool have_sock_error() { return bHaveSocketError; }
@@ -80,6 +81,7 @@ private:
 	size_t pool_id;
 	double pool_weight;
 	bool dev_pool;
+	bool nicehash;
 
 	std::atomic<size_t> connect_attempts;
 	std::atomic<size_t> disconnect_time;

@@ -344,9 +344,8 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 
 	jpsock* pool = pick_pool_by_id(pool_id);
 
-	xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob, oPoolJob.iWorkLen, oPoolJob.iTarget,
-		!pool->is_dev_pool() && ::jconf::inst()->NiceHashMode(), pool_id);
-	
+	xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob, oPoolJob.iWorkLen, oPoolJob.iTarget, pool->is_nicehash(), pool_id);
+
 	xmrstak::pool_data dat;
 	dat.iSavedNonce = oPoolJob.iSavedNonce;
 	dat.pool_id = pool_id;
@@ -453,9 +452,9 @@ void executor::ex_main()
 	telem = new xmrstak::telemetry(pvThreads->size());
 
 	dev_timestamp = get_timestamp();
-	pools.emplace_back(0, "127.0.0.1:5555"/*jconf::inst()->GetTlsSetting() ? "donate.xmr-stak.net:6666" : "donate.xmr-stak.net:3333"*/, "", "", 0.0, true, jconf::inst()->GetTlsSetting());
-	pools.emplace_back(1, "127.0.0.1:3333", jconf::inst()->GetWalletAddress(), jconf::inst()->GetPoolPwd(), 1.0, false, jconf::inst()->GetTlsSetting());
-	pools.emplace_back(2, "127.0.0.1:4444"/*jconf::inst()->GetPoolAddress()*/, jconf::inst()->GetWalletAddress(), jconf::inst()->GetPoolPwd(), 0.5, false, jconf::inst()->GetTlsSetting());
+	pools.emplace_back(0, "127.0.0.1:5555"/*jconf::inst()->GetTlsSetting() ? "donate.xmr-stak.net:6666" : "donate.xmr-stak.net:3333"*/, "", "", 0.0, true, jconf::inst()->GetTlsSetting(), false);
+	pools.emplace_back(1, "127.0.0.1:3333", jconf::inst()->GetWalletAddress(), jconf::inst()->GetPoolPwd(), 1.0, false, jconf::inst()->GetTlsSetting(), true);
+	pools.emplace_back(2, "127.0.0.1:4444"/*jconf::inst()->GetPoolAddress()*/, jconf::inst()->GetWalletAddress(), jconf::inst()->GetPoolPwd(), 0.5, false, jconf::inst()->GetTlsSetting(), true);
 
 	ex_event ev;
 	std::thread clock_thd(&executor::ex_clock_thd, this);
