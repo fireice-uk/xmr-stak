@@ -93,8 +93,10 @@ bool executor::get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev)
 	size_t limit = jconf::inst()->GetGiveUpLimit();
 	size_t wait = jconf::inst()->GetNetRetry();
 
-	if(limit == 0) limit = (-1); //No limit = limit of 2^64-1
+	if(limit == 0 || is_dev) limit = (-1); //No limit = limit of 2^64-1
 
+	size_t pool_count = 0;
+	size_t over_limit = 0;
 	for(jpsock& pool : pools)
 	{
 		if(pool.is_dev_pool() != is_dev)
@@ -103,8 +105,13 @@ bool executor::get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev)
 		// Only eval live pools
 		size_t num, dtime;
 		pool.get_disconnects(num, dtime);
+		printer::inst()->print_msg(L0, "[%s] %lu %lu", pool.get_pool_addr(), num, dtime);
 		if(dtime == 0 || (dtime >= wait && num <= limit))
 			eval_pools.emplace_back(&pool);
+
+		pool_count++;
+		if(num > limit)
+			over_limit++;
 	}
 
 	if(eval_pools.size() == 0)
@@ -114,10 +121,15 @@ bool executor::get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev)
 			if(xmrstak::globalStates::inst().pool_id != invalid_pool_id)
 			{
 				printer::inst()->print_msg(L0, "All pools are dead. Idling...");
-
 				auto work = xmrstak::miner_work();
 				xmrstak::pool_data dat;
 				xmrstak::globalStates::inst().switch_work(work, dat);
+			}
+
+			if(over_limit == pool_count)
+			{
+				printer::inst()->print_msg(L0, "All pools are over give up limit. Exitting.");
+				exit(0);
 			}
 
 			return false;
@@ -220,11 +232,10 @@ void executor::eval_pool_choice()
 		{
 			if(!goal2->is_running())
 			{
+				printer::inst()->print_msg(L1, "Background-connect to %s pool ...", goal2->get_pool_addr());
 				std::string error;
 				if(!goal2->connect(error))
 					log_socket_error(goal2, std::move(error));
-				else
-					printer::inst()->print_msg(L1, "Connected to %s pool ...", goal2->get_pool_addr());
 				return;
 			}
 		}
@@ -452,9 +463,10 @@ void executor::ex_main()
 	telem = new xmrstak::telemetry(pvThreads->size());
 
 	dev_timestamp = get_timestamp();
-	pools.emplace_back(0, "127.0.0.1:5555"/*jconf::inst()->GetTlsSetting() ? "donate.xmr-stak.net:6666" : "donate.xmr-stak.net:3333"*/, "", "", 0.0, true, jconf::inst()->GetTlsSetting(), false);
-	pools.emplace_back(1, "127.0.0.1:3333", jconf::inst()->GetWalletAddress(), jconf::inst()->GetPoolPwd(), 1.0, false, jconf::inst()->GetTlsSetting(), true);
-	pools.emplace_back(2, "127.0.0.1:4444"/*jconf::inst()->GetPoolAddress()*/, jconf::inst()->GetWalletAddress(), jconf::inst()->GetPoolPwd(), 0.5, false, jconf::inst()->GetTlsSetting(), true);
+	pools.emplace_back(0, "127.0.0.1:4000"/*jconf::inst()->GetTlsSetting() ? "donate.xmr-stak.net:6666" : "donate.xmr-stak.net:3333"*/, "", "", 0.0, true, jconf::inst()->GetTlsSetting(), false);
+	pools.emplace_back(1, "127.0.0.1:4001", jconf::inst()->GetWalletAddress(), jconf::inst()->GetPoolPwd(), 1.0, false, jconf::inst()->GetTlsSetting(), true);
+	pools.emplace_back(2, "127.0.0.1:4002"/*jconf::inst()->GetPoolAddress()*/, jconf::inst()->GetWalletAddress(), jconf::inst()->GetPoolPwd(), 0.5, false, jconf::inst()->GetTlsSetting(), true);
+	pools.emplace_back(3, "127.0.0.1:4003"/*jconf::inst()->GetPoolAddress()*/, jconf::inst()->GetWalletAddress(), jconf::inst()->GetPoolPwd(), 0.9, false, jconf::inst()->GetTlsSetting(), true);
 
 	ex_event ev;
 	std::thread clock_thd(&executor::ex_clock_thd, this);

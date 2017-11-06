@@ -211,7 +211,7 @@ void jpsock::jpsock_thread()
 	bRunning = false;
 	bLoggedIn = false;
 
-	if(bHaveSocketError)
+	if(bHaveSocketError && !quiet_close)
 		disconnect_time = get_timestamp();
 	else
 		disconnect_time = 0;
