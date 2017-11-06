@@ -319,7 +319,7 @@ void executor::on_sock_ready(size_t pool_id)
 	}
 }
 
-void executor::on_sock_error(long unsigned int pool_id, std::string&& sError, bool silent)
+void executor::on_sock_error(size_t pool_id, std::string&& sError, bool silent)
 {
 	jpsock* pool = pick_pool_by_id(pool_id);
 
