@@ -1,8 +1,13 @@
 R"===(
 /*
- * pool_address	  - Pool address should be in the form "pool.supportxmr.com:3333". Only stratum pools are supported.
- * wallet_address - Your wallet, or pool login.
- * pool_password  - Can be empty in most cases or "x".
+ * pool_address    - Pool address should be in the form "pool.supportxmr.com:3333". Only stratum pools are supported.
+ * wallet_address  - Your wallet, or pool login.
+ * pool_password   - Can be empty in most cases or "x".
+ * use_nicehash    - Limit the nonce to 3 bytes as required by nicehash.
+ * use_tls         - This option will make us connect using Transport Layer Security.
+ * tls_fingerprint - Server's SHA256 fingerprint. If this string is non-empty then we will check the server's cert against it.
+ * pool_weight     - Pool weight is a number telling the miner how important the pool is. Miner will mine mostly at the pool 
+ *                   with the highest weight, unless the pool fails. Weight must be an integer larger than 0.
  *
  * We feature pools up to 1MH/s. For a more complete list see M5M400's pool list at www.moneropools.com
  */
@@ -111,25 +116,13 @@ POOLCONF],
 "use_slow_memory" : "warn",
 
 /*
- * NiceHash mode
- * nicehash_nonce - Limit the nonce to 3 bytes as required by nicehash. This cuts all the safety margins, and
- *                  if a block isn't found within 30 minutes then you might run into nonce collisions. Number
- *                  of threads in this mode is hard-limited to 32.
- */
-"nicehash_nonce" : false,
-
-/*
  * TLS Settings
  * If you need real security, make sure tls_secure_algo is enabled (otherwise MITM attack can downgrade encryption
  * to trivially breakable stuff like DES and MD5), and verify the server's fingerprint through a trusted channel.
  *
- * use_tls         - This option will make us connect using Transport Layer Security.
  * tls_secure_algo - Use only secure algorithms. This will make us quit with an error if we can't negotiate a secure algo.
- * tls_fingerprint - Server's SHA256 fingerprint. If this string is non-empty then we will check the server's cert against it.
  */
-"use_tls" : false,
 "tls_secure_algo" : true,
-"tls_fingerprint" : "",
 
 /*
  * Daemon mode
@@ -145,7 +138,7 @@ POOLCONF],
  * each output line immediately. This can cause delays when running in background.
  * Set this option to true to flush stdout after each line, so it can be read immediately.
  */
- "flush_stdout" : false,
+"flush_stdout" : false,
 
 /*
  * Output file

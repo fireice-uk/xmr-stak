@@ -89,7 +89,26 @@ void help()
 	cout<<"Brought to by fireice_uk and psychocrypt under GPLv3."<<endl;
 }
 
-inline std::string get_multipool_entry(bool& final)
+bool read_yes_no(const char* str)
+{
+	std::string tmp;
+	do
+	{
+		std::cout << str << std::endl;
+		std::cin >> tmp;
+		std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
+	}
+	while(tmp != "y" && tmp != "n" && tmp != "yes" && tmp != "no");
+
+	return tmp == "y" || tmp == "yes";
+}
+
+inline const char* bool_to_str(bool v)
+{
+	return v ? "true" : "false";
+}
+
+std::string get_multipool_entry(bool& final)
 {
 	std::cout<<std::endl<<"- Next Pool:"<<std::endl<<std::endl;
 	
@@ -109,6 +128,9 @@ inline std::string get_multipool_entry(bool& final)
 	std::cout<<"- Password (mostly empty or x):"<<std::endl;
 	getline(std::cin, passwd);
 
+	bool tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)");
+	bool nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/n)");
+
 	int64_t pool_weight;
 	std::cout << "- Please enter a weight for this pool: "<<std::endl;
 	while(!(std::cin >> pool_weight) || pool_weight <= 0)
@@ -118,22 +140,11 @@ inline std::string get_multipool_entry(bool& final)
 		std::cout << "Invalid weight.  Try 1, 10, 100, etc:" << std::endl;
 	}
 
-	std::string tmp;
-	do
-	{
-		std::cout << "- Do you want to add another pool? (y/n)"<<std::endl;
-		std::cin >> tmp;
-		std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
-	}
-	while(tmp != "y" && tmp != "n" && tmp != "yes" && tmp != "no");
-		
-	if(tmp == "y" || tmp == "yes")
-		final = false;
-	else
-		final = true;
+	final = !read_yes_no("- Do you want to add another pool? (y/n)");
 	
-	return "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName + 
-		"\", \"pool_password\" : \"" + passwd + "\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
+	return "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName +  "\", \"pool_password\" : \"" + 
+		passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " + bool_to_str(tls) + 
+		", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
 }
 
 void do_guided_config(bool userSetPasswd)
@@ -193,24 +204,13 @@ void do_guided_config(bool userSetPasswd)
 		std::cout<<"- Password (mostly empty or x):"<<std::endl;
 		getline(std::cin, passwd);
 	}
+
+	bool tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)");
+	bool nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/n)");
 	
 	bool multipool;
 	if(!userSetPool)
-	{
-		std::string tmp;
-		do
-		{
-			std::cout << "- Do you want to use multiple pools? (y/n)"<<std::endl;
-			std::cin >> tmp;
-			std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
-		}
-		while(tmp != "y" && tmp != "n" && tmp != "yes" && tmp != "no");
-		
-		if(tmp == "y" || tmp == "yes")
-			multipool = true;
-		else
-			multipool = false;
-	}
+		multipool = read_yes_no("- Do you want to use multiple pools? (y/n)");
 	else
 		multipool = false;
 	
@@ -233,8 +233,9 @@ void do_guided_config(bool userSetPasswd)
 		pool_weight = 1;
 	
 	std::string pool_table;
-	pool_table += "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName + 
-		"\", \"pool_password\" : \"" + passwd + "\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
+	pool_table += "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName +  "\", \"pool_password\" : \"" + 
+		passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " + bool_to_str(tls) + 
+		", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
 
 	if(multipool)
 	{
