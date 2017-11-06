@@ -105,7 +105,6 @@ bool executor::get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev)
 		// Only eval live pools
 		size_t num, dtime;
 		pool.get_disconnects(num, dtime);
-		printer::inst()->print_msg(L0, "[%s] %lu %lu", pool.get_pool_addr(), num, dtime);
 		if(dtime == 0 || (dtime >= wait && num <= limit))
 			eval_pools.emplace_back(&pool);
 
