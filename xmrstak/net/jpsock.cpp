@@ -95,7 +95,7 @@ struct jpsock::opq_json_val
 };
 
 jpsock::jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sPassword, double pool_weight, bool dev_pool, bool tls) :
-    net_addr(sAddr), usr_login(sLogin), usr_pass(sPassword), pool_id(id), pool_weight(pool_weight), dev_pool(dev_pool), connect_attempts(0), disconnect_time(0)
+    net_addr(sAddr), usr_login(sLogin), usr_pass(sPassword), pool_id(id), pool_weight(pool_weight), dev_pool(dev_pool), connect_attempts(0), disconnect_time(0), quiet_close(false)
 {
 	sock_init();
 
@@ -190,7 +190,7 @@ bool jpsock::set_socket_error_strerr(const char* a, int res)
 void jpsock::jpsock_thread()
 {
 	jpsock_thd_main();
-	executor::inst()->push_event(ex_event(std::move(sSocketError), pool_id));
+	executor::inst()->push_event(ex_event(std::move(sSocketError), quiet_close, pool_id));
 
 	// If a call is wating, send an error to end it
 	bool bCallWaiting = false;
@@ -442,8 +442,9 @@ bool jpsock::connect(std::string& sConnectError)
 	return false;
 }
 
-void jpsock::disconnect()
+void jpsock::disconnect(bool quiet)
 {
+	quiet_close = quiet;
 	sck->close(false);
 
 	if(oRecvThd != nullptr)
@@ -454,6 +455,7 @@ void jpsock::disconnect()
 	}
 
 	sck->close(true);
+	quiet_close = false;
 }
 
 bool jpsock::cmd_ret_wait(const char* sPacket, opq_json_val& poResult)

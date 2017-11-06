@@ -161,7 +161,7 @@ void executor::eval_pool_choice()
 				printer::inst()->print_msg(L1, "Fast-connecting to %s pool ...", pool->get_pool_addr());
 			std::string error;
 			if(!pool->connect(error))
-				log_socket_error(std::move(error));
+				log_socket_error(pool, std::move(error));
 		}
 
 		return;
@@ -181,7 +181,7 @@ void executor::eval_pool_choice()
 
 			std::string error;
 			if(!goal->connect(error))
-				log_socket_error(std::move(error));
+				log_socket_error(goal, std::move(error));
 			return;
 		}
 
@@ -222,7 +222,7 @@ void executor::eval_pool_choice()
 			{
 				std::string error;
 				if(!goal2->connect(error))
-					log_socket_error(std::move(error));
+					log_socket_error(goal2, std::move(error));
 				else
 					printer::inst()->print_msg(L1, "Connected to %s pool ...", goal2->get_pool_addr());
 				return;
@@ -235,16 +235,21 @@ void executor::eval_pool_choice()
 		for(jpsock& pool : pools)
 		{
 			if(goal->is_logged_in() && pool.is_running() && pool.get_pool_id() != goal->get_pool_id())
-				pool.disconnect();
+				pool.disconnect(true);
 
 			if(pool.is_dev_pool() && pool.is_running())
-				pool.disconnect();
+				pool.disconnect(true);
 		}
 	}
 }
 
-void executor::log_socket_error(std::string&& sError)
+void executor::log_socket_error(jpsock* pool, std::string&& sError)
 {
+	std::string pool_name;
+	pool_name.reserve(128);
+	pool_name.append("[").append(pool->get_pool_addr()).append("] ");
+	sError.insert(0, pool_name);
+	
 	vSocketLog.emplace_back(std::move(sError));
 	printer::inst()->print_msg(L1, "SOCKET ERROR - %s", vSocketLog.back().msg.c_str());
 
@@ -308,13 +313,13 @@ void executor::on_sock_ready(size_t pool_id)
 	{
 		if(!pool->have_sock_error())
 		{
-			log_socket_error(pool->get_call_error());
+			log_socket_error(pool, pool->get_call_error());
 			pool->disconnect();
 		}
 	}
 }
 
-void executor::on_sock_error(size_t pool_id, std::string&& sError)
+void executor::on_sock_error(long unsigned int pool_id, std::string&& sError, bool silent)
 {
 	jpsock* pool = pick_pool_by_id(pool_id);
 
@@ -323,8 +328,11 @@ void executor::on_sock_error(size_t pool_id, std::string&& sError)
 	if(pool_id == current_pool_id)
 		current_pool_id = invalid_pool_id;
 
+	if(silent)
+		return;
+
 	if(!pool->is_dev_pool())
-		log_socket_error(std::move(sError));
+		log_socket_error(pool, std::move(sError));
 	else
 		printer::inst()->print_msg(L1, "Dev pool socket error - mining on user pool...");
 }
@@ -473,7 +481,7 @@ void executor::ex_main()
 			break;
 
 		case EV_SOCK_ERROR:
-			on_sock_error(ev.iPoolId, std::move(ev.sSocketError));
+			on_sock_error(ev.iPoolId, std::move(ev.oSocketError.sSocketError), ev.oSocketError.silent);
 			break;
 
 		case EV_POOL_HAVE_JOB:

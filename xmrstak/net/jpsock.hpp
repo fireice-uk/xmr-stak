@@ -30,7 +30,7 @@ public:
 	~jpsock();
 
 	bool connect(std::string& sConnectError);
-	void disconnect();
+	void disconnect(bool quiet = false);
 
 	bool cmd_login();
 	bool cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult);
@@ -86,6 +86,7 @@ private:
 
 	std::atomic<bool> bRunning;
 	std::atomic<bool> bLoggedIn;
+	std::atomic<bool> quiet_close;
 
 	uint8_t* bJsonRecvMem;
 	uint8_t* bJsonParseMem;

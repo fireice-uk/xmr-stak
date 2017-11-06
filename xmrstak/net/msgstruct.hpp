@@ -39,6 +39,28 @@ struct job_result
 	}
 };
 
+struct sock_err
+{
+	std::string sSocketError;
+	bool silent;
+
+	sock_err() {}
+	sock_err(std::string&& err, bool silent) : sSocketError(std::move(err)), silent(silent) { }
+	sock_err(sock_err&& from) : sSocketError(std::move(from.sSocketError)), silent(from.silent) {}
+
+	sock_err& operator=(sock_err&& from)
+	{
+		assert(this != &from);
+		sSocketError = std::move(from.sSocketError);
+		silent = from.silent;
+		return *this;
+	}
+
+	~sock_err() { }
+
+	sock_err(sock_err const&) = delete;
+	sock_err& operator=(sock_err const&) = delete;
+};
 
 enum ex_event_name { EV_INVALID_VAL, EV_SOCK_READY, EV_SOCK_ERROR,
 	EV_POOL_HAVE_JOB, EV_MINER_HAVE_RESULT, EV_PERF_TICK, EV_EVAL_POOL_CHOICE, 
@@ -64,11 +86,11 @@ struct ex_event
 	{
 		pool_job oPoolJob;
 		job_result oJobResult;
-		std::string sSocketError;
+		sock_err oSocketError;
 	};
 
 	ex_event() { iName = EV_INVALID_VAL; iPoolId = 0;}
-	ex_event(std::string&& err, size_t id) : iName(EV_SOCK_ERROR), iPoolId(id), sSocketError(std::move(err)) { }
+	ex_event(std::string&& err, bool silent, size_t id) : iName(EV_SOCK_ERROR), iPoolId(id), oSocketError(std::move(err), silent) { }
 	ex_event(job_result dat, size_t id) : iName(EV_MINER_HAVE_RESULT), iPoolId(id), oJobResult(dat) {}
 	ex_event(pool_job dat, size_t id) : iName(EV_POOL_HAVE_JOB), iPoolId(id), oPoolJob(dat) {}
 	ex_event(ex_event_name ev, size_t id = 0) : iName(ev), iPoolId(id) {}
@@ -85,7 +107,7 @@ struct ex_event
 		switch(iName)
 		{
 		case EV_SOCK_ERROR:
-			new (&sSocketError) std::string(std::move(from.sSocketError));
+			new (&oSocketError) sock_err(std::move(from.oSocketError));
 			break;
 		case EV_MINER_HAVE_RESULT:
 			oJobResult = from.oJobResult;
@@ -103,7 +125,7 @@ struct ex_event
 		assert(this != &from);
 
 		if(iName == EV_SOCK_ERROR)
-			sSocketError.~basic_string();
+			oSocketError.~sock_err();
 
 		iName = from.iName;
 		iPoolId = from.iPoolId;
@@ -111,8 +133,8 @@ struct ex_event
 		switch(iName)
 		{
 		case EV_SOCK_ERROR:
-			new (&sSocketError) std::string();
-			sSocketError = std::move(from.sSocketError);
+			new (&oSocketError) sock_err();
+			oSocketError = std::move(from.oSocketError);
 			break;
 		case EV_MINER_HAVE_RESULT:
 			oJobResult = from.oJobResult;
@@ -130,7 +152,7 @@ struct ex_event
 	~ex_event()
 	{
 		if(iName == EV_SOCK_ERROR)
-			sSocketError.~basic_string();
+			oSocketError.~sock_err();
 	}
 };
 
