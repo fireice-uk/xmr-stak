@@ -19,11 +19,16 @@ public:
 	};
 
 	bool parse_config(const char* sFilename = xmrstak::params::inst().configFile.c_str());
-
-	struct thd_cfg {
-		bool bDoubleMode;
-		bool bNoPrefetch;
-		long long iCpuAff;
+	
+	struct pool_cfg {
+		const char* sPoolAddr;
+		const char* sWalletAddr;
+		const char* sPasswd;
+		bool nicehash;
+		bool tls;
+		const char* tls_fingerprint;
+		size_t raw_weight;
+		double weight;
 	};
 
 	enum slow_mem_cfg {
@@ -34,13 +39,8 @@ public:
 		unknown_value
 	};
 
-	bool GetTlsSetting();
 	bool TlsSecureAlgos();
-	const char* GetTlsFingerprint();
-
-	const char* GetPoolAddress();
-	const char* GetPoolPwd();
-	const char* GetWalletAddress();
+	
 	const std::string GetCurrency();
 	bool IsCurrencyMonero();
 
@@ -58,8 +58,6 @@ public:
 	bool DaemonMode();
 
 	bool PreferIpv4();
-
-	bool NiceHashMode();
 
 	inline bool HaveHardwareAes() { return bHaveAes; }
 
