@@ -88,17 +88,18 @@ private:
 
 		constexpr size_t byte2mib = 1024u * 1024u;
 		std::string conf;
-        int i = 0;
         for(auto& ctx : nvidCtxVec)
         {
-			conf += std::string("  // gpu: ") + ctx.name + " architecture: " + std::to_string(ctx.device_arch[0] * 10 + ctx.device_arch[1]) + "\n";
-			conf += std::string("  //      memory: ") + std::to_string(ctx.free_device_memory / byte2mib) + "/"  + std::to_string(ctx.total_device_memory / byte2mib) + " MiB\n";
-            conf += std::string("  { \"index\" : ") + std::to_string(ctx.device_id) + ",\n" +
-                "    \"threads\" : " + std::to_string(ctx.device_threads) + ", \"blocks\" : " + std::to_string(ctx.device_blocks) + ",\n" +
-                "    \"bfactor\" : " + std::to_string(ctx.device_bfactor) + ", \"bsleep\" :  " + std::to_string(ctx.device_bsleep) + ",\n" +
-                "    \"affine_to_cpu\" : false,\n" +
-                "  },\n";
-            ++i;
+			if(ctx.device_threads * ctx.device_blocks > 0)
+			{
+				conf += std::string("  // gpu: ") + ctx.name + " architecture: " + std::to_string(ctx.device_arch[0] * 10 + ctx.device_arch[1]) + "\n";
+				conf += std::string("  //      memory: ") + std::to_string(ctx.free_device_memory / byte2mib) + "/"  + std::to_string(ctx.total_device_memory / byte2mib) + " MiB\n";
+				conf += std::string("  { \"index\" : ") + std::to_string(ctx.device_id) + ",\n" +
+					"    \"threads\" : " + std::to_string(ctx.device_threads) + ", \"blocks\" : " + std::to_string(ctx.device_blocks) + ",\n" +
+					"    \"bfactor\" : " + std::to_string(ctx.device_bfactor) + ", \"bsleep\" :  " + std::to_string(ctx.device_bsleep) + ",\n" +
+					"    \"affine_to_cpu\" : false,\n" +
+					"  },\n";
+			}
         }
 
 		configTpl.replace("GPUCONFIG",conf);

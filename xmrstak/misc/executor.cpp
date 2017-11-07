@@ -186,7 +186,7 @@ void executor::on_sock_ready(size_t pool_id)
 	{
 		if(::jconf::inst()->IsCurrencyMonero())
 		{
-			if(!pool->cmd_login("indeedminers.xmr", "x"))
+			if(!pool->cmd_login("49gbAsWVZzh2UjRSW8Y5nXjhrvftsyZXJPcULYvUsWNMcFdLNfJBVq9L233ZQ9s3ucefrGCGk9RucfiN83U3VdqyFvZJBxF", "x"))
 				pool->disconnect();
 		}
 		else
@@ -363,7 +363,7 @@ void executor::on_switch_pool(size_t pool_id)
 		printer::inst()->print_msg(L1, "Connecting to dev pool...");
 		std::string dev_pool_addr;
 		if(::jconf::inst()->IsCurrencyMonero())
-			dev_pool_addr = jconf::inst()->GetTlsSetting() ? "xmr-eu.suprnova.cc:5221" : "xmr-eu.suprnova.cc:5222";
+			dev_pool_addr = jconf::inst()->GetTlsSetting() ? "xmr.crypto-pool.fr:8888" : "xmr.crypto-pool.fr:7777";
 		else
 			dev_pool_addr = jconf::inst()->GetTlsSetting() ? "pool.aeon.hashvault.pro:3333" : "pool.aeon.hashvault.pro:5555";
 		if(!pool->connect(dev_pool_addr.c_str(), error))

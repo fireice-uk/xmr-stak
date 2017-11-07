@@ -106,15 +106,21 @@ int main(int argc, char *argv[])
 	using namespace xmrstak;
 
 	std::string pathWithName(argv[0]);
-	auto pos = pathWithName.rfind("/");
+	std::string seperator("/");
+	auto pos = pathWithName.rfind(seperator);
+
 	if(pos == std::string::npos)
 	{
 		// try windows "\"
-		pos = pathWithName.rfind("\\");
+		seperator = "\\";
+		pos = pathWithName.rfind(seperator);
 	}
 	params::inst().binaryName = std::string(pathWithName, pos + 1, std::string::npos);
 	if(params::inst().binaryName.compare(pathWithName) != 0)
+	{
 		params::inst().executablePrefix = std::string(pathWithName, 0, pos);
+		params::inst().executablePrefix += seperator;
+	}
 
 	bool userSetPasswd = false;
 	for(int i = 1; i < argc; ++i)
