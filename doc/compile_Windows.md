@@ -20,6 +20,15 @@
 - tested version: [cmake 3.9](https://cmake.org/files/v3.9/cmake-3.9.0-rc3-win64-x64.msi)
 - during the install choose the option `Add CMake to the system PATH for all users`
 
+### Cuda 8.0+ (only needed to use NVIDIA GPUs)
+
+- donwload and install [https://developer.nvidia.com/cuda-downloads](https://developer.nvidia.com/cuda-downloads)
+- for minimal install choose `Custom installation options` during the install and select
+    - CUDA/Develpment
+    - CUDA/Visual Studio Integration (ignore the warning during the install that VS2017 is not supported)
+    - CUDA/Runtime
+    - Driver components
+
 ### Dependencies OpenSSL/Hwloc and Microhttpd
 
 - download the precompiled binary from [https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip](https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip)
@@ -67,7 +76,16 @@
   set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc;C:\xmr-stak-dep\libmicrohttpd;C:\xmr-stak-dep\openssl
   mkdir build
   cd build
-  cmake -G "Visual Studio 15 2017 Win64" -T v140,host=x64 ..
+  ```
+  - with CUDA 8
+    ```
+    cmake -G "Visual Studio 15 2017 Win64" -T v140,host=x64 ..
+    ```
+  - with CUDA 9
+    ```
+    cmake -G "Visual Studio 15 2017 Win64" -T v141,host=x64 ..
+    ```
+  ```
   cmake --build . --config Release --target install
   cd bin\Release
   ```
