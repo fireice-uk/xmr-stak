@@ -477,7 +477,20 @@ void executor::ex_main()
 		pools.emplace_back(i+1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
 	}
 	
-	pools.emplace_front(0, "127.0.0.1:4000", "", "", 0.0, true, tls, "", false);
+	if(jconf::inst()->IsCurrencyMonero())
+	{
+		if(tls)
+			pools.emplace_front(0, "donate.xmr-stak.net:6666", "", "", 0.0, true, true, "", false);
+		else
+			pools.emplace_front(0, "donate.xmr-stak.net:3333", "", "", 0.0, true, false, "", false);
+	}
+	else
+	{
+		if(tls)
+			pools.emplace_front(0, "donate.xmr-stak.net:7777", "", "", 0.0, true, true, "", false);
+		else
+			pools.emplace_front(0, "donate.xmr-stak.net:4444", "", "", 0.0, true, false, "", false);
+	}
 
 	ex_event ev;
 	std::thread clock_thd(&executor::ex_clock_thd, this);

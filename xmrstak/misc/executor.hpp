@@ -60,7 +60,7 @@ private:
 
 	// Dev donation time period in seconds. 100 minutes by default.
 	// We will divide up this period according to the config setting
-	constexpr static size_t iDevDonatePeriod = 4 * 60;
+	constexpr static size_t iDevDonatePeriod = 100 * 60;
 
 	inline bool is_dev_time()
 	{
