@@ -29,6 +29,10 @@
     - CUDA/Runtime
     - Driver components
 
+### AMD APP SDK 3.0 (only needed to use AMD GPUs)
+
+- download and install the latest version from [http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)
+
 ### Dependencies OpenSSL/Hwloc and Microhttpd
 
 - download the precompiled binary from [https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip](https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip)
