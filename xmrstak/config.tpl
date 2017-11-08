@@ -36,7 +36,7 @@ POOLCONF],
  *                don't mine while the connection is lost, so your computer's power usage goes down to idle.
  */
 "call_timeout" : 10,
-"retry_time" : 10,
+"retry_time" : 30,
 "giveup_limit" : 0,
 
 /*

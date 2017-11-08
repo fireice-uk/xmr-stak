@@ -112,7 +112,7 @@ jconf::jconf()
 	prv = new opaque_private();
 }
 
-size_t jconf::GetPoolCount()
+uint64_t jconf::GetPoolCount()
 {
 	if(prv->configValues[aPoolList]->IsArray())
 		return prv->configValues[aPoolList]->Size();
