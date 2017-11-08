@@ -31,9 +31,6 @@ public:
 	bool GetThreadConfig(size_t id, thd_cfg &cfg);
 	bool NeedsAutoconf();
 
-	
-
-
 private:
 	jconf();
 	static jconf* oInst;

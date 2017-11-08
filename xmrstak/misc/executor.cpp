@@ -104,7 +104,9 @@ bool executor::get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev)
 
 		// Only eval live pools
 		size_t num, dtime;
-		pool.get_disconnects(num, dtime);
+		if(pool.get_disconnects(num, dtime))
+			set_timestamp();
+
 		if(dtime == 0 || (dtime >= wait && num <= limit))
 			eval_pools.emplace_back(&pool);
 
@@ -168,11 +170,14 @@ void executor::eval_pool_choice()
 
 		for(jpsock* pool : eval_pools)
 		{
-			if(!dev_time)
-				printer::inst()->print_msg(L1, "Fast-connecting to %s pool ...", pool->get_pool_addr());
-			std::string error;
-			if(!pool->connect(error))
-				log_socket_error(pool, std::move(error));
+			if(pool->can_connect())
+			{
+				if(!dev_time)
+					printer::inst()->print_msg(L1, "Fast-connecting to %s pool ...", pool->get_pool_addr());
+				std::string error;
+				if(!pool->connect(error))
+					log_socket_error(pool, std::move(error));
+			}
 		}
 
 		return;
@@ -183,7 +188,7 @@ void executor::eval_pool_choice()
 
 	if(goal->get_pool_id() != xmrstak::globalStates::inst().pool_id)
 	{
-		if(!goal->is_running())
+		if(!goal->is_running() && goal->can_connect())
 		{
 			if(dev_time)
 				printer::inst()->print_msg(L1, "Connecting to dev pool ...");
@@ -461,11 +466,18 @@ void executor::ex_main()
 
 	telem = new xmrstak::telemetry(pvThreads->size());
 
-	dev_timestamp = get_timestamp();
-	pools.emplace_back(0, "127.0.0.1:4000"/*jconf::inst()->GetTlsSetting() ? "donate.xmr-stak.net:6666" : "donate.xmr-stak.net:3333"*/, "", "", 0.0, true, jconf::inst()->GetTlsSetting(), false);
-	pools.emplace_back(1, "127.0.0.1:4001", jconf::inst()->GetWalletAddress(), jconf::inst()->GetPoolPwd(), 1.0, false, jconf::inst()->GetTlsSetting(), true);
-	pools.emplace_back(2, "127.0.0.1:4002"/*jconf::inst()->GetPoolAddress()*/, jconf::inst()->GetWalletAddress(), jconf::inst()->GetPoolPwd(), 0.5, false, jconf::inst()->GetTlsSetting(), true);
-	pools.emplace_back(3, "127.0.0.1:4003"/*jconf::inst()->GetPoolAddress()*/, jconf::inst()->GetWalletAddress(), jconf::inst()->GetPoolPwd(), 0.9, false, jconf::inst()->GetTlsSetting(), true);
+	set_timestamp();
+	size_t pc = jconf::inst()->GetPoolCount();
+	bool tls = true;
+	for(size_t i=0; i < pc; i++)
+	{
+		jconf::pool_cfg cfg;
+ 		jconf::inst()->GetPoolConfig(i, cfg);
+		if(!cfg.tls) tls = false;
+		pools.emplace_back(i+1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
+	}
+	
+	pools.emplace_front(0, "127.0.0.1:4000", "", "", 0.0, true, tls, "", false);
 
 	ex_event ev;
 	std::thread clock_thd(&executor::ex_clock_thd, this);
@@ -901,7 +913,7 @@ void executor::http_connection_report(std::string& out)
 	}
 
 	snprintf(buffer, sizeof(buffer), sHtmlConnectionBodyHigh,
-		jconf::inst()->GetPoolAddress(),
+		pool != nullptr ? pool->get_pool_addr() : "not connected",
 		cdate, ping_time);
 	out.append(buffer);
 
@@ -1028,7 +1040,7 @@ void executor::http_json_report(std::string& out)
 		int_port(iPoolDiff), int_port(iGoodRes), int_port(iTotalRes), fAvgResTime, int_port(iPoolHashes),
 		int_port(iTopDiff[0]), int_port(iTopDiff[1]), int_port(iTopDiff[2]), int_port(iTopDiff[3]), int_port(iTopDiff[4]),
 		int_port(iTopDiff[5]), int_port(iTopDiff[6]), int_port(iTopDiff[7]), int_port(iTopDiff[8]), int_port(iTopDiff[9]),
-		res_error.c_str(), jconf::inst()->GetPoolAddress(), int_port(iConnSec), int_port(iPoolPing), cn_error.c_str());
+		res_error.c_str(), pool != nullptr ? pool->get_pool_addr() : "not connected", int_port(iConnSec), int_port(iPoolPing), cn_error.c_str());
 
 	out = std::string(bigbuf.get(), bigbuf.get() + bb_len);
 }

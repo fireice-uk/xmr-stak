@@ -53,6 +53,8 @@ private:
 		timed_event(ex_event&& ev, size_t ticks) : event(std::move(ev)), ticks_left(ticks) {}
 	};
 
+	inline void set_timestamp() { dev_timestamp = get_timestamp(); };
+	
 	// In miliseconds, has to divide a second (1000ms) into an integer number
 	constexpr static size_t iTickTime = 500;
 

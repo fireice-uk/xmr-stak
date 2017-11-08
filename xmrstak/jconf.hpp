@@ -30,6 +30,12 @@ public:
 		size_t raw_weight;
 		double weight;
 	};
+	
+	size_t wt_max;
+	size_t wt_min;
+	
+	uint64_t GetPoolCount();
+	bool GetPoolConfig(size_t id, pool_cfg& cfg);
 
 	enum slow_mem_cfg {
 		always_use,

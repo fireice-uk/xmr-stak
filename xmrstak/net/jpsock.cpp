@@ -94,9 +94,9 @@ struct jpsock::opq_json_val
 	opq_json_val(const Value* val) : val(val) {}
 };
 
-jpsock::jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sPassword, double pool_weight, bool dev_pool, bool tls, bool nicehash) :
-    net_addr(sAddr), usr_login(sLogin), usr_pass(sPassword), pool_id(id), pool_weight(pool_weight), dev_pool(dev_pool), nicehash(nicehash),
-    connect_attempts(0), disconnect_time(0), quiet_close(false)
+jpsock::jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sPassword, double pool_weight, bool dev_pool, bool tls, const char* tls_fp, bool nicehash) :
+    net_addr(sAddr), usr_login(sLogin), usr_pass(sPassword), tls_fp(tls_fp), pool_id(id), pool_weight(pool_weight), pool(dev_pool), nicehash(nicehash),
+    connect_time(0), connect_attempts(0), disconnect_time(0), quiet_close(false)
 {
 	sock_init();
 
@@ -208,7 +208,6 @@ void jpsock::jpsock_thread()
 	if(bCallWaiting)
 		call_cond.notify_one();
 
-	bRunning = false;
 	bLoggedIn = false;
 
 	if(bHaveSocketError && !quiet_close)
@@ -218,6 +217,7 @@ void jpsock::jpsock_thread()
 
 	std::unique_lock<std::mutex>(job_mutex);
 	memset(&oCurrentJob, 0, sizeof(oCurrentJob));
+	bRunning = false;
 }
 
 bool jpsock::jpsock_thd_main()
@@ -430,11 +430,12 @@ bool jpsock::connect(std::string& sConnectError)
 	sSocketError.clear();
 	iJobDiff = 0;
 	connect_attempts++;
-
+	
 	if(sck->set_hostname(net_addr.c_str()))
 	{
 		bRunning = true;
 		disconnect_time = 0;
+		connect_time = get_timestamp();
 		oRecvThd = new std::thread(&jpsock::jpsock_thread, this);
 		return true;
 	}

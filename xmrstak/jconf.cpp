@@ -32,6 +32,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+#include <vector>
+#include <numeric>
+#include <algorithm>
 
 #ifdef _WIN32
 #define strcasecmp _stricmp
@@ -47,8 +51,9 @@ using namespace rapidjson;
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
 enum configEnum {
-	bTlsSecureAlgo, sCurrency, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, 
-	iAutohashTime, bFlushStdout, bDaemonMode, sOutputFile, iHttpdPort, bPreferIpv4, bAesOverride, sUseSlowMem };
+	aPoolList, bTlsSecureAlgo, sCurrency, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, iAutohashTime, 
+	bFlushStdout, bDaemonMode, sOutputFile, iHttpdPort, bPreferIpv4, bAesOverride, sUseSlowMem 
+};
 
 struct configVal {
 	configEnum iName;
@@ -59,7 +64,9 @@ struct configVal {
 // Same order as in configEnum, as per comment above
 // kNullType means any type
 configVal oConfigValues[] = {
+	{ aPoolList, "pool_list", kArrayType },
 	{ bTlsSecureAlgo, "tls_secure_algo", kTrueType },
+	{ sCurrency, "currency", kStringType },
 	{ iCallTimeout, "call_timeout", kNumberType },
 	{ iNetRetry, "retry_time", kNumberType },
 	{ iGiveUpLimit, "giveup_limit", kNumberType },
@@ -103,6 +110,51 @@ struct jconf::opaque_private
 jconf::jconf()
 {
 	prv = new opaque_private();
+}
+
+size_t jconf::GetPoolCount()
+{
+	if(prv->configValues[aPoolList]->IsArray())
+		return prv->configValues[aPoolList]->Size();
+	else
+		return 0;
+}
+
+bool jconf::GetPoolConfig(size_t id, pool_cfg& cfg)
+{
+	if(id >= GetPoolCount())
+		return false;
+
+	typedef const Value* cval;
+	cval jaddr, jlogin, jpasswd, jnicehash, jtls, jtlsfp, jwt;
+	const Value& oThdConf = prv->configValues[aPoolList]->GetArray()[id];
+
+	/* We already checked presence and types */
+	jaddr = GetObjectMember(oThdConf, "pool_address");
+	jlogin = GetObjectMember(oThdConf, "wallet_address");
+	jpasswd = GetObjectMember(oThdConf, "pool_password");
+	jnicehash = GetObjectMember(oThdConf, "use_nicehash");
+	jtls = GetObjectMember(oThdConf, "use_tls");
+	jtlsfp = GetObjectMember(oThdConf, "tls_fingerprint");
+	jwt = GetObjectMember(oThdConf, "pool_weight");
+
+	cfg.sPoolAddr = jaddr->GetString();
+	cfg.sWalletAddr = jlogin->GetString();
+	cfg.sPasswd = jpasswd->GetString();
+	cfg.nicehash = jnicehash->GetBool();
+	cfg.tls = jtls->GetBool();
+	cfg.tls_fingerprint = jtlsfp->GetString();
+	cfg.raw_weight = jwt->GetUint64();
+	
+	size_t dlt = wt_max - wt_min;
+	if(dlt != 0)
+	{
+		/* Normalise weights between 0 and 9.9 */
+		cfg.weight = double(cfg.raw_weight - wt_min) * 9.9;
+		cfg.weight /= dlt;
+	}
+	else /* Special case - user selected same weights for everything */
+		cfg.weight = 0.0;
 }
 
 bool jconf::TlsSecureAlgos()
@@ -335,6 +387,60 @@ bool jconf::parse_config(const char* sFilename)
 			return false;
 		}
 	}
+	
+	size_t pool_cnt = prv->configValues[aPoolList]->Size();
+	if(pool_cnt == 0)
+	{
+		printer::inst()->print_msg(L0, "Invalid config file. pool_list must not be empty.");
+		return false;
+	}
+	
+	std::vector<size_t> pool_weights;
+	pool_weights.reserve(pool_cnt);
+	
+	const char* aPoolValues[] = { "pool_address", "wallet_address", "pool_password", "use_nicehash", "use_tls", "tls_fingerprint", "pool_weight" };
+	Type poolValTypes[] = { kStringType, kStringType, kStringType, kTrueType, kTrueType, kStringType, kNumberType };
+	
+	constexpr size_t pvcnt = sizeof(aPoolValues)/sizeof(aPoolValues[0]);
+	for(uint32_t i=0; i < pool_cnt; i++)
+	{
+		const Value& oThdConf = prv->configValues[aPoolList]->GetArray()[i];
+		
+		if(!oThdConf.IsObject())
+		{
+			printer::inst()->print_msg(L0, "Invalid config file. pool_list must contain objects.");
+			return false;
+		}
+
+		for(uint32_t j=0; j < pvcnt; j++)
+		{
+			const Value* v;
+			if((v = GetObjectMember(oThdConf, aPoolValues[j])) == nullptr)
+			{
+				printer::inst()->print_msg(L0, "Invalid config file. Pool %u does not have the value %s.", i, aPoolValues[j]);
+				return false;
+			}
+
+			if(!checkType(v->GetType(), poolValTypes[j]))
+			{
+				printer::inst()->print_msg(L0, "Invalid config file. Value %s for pool %u has unexpected type.", aPoolValues[j], i);
+				return false;
+			}
+		}
+
+		const Value* jwt = GetObjectMember(oThdConf, "pool_weight");
+		size_t wt;
+		if(!jwt->IsUint64() || (wt = jwt->GetUint64()) == 0)
+		{
+			printer::inst()->print_msg(L0, "Invalid pool list for pool %u. Pool weight needs to be an integer larger than zero.", i);
+			return false;
+		}
+
+		pool_weights.emplace_back(wt);
+	}
+
+	wt_max = *std::max_element(pool_weights.begin(), pool_weights.end());
+	wt_min = *std::min_element(pool_weights.begin(), pool_weights.end());
 
 	if(!prv->configValues[iCallTimeout]->IsUint64() ||
 		!prv->configValues[iNetRetry]->IsUint64() ||
