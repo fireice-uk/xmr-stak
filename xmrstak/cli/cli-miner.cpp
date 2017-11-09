@@ -49,7 +49,6 @@
 #include <openssl/err.h>
 #endif
 
-
 #ifdef _WIN32
 #	define strcasecmp _stricmp
 #endif // _WIN32
@@ -88,6 +87,170 @@ void help()
 	cout<<" \n"<<endl;
 	cout<<XMR_STAK_NAME<<" "<<XMR_STAK_VERSION<<endl;
 	cout<<"Brought to by fireice_uk and psychocrypt under GPLv3."<<endl;
+}
+
+bool read_yes_no(const char* str)
+{
+	std::string tmp;
+	do
+	{
+		std::cout << str << std::endl;
+		std::cin >> tmp;
+		std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
+	}
+	while(tmp != "y" && tmp != "n" && tmp != "yes" && tmp != "no");
+
+	return tmp == "y" || tmp == "yes";
+}
+
+inline const char* bool_to_str(bool v)
+{
+	return v ? "true" : "false";
+}
+
+std::string get_multipool_entry(bool& final)
+{
+	std::cout<<std::endl<<"- Next Pool:"<<std::endl<<std::endl;
+	
+	std::string pool;
+	if(xmrstak::params::inst().currency == "monero")
+		std::cout<<"- Pool address: e.g. pool.usxmrpool.com:3333"<<std::endl;
+	else
+		std::cout<<"- Pool address: e.g. mine.aeon-pool.com:5555"<<std::endl;
+	std::cin >> pool;
+
+	std::string userName;
+	std::cout<<"- Username (wallet address or pool login):"<<std::endl;
+	std::cin >> userName;
+
+	std::string passwd;
+	std::cin.clear(); std::cin.ignore(INT_MAX,'\n');
+	std::cout<<"- Password (mostly empty or x):"<<std::endl;
+	getline(std::cin, passwd);
+
+	bool tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)");
+	bool nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/n)");
+
+	int64_t pool_weight;
+	std::cout << "- Please enter a weight for this pool: "<<std::endl;
+	while(!(std::cin >> pool_weight) || pool_weight <= 0)
+	{
+		std::cin.clear();
+		std::cin.ignore(INT_MAX, '\n');
+		std::cout << "Invalid weight.  Try 1, 10, 100, etc:" << std::endl;
+	}
+
+	final = !read_yes_no("- Do you want to add another pool? (y/n)");
+	
+	return "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName +  "\", \"pool_password\" : \"" + 
+		passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " + bool_to_str(tls) + 
+		", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
+}
+
+void do_guided_config(bool userSetPasswd)
+{
+	using namespace xmrstak;
+
+	// load the template of the backend config into a char variable
+	const char *tpl =
+		#include "../config.tpl"
+	;
+
+	configEditor configTpl{};
+	configTpl.set(std::string(tpl));
+	std::cout<<"Please enter:"<<std::endl;
+	auto& currency = params::inst().currency;
+	if(currency.empty())
+	{
+		std::string tmp;
+#if defined(CONF_NO_AEON)
+		tmp = "monero";
+#elif defined(CONF_NO_MONERO)
+		tmp = "aeon";
+#endif
+		while(tmp != "monero" && tmp != "aeon")
+		{
+			std::cout<<"- Currency: 'monero' or 'aeon'"<<std::endl;
+			std::cin >> tmp;
+			std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
+		} 
+		currency = tmp;
+	}
+
+	auto& pool = params::inst().poolURL;
+	bool userSetPool = true;
+	if(pool.empty())
+	{
+		userSetPool = false;
+		if(currency == "monero")
+			std::cout<<"- Pool address: e.g. pool.usxmrpool.com:3333"<<std::endl;
+		else
+			std::cout<<"- Pool address: e.g. mine.aeon-pool.com:5555"<<std::endl;
+		std::cin >> pool;
+	}
+
+	auto& userName = params::inst().poolUsername;
+	if(userName.empty())
+	{
+		std::cout<<"- Username (wallet address or pool login):"<<std::endl;
+		std::cin >> userName;
+	}
+
+	auto& passwd = params::inst().poolPasswd;
+	if(passwd.empty() && (!userSetPasswd))
+	{
+		// clear everything from stdin to allow an empty password
+		std::cin.clear(); std::cin.ignore(INT_MAX,'\n');
+		std::cout<<"- Password (mostly empty or x):"<<std::endl;
+		getline(std::cin, passwd);
+	}
+
+	bool tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)");
+	bool nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/n)");
+	
+	bool multipool;
+	if(!userSetPool)
+		multipool = read_yes_no("- Do you want to use multiple pools? (y/n)");
+	else
+		multipool = false;
+	
+	int64_t pool_weight;
+	if(multipool)
+	{
+		std::cout << "Pool weight is a number telling the miner how important the pool is." << std::endl;
+		std::cout << "Miner will mine mostly at the pool with the highest weight, unless the pool fails." << std::endl;
+		std::cout << "Weight must be an integer larger than 0." << std::endl;
+		std::cout << "- Please enter a weight for this pool: "<<std::endl;
+		
+		while(!(std::cin >> pool_weight) || pool_weight <= 0)
+		{
+			std::cin.clear();
+			std::cin.ignore(INT_MAX, '\n');
+			std::cout << "Invalid weight.  Try 1, 10, 100, etc:" << std::endl;
+		}
+    }
+    else
+		pool_weight = 1;
+	
+	std::string pool_table;
+	pool_table += "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName +  "\", \"pool_password\" : \"" + 
+		passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " + bool_to_str(tls) + 
+		", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
+
+	if(multipool)
+	{
+		bool final;
+		do
+		{
+			pool_table += get_multipool_entry(final);
+		}
+		while(!final);
+	}
+	
+	configTpl.replace("POOLCONF", pool_table);
+	configTpl.replace("CURRENCY", currency);
+	configTpl.write(params::inst().configFile);
+	std::cout<<"Configuration stored in file '"<<params::inst().configFile<<"'"<<std::endl;
 }
 
 int main(int argc, char *argv[])
@@ -244,60 +407,7 @@ int main(int argc, char *argv[])
 
 	// check if we need a guided start
 	if(!configEditor::file_exist(params::inst().configFile))
-	{
-		// load the template of the backend config into a char variable
-		const char *tpl =
-			#include "../config.tpl"
-		;
-		configEditor configTpl{};
-		configTpl.set(std::string(tpl));
-		std::cout<<"Please enter:"<<std::endl;
-		auto& currency = params::inst().currency;
-		if(currency.empty())
-		{
-			std::string tmp;
-#if defined(CONF_NO_AEON)
-			tmp = "monero";
-#elif defined(CONF_NO_MONERO)
-			tmp = "aeon";
-#endif
-			while(!xmrstak::strcmp_i(tmp, "monero") && !xmrstak::strcmp_i(tmp, "aeon"))
-			{
-				std::cout<<"- currency: 'monero' or 'aeon'"<<std::endl;
-				std::cin >> tmp;
-			} 
-			currency = tmp;
-		}
-		auto& pool = params::inst().poolURL;
-		if(pool.empty())
-		{
-			if(xmrstak::strcmp_i(currency, "monero"))
-				std::cout<<"- pool address: e.g. pool.usxmrpool.com:3333"<<std::endl;
-			else
-				std::cout<<"- pool address: e.g. mine.aeon-pool.com:5555"<<std::endl;
-			std::cin >> pool;
-		}
-		auto& userName = params::inst().poolUsername;
-		if(userName.empty())
-		{
-			std::cout<<"- user name (wallet address or pool login):"<<std::endl;
-			std::cin >> userName;
-		}
-		auto& passwd = params::inst().poolPasswd;
-		if(passwd.empty() && (!userSetPasswd))
-		{
-			// clear everything from stdin to allow an empty password
-			std::cin.clear(); std::cin.ignore(INT_MAX,'\n');
-			std::cout<<"- password (mostly empty or x):"<<std::endl;	
-			getline(std::cin, passwd);
-		}
-		configTpl.replace("POOLURL", pool);
-		configTpl.replace("POOLUSER", userName);
-		configTpl.replace("POOLPASSWD", passwd);
-		configTpl.replace("CURRENCY", currency);
-		configTpl.write(params::inst().configFile);
-		std::cout<<"Configuration stored in file '"<<params::inst().configFile<<"'"<<std::endl;
-	}
+		do_guided_config(userSetPasswd);
 
 	if(!jconf::inst()->parse_config(params::inst().configFile.c_str()))
 	{

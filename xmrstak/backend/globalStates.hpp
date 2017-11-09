@@ -6,6 +6,7 @@
 
 #include <atomic>
 
+constexpr static size_t invalid_pool_id = (-1);
 
 namespace xmrstak
 {
@@ -15,7 +16,7 @@ struct pool_data
 	uint32_t iSavedNonce;
 	size_t   pool_id;
  
-	pool_data() : iSavedNonce(0), pool_id(0)
+	pool_data() : iSavedNonce(0), pool_id(invalid_pool_id)
 	{
 	}
 };
@@ -46,7 +47,7 @@ struct globalStates
 	std::atomic<uint64_t> iConsumeCnt;
 	std::atomic<uint32_t> iGlobalNonce;
 	uint64_t iThreadCount;
-	size_t pool_id;
+	size_t pool_id = invalid_pool_id;
 
 private:
 	globalStates() : iThreadCount(0)

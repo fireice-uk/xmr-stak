@@ -94,7 +94,9 @@ struct jpsock::opq_json_val
 	opq_json_val(const Value* val) : val(val) {}
 };
 
-jpsock::jpsock(size_t id, bool tls) : pool_id(id)
+jpsock::jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sPassword, double pool_weight, bool dev_pool, bool tls, const char* tls_fp, bool nicehash) :
+    net_addr(sAddr), usr_login(sLogin), usr_pass(sPassword), tls_fp(tls_fp), pool_id(id), pool_weight(pool_weight), pool(dev_pool), nicehash(nicehash),
+    connect_time(0), connect_attempts(0), disconnect_time(0), quiet_close(false)
 {
 	sock_init();
 
@@ -189,7 +191,7 @@ bool jpsock::set_socket_error_strerr(const char* a, int res)
 void jpsock::jpsock_thread()
 {
 	jpsock_thd_main();
-	executor::inst()->push_event(ex_event(std::move(sSocketError), pool_id));
+	executor::inst()->push_event(ex_event(std::move(sSocketError), quiet_close, pool_id));
 
 	// If a call is wating, send an error to end it
 	bool bCallWaiting = false;
@@ -206,11 +208,16 @@ void jpsock::jpsock_thread()
 	if(bCallWaiting)
 		call_cond.notify_one();
 
-	bRunning = false;
 	bLoggedIn = false;
+
+	if(bHaveSocketError && !quiet_close)
+		disconnect_time = get_timestamp();
+	else
+		disconnect_time = 0;
 
 	std::unique_lock<std::mutex>(job_mutex);
 	memset(&oCurrentJob, 0, sizeof(oCurrentJob));
+	bRunning = false;
 }
 
 bool jpsock::jpsock_thd_main()
@@ -417,15 +424,18 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 	return true;
 }
 
-bool jpsock::connect(const char* sAddr, std::string& sConnectError)
+bool jpsock::connect(std::string& sConnectError)
 {
 	bHaveSocketError = false;
 	sSocketError.clear();
 	iJobDiff = 0;
-
-	if(sck->set_hostname(sAddr))
+	connect_attempts++;
+	
+	if(sck->set_hostname(net_addr.c_str()))
 	{
 		bRunning = true;
+		disconnect_time = 0;
+		connect_time = get_timestamp();
 		oRecvThd = new std::thread(&jpsock::jpsock_thread, this);
 		return true;
 	}
@@ -434,8 +444,9 @@ bool jpsock::connect(const char* sAddr, std::string& sConnectError)
 	return false;
 }
 
-void jpsock::disconnect()
+void jpsock::disconnect(bool quiet)
 {
+	quiet_close = quiet;
 	sck->close(false);
 
 	if(oRecvThd != nullptr)
@@ -446,6 +457,7 @@ void jpsock::disconnect()
 	}
 
 	sck->close(true);
+	quiet_close = false;
 }
 
 bool jpsock::cmd_ret_wait(const char* sPacket, opq_json_val& poResult)
@@ -493,12 +505,12 @@ bool jpsock::cmd_ret_wait(const char* sPacket, opq_json_val& poResult)
 	return bSuccess;
 }
 
-bool jpsock::cmd_login(const char* sLogin, const char* sPassword)
+bool jpsock::cmd_login()
 {
 	char cmd_buffer[1024];
 
 	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"login\",\"params\":{\"login\":\"%s\",\"pass\":\"%s\",\"agent\":\"" AGENTID_STR "\"},\"id\":1}\n",
-		sLogin, sPassword);
+		usr_login.c_str(), usr_pass.c_str());
 
 	opq_json_val oResult(nullptr);
 
@@ -541,6 +553,7 @@ bool jpsock::cmd_login(const char* sLogin, const char* sPassword)
 	}
 
 	bLoggedIn = true;
+	connect_attempts = 0;
 
 	return true;
 }
