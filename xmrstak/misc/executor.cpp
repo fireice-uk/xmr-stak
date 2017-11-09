@@ -234,7 +234,7 @@ void executor::eval_pool_choice()
 		
 		if(goal->get_pool_id() != goal2->get_pool_id())
 		{
-			if(!goal2->is_running())
+			if(!goal2->is_running() && goal2->can_connect())
 			{
 				printer::inst()->print_msg(L1, "Background-connect to %s pool ...", goal2->get_pool_addr());
 				std::string error;
@@ -268,7 +268,7 @@ void executor::log_socket_error(jpsock* pool, std::string&& sError)
 	vSocketLog.emplace_back(std::move(sError));
 	printer::inst()->print_msg(L1, "SOCKET ERROR - %s", vSocketLog.back().msg.c_str());
 
-	eval_pool_choice();
+	push_event(ex_event(EV_EVAL_POOL_CHOICE));
 }
 
 void executor::log_result_error(std::string&& sError)

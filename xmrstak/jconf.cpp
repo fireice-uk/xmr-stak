@@ -387,7 +387,7 @@ bool jconf::parse_config(const char* sFilename)
 			return false;
 		}
 	}
-	
+
 	size_t pool_cnt = prv->configValues[aPoolList]->Size();
 	if(pool_cnt == 0)
 	{
@@ -448,6 +448,13 @@ bool jconf::parse_config(const char* sFilename)
 	{
 		printer::inst()->print_msg(L0,
 			"Invalid config file. call_timeout, retry_time and giveup_limit need to be positive integers.");
+		return false;
+	}
+
+	if(prv->configValues[iCallTimeout]->GetUint64() < 2 || prv->configValues[iNetRetry]->GetUint64() < 2)
+	{
+		printer::inst()->print_msg(L0,
+			"Invalid config file. call_timeout and retry_time need to be larger than 1 second.");
 		return false;
 	}
 
