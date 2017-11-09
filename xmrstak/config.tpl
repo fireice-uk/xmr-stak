@@ -106,7 +106,7 @@ POOLCONF],
  */
 
 /*
- * use_slow_memory defines our behavior with regards to large pages. There are three possible options here:
+ * use_slow_memory defines our behaviour with regards to large pages. There are three possible options here:
  * always  - Don't even try to use large pages. Always use slow memory.
  * warn    - We will try to use large pages, but fall back to slow memory if that fails.
  * no_mlck - This option is only relevant on Linux, where we can use large pages without locking memory.
@@ -158,6 +158,19 @@ POOLCONF],
  */
 "httpd_port" : 0,
 
+/*
+ * HTTP Authentication
+ *
+ * This allows you to set a password to keep people on the Internet from snooping on your hashrate.
+ * Keep in mind that this is based on HTTP Digest, which is based on MD5. To a determined attacker
+ * who is able to read your traffic it is as easy to break a bog door latch.
+ *
+ * http_login - Login. Empty login disables authentication.
+ * http_pass  - Password.
+ */ 
+"http_login" : "",
+"http_pass" : "",
+ 
 /*
  * prefer_ipv4 - IPv6 preference. If the host is available on both IPv4 and IPv6 net, which one should be choose?
  *               This setting will only be needed in 2020's. No need to worry about it now.

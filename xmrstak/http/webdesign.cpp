@@ -90,6 +90,17 @@ extern const char sHtmlCssFile [] =
 
 size_t sHtmlCssSize = sizeof(sHtmlCssFile) - 1;
 
+extern const char sHttpAuthRelam[] = "XMR-Stak-Miner";
+extern const char sHttpAuthOpaque[] = "6c071f0df539e234cadbcd79164af7a594e23ab42bccb834df796aead6ce96e4";
+
+extern const char sHtmlAccessDenied[] =
+	"<!DOCTYPE html><html>"
+	"<head><title>Access Denied</title></head>"
+	"<body><h1>Access Denied</h1><p>You have entered a wrong username or password</p></body>"
+	"</html>";
+
+size_t sHtmlAccessDeniedSize = sizeof(sHtmlAccessDenied) - 1;
+
 extern const char sHtmlCommonHeader [] =
 	"<!DOCTYPE html>"
 	"<html>"
