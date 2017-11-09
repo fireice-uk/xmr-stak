@@ -24,9 +24,9 @@
     - CUDA/Runtime
     - Driver components
 
-### Install AMD AMD APP SDK (only needed to use AMD GPUs)
+### AMD APP SDK 3.0 (only needed to use AMD GPUs)
 
-- download and install [http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)
+- download and install the latest version from [http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)
 
 ### Dependencies OpenSSL/Hwloc and Microhttpd
 

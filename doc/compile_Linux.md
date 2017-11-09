@@ -1,5 +1,19 @@
 # Compile **xmr-stak** for Linux
 
+## Install Dependencies
+
+### AMD APP SDK 3.0 (only needed to use AMD GPUs)
+
+- download and install the latest version from [http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)
+
+### Cuda 8.0+ (only needed to use NVIDIA GPUs)
+
+- donwload and install [https://developer.nvidia.com/cuda-downloads](https://developer.nvidia.com/cuda-downloads)
+- for minimal install choose `Custom installation options` during the install and select
+    - CUDA/Develpment
+    - CUDA/Runtime
+    - Driver components
+
 ### GNU Compiler
 ```
     # Ubuntu / Debian
