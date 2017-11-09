@@ -8,6 +8,9 @@
 #include <CL/cl.h>
 #endif
 
+#include <string>
+#include <sstream>
+#include <iostream>
 #include <stdint.h>
 #include <vector>
 
