@@ -52,7 +52,7 @@ using namespace rapidjson;
  */
 enum configEnum {
 	aPoolList, bTlsSecureAlgo, sCurrency, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, iAutohashTime, 
-	bFlushStdout, bDaemonMode, sOutputFile, iHttpdPort, bPreferIpv4, bAesOverride, sUseSlowMem 
+	bFlushStdout, bDaemonMode, sOutputFile, iHttpdPort, sHttpLogin, sHttpPass, bPreferIpv4, bAesOverride, sUseSlowMem 
 };
 
 struct configVal {
@@ -76,6 +76,8 @@ configVal oConfigValues[] = {
 	{ bDaemonMode, "daemon_mode", kTrueType },
 	{ sOutputFile, "output_file", kStringType },
 	{ iHttpdPort, "httpd_port", kNumberType },
+	{ sHttpLogin, "http_login", kStringType },
+	{ sHttpPass, "http_pass", kStringType },
 	{ bPreferIpv4, "prefer_ipv4", kTrueType },
 	{ bAesOverride, "aes_override", kNullType },
 	{ sUseSlowMem, "use_slow_memory", kStringType }
@@ -234,6 +236,16 @@ uint64_t jconf::GetAutohashTime()
 uint16_t jconf::GetHttpdPort()
 {
 	return prv->configValues[iHttpdPort]->GetUint();
+}
+
+const char* jconf::GetHttpUsername()
+{
+	return prv->configValues[sHttpLogin]->GetString();
+}
+
+const char* jconf::GetHttpPassword()
+{
+	return prv->configValues[sHttpPass]->GetString();
 }
 
 bool jconf::DaemonMode()
