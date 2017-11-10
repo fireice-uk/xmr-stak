@@ -29,6 +29,7 @@
 #include "xmrstak/backend/miner_work.hpp"
 #include "xmrstak/backend/globalStates.hpp"
 #include "xmrstak/backend/backendConnector.hpp"
+#include "xmrstak/backend/iBackend.hpp"
 
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/console.hpp"
@@ -619,49 +620,64 @@ inline const char* hps_format(double h, char* buf, size_t l)
 void executor::hashrate_report(std::string& out)
 {
 	char num[32];
-	size_t nthd = pvThreads->size();
-
-	out.reserve(256 + nthd * 64);
-
 	double fTotal[3] = { 0.0, 0.0, 0.0};
-	size_t i;
 
-	out.append("HASHRATE REPORT\n");
-	out.append("| ID | 10s |  60s |  15m |");
-	if(nthd != 1)
-		out.append(" ID | 10s |  60s |  15m |\n");
-	else
-		out.append(1, '\n');
-
-	for (i = 0; i < nthd; i++)
+	for( uint32_t b = 0; b < 4u; ++b)
 	{
-		double fHps[3];
+		std::vector<xmrstak::iBackend*> backEnds;
+		std::copy_if(pvThreads->begin(), pvThreads->end(), std::back_inserter(backEnds),
+			[&](xmrstak::iBackend* backend)
+			{
+				return backend->backendType == b;
+			}
+		);
 
-		fHps[0] = telem->calc_telemetry_data(10000, i);
-		fHps[1] = telem->calc_telemetry_data(60000, i);
-		fHps[2] = telem->calc_telemetry_data(900000, i);
+		size_t nthd = backEnds.size();
+		if(nthd != 0)
+		{
+			out.reserve(256 + nthd * 64);
 
-		snprintf(num, sizeof(num), "| %2u |", (unsigned int)i);
-		out.append(num);
-		out.append(hps_format(fHps[0], num, sizeof(num))).append(" |");
-		out.append(hps_format(fHps[1], num, sizeof(num))).append(" |");
-		out.append(hps_format(fHps[2], num, sizeof(num))).append(1, ' ');
+			size_t i;
+			auto bType = static_cast<xmrstak::iBackend::BackendType>(b);
+			out.append("HASHRATE REPORT - ").append(xmrstak::iBackend::getName(bType)).append("\n");
+			out.append("| ID | 10s |  60s |  15m |");
+			if(nthd != 1)
+				out.append(" ID | 10s |  60s |  15m |\n");
+			else
+				out.append(1, '\n');
 
-		fTotal[0] += fHps[0];
-		fTotal[1] += fHps[1];
-		fTotal[2] += fHps[2];
+			for (i = 0; i < nthd; i++)
+			{
+				double fHps[3];
 
-		if((i & 0x1) == 1) //Odd i's
-			out.append("|\n");
+				uint32_t tid = backEnds[i]->iThreadNo;
+				fHps[0] = telem->calc_telemetry_data(10000, tid);
+				fHps[1] = telem->calc_telemetry_data(60000, tid);
+				fHps[2] = telem->calc_telemetry_data(900000, tid);
+
+				snprintf(num, sizeof(num), "| %2u |", (unsigned int)i);
+				out.append(num);
+				out.append(hps_format(fHps[0], num, sizeof(num))).append(" |");
+				out.append(hps_format(fHps[1], num, sizeof(num))).append(" |");
+				out.append(hps_format(fHps[2], num, sizeof(num))).append(1, ' ');
+
+				fTotal[0] += fHps[0];
+				fTotal[1] += fHps[1];
+				fTotal[2] += fHps[2];
+
+				if((i & 0x1) == 1) //Odd i's
+					out.append("|\n");
+			}
+
+			if((i & 0x1) == 1) //We had odd number of threads
+				out.append("|\n");
+	
+			if(nthd != 1)
+				out.append("-----------------------------------------------------\n");
+			else
+				out.append("---------------------------\n");
+		}
 	}
-
-	if((i & 0x1) == 1) //We had odd number of threads
-		out.append("|\n");
-
-	if(nthd != 1)
-		out.append("-----------------------------------------------------\n");
-	else
-		out.append("---------------------------\n");
 
 	out.append("Totals:  ");
 	out.append(hps_format(fTotal[0], num, sizeof(num)));
