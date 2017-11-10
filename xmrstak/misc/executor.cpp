@@ -449,8 +449,26 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 	}
 }
 
+#ifndef _WIN32
+
+#include <signal.h>
+void disable_sigpipe()
+{
+	struct sigaction sa;
+	sa.sa_handler = SIG_IGN;
+	sa.sa_flags = 0;
+	if (sigaction(SIGPIPE, &sa, 0) == -1)
+		printer::inst()->print_msg(L1, "ERROR: Call to sigaction failed!");
+}
+
+#else
+inline void disable_sigpipe() {}
+#endif
+
 void executor::ex_main()
 {
+	disable_sigpipe();
+
 	assert(1000 % iTickTime == 0);
 
 	xmrstak::miner_work oWork = xmrstak::miner_work();
