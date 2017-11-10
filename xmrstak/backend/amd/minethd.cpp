@@ -49,6 +49,7 @@ namespace amd
 
 minethd::minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::thd_cfg cfg)
 {
+	this->backendType = iBackend::AMD;
 	oWork = pWork;
 	bQuit = 0;
 	iThreadNo = (uint8_t)iNo;
