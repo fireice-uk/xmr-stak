@@ -1,5 +1,6 @@
 #pragma once
 
+#include <inttypes.h>
 #include <string>
 #include "donate-level.hpp"
 
@@ -8,7 +9,7 @@ extern const char ver_short[];
 
 inline std::string get_version_str()
 {
-	return std::string(ver_long) + std::to_string(uint(fDevDonationLevel * 1000)) ;
+	return std::string(ver_long) + std::to_string(uint32_t(fDevDonationLevel * 1000)) ;
 }
 
 inline std::string get_version_str_short()

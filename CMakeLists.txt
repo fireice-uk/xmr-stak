@@ -379,10 +379,10 @@ execute_process(
 )
 
 if(NOT "${GIT_COMMIT_HASH}" STREQUAL "")
-	add_definitions("-DGIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
+	add_definitions("-DGIT_COMMIT_HASH=${GIT_COMMIT_HASH}")
 endif()
 if(NOT "${GIT_BRANCH}" STREQUAL "")
-	add_definitions("-DGIT_BRANCH=\"${GIT_BRANCH}\"")
+	add_definitions("-DGIT_BRANCH=${GIT_BRANCH}")
 endif()
 
 
