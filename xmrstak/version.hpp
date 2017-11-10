@@ -1,17 +1,17 @@
 #pragma once
 
-//! git will put "#define GIT_ARCHIVE 1" on the next line inside archives. $Format:%n#define GIT_ARCHIVE 1$
-#if defined(GIT_ARCHIVE) && !defined(GIT_COMMIT_HASH)
-#define GIT_COMMIT_HASH "$Format:%h$"
-#endif
+#include <string>
+#include "donate-level.hpp"
 
-#ifndef GIT_COMMIT_HASH
-#define GIT_COMMIT_HASH "0000000"
-#endif
+extern const char ver_long[];
+extern const char ver_short[];
 
-#ifndef GIT_BRANCH
-#define GIT_BRANCH "unknown"
-#endif
+inline std::string get_version_str()
+{
+	return std::string(ver_long) + std::to_string(uint(fDevDonationLevel * 1000)) ;
+}
 
-#define XMR_STAK_NAME "xmr-stak"
-#define XMR_STAK_VERSION "2.0.0-predev"
+inline std::string get_version_str_short()
+{
+	return std::string(ver_short);
+}
