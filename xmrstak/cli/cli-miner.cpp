@@ -85,7 +85,7 @@ void help()
 	cout<<"  -u, --user USERNAME   pool user name or wallet address"<<endl;
 	cout<<"  -p, --pass PASSWD     pool password, in the most cases x or empty \"\""<<endl;
 	cout<<" \n"<<endl;
-	cout<<XMR_STAK_NAME<<" "<<XMR_STAK_VERSION<<endl;
+	cout<<XMR_STAK_NAME << " " << XMR_STAK_VERSION << " " << GIT_COMMIT_HASH << " " << GIT_BRANCH << endl;
 	cout<<"Brought to by fireice_uk and psychocrypt under GPLv3."<<endl;
 }
 
