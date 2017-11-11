@@ -2,15 +2,19 @@
 
 //! git will put "#define GIT_ARCHIVE 1" on the next line inside archives. $Format:%n#define GIT_ARCHIVE 1$
 #if defined(GIT_ARCHIVE) && !defined(GIT_COMMIT_HASH)
-#define GIT_COMMIT_HASH "$Format:%h$"
+#define GIT_COMMIT_HASH $Format:%h$
 #endif
 
 #ifndef GIT_COMMIT_HASH
-#define GIT_COMMIT_HASH "0000000"
+#define GIT_COMMIT_HASH 0000000
 #endif
 
 #ifndef GIT_BRANCH
-#define GIT_BRANCH "unknown"
+#define GIT_BRANCH unknown
+#endif
+
+#ifndef BACKEND_TYPE
+#define BACKEND_TYPE unknown
 #endif
 
 #define XMR_STAK_NAME "xmr-stak"
@@ -28,16 +32,6 @@
 #define OS_TYPE "unk"
 #endif
 
-#if !defined(CONF_NO_CUDA) && !defined(CONF_NO_OPENCL)
-#define BACKEND_TYPE "cpu-nvidia-amd"
-#elif !defined(CONF_NO_OPENCL)
-#define BACKEND_TYPE "cpu-amd"
-#elif !defined(CONF_NO_CUDA)
-#define BACKEND_TYPE "cpu-nvidia"
-#else
-#define BACKEND_TYPE "cpu"
-#endif
-
 #if defined(CONF_NO_AEON)
 #define COIN_TYPE "monero"
 #elif defined(CONF_NO_MONERO)
@@ -46,8 +40,11 @@
 #define COIN_TYPE "aeon-monero"
 #endif
 
-#define VERSION_LONG  XMR_STAK_NAME "/" XMR_STAK_VERSION "/" GIT_COMMIT_HASH "/" GIT_BRANCH "/" OS_TYPE "/" BACKEND_TYPE "/" COIN_TYPE "/"
-#define VERSION_SHORT XMR_STAK_NAME " " XMR_STAK_VERSION " " GIT_COMMIT_HASH
+#define XMRSTAK_PP_TOSTRING1(str) #str
+#define XMRSTAK_PP_TOSTRING(str) XMRSTAK_PP_TOSTRING1(str)
+
+#define VERSION_LONG  XMR_STAK_NAME "/" XMR_STAK_VERSION "/" XMRSTAK_PP_TOSTRING(GIT_COMMIT_HASH) "/" XMRSTAK_PP_TOSTRING(GIT_BRANCH) "/" OS_TYPE "/" XMRSTAK_PP_TOSTRING(BACKEND_TYPE) "/" COIN_TYPE "/"
+#define VERSION_SHORT XMR_STAK_NAME " " XMR_STAK_VERSION " " XMRSTAK_PP_TOSTRING(GIT_COMMIT_HASH)
 
 const char ver_long[]  = VERSION_LONG;
 const char ver_short[] = VERSION_SHORT;

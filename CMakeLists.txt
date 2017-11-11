@@ -63,7 +63,7 @@ if(CUDA_ENABLE)
     find_package(CUDA 7.5)
 
     if(CUDA_FOUND)
-
+        list(APPEND BACKEND_TYPES "nvidia")
         option(XMR-STAK_LARGEGRID "Support large CUDA block count > 128" ON)
         if(XMR-STAK_LARGEGRID)
             add_definitions("-DXMR_STAK_LARGEGRID=${XMR-STAK_LARGEGRID}")
@@ -233,6 +233,7 @@ if(OpenCL_ENABLE)
     # find package will use the previews searched path variables
     find_package(OpenCL)
     if(OpenCL_FOUND)
+        list(APPEND BACKEND_TYPES "amd")
         include_directories(SYSTEM ${OpenCL_INCLUDE_DIRS})
         #set(LIBS ${LIBS} ${OpenCL_LIBRARY})
         link_directories(${OpenCL_LIBRARY})
@@ -250,6 +251,8 @@ endif()
 option(CPU_ENABLE "Enable or disable CPU support" ON)
 if(NOT CPU_ENABLE)
     add_definitions("-DCONF_NO_CPU")
+else()
+    list(APPEND BACKEND_TYPES "cpu")
 endif()
 
 ################################################################################
@@ -385,6 +388,9 @@ if(NOT "${GIT_BRANCH}" STREQUAL "")
 	add_definitions("-DGIT_BRANCH=${GIT_BRANCH}")
 endif()
 
+# generate backend string
+string(REPLACE ";" "-" STR_BACKEND_TYPES "${BACKEND_TYPES}")
+add_definitions("-DBACKEND_TYPE=${STR_BACKEND_TYPES}")
 
 ################################################################################
 # Compile & Link
