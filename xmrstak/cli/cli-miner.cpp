@@ -63,6 +63,7 @@ void help()
 	cout<<"Usage: "<<params::inst().binaryName<<" [OPTION]..."<<endl;
 	cout<<" "<<endl;
 	cout<<"  -h, --help            show this help"<<endl;
+	cout<<"  -v, --version         show version number"<<endl;
 	cout<<"  -c, --config FILE     common miner configuration file"<<endl;
 #if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_MONERO))
 	cout<<"  --currency NAME       currency to mine: monero or aeon"<<endl;
@@ -294,6 +295,11 @@ int main(int argc, char *argv[])
 			help();
 			// \todo give return code to win_exit to allow passing CI
 			//win_exit();
+			return 0;
+		}
+		if(opName.compare("-v") == 0 || opName.compare("--version") == 0)
+		{
+			std::cout<< "Version: " << get_version_str() << std::endl;
 			return 0;
 		}
 		else if(opName.compare("--noCPU") == 0)
