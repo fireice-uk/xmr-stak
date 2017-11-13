@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
 		}
 		if(opName.compare("-v") == 0 || opName.compare("--version") == 0)
 		{
-			std::cout<< "Version: " << get_version_str() << std::endl;
+			std::cout<< "Version: " << get_version_str_short() << std::endl;
 			return 0;
 		}
 		else if(opName.compare("--noCPU") == 0)
