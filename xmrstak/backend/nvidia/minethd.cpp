@@ -66,6 +66,7 @@ namespace nvidia
 	
 minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 {
+	this->backendType = iBackend::NVIDIA;
 	oWork = pWork;
 	bQuit = 0;
 	iThreadNo = (uint8_t)iNo;
