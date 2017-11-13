@@ -43,13 +43,8 @@ The Following options temporary overwrites the config file settings:
   -o, --url URL         pool url and port, e.g. pool.usxmrpool.com:3333
   -u, --user USERNAME   pool user name or wallet address
   -p, --pass PASSWD     pool password, in the most cases x or empty ""
+```
 
 ## HTML and JSON API report configuraton
 
 To configure the reports shown on the [README](README.md) side you need to edit the httpd_port variable. Then enable wifi on your phone and navigate to [miner ip address]:[httpd_port] in your phone browser. If you want to use the data in scripts, you can get the JSON version of the data at url [miner ip address]:[httpd_port]/api.json
-
-## Default Developer Donation
-By default the miner will donate 2% of the hashpower (2 minute in 100 minutes) to my pool. If you want to change that, edit **xmrstak/donate-level.hpp** before you build the binaries.
-
-If you want to donate directly to support further development, here is my wallet
-```
