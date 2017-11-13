@@ -64,6 +64,7 @@ void help()
 	cout<<" "<<endl;
 	cout<<"  -h, --help            show this help"<<endl;
 	cout<<"  -v, --version         show version number"<<endl;
+	cout<<"  -V, --version-long    show long version number"<<endl;
 	cout<<"  -c, --config FILE     common miner configuration file"<<endl;
 #if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_MONERO))
 	cout<<"  --currency NAME       currency to mine: monero or aeon"<<endl;
