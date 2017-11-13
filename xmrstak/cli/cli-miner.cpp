@@ -302,6 +302,11 @@ int main(int argc, char *argv[])
 			std::cout<< "Version: " << get_version_str_short() << std::endl;
 			return 0;
 		}
+		else if(opName.compare("-V") == 0 || opName.compare("--version-long") == 0)
+		{
+			std::cout<< "Version: " << get_version_str() << std::endl;
+			return 0;
+		}
 		else if(opName.compare("--noCPU") == 0)
 		{
 			params::inst().useCPU = false;
