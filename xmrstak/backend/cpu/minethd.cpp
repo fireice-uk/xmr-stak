@@ -102,6 +102,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefet
 	bNoPrefetch = no_prefetch;
 	this->affinity = affinity;
 
+	std::unique_lock<std::mutex> lck(thd_aff_set);
 	std::future<void> order_guard = order_fix.get_future();
 
 	if(double_work)
@@ -340,6 +341,9 @@ void minethd::work_main()
 		bindMemoryToNUMANode(affinity);
 
 	order_fix.set_value();
+	std::unique_lock<std::mutex> lck(thd_aff_set);
+	lck.release();
+	std::this_thread::yield();
 
 	cn_hash_fun hash_fun;
 	cryptonight_ctx* ctx;
@@ -467,6 +471,9 @@ void minethd::double_work_main()
 		bindMemoryToNUMANode(affinity);
 
 	order_fix.set_value();
+	std::unique_lock<std::mutex> lck(thd_aff_set);
+	lck.release();
+	std::this_thread::yield();
 
 	cn_hash_fun_dbl hash_fun;
 	cryptonight_ctx* ctx0;

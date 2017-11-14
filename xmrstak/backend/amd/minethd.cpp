@@ -59,6 +59,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::th
 	pGpuCtx = ctx;
 	this->affinity = cfg.cpu_aff;
 
+	std::unique_lock<std::mutex> lck(thd_aff_set);
 	std::future<void> order_guard = order_fix.get_future();
 	
 	oWorkThd = std::thread(&minethd::work_main, this);
@@ -180,6 +181,9 @@ void minethd::work_main()
 		bindMemoryToNUMANode(affinity);
 
 	order_fix.set_value();
+	std::unique_lock<std::mutex> lck(thd_aff_set);
+	lck.release();
+	std::this_thread::yield();
 	
 	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
@@ -239,7 +243,7 @@ void minethd::work_main()
 				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
 					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, results[i], bResult), oWork.iPoolId));
 				else
-					executor::inst()->log_result_error("AMD Invalid Result");
+					executor::inst()->push_event(ex_event("AMD Invalid Result", oWork.iPoolId));
 			}
 
 			iCount += pGpuCtx->rawIntensity;
