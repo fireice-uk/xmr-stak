@@ -641,7 +641,10 @@ void executor::hashrate_report(std::string& out)
 
 			size_t i;
 			auto bType = static_cast<xmrstak::iBackend::BackendType>(b);
-			out.append("HASHRATE REPORT - ").append(xmrstak::iBackend::getName(bType)).append("\n");
+			std::string name(xmrstak::iBackend::getName(bType));
+			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+			
+			out.append("HASHRATE REPORT - ").append(name).append("\n");
 			out.append("| ID | 10s |  60s |  15m |");
 			if(nthd != 1)
 				out.append(" ID | 10s |  60s |  15m |\n");

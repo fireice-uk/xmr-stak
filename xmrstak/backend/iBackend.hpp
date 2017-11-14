@@ -8,22 +8,33 @@
 #include <vector>
 #include <string>
 
+template <typename T, std::size_t N>
+constexpr std::size_t countof(T const (&)[N]) noexcept
+{
+	return N;
+}
+
 namespace xmrstak
 {
 	struct iBackend
 	{
 
-		enum BackendType : uint32_t { UNKNOWN = 0, CPU = 1u, AMD = 2u, NVIDIA = 3u };
+		enum BackendType : uint32_t { UNKNOWN = 0u, CPU = 1u, AMD = 2u, NVIDIA = 3u };
 		
-		static std::string getName(const BackendType type)
+		static const char* getName(const BackendType type)
 		{
-			std::vector<std::string> backendNames = {
-				"UNKNOWN",
-				"CPU",
-				"AMD",
-				"NVIDIA"
+			const char* backendNames[] = {
+				"unknown",
+				"cpu",
+				"amd",
+				"nvidia"
 			};
-			return backendNames[static_cast<uint32_t>(type)];
+
+			uint32_t i = static_cast<uint32_t>(type);
+			if(i >= countof(backendNames))
+				i = 0;
+
+			return backendNames[i];
 		}
 
 		std::atomic<uint64_t> iHashCount;
