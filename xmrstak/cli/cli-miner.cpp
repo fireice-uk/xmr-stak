@@ -63,6 +63,8 @@ void help()
 	cout<<"Usage: "<<params::inst().binaryName<<" [OPTION]..."<<endl;
 	cout<<" "<<endl;
 	cout<<"  -h, --help            show this help"<<endl;
+	cout<<"  -v, --version         show version number"<<endl;
+	cout<<"  -V, --version-long    show long version number"<<endl;
 	cout<<"  -c, --config FILE     common miner configuration file"<<endl;
 #if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_MONERO))
 	cout<<"  --currency NAME       currency to mine: monero or aeon"<<endl;
@@ -85,7 +87,7 @@ void help()
 	cout<<"  -u, --user USERNAME   pool user name or wallet address"<<endl;
 	cout<<"  -p, --pass PASSWD     pool password, in the most cases x or empty \"\""<<endl;
 	cout<<" \n"<<endl;
-	cout<<XMR_STAK_NAME<<" "<<XMR_STAK_VERSION<<endl;
+	cout<< "Version: " << get_version_str_short() << endl;
 	cout<<"Brought to by fireice_uk and psychocrypt under GPLv3."<<endl;
 }
 
@@ -296,6 +298,16 @@ int main(int argc, char *argv[])
 			//win_exit();
 			return 0;
 		}
+		if(opName.compare("-v") == 0 || opName.compare("--version") == 0)
+		{
+			std::cout<< "Version: " << get_version_str_short() << std::endl;
+			return 0;
+		}
+		else if(opName.compare("-V") == 0 || opName.compare("--version-long") == 0)
+		{
+			std::cout<< "Version: " << get_version_str() << std::endl;
+			return 0;
+		}
 		else if(opName.compare("--noCPU") == 0)
 		{
 			params::inst().useCPU = false;
@@ -433,17 +445,18 @@ int main(int argc, char *argv[])
 #endif
 
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
-	printer::inst()->print_str( XMR_STAK_NAME" " XMR_STAK_VERSION " mining software.\n");
+	printer::inst()->print_str(get_version_str_short().c_str());
+	printer::inst()->print_str("\n\n");
+	printer::inst()->print_str("Brought to you by fireice_uk and psychocrypt under GPLv3.\n");
 	printer::inst()->print_str("Based on CPU mining code by wolf9466 (heavily optimized by fireice_uk).\n");
 #ifndef CONF_NO_CUDA
-	printer::inst()->print_str("NVIDIA mining code was written by KlausT and psychocrypt.\n");
+	printer::inst()->print_str("Based on NVIDIA mining code by KlausT and psychocrypt.\n");
 #endif
 #ifndef CONF_NO_OPENCL
-	printer::inst()->print_str("AMD mining code was written by wolf9466.\n");
+	printer::inst()->print_str("Based on OpenCL mining code by wolf9466.\n");
 #endif
-	printer::inst()->print_str("Brought to you by fireice_uk and psychocrypt under GPLv3.\n\n");
 	char buffer[64];
-	snprintf(buffer, sizeof(buffer), "Configurable dev donation level is set to %.1f %%\n\n", fDevDonationLevel * 100.0);
+	snprintf(buffer, sizeof(buffer), "\nConfigurable dev donation level is set to %.1f%%\n\n", fDevDonationLevel * 100.0);
 	printer::inst()->print_str(buffer);
 	printer::inst()->print_str("You can use following keys to display reports:\n");
 	printer::inst()->print_str("'h' - hashrate\n");

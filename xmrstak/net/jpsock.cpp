@@ -509,8 +509,8 @@ bool jpsock::cmd_login()
 {
 	char cmd_buffer[1024];
 
-	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"login\",\"params\":{\"login\":\"%s\",\"pass\":\"%s\",\"agent\":\"" AGENTID_STR "\"},\"id\":1}\n",
-		usr_login.c_str(), usr_pass.c_str());
+	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"login\",\"params\":{\"login\":\"%s\",\"pass\":\"%s\",\"agent\":\"%s\"},\"id\":1}\n",
+		usr_login.c_str(), usr_pass.c_str(), get_version_str().c_str());
 
 	opq_json_val oResult(nullptr);
 

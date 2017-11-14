@@ -32,6 +32,8 @@ The miner allow to overwrite some of the settings via command line options.
 Usage: xmr-stak [OPTION]...
 
   -h, --help            show this help
+  -v, --version         show version number
+  -V, --version-long  show long version number
   -c, --config FILE     common miner configuration file
   --currency NAME       currency to mine: monero or aeon
   --noCPU               disable the CPU miner backend

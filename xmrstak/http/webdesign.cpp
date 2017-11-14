@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-extern const char sHtmlCssEtag [] = "00000006";
+extern const char sHtmlCssEtag [] = "00000008";
 extern const char sHtmlCssFile [] =
 	"body {"
 		"font-family: Tahoma, Arial, sans-serif;"
@@ -38,7 +38,13 @@ extern const char sHtmlCssFile [] =
 		"color: white;"
 		"padding: 10px;"
 		"font-weight: bold;"
-		"margin: 10px 0px;"
+		"margin: 0px;"
+		"margin-bottom: 10px;"
+	"}"
+
+	".version {"
+		"font-size: 75%;"
+		"text-align: right;"
 	"}"
 
 	".links {"
@@ -108,6 +114,7 @@ extern const char sHtmlCommonHeader [] =
 	"<link rel='stylesheet' href='style.css' /><title>%s</title></head>"
 	"<body>"
 	"<div class='all'>"
+	"<div class='version'>%s</div>"
 	"<div class='header'><span style='color: rgb(255, 160, 0)'>XMR</span>-Stak Monero Miner</div>"
 
 	"<div class='flex-container'>"
@@ -192,6 +199,8 @@ extern const char sJsonApiConnectionError[] =
 
 extern const char sJsonApiFormat [] =
 "{"
+	"\"version\":\"%s\","
+
 	"\"hashrate\":{"
 		"\"threads\":[%s],"
 		"\"total\":%s,"

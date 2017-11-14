@@ -34,6 +34,7 @@
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/donate-level.hpp"
+#include "xmrstak/version.hpp"
 #include "xmrstak/http/webdesign.hpp"
 
 #include <thread>
@@ -43,6 +44,7 @@
 #include <functional>
 #include <assert.h>
 #include <time.h>
+
 
 #ifdef _WIN32
 #define strncasecmp _strnicmp
@@ -848,7 +850,7 @@ void executor::http_hashrate_report(std::string& out)
 
 	out.reserve(4096);
 
-	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Hashrate Report", "Hashrate Report");
+	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Hashrate Report", ver_html, "Hashrate Report");
 	out.append(buffer);
 
 	snprintf(buffer, sizeof(buffer), sHtmlHashrateBodyHigh, (unsigned int)nthd + 3);
@@ -893,7 +895,7 @@ void executor::http_result_report(std::string& out)
 
 	out.reserve(4096);
 
-	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Result Report", "Result Report");
+	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Result Report", ver_html,  "Result Report");
 	out.append(buffer);
 
 	size_t iGoodRes = vMineResults[0].count, iTotalRes = iGoodRes;
@@ -939,7 +941,7 @@ void executor::http_connection_report(std::string& out)
 
 	out.reserve(4096);
 
-	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Connection Report", "Connection Report");
+	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Connection Report", ver_html,  "Connection Report");
 	out.append(buffer);
 
 	jpsock* pool = pick_pool_by_id(current_pool_id);
@@ -1079,11 +1081,11 @@ void executor::http_json_report(std::string& out)
 		cn_error.append(buffer);
 	}
 
-	size_t bb_size = 1024 + hr_thds.size() + res_error.size() + cn_error.size();
+	size_t bb_size = 2048 + hr_thds.size() + res_error.size() + cn_error.size();
 	std::unique_ptr<char[]> bigbuf( new char[ bb_size ] );
 
 	int bb_len = snprintf(bigbuf.get(), bb_size, sJsonApiFormat,
-		hr_thds.c_str(), hr_buffer, a,
+		get_version_str().c_str(), hr_thds.c_str(), hr_buffer, a,
 		int_port(iPoolDiff), int_port(iGoodRes), int_port(iTotalRes), fAvgResTime, int_port(iPoolHashes),
 		int_port(iTopDiff[0]), int_port(iTopDiff[1]), int_port(iTopDiff[2]), int_port(iTopDiff[3]), int_port(iTopDiff[4]),
 		int_port(iTopDiff[5]), int_port(iTopDiff[6]), int_port(iTopDiff[7]), int_port(iTopDiff[8]), int_port(iTopDiff[9]),
