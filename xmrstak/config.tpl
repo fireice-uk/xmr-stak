@@ -51,8 +51,11 @@ POOLCONF],
  *                 2 - All of level 1, and new job (block) event if the difficulty is different from the last job
  *                 3 - All of level 1, and new job (block) event in all cases, result submission event.
  *                 4 - All of level 3, and automatic hashrate report printing
+ *
+ * print_motd    - Display messages from your pool operator in the hashrate result.
  */
 "verbose_level" : 3,
+"print_motd" : true,
 
 /*
  * Automatic hashrate report

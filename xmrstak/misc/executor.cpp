@@ -620,8 +620,75 @@ inline const char* hps_format(double h, char* buf, size_t l)
 		return " (na)";
 }
 
+bool executor::motd_filter_console(std::string& motd)
+{
+	if(motd.size() > motd_max_length)
+		return false;
+
+	motd.erase(std::remove_if(motd.begin(), motd.end(), [](int chr)->bool { return !((chr >= 0x20 && chr <= 0x7e) || chr == '\n');}), motd.end());
+	return motd.size() > 0;
+}
+
+bool executor::motd_filter_web(std::string& motd)
+{
+	if(!motd_filter_console(motd))
+		return false;
+
+	std::string tmp;
+	tmp.reserve(motd.size() + 128);
+
+	for(size_t i=0; i < motd.size(); i++)
+	{
+		char c = motd[i];
+		switch(c)
+		{
+		case '&':
+			tmp.append("&amp;");
+			break;
+		case '"':
+			tmp.append("&quot;");
+			break;
+		case '\'':
+			tmp.append("&#039");
+			break;
+		case '<':
+			tmp.append("&lt;");
+			break;
+		case '>':
+			tmp.append("&gt;");
+			break;
+		case '\n':
+			tmp.append("<br>");
+			break;
+		default:
+			tmp.append(1, c);
+			break;
+		}
+	}
+
+	motd = std::move(tmp);
+	return true;
+}
+
 void executor::hashrate_report(std::string& out)
 {
+	out.reserve(2048 + pvThreads->size() * 64);
+
+	if(jconf::inst()->PrintMotd())
+	{
+		std::string motd;
+		for(jpsock& pool : pools)
+		{
+			motd.empty();
+			if(pool.get_pool_motd(motd) && motd_filter_console(motd))
+			{
+				out.append("Message from ").append(pool.get_pool_addr()).append(":\n");
+				out.append(motd).append("\n");
+				out.append("-----------------------------------------------------\n");
+			}
+		}
+	}
+
 	char num[32];
 	double fTotal[3] = { 0.0, 0.0, 0.0};
 
@@ -638,8 +705,6 @@ void executor::hashrate_report(std::string& out)
 		size_t nthd = backEnds.size();
 		if(nthd != 0)
 		{
-			out.reserve(256 + nthd * 64);
-
 			size_t i;
 			auto bType = static_cast<xmrstak::iBackend::BackendType>(b);
 			std::string name(xmrstak::iBackend::getName(bType));
@@ -856,6 +921,30 @@ void executor::http_hashrate_report(std::string& out)
 
 	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Hashrate Report", ver_html, "Hashrate Report");
 	out.append(buffer);
+
+	bool have_motd = false;
+	if(jconf::inst()->PrintMotd())
+	{
+		std::string motd;
+		for(jpsock& pool : pools)
+		{
+			motd.empty();
+			if(pool.get_pool_motd(motd) && motd_filter_web(motd))
+			{
+				if(!have_motd)
+				{
+					out.append(sHtmlMotdBoxStart);
+					have_motd = true;
+				}
+				
+				snprintf(buffer, sizeof(buffer), sHtmlMotdEntry, pool.get_pool_addr(), motd.c_str());
+				out.append(buffer);
+			}
+		}
+	}
+
+	if(have_motd)
+		out.append(sHtmlMotdBoxEnd);
 
 	snprintf(buffer, sizeof(buffer), sHtmlHashrateBodyHigh, (unsigned int)nthd + 3);
 	out.append(buffer);

@@ -414,10 +414,17 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 	else
 		return set_socket_error("PARSE error: Job error 5");
 
-	if(motd != nullptr && motd->IsString())
+	if(motd != nullptr && motd->IsString() && (motd->GetStringLength() & 0x01) == 0)
 	{
 		std::unique_lock<std::mutex>(motd_mutex);
-		pool_motd.assign(motd->GetString());
+		if(motd->GetStringLength() > 0)
+		{
+			pool_motd.resize(motd->GetStringLength()/2 + 1);
+			if(!hex2bin(motd->GetString(), motd->GetStringLength(), (unsigned char*)&pool_motd.front()))
+				pool_motd.clear();
+		}
+		else
+			pool_motd.clear();
 	}
 
 	iJobDiff = t64_to_diff(oPoolJob.iTarget);
@@ -564,13 +571,13 @@ bool jpsock::cmd_login()
 			std::string tmp(jextname.GetString());
 			std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
 
-			if(tmp.compare("algo"))
+			if(tmp == "algo")
 				ext_algo = true;
-			else if(tmp.compare("backend"))
+			else if(tmp == "backend")
 				ext_backend = true;
-			else if(tmp.compare("hashcount"))
+			else if(tmp == "hashcount")
 				ext_hashcount = true;
-			else if(tmp.compare("motd"))
+			else if(tmp == "motd")
 				ext_motd = true;
 		}
 	}
@@ -602,7 +609,7 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 		snprintf(sBackend, sizeof(sBackend), ",\"backend\":\"%s\"", xmrstak::iBackend::getName(bend->backendType));
 	
 	if(ext_hashcount)
-		snprintf(sHashcount, sizeof(sHashcount), ",\"hashcount\":\"%llu\"", int_port(bend->iHashCount.load(std::memory_order_relaxed)));
+		snprintf(sHashcount, sizeof(sHashcount), ",\"hashcount\":%llu", int_port(bend->iHashCount.load(std::memory_order_relaxed)));
 
 	if(ext_algo)
 		snprintf(sAlgo, sizeof(sAlgo), ",\"algo\":\"%s\"", algo_full_cn ? "cryptonight" : "cryptonight-lite");
