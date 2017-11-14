@@ -216,7 +216,7 @@ void minethd::work_main()
 
 	globalStates::inst().iConsumeCnt++;
 
-	if(/*cuda_get_deviceinfo(&ctx) != 1 ||*/ cryptonight_extra_cpu_init(&ctx) != 1)
+	if(cuda_get_deviceinfo(&ctx) != 0 || cryptonight_extra_cpu_init(&ctx) != 1)
 	{
 		printer::inst()->print_msg(L0, "Setup failed for GPU %d. Exitting.\n", (int)iThreadNo);
 		std::exit(0);
