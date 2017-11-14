@@ -1,5 +1,6 @@
 #pragma once
 
+#include "xmrstak/backend/iBackend.hpp"
 #include "msgstruct.hpp"
 
 #include <mutex>
@@ -33,7 +34,7 @@ public:
 	void disconnect(bool quiet = false);
 
 	bool cmd_login();
-	bool cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult);
+	bool cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult, xmrstak::iBackend* bend, bool algo_full_cn);
 
 	static bool hex2bin(const char* in, unsigned int len, unsigned char* out);
 	static void bin2hex(const unsigned char* in, unsigned int len, char* out);
@@ -57,6 +58,8 @@ public:
 	inline const char* get_pool_addr() { return net_addr.c_str(); }
 	inline const char* get_tls_fp() { return tls_fp.c_str(); }
 	inline bool is_nicehash() { return nicehash; }
+
+	bool get_pool_motd(std::string& strin);
 
 	std::string&& get_call_error();
 	bool have_sock_error() { return bHaveSocketError; }
@@ -86,6 +89,14 @@ private:
 	double pool_weight;
 	bool pool;
 	bool nicehash;
+
+	bool ext_algo = false;
+	bool ext_backend = false;
+	bool ext_hashcount = false;
+	bool ext_motd = false;
+
+	std::string pool_motd;
+	std::mutex motd_mutex;
 
 	size_t connect_time = 0;
 	std::atomic<size_t> connect_attempts;

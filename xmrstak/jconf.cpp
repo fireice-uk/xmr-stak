@@ -193,7 +193,7 @@ const std::string jconf::GetCurrency()
 
 bool jconf::IsCurrencyMonero()
 {
-	if(xmrstak::strcmp_i(::jconf::inst()->GetCurrency(), "monero"))
+	if(xmrstak::strcmp_i(GetCurrency(), "monero"))
 	{
 		return true;
 	}
