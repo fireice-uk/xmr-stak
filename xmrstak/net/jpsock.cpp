@@ -599,7 +599,7 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 	char sHashcount[64] = {0};
 
 	if(ext_backend)
-		snprintf(sBackend, sizeof(sBackend), ",\"backend\":\"%s\"", "");
+		snprintf(sBackend, sizeof(sBackend), ",\"backend\":\"%s\"", xmrstak::iBackend::getName(bend->backendType));
 	
 	if(ext_hashcount)
 		snprintf(sHashcount, sizeof(sHashcount), ",\"hashcount\":\"%llu\"", int_port(bend->iHashCount.load(std::memory_order_relaxed)));
