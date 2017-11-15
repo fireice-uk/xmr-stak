@@ -7,6 +7,7 @@
 * [AMD Backend](#amd-backend)
   * [Choose `intensity` and `worksize`](#choose-intensity-and-worksize)
   * [Add more GPUs](#add-more-gpus)
+  * [Increase Memory Pool](#increase-memory-pool)
 
 ## NVIDIA Backend
 
@@ -66,3 +67,17 @@ If you are unsure of either GPU or platform index value, you can use `clinfo` to
 
 "platform_index" : 0,
 ```
+
+### Increase Memory Pool
+
+By setting the following environment variables before the miner is started OpenCl allows the miner to more threads.
+This variables must be set each time before the miner is started else it could be that the miner can not allocate enough memory and is crashing.
+
+```
+export GPU_FORCE_64BIT_PTR=1
+export GPU_MAX_HEAP_SIZE=99
+export GPU_MAX_ALLOC_PERCENT=99
+export GPU_SINGLE_ALLOC_PERCENT=99
+```
+
+*Note:* Windows user must use `set` instead of `export` to define an environment variable.
