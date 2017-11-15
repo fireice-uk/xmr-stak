@@ -270,6 +270,14 @@ extern "C" int cuda_get_devicecount( int* deviceCount)
 	return 1;
 }
 
+/** get device information
+ *
+ * @return 0 = all OK,
+ *         1 = something went wrong,
+ *         2 = gpu cannot be selected,
+ *         3 = context cannot be created
+ *         4 = not enough memory
+ */
 extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 {
 	cudaError_t err;
@@ -279,25 +287,25 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 	if(err != cudaSuccess)
 	{
 		printf("Unable to query CUDA driver version! Is an nVidia driver installed?\n");
-		return 0;
+		return 1;
 	}
 
 	if(version < CUDART_VERSION)
 	{
 		printf("Driver does not support CUDA %d.%d API! Update your nVidia driver!\n", CUDART_VERSION / 1000, (CUDART_VERSION % 1000) / 10);
-		return 0;
+		return 1;
 	}
 
 	int GPU_N;
 	if(cuda_get_devicecount(&GPU_N) == 0)
 	{
-		return 0;
+		return 1;
 	}
 
 	if(ctx->device_id >= GPU_N)
 	{
 		printf("Invalid device ID!\n");
-		return 0;
+		return 1;
 	}
 
 	cudaDeviceProp props;
@@ -305,7 +313,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 	if(err != cudaSuccess)
 	{
 		printf("\nGPU %d: %s\n%s line %d\n", ctx->device_id, cudaGetErrorString(err), __FILE__, __LINE__);
-		return 0;
+		return 1;
 	}
 
 	ctx->device_name = strdup(props.name);
@@ -347,9 +355,31 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			maxMemUsage = size_t(1024u) * byteToMiB;
 		}
 
+		int* tmp;
+		cudaError_t err;
+		// a device must be selected to get the right memory usage later on
+		err = cudaSetDevice(ctx->device_id);
+		if(err != cudaSuccess)
+		{
+			printf("WARNING: NVIDIA GPU %d: cannot be selected.\n", ctx->device_id);
+			return 2;
+		}
+		// trigger that a context on the gpu will be allocated
+		err = cudaMalloc(&tmp, 256);
+		if(err != cudaSuccess)
+		{
+			printf("WARNING: NVIDIA GPU %d: context cannot be created.\n", ctx->device_id);
+			return 3;
+		}
+
+
 		size_t freeMemory = 0;
 		size_t totalMemory = 0;
 		CUDA_CHECK(ctx->device_id, cudaMemGetInfo(&freeMemory, &totalMemory));
+
+		cudaFree(tmp);
+		// delete created context on the gpu
+		cudaDeviceReset();
 		
 		ctx->total_device_memory = totalMemory;
 		ctx->free_device_memory = freeMemory;
@@ -379,6 +409,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			printf("WARNING: NVIDIA GPU %d: already %s MiB memory in use, skip GPU.\n",
 				ctx->device_id,
 				std::to_string(usedMem/byteToMiB).c_str());
+			return 4;
 		}
 		else
 			maxMemUsage -= usedMem;
@@ -404,5 +435,5 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 
 	}
 
-	return 1;
+	return 0;
 }

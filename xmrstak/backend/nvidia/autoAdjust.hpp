@@ -60,17 +60,15 @@ public:
             ctx.device_bfactor = 6;
             ctx.device_bsleep = 25;
 #endif
-            if( cuda_get_deviceinfo(&ctx) != 1 )
-            {
-                printer::inst()->print_msg(L0, "Setup failed for GPU %d. Exitting.\n", i);
-                std::exit(0);
-            }
-            nvidCtxVec.push_back(ctx);
+            if(cuda_get_deviceinfo(&ctx) == 0)
+                nvidCtxVec.push_back(ctx);
+            else
+                printer::inst()->print_msg(L0, "WARNING: NVIDIA setup failed for GPU %d.\n", i);
 
         }
 
         generateThreadConfig();
-		return true;
+        return true;
 
     }
 
@@ -94,6 +92,7 @@ private:
 			{
 				conf += std::string("  // gpu: ") + ctx.name + " architecture: " + std::to_string(ctx.device_arch[0] * 10 + ctx.device_arch[1]) + "\n";
 				conf += std::string("  //      memory: ") + std::to_string(ctx.free_device_memory / byte2mib) + "/"  + std::to_string(ctx.total_device_memory / byte2mib) + " MiB\n";
+				conf += std::string("  //      smx: ") + std::to_string(ctx.device_mpcount) + "\n";
 				conf += std::string("  { \"index\" : ") + std::to_string(ctx.device_id) + ",\n" +
 					"    \"threads\" : " + std::to_string(ctx.device_threads) + ", \"blocks\" : " + std::to_string(ctx.device_blocks) + ",\n" +
 					"    \"bfactor\" : " + std::to_string(ctx.device_bfactor) + ", \"bsleep\" :  " + std::to_string(ctx.device_bsleep) + ",\n" +
