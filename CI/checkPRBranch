@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+
+# Disallow pull requests to `fireice-uk/xmr-stak` branch `master`
+#
+# - merging from `dev` or `release-...` located within our reposetory is allowed
+# - merging to `master` within a fork is allowed
+# - pull request to `dev` are allowed from everywhere
+#
+# See: https://docs.travis-ci.com/user/environment-variables/
+#      https://developer.github.com/v3/pulls/#get-a-single-pull-request
+#
+#
+# return 0 = OK, else false
+#
+
+if [ "$TRAVIS" != "true" ] ; then
+    echo "Not in travis, so I have nothing to do :)"
+else
+    xmrstak_slug="fireice-uk/xmr-stak"
+
+    # check only pull requests to `master`
+    if [ "$TRAVIS_EVENT_TYPE" == "pull_request" ] && [ "$TRAVIS_BRANCH" == "master" ] ; then
+        # allow pull requests to forks
+        if [ "$TRAVIS_REPO_SLUG" == "$xmrstak_slug" ] ; then
+            echo "$TRAVIS_PULL_REQUEST_BRANCH" | grep -q "^dev$"
+            comingFromDev=$?
+            echo "$TRAVIS_PULL_REQUEST_BRANCH" | grep -q "^release-"
+            comingFromRelease=$?
+            # check origin
+            if [[ "$TRAVIS_PULL_REQUEST_SLUG" != "$xmrstak_slug" || ( $comingFromDev -ne 0 && $comingFromRelease -ne 0 ) ]] ; then
+                # the PR came from a fork owned by the first part of the slug
+                pr_author=$(echo "$TRAVIS_PULL_REQUEST_SLUG" | awk -F "/" '{print $1}')
+                pr_branch=$TRAVIS_PULL_REQUEST_BRANCH
+                echo ""
+                echo "Pull request opened to wrong branch!"
+                echo ""
+                echo "Pul requests need to go to our 'dev' branch but your pull-request from '"$TRAVIS_PULL_REQUEST_SLUG"' was"
+                echo "sent to 'master' which is only updated by our maintainers for new stable releases."
+                echo ""
+                echo "Please re-open your pull-request against our 'dev' branch:"
+                echo "  https://github.com/fireice-uk/xmr-stak/compare/dev...$pr_author:$pr_branch?expand=1"
+                echo ""
+                echo "For further information, please see:"
+                echo "  https://github.com/fireice-uk/xmr-stak/blob/dev/CONTRIBUTING.md"
+                exit 1
+            fi
+        fi
+    fi
+fi
