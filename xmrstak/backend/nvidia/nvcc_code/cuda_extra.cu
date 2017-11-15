@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <sstream>
+#include <algorithm>
+#include <vector>
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <device_functions.hpp>
@@ -277,6 +280,7 @@ extern "C" int cuda_get_devicecount( int* deviceCount)
  *         2 = gpu cannot be selected,
  *         3 = context cannot be created
  *         4 = not enough memory
+ *         5 = architecture not supported (not compiled for the gpu architecture)
  */
 extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 {
@@ -321,7 +325,51 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 	ctx->device_arch[0] = props.major;
 	ctx->device_arch[1] = props.minor;
 
+	const int gpuArch = ctx->device_arch[0] * 10 + ctx->device_arch[1];
+
 	ctx->name = std::string(props.name);
+
+	std::vector<int> arch;
+#define XMRSTAK_PP_TOSTRING1(str) #str
+#define XMRSTAK_PP_TOSTRING(str) XMRSTAK_PP_TOSTRING1(str)
+	char const * archStringList = XMRSTAK_PP_TOSTRING(XMRSTAK_CUDA_ARCH_LIST);
+#undef XMRSTAK_PP_TOSTRING
+#undef XMRSTAK_PP_TOSTRING1
+	std::stringstream ss(archStringList);
+
+	//transform string list sperated with `+` into a vector of integers
+	int tmpArch;
+	while ( ss >> tmpArch )
+		arch.push_back( tmpArch );
+
+	if(gpuArch >= 20 && gpuArch < 30)
+	{
+		// compiled binary must support sm_20 for fermi
+		std::vector<int>::iterator it = std::find(arch.begin(), arch.end(), 20);
+		if(it == arch.end())
+		{
+			printf("WARNING: NVIDIA GPU %d: miner not compiled for the gpu architecture %d.\n", ctx->device_id, gpuArch);
+			return 5;
+		}
+	}
+	if(gpuArch >= 30)
+	{
+		// search the minimum architecture greater than sm_20
+		int minSupportedArch = 0;
+		/* - for newer architecture than fermi we need at least sm_30
+		 * or a architecture >= gpuArch
+		 * - it is not possible to use a gpu with a architecture >= 30
+		 *   with a sm_20 only compiled binary
+		 */
+		for(int i = 0; i < arch.size(); ++i)
+			if(minSupportedArch == 0 || (arch[i] >= 30 && arch[i] < minSupportedArch))
+				minSupportedArch = arch[i];
+		if(minSupportedArch >= 30 && gpuArch <= minSupportedArch)
+		{
+			printf("WARNING: NVIDIA GPU %d: miner not compiled for the gpu architecture %d.\n", ctx->device_id, gpuArch);
+			return 5;
+		}
+	}
 
 	// set all evice option those marked as auto (-1) to a valid value
 	if(ctx->device_blocks == -1)

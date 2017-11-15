@@ -109,6 +109,10 @@ if(CUDA_ENABLE)
         endif()
         set(CUDA_ARCH "${DEFAULT_CUDA_ARCH}" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
 
+        # generate comma separated list with architectures
+        string(REPLACE ";" "+" STR_CUDA_ARCH "${CUDA_ARCH}")
+        add_definitions("-DXMRSTAK_CUDA_ARCH_LIST=${STR_CUDA_ARCH}")
+
         # validate architectures (only numbers are allowed)
         foreach(CUDA_ARCH_ELEM ${CUDA_ARCH})
             string(REGEX MATCH "^[0-9]+$" IS_NUMBER ${CUDA_ARCH})
