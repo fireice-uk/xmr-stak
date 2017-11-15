@@ -42,7 +42,6 @@ public:
 
 	inline void push_event(ex_event&& ev) { oEventQ.push(std::move(ev)); }
 	void push_timed_event(ex_event&& ev, size_t sec);
-	void log_result_error(std::string&& sError);
 
 private:
 	struct timed_event
@@ -180,6 +179,7 @@ private:
 	double fHighestHps = 0.0;
 
 	void log_socket_error(jpsock* pool, std::string&& sError);
+	void log_result_error(std::string&& sError);
 	void log_result_ok(uint64_t iActualDiff);
 
 	void on_sock_ready(size_t pool_id);

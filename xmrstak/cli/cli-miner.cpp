@@ -130,7 +130,11 @@ std::string get_multipool_entry(bool& final)
 	std::cout<<"- Password (mostly empty or x):"<<std::endl;
 	getline(std::cin, passwd);
 
+#ifdef CONF_NO_TLS
+	bool tls = false;
+#else
 	bool tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)");
+#endif
 	bool nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/n)");
 
 	int64_t pool_weight;
@@ -207,7 +211,11 @@ void do_guided_config(bool userSetPasswd)
 		getline(std::cin, passwd);
 	}
 
+#ifdef CONF_NO_TLS
+	bool tls = false;
+#else
 	bool tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)");
+#endif
 	bool nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/n)");
 	
 	bool multipool;
