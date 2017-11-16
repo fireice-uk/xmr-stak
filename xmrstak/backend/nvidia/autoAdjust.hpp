@@ -24,58 +24,58 @@ class autoAdjust
 {    
 public:
 
-    autoAdjust()
-    {
+	autoAdjust()
+	{
 
-    }
+	}
 
-    /** print the adjusted values if needed
-     *
-     * Routine exit the application and print the adjusted values if needed else
-     * nothing is happened.
-     */
-    bool printConfig()
-    {
+	/** print the adjusted values if needed
+	 *
+	 * Routine exit the application and print the adjusted values if needed else
+	 * nothing is happened.
+	 */
+	bool printConfig()
+	{
 		int deviceCount = 0;
-        if(cuda_get_devicecount(&deviceCount) == 0)
-            return false;
-        // evaluate config parameter for if auto adjustment is needed
-                // evaluate config parameter for if auto adjustment is needed
-        for(int i = 0; i < deviceCount; i++)
-        {
-       
-            nvid_ctx ctx;
+		if(cuda_get_devicecount(&deviceCount) == 0)
+			return false;
+		// evaluate config parameter for if auto adjustment is needed
+				// evaluate config parameter for if auto adjustment is needed
+		for(int i = 0; i < deviceCount; i++)
+		{
+	   
+			nvid_ctx ctx;
 
-            ctx.device_id = i;
-            // -1 trigger auto adjustment
-            ctx.device_blocks = -1;
-            ctx.device_threads = -1;
+			ctx.device_id = i;
+			// -1 trigger auto adjustment
+			ctx.device_blocks = -1;
+			ctx.device_threads = -1;
 
-        // set all evice option those marked as auto (-1) to a valid value
+		// set all evice option those marked as auto (-1) to a valid value
 #ifndef _WIN32
-            ctx.device_bfactor = 0;
-            ctx.device_bsleep = 0;
+			ctx.device_bfactor = 0;
+			ctx.device_bsleep = 0;
 #else
-            // windows pass, try to avoid that windows kills the miner if the gpu is blocked for 2 seconds
-            ctx.device_bfactor = 6;
-            ctx.device_bsleep = 25;
+			// windows pass, try to avoid that windows kills the miner if the gpu is blocked for 2 seconds
+			ctx.device_bfactor = 6;
+			ctx.device_bsleep = 25;
 #endif
-            if(cuda_get_deviceinfo(&ctx) == 0)
-                nvidCtxVec.push_back(ctx);
-            else
-                printer::inst()->print_msg(L0, "WARNING: NVIDIA setup failed for GPU %d.\n", i);
+			if(cuda_get_deviceinfo(&ctx) == 0)
+				nvidCtxVec.push_back(ctx);
+			else
+				printer::inst()->print_msg(L0, "WARNING: NVIDIA setup failed for GPU %d.\n", i);
 
-        }
+		}
 
-        generateThreadConfig();
-        return true;
+		generateThreadConfig();
+		return true;
 
-    }
+	}
 
 private:
-    
-    void generateThreadConfig()
-    {
+	
+	void generateThreadConfig()
+	{
 		// load the template of the backend config into a char variable
 		const char *tpl =
 			#include "./config.tpl"
@@ -86,8 +86,8 @@ private:
 
 		constexpr size_t byte2mib = 1024u * 1024u;
 		std::string conf;
-        for(auto& ctx : nvidCtxVec)
-        {
+		for(auto& ctx : nvidCtxVec)
+		{
 			if(ctx.device_threads * ctx.device_blocks > 0)
 			{
 				conf += std::string("  // gpu: ") + ctx.name + " architecture: " + std::to_string(ctx.device_arch[0] * 10 + ctx.device_arch[1]) + "\n";
@@ -99,14 +99,14 @@ private:
 					"    \"affine_to_cpu\" : false,\n" +
 					"  },\n";
 			}
-        }
+		}
 
 		configTpl.replace("GPUCONFIG",conf);
 		configTpl.write(params::inst().configFileNVIDIA);
 		printer::inst()->print_msg(L0, "NVIDIA: GPU configuration stored in file '%s'", params::inst().configFileNVIDIA.c_str());
-    }
+	}
 
-    std::vector<nvid_ctx> nvidCtxVec;
+	std::vector<nvid_ctx> nvidCtxVec;
 };
 
 } // namespace nvidia

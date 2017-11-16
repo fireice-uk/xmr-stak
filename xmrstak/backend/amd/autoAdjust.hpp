@@ -34,18 +34,18 @@ class autoAdjust
 {    
 public:
 
-    autoAdjust()
-    {
+	autoAdjust()
+	{
 
-    }
+	}
 
-    /** print the adjusted values if needed
-     *
-     * Routine exit the application and print the adjusted values if needed else
-     * nothing is happened.
-     */
-    bool printConfig()
-    {
+	/** print the adjusted values if needed
+	 *
+	 * Routine exit the application and print the adjusted values if needed else
+	 * nothing is happened.
+	 */
+	bool printConfig()
+	{
 		int platformIndex = getAMDPlatformIdx();
 
 		if(platformIndex == -1)
@@ -65,14 +65,14 @@ public:
 			return false;
 		}
 
-        generateThreadConfig(platformIndex);
+		generateThreadConfig(platformIndex);
 		return true;
-    }
+	}
 
 private:
 
-    void generateThreadConfig(const int platformIndex)
-    {
+	void generateThreadConfig(const int platformIndex)
+	{
 		// load the template of the backend config into a char variable
 		const char *tpl =
 			#include "./config.tpl"
@@ -94,9 +94,9 @@ private:
 		}
 
 		std::string conf;
-        int i = 0;
-        for(auto& ctx : devVec)
-        {
+		int i = 0;
+		for(auto& ctx : devVec)
+		{
 			/* 1000 is a magic selected limit, the reason is that more than 2GiB memory
 			 * sowing down the memory performance because of TLB cache misses
 			 */
@@ -121,20 +121,20 @@ private:
 			conf += std::string("  // gpu: ") + ctx.name + " memory:" + std::to_string(availableMem / byteToMiB) + "\n";
 			conf += std::string("  // compute units: ") + std::to_string(ctx.computeUnits) + "\n";
 			// set 8 threads per block (this is a good value for the most gpus)
-            conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
-                "    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
-                "    \"affine_to_cpu\" : false, \n"
-                "  },\n";
-            ++i;
-        }
+			conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
+				"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
+				"    \"affine_to_cpu\" : false, \n"
+				"  },\n";
+			++i;
+		}
 
 		configTpl.replace("PLATFORMINDEX",std::to_string(platformIndex));
 		configTpl.replace("GPUCONFIG",conf);
 		configTpl.write(params::inst().configFileAMD);
 		printer::inst()->print_msg(L0, "AMD: GPU configuration stored in file '%s'", params::inst().configFileAMD.c_str());
-    }
+	}
 
-    std::vector<GpuContext> devVec;
+	std::vector<GpuContext> devVec;
 };
 
 } // namespace amd

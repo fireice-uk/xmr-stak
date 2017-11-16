@@ -95,16 +95,16 @@ struct plugin
 	starterBackend_t fn_starterBackend;
 
 #ifdef WIN32
-    HINSTANCE libBackend;
+	HINSTANCE libBackend;
 #else
-    void *libBackend;
+	void *libBackend;
 #endif
 
 /* \todo add unload to destructor and change usage of plugin that libs keeped open until the miner endss
 #ifdef WIN32
-    FreeLibrary(libBackend);
+	FreeLibrary(libBackend);
 #else
-    dlclose(libBackend);
+	dlclose(libBackend);
 #endif
  * */
 };

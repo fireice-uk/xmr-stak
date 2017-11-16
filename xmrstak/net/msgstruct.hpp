@@ -170,6 +170,6 @@ struct ex_event
 //Get steady_clock timestamp - misc helper function
 inline size_t get_timestamp()
 {
-    using namespace std::chrono;
-    return time_point_cast<seconds>(steady_clock::now()).time_since_epoch().count();
+	using namespace std::chrono;
+	return time_point_cast<seconds>(steady_clock::now()).time_since_epoch().count();
 };

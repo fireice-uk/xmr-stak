@@ -35,7 +35,7 @@ struct configEditor
 		std::ifstream fstream(filename);
 		m_fileContent = std::string(
 			(std::istreambuf_iterator<char>(fstream)),
-		    std::istreambuf_iterator<char>()
+			std::istreambuf_iterator<char>()
 		);
 		return fstream.good();
 	}

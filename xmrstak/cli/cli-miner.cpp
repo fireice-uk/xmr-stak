@@ -238,8 +238,8 @@ void do_guided_config(bool userSetPasswd)
 			std::cin.ignore(INT_MAX, '\n');
 			std::cout << "Invalid weight.  Try 1, 10, 100, etc:" << std::endl;
 		}
-    }
-    else
+	}
+	else
 		pool_weight = 1;
 	
 	std::string pool_table;
