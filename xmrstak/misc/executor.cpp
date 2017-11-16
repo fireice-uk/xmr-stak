@@ -234,7 +234,7 @@ void executor::eval_pool_choice()
 		/* All is good - but check if we can do better */
 		std::sort(eval_pools.begin(), eval_pools.end(), [](jpsock* a, jpsock* b) { return b->get_pool_weight(false) < a->get_pool_weight(false); }); 
 		jpsock* goal2 = eval_pools[0];
-		
+
 		if(goal->get_pool_id() != goal2->get_pool_id())
 		{
 			if(!goal2->is_running() && goal2->can_connect())
@@ -252,10 +252,10 @@ void executor::eval_pool_choice()
 	{
 		for(jpsock& pool : pools)
 		{
-			if(goal->is_logged_in() && pool.is_running() && pool.get_pool_id() != goal->get_pool_id())
+			if(goal->is_logged_in() && pool.is_logged_in() && pool.get_pool_id() != goal->get_pool_id())
 				pool.disconnect(true);
 
-			if(pool.is_dev_pool() && pool.is_running())
+			if(pool.is_dev_pool() && pool.is_logged_in())
 				pool.disconnect(true);
 		}
 	}
