@@ -358,7 +358,8 @@ void minethd::work_main()
 	piHashVal = (uint64_t*)(result.bResult + 24);
 	piNonce = (uint32_t*)(oWork.bWorkBlob + 39);
 	globalStates::inst().inst().iConsumeCnt++;
-
+	result.iThreadId = iThreadNo;
+	
 	while (bQuit == 0)
 	{
 		if (oWork.bStall)
@@ -542,17 +543,16 @@ void minethd::double_work_main()
 				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, nonce_chunk);
 			}
 
-
 			*piNonce0 = ++iNonce;
 			*piNonce1 = ++iNonce;
 
 			hash_fun(bDoubleWorkBlob, oWork.iWorkSize, bDoubleHashOut, ctx0, ctx1);
 
 			if (*piHashVal0 < oWork.iTarget)
-				executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce-1, bDoubleHashOut), oWork.iPoolId));
+				executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce-1, bDoubleHashOut, iThreadNo), oWork.iPoolId));
 
 			if (*piHashVal1 < oWork.iTarget)
-				executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce, bDoubleHashOut + 32), oWork.iPoolId));
+				executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce, bDoubleHashOut + 32, iThreadNo), oWork.iPoolId));
 
 			std::this_thread::yield();
 		}

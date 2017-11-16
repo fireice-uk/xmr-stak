@@ -12,6 +12,10 @@ extern const char sHttpAuthOpaque[];
 
 extern const char sHtmlCommonHeader[];
 
+extern const char sHtmlMotdBoxStart[];
+extern const char sHtmlMotdEntry[];
+extern const char sHtmlMotdBoxEnd[];
+
 extern const char sHtmlHashrateBodyHigh[];
 extern const char sHtmlHashrateTableRow[];
 extern const char sHtmlHashrateBodyLow[];

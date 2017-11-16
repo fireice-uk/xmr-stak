@@ -51,6 +51,7 @@ public:
 	bool IsCurrencyMonero();
 
 	uint64_t GetVerboseLevel();
+	bool PrintMotd();
 	uint64_t GetAutohashTime();
 
 	const char* GetOutputFile();

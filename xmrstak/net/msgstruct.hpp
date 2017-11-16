@@ -30,9 +30,10 @@ struct job_result
 	uint8_t		bResult[32];
 	char		sJobID[64];
 	uint32_t	iNonce;
+	uint32_t	iThreadId;
 
 	job_result() {}
-	job_result(const char* sJobID, uint32_t iNonce, const uint8_t* bResult) : iNonce(iNonce)
+	job_result(const char* sJobID, uint32_t iNonce, const uint8_t* bResult, uint32_t iThreadId) : iNonce(iNonce), iThreadId(iThreadId)
 	{
 		memcpy(this->sJobID, sJobID, sizeof(job_result::sJobID));
 		memcpy(this->bResult, bResult, sizeof(job_result::bResult));

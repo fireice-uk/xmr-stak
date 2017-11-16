@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-extern const char sHtmlCssEtag [] = "00000008";
+extern const char sHtmlCssEtag [] = "00000009";
 extern const char sHtmlCssFile [] =
 	"body {"
 		"font-family: Tahoma, Arial, sans-serif;"
@@ -92,6 +92,23 @@ extern const char sHtmlCssFile [] =
 	".flex-item {"
 		"width: 33%;"
 		"margin: 3px;"
+	"}"
+
+	".motd-box {"
+		"background-color: #ccc;"
+		"padding: 0px 10px 5px 10px;"
+		"margin-bottom: 10px;"
+	"}"
+
+	".motd-head {"
+		"border-bottom: 1px solid #000;"
+		"margin-bottom: 0.5em;"
+		"padding: 0.5em 0em;"
+		"font-weight: bold;"
+	"}"
+	
+	".motd-body {"
+		"overflow: hidden;"
 	"}";
 
 size_t sHtmlCssSize = sizeof(sHtmlCssFile) - 1;
@@ -129,6 +146,10 @@ extern const char sHtmlCommonHeader [] =
 		"</div>"
 	"</div>"
 	"<h4>%s</h4>";
+
+extern const char sHtmlMotdBoxStart[] = "<div class='motd-box'>";
+extern const char sHtmlMotdEntry[] = "<div class='motd-head'>Message from %s</div><div class='motd-body'>%s</div>";
+extern const char sHtmlMotdBoxEnd[] = "</div>";
 
 extern const char sHtmlHashrateBodyHigh [] =
 	"<div class=data>"

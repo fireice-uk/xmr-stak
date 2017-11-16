@@ -51,7 +51,7 @@ using namespace rapidjson;
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
 enum configEnum {
-	aPoolList, bTlsSecureAlgo, sCurrency, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, iAutohashTime, 
+	aPoolList, bTlsSecureAlgo, sCurrency, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, bPrintMotd, iAutohashTime, 
 	bFlushStdout, bDaemonMode, sOutputFile, iHttpdPort, sHttpLogin, sHttpPass, bPreferIpv4, bAesOverride, sUseSlowMem 
 };
 
@@ -71,6 +71,7 @@ configVal oConfigValues[] = {
 	{ iNetRetry, "retry_time", kNumberType },
 	{ iGiveUpLimit, "giveup_limit", kNumberType },
 	{ iVerboseLevel, "verbose_level", kNumberType },
+	{ bPrintMotd, "print_motd", kTrueType },
 	{ iAutohashTime, "h_print_time", kNumberType },
 	{ bFlushStdout, "flush_stdout", kTrueType},
 	{ bDaemonMode, "daemon_mode", kTrueType },
@@ -193,7 +194,7 @@ const std::string jconf::GetCurrency()
 
 bool jconf::IsCurrencyMonero()
 {
-	if(xmrstak::strcmp_i(::jconf::inst()->GetCurrency(), "monero"))
+	if(xmrstak::strcmp_i(GetCurrency(), "monero"))
 	{
 		return true;
 	}
@@ -226,6 +227,11 @@ uint64_t jconf::GetGiveUpLimit()
 uint64_t jconf::GetVerboseLevel()
 {
 	return prv->configValues[iVerboseLevel]->GetUint64();
+}
+
+bool jconf::PrintMotd()
+{
+	return prv->configValues[bPrintMotd]->GetBool();
 }
 
 uint64_t jconf::GetAutohashTime()
