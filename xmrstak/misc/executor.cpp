@@ -267,7 +267,7 @@ void executor::log_socket_error(jpsock* pool, std::string&& sError)
 	pool_name.reserve(128);
 	pool_name.append("[").append(pool->get_pool_addr()).append("] ");
 	sError.insert(0, pool_name);
-	
+
 	vSocketLog.emplace_back(std::move(sError));
 	printer::inst()->print_msg(L1, "SOCKET ERROR - %s", vSocketLog.back().msg.c_str());
 
@@ -321,7 +321,7 @@ jpsock* executor::pick_pool_by_id(size_t pool_id)
 void executor::on_sock_ready(size_t pool_id)
 {
 	jpsock* pool = pick_pool_by_id(pool_id);
-	
+
 	if(pool->is_dev_pool())
 		printer::inst()->print_msg(L1, "Dev pool connected. Logging in...");
 	else
@@ -342,7 +342,7 @@ void executor::on_sock_error(size_t pool_id, std::string&& sError, bool silent)
 	jpsock* pool = pick_pool_by_id(pool_id);
 
 	pool->disconnect();
-	
+
 	if(pool_id == current_pool_id)
 		current_pool_id = invalid_pool_id;
 
@@ -505,7 +505,7 @@ void executor::ex_main()
 		if(!cfg.tls) tls = false;
 		pools.emplace_back(i+1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
 	}
-	
+
 	if(jconf::inst()->IsCurrencyMonero())
 	{
 		if(tls)
@@ -753,7 +753,7 @@ void executor::hashrate_report(std::string& out)
 
 			if((i & 0x1) == 1) //We had odd number of threads
 				out.append("|\n");
-	
+
 			if(nthd != 1)
 				out.append("-----------------------------------------------------\n");
 			else

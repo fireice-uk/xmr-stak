@@ -106,7 +106,7 @@ extern const char sHtmlCssFile [] =
 		"padding: 0.5em 0em;"
 		"font-weight: bold;"
 	"}"
-	
+
 	".motd-body {"
 		"overflow: hidden;"
 	"}";

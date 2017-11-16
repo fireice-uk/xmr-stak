@@ -61,7 +61,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::th
 
 	std::unique_lock<std::mutex> lck(thd_aff_set);
 	std::future<void> order_guard = order_fix.get_future();
-	
+
 	oWorkThd = std::thread(&minethd::work_main, this);
 
 	order_guard.wait();
@@ -126,7 +126,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 		printer::inst()->print_msg(L1, "WARNING: AMD device not found");
 		return pvThreads;
 	}
-	
+
 	size_t i, n = jconf::inst()->GetThreadCount();
 	pvThreads->reserve(n);
 
@@ -172,7 +172,7 @@ void minethd::consume_work()
 	memcpy(&oWork, &globalStates::inst().oGlobalWork, sizeof(miner_work));
 	iJobNo++;
 	globalStates::inst().iConsumeCnt++;
-	
+
 }
 
 void minethd::work_main()
@@ -184,20 +184,21 @@ void minethd::work_main()
 	std::unique_lock<std::mutex> lck(thd_aff_set);
 	lck.release();
 	std::this_thread::yield();
-	
+
 	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
 	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, ::jconf::inst()->IsCurrencyMonero());
 	globalStates::inst().iConsumeCnt++;
-	
+
 	while (bQuit == 0)
 	{
 		if (oWork.bStall)
 		{
-			/*  We are stalled here because the executor didn't find a job for us yet,
-			    either because of network latency, or a socket problem. Since we are
-			    raison d'etre of this software it us sensible to just wait until we have something*/
+			/* We are stalled here because the executor didn't find a job for us yet,
+			 * either because of network latency, or a socket problem. Since we are
+			 * raison d'etre of this software it us sensible to just wait until we have something
+			 */
 
 			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));

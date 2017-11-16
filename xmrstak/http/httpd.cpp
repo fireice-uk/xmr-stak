@@ -49,13 +49,13 @@ httpd::httpd()
 }
 
 int httpd::req_handler(void * cls,
-	        MHD_Connection* connection,
-	        const char* url,
-	        const char* method,
-	        const char* version,
-	        const char* upload_data,
-	        size_t* upload_data_size,
-	        void ** ptr)
+			MHD_Connection* connection,
+			const char* url,
+			const char* method,
+			const char* version,
+			const char* upload_data,
+			size_t* upload_data_size,
+			void ** ptr)
 {
 	struct MHD_Response * rsp;
 
@@ -86,7 +86,7 @@ int httpd::req_handler(void * cls,
 			return ret;
 		}
 	}
-    
+
 	*ptr = nullptr;
 	std::string str;
 	if(strcasecmp(url, "/style.css") == 0)

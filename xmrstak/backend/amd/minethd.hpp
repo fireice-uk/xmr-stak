@@ -26,9 +26,9 @@ public:
 
 private:
 	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx*);
-	
+
 	minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::thd_cfg cfg);
-	
+
 	void work_main();
 	void consume_work();
 

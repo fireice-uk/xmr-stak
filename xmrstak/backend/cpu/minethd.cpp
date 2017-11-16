@@ -234,7 +234,7 @@ bool minethd::self_test()
 
 	if(!bResult)
 		printer::inst()->print_msg(L0,
-		    "Cryptonight hash self-test failed. This might be caused by bad compiler optimizations.");
+			"Cryptonight hash self-test failed. This might be caused by bad compiler optimizations.");
 
 	return bResult;
 }
@@ -254,7 +254,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 	{
 		win_exit();
 	}
-	
+
 
 	//Launch the requested number of single and double threads, to distribute
 	//load evenly we need to alternate single and double threads
@@ -280,7 +280,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		minethd* thd = new minethd(pWork, i + threadOffset, cfg.bDoubleMode, cfg.bNoPrefetch, cfg.iCpuAff);
 		pvThreads.push_back(thd);
 	}
-	
+
 	return pvThreads;
 }
 
@@ -359,14 +359,15 @@ void minethd::work_main()
 	piNonce = (uint32_t*)(oWork.bWorkBlob + 39);
 	globalStates::inst().inst().iConsumeCnt++;
 	result.iThreadId = iThreadNo;
-	
+
 	while (bQuit == 0)
 	{
 		if (oWork.bStall)
 		{
-			/*  We are stalled here because the executor didn't find a job for us yet,
-			    either because of network latency, or a socket problem. Since we are
-			    raison d'etre of this software it us sensible to just wait until we have something*/
+			/* We are stalled here because the executor didn't find a job for us yet,
+			 * either because of network latency, or a socket problem. Since we are
+			 * raison d'etre of this software it us sensible to just wait until we have something
+			 */
 
 			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));

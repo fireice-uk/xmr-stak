@@ -93,8 +93,8 @@ struct jpsock::opq_json_val
 };
 
 jpsock::jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sPassword, double pool_weight, bool dev_pool, bool tls, const char* tls_fp, bool nicehash) :
-    net_addr(sAddr), usr_login(sLogin), usr_pass(sPassword), tls_fp(tls_fp), pool_id(id), pool_weight(pool_weight), pool(dev_pool), nicehash(nicehash),
-    connect_time(0), connect_attempts(0), disconnect_time(0), quiet_close(false)
+	net_addr(sAddr), usr_login(sLogin), usr_pass(sPassword), tls_fp(tls_fp), pool_id(id), pool_weight(pool_weight), pool(dev_pool), nicehash(nicehash),
+	connect_time(0), connect_attempts(0), disconnect_time(0), quiet_close(false)
 {
 	sock_init();
 
@@ -443,7 +443,7 @@ bool jpsock::connect(std::string& sConnectError)
 	sSocketError.clear();
 	iJobDiff = 0;
 	connect_attempts++;
-	
+
 	if(sck->set_hostname(net_addr.c_str()))
 	{
 		bRunning = true;
@@ -607,13 +607,13 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 
 	if(ext_backend)
 		snprintf(sBackend, sizeof(sBackend), ",\"backend\":\"%s\"", xmrstak::iBackend::getName(bend->backendType));
-	
+
 	if(ext_hashcount)
 		snprintf(sHashcount, sizeof(sHashcount), ",\"hashcount\":%llu", int_port(bend->iHashCount.load(std::memory_order_relaxed)));
 
 	if(ext_algo)
 		snprintf(sAlgo, sizeof(sAlgo), ",\"algo\":\"%s\"", algo_full_cn ? "cryptonight" : "cryptonight-lite");
-	
+
 	bin2hex((unsigned char*)&iNonce, 4, sNonce);
 	sNonce[8] = '\0';
 
@@ -648,7 +648,7 @@ bool jpsock::get_pool_motd(std::string& strin)
 {
 	if(!ext_motd) 
 		return false;
-	
+
 	std::unique_lock<std::mutex>(motd_mutex);
 	if(pool_motd.size() > 0)
 	{

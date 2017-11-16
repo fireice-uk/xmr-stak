@@ -386,42 +386,42 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 }
 
 const cl_platform_info attributeTypes[5] = {
-    CL_PLATFORM_NAME,
-    CL_PLATFORM_VENDOR,
-    CL_PLATFORM_VERSION,
-    CL_PLATFORM_PROFILE,
-    CL_PLATFORM_EXTENSIONS
+	CL_PLATFORM_NAME,
+	CL_PLATFORM_VENDOR,
+	CL_PLATFORM_VERSION,
+	CL_PLATFORM_PROFILE,
+	CL_PLATFORM_EXTENSIONS
 };
 
 const char* const attributeNames[] = {
-    "CL_PLATFORM_NAME",
-    "CL_PLATFORM_VENDOR",
-    "CL_PLATFORM_VERSION",
-    "CL_PLATFORM_PROFILE",
-    "CL_PLATFORM_EXTENSIONS"
+	"CL_PLATFORM_NAME",
+	"CL_PLATFORM_VENDOR",
+	"CL_PLATFORM_VERSION",
+	"CL_PLATFORM_PROFILE",
+	"CL_PLATFORM_EXTENSIONS"
 };
 
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
 
 void PrintDeviceInfo(cl_device_id device)
 {
-    char queryBuffer[1024];
-    int queryInt;
-    cl_int clError;
-    clError = clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(queryBuffer), &queryBuffer, NULL);
-    printf("    CL_DEVICE_NAME: %s\n", queryBuffer);
-    queryBuffer[0] = '\0';
-    clError = clGetDeviceInfo(device, CL_DEVICE_VENDOR, sizeof(queryBuffer), &queryBuffer, NULL);
-    printf("    CL_DEVICE_VENDOR: %s\n", queryBuffer);
-    queryBuffer[0] = '\0';
-    clError = clGetDeviceInfo(device, CL_DRIVER_VERSION, sizeof(queryBuffer), &queryBuffer, NULL);
-    printf("    CL_DRIVER_VERSION: %s\n", queryBuffer);
-    queryBuffer[0] = '\0';
-    clError = clGetDeviceInfo(device, CL_DEVICE_VERSION, sizeof(queryBuffer), &queryBuffer, NULL);
-    printf("    CL_DEVICE_VERSION: %s\n", queryBuffer);
-    queryBuffer[0] = '\0';
-    clError = clGetDeviceInfo(device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &queryInt, NULL);
-    printf("    CL_DEVICE_MAX_COMPUTE_UNITS: %d\n", queryInt);
+	char queryBuffer[1024];
+	int queryInt;
+	cl_int clError;
+	clError = clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(queryBuffer), &queryBuffer, NULL);
+	printf("    CL_DEVICE_NAME: %s\n", queryBuffer);
+	queryBuffer[0] = '\0';
+	clError = clGetDeviceInfo(device, CL_DEVICE_VENDOR, sizeof(queryBuffer), &queryBuffer, NULL);
+	printf("    CL_DEVICE_VENDOR: %s\n", queryBuffer);
+	queryBuffer[0] = '\0';
+	clError = clGetDeviceInfo(device, CL_DRIVER_VERSION, sizeof(queryBuffer), &queryBuffer, NULL);
+	printf("    CL_DRIVER_VERSION: %s\n", queryBuffer);
+	queryBuffer[0] = '\0';
+	clError = clGetDeviceInfo(device, CL_DEVICE_VERSION, sizeof(queryBuffer), &queryBuffer, NULL);
+	printf("    CL_DEVICE_VERSION: %s\n", queryBuffer);
+	queryBuffer[0] = '\0';
+	clError = clGetDeviceInfo(device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &queryInt, NULL);
+	printf("    CL_DEVICE_MAX_COMPUTE_UNITS: %d\n", queryInt);
 }
 
 uint32_t getNumPlatforms()
@@ -449,8 +449,8 @@ std::vector<GpuContext> getAMDDevices(int index)
 	uint32_t numPlatforms = getNumPlatforms();
 
 
-    platforms = (cl_platform_id *) malloc(sizeof(cl_platform_id) * numPlatforms);
-    clStatus = clGetPlatformIDs(numPlatforms, platforms, NULL);
+	platforms = (cl_platform_id *) malloc(sizeof(cl_platform_id) * numPlatforms);
+	clStatus = clGetPlatformIDs(numPlatforms, platforms, NULL);
 
 	clStatus = clGetDeviceIDs( platforms[index], CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices);
 	device_list = (cl_device_id *) malloc(sizeof(cl_device_id)*num_devices);
@@ -478,7 +478,7 @@ std::vector<GpuContext> getAMDDevices(int index)
 			ctxVec.push_back(ctx);
 		}
 	}
-	
+
 
 	free(device_list);
 	free(platforms);
@@ -500,7 +500,7 @@ int getAMDPlatformIdx()
 	cl_int clStatus;
 
 	platforms = (cl_platform_id *) malloc(sizeof(cl_platform_id) * numPlatforms);
-    clStatus = clGetPlatformIDs(numPlatforms, platforms, NULL);
+	clStatus = clGetPlatformIDs(numPlatforms, platforms, NULL);
 
 	int platformIndex = -1;
 
@@ -554,7 +554,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	uint32_t numPlatforms = getNumPlatforms();
 
 	platforms = (cl_platform_id *) malloc(sizeof(cl_platform_id) * numPlatforms);
-    clStatus = clGetPlatformIDs(numPlatforms, platforms, NULL);
+	clStatus = clGetPlatformIDs(numPlatforms, platforms, NULL);
 
 	size_t infoSize;
 	clGetPlatformInfo(platforms[platform_idx], CL_PLATFORM_VENDOR, 0, NULL, &infoSize);
@@ -565,7 +565,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	{
 		printer::inst()->print_msg(L1,"WARNING: using non AMD device: %s", platformName.c_str());
 	}
-	
+
 	free(platforms);
 
 	/*MSVC skimping on devel costs by shoehorning C99 to be a subset of C++? Noooo... can't be.*/
@@ -674,7 +674,7 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 
 	input[input_len] = 0x01;
 	memset(input + input_len + 1, 0, 88 - input_len - 1);
-	
+
 	size_t numThreads = ctx->rawIntensity;
 
 	if((ret = clEnqueueWriteBuffer(ctx->CommandQueues, ctx->InputBuffer, CL_TRUE, 0, 88, input, 0, NULL, NULL)) != CL_SUCCESS)
