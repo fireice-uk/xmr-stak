@@ -443,16 +443,17 @@ bool jpsock::connect(std::string& sConnectError)
 	sSocketError.clear();
 	iJobDiff = 0;
 	connect_attempts++;
+	connect_time = get_timestamp();
 
 	if(sck->set_hostname(net_addr.c_str()))
 	{
 		bRunning = true;
 		disconnect_time = 0;
-		connect_time = get_timestamp();
 		oRecvThd = new std::thread(&jpsock::jpsock_thread, this);
 		return true;
 	}
 
+	disconnect_time = get_timestamp();
 	sConnectError = std::move(sSocketError);
 	return false;
 }
