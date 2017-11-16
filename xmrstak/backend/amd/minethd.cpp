@@ -195,9 +195,10 @@ void minethd::work_main()
 	{
 		if (oWork.bStall)
 		{
-			/*  We are stalled here because the executor didn't find a job for us yet,
-				either because of network latency, or a socket problem. Since we are
-				raison d'etre of this software it us sensible to just wait until we have something*/
+			/* We are stalled here because the executor didn't find a job for us yet,
+			 * either because of network latency, or a socket problem. Since we are
+			 * raison d'etre of this software it us sensible to just wait until we have something
+			 */
 
 			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));

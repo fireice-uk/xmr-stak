@@ -40,7 +40,6 @@ public:
 		if(cuda_get_devicecount(&deviceCount) == 0)
 			return false;
 		// evaluate config parameter for if auto adjustment is needed
-				// evaluate config parameter for if auto adjustment is needed
 		for(int i = 0; i < deviceCount; i++)
 		{
 	   
@@ -51,7 +50,7 @@ public:
 			ctx.device_blocks = -1;
 			ctx.device_threads = -1;
 
-		// set all evice option those marked as auto (-1) to a valid value
+			// set all evice option those marked as auto (-1) to a valid value
 #ifndef _WIN32
 			ctx.device_bfactor = 0;
 			ctx.device_bsleep = 0;
