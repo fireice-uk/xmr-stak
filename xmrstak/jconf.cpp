@@ -148,7 +148,7 @@ bool jconf::GetPoolConfig(size_t id, pool_cfg& cfg)
 	cfg.tls = jtls->GetBool();
 	cfg.tls_fingerprint = jtlsfp->GetString();
 	cfg.raw_weight = jwt->GetUint64();
-	
+
 	size_t dlt = wt_max - wt_min;
 	if(dlt != 0)
 	{
@@ -412,13 +412,13 @@ bool jconf::parse_config(const char* sFilename)
 		printer::inst()->print_msg(L0, "Invalid config file. pool_list must not be empty.");
 		return false;
 	}
-	
+
 	std::vector<size_t> pool_weights;
 	pool_weights.reserve(pool_cnt);
-	
+
 	const char* aPoolValues[] = { "pool_address", "wallet_address", "pool_password", "use_nicehash", "use_tls", "tls_fingerprint", "pool_weight" };
 	Type poolValTypes[] = { kStringType, kStringType, kStringType, kTrueType, kTrueType, kStringType, kNumberType };
-	
+
 	constexpr size_t pvcnt = sizeof(aPoolValues)/sizeof(aPoolValues[0]);
 	for(uint32_t i=0; i < pool_cnt; i++)
 	{

@@ -63,7 +63,7 @@ namespace nvidia
 #else
 	void *lib_handle;
 #endif
-	
+
 minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 {
 	this->backendType = iBackend::NVIDIA;
@@ -81,7 +81,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 
 	std::unique_lock<std::mutex> lck(thd_aff_set);
 	std::future<void> order_guard = order_fix.get_future();
-	
+
 	oWorkThd = std::thread(&minethd::work_main, this);
 
 	order_guard.wait();
@@ -211,7 +211,7 @@ void minethd::work_main()
 	std::unique_lock<std::mutex> lck(thd_aff_set);
 	lck.release();
 	std::this_thread::yield();
-	
+
 	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
@@ -227,7 +227,7 @@ void minethd::work_main()
 	}
 
 	bool mineMonero = strcmp_i(::jconf::inst()->GetCurrency(), "monero");
-	
+
 	while (bQuit == 0)
 	{
 		if (oWork.bStall)

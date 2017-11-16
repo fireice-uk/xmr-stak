@@ -86,7 +86,7 @@ int httpd::req_handler(void * cls,
 			return ret;
 		}
 	}
-	
+
 	*ptr = nullptr;
 	std::string str;
 	if(strcasecmp(url, "/style.css") == 0)

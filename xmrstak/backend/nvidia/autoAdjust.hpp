@@ -72,7 +72,7 @@ public:
 	}
 
 private:
-	
+
 	void generateThreadConfig()
 	{
 		// load the template of the backend config into a char variable

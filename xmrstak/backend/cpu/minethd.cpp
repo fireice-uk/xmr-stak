@@ -254,7 +254,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 	{
 		win_exit();
 	}
-	
+
 
 	//Launch the requested number of single and double threads, to distribute
 	//load evenly we need to alternate single and double threads
@@ -280,7 +280,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		minethd* thd = new minethd(pWork, i + threadOffset, cfg.bDoubleMode, cfg.bNoPrefetch, cfg.iCpuAff);
 		pvThreads.push_back(thd);
 	}
-	
+
 	return pvThreads;
 }
 
@@ -359,7 +359,7 @@ void minethd::work_main()
 	piNonce = (uint32_t*)(oWork.bWorkBlob + 39);
 	globalStates::inst().inst().iConsumeCnt++;
 	result.iThreadId = iThreadNo;
-	
+
 	while (bQuit == 0)
 	{
 		if (oWork.bStall)

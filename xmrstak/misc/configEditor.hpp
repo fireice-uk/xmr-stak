@@ -16,7 +16,7 @@ struct configEditor
 
 	configEditor() 
 	{
-	
+
 	}
 
 	static bool file_exist( const std::string filename)
@@ -51,7 +51,7 @@ struct configEditor
 	{
 		m_fileContent = std::regex_replace(m_fileContent, std::regex(search), substring);
 	}
-	
+
 };
 
 } // namepsace xmrstak

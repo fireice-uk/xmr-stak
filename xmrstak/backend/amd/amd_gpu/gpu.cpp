@@ -478,7 +478,7 @@ std::vector<GpuContext> getAMDDevices(int index)
 			ctxVec.push_back(ctx);
 		}
 	}
-	
+
 
 	free(device_list);
 	free(platforms);
@@ -565,7 +565,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	{
 		printer::inst()->print_msg(L1,"WARNING: using non AMD device: %s", platformName.c_str());
 	}
-	
+
 	free(platforms);
 
 	/*MSVC skimping on devel costs by shoehorning C99 to be a subset of C++? Noooo... can't be.*/
@@ -674,7 +674,7 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 
 	input[input_len] = 0x01;
 	memset(input + input_len + 1, 0, 88 - input_len - 1);
-	
+
 	size_t numThreads = ctx->rawIntensity;
 
 	if((ret = clEnqueueWriteBuffer(ctx->CommandQueues, ctx->InputBuffer, CL_TRUE, 0, 88, input, 0, NULL, NULL)) != CL_SUCCESS)

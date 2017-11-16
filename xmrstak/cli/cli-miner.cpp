@@ -59,7 +59,7 @@ void help()
 {
 	using namespace std;
 	using namespace xmrstak;
-	
+
 	cout<<"Usage: "<<params::inst().binaryName<<" [OPTION]..."<<endl;
 	cout<<" "<<endl;
 	cout<<"  -h, --help            show this help"<<endl;
@@ -113,7 +113,7 @@ inline const char* bool_to_str(bool v)
 std::string get_multipool_entry(bool& final)
 {
 	std::cout<<std::endl<<"- Next Pool:"<<std::endl<<std::endl;
-	
+
 	std::string pool;
 	if(xmrstak::params::inst().currency == "monero")
 		std::cout<<"- Pool address: e.g. pool.usxmrpool.com:3333"<<std::endl;
@@ -147,7 +147,7 @@ std::string get_multipool_entry(bool& final)
 	}
 
 	final = !read_yes_no("- Do you want to add another pool? (y/n)");
-	
+
 	return "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName +  "\", \"pool_password\" : \"" + 
 		passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " + bool_to_str(tls) + 
 		", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
@@ -217,13 +217,13 @@ void do_guided_config(bool userSetPasswd)
 	bool tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)");
 #endif
 	bool nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/n)");
-	
+
 	bool multipool;
 	if(!userSetPool)
 		multipool = read_yes_no("- Do you want to use multiple pools? (y/n)");
 	else
 		multipool = false;
-	
+
 	int64_t pool_weight;
 	if(multipool)
 	{
@@ -241,7 +241,7 @@ void do_guided_config(bool userSetPasswd)
 	}
 	else
 		pool_weight = 1;
-	
+
 	std::string pool_table;
 	pool_table += "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName +  "\", \"pool_password\" : \"" + 
 		passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " + bool_to_str(tls) + 
@@ -256,7 +256,7 @@ void do_guided_config(bool userSetPasswd)
 		}
 		while(!final);
 	}
-	
+
 	configTpl.replace("POOLCONF", pool_table);
 	configTpl.replace("CURRENCY", currency);
 	configTpl.write(params::inst().configFile);

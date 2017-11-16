@@ -19,7 +19,7 @@ public:
 	};
 
 	bool parse_config(const char* sFilename = xmrstak::params::inst().configFile.c_str());
-	
+
 	struct pool_cfg {
 		const char* sPoolAddr;
 		const char* sWalletAddr;
@@ -30,10 +30,10 @@ public:
 		size_t raw_weight;
 		double weight;
 	};
-	
+
 	size_t wt_max;
 	size_t wt_min;
-	
+
 	uint64_t GetPoolCount();
 	bool GetPoolConfig(size_t id, pool_cfg& cfg);
 
@@ -46,7 +46,7 @@ public:
 	};
 
 	bool TlsSecureAlgos();
-	
+
 	const std::string GetCurrency();
 	bool IsCurrencyMonero();
 

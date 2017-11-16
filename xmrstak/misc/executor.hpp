@@ -53,7 +53,7 @@ private:
 	};
 
 	inline void set_timestamp() { dev_timestamp = get_timestamp(); };
-	
+
 	// In miliseconds, has to divide a second (1000ms) into an integer number
 	constexpr static size_t iTickTime = 500;
 
@@ -97,7 +97,7 @@ private:
 	constexpr static size_t motd_max_length = 512;
 	bool motd_filter_console(std::string& motd);
 	bool motd_filter_web(std::string& motd);
-	
+
 	void hashrate_report(std::string& out);
 	void result_report(std::string& out);
 	void connection_report(std::string& out);
