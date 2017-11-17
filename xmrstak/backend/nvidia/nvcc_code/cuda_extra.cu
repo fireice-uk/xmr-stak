@@ -364,7 +364,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		for(int i = 0; i < arch.size(); ++i)
 			if(minSupportedArch == 0 || (arch[i] >= 30 && arch[i] < minSupportedArch))
 				minSupportedArch = arch[i];
-		if(minSupportedArch >= 30 && gpuArch <= minSupportedArch)
+		if(minSupportedArch < 30 || gpuArch < minSupportedArch)
 		{
 			printf("WARNING: NVIDIA GPU %d: miner not compiled for the gpu architecture %d.\n", ctx->device_id, gpuArch);
 			return 5;
