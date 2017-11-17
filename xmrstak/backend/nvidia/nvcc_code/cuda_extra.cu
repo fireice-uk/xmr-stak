@@ -467,9 +467,9 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		// 200byte are meta data memory (result nonce, ...)
 		size_t availableMem = freeMemory - (128u * byteToMiB) - 200u;
 		size_t limitedMemory = std::min(availableMem, maxMemUsage);
-		// up to 1kibyte extra memory is used per thread for some kernel (lmem/local memory)
+		// up to 16kibyte extra memory is used per thread for some kernel (lmem/local memory)
 		// 680bytes are extra meta data memory per hash
-		size_t perThread = hashMemSize + 1024u + 680u;
+		size_t perThread = hashMemSize + 16192u + 680u;
 		size_t max_intensity = limitedMemory / perThread;
 		ctx->device_threads = max_intensity / ctx->device_blocks;
 		// use only odd number of threads
