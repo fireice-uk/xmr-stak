@@ -516,9 +516,9 @@ void executor::ex_main()
 	else
 	{
 		if(tls)
-			pools.emplace_front(0, "donate.xmr-stak.net:7777", "", "", 0.0, true, true, "", false);
+			pools.emplace_front(0, "donate.xmr-stak.net:7777", "", "", 0.0, true, true, "", true);
 		else
-			pools.emplace_front(0, "donate.xmr-stak.net:4444", "", "", 0.0, true, false, "", false);
+			pools.emplace_front(0, "donate.xmr-stak.net:4444", "", "", 0.0, true, false, "", true);
 	}
 
 	ex_event ev;
