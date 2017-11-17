@@ -125,6 +125,8 @@ struct ex_event
 		case EV_POOL_HAVE_JOB:
 			oPoolJob = from.oPoolJob;
 			break;
+		case EV_GPU_RES_ERROR:
+			oGpuError = from.oGpuError;
 		default:
 			break;
 		}
@@ -152,6 +154,8 @@ struct ex_event
 		case EV_POOL_HAVE_JOB:
 			oPoolJob = from.oPoolJob;
 			break;
+		case EV_GPU_RES_ERROR:
+			oGpuError = from.oGpuError;
 		default:
 			break;
 		}
