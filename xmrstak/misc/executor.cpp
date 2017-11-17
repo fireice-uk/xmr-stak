@@ -561,7 +561,7 @@ void executor::ex_main()
 			break;
 
 		case EV_GPU_RES_ERROR:
-			log_result_error(ev.oGpuError.error_str);
+			log_result_error(std::string(ev.oGpuError.error_str));
 			break;
 
 		case EV_PERF_TICK:
