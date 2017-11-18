@@ -172,7 +172,7 @@ const char* err_to_str(cl_int ret)
 		return "CL_INVALID_LINKER_OPTIONS";
 	case CL_INVALID_DEVICE_PARTITION_COUNT:
 		return "CL_INVALID_DEVICE_PARTITION_COUNT";
-#ifdef CL_VERSION_2_0
+#if defined(CL_VERSION_2_0) && !defined(CONF_ENFORCE_OpenCL_1_2)
 	case CL_INVALID_PIPE_SIZE:
 		return "CL_INVALID_PIPE_SIZE";
 	case CL_INVALID_DEVICE_QUEUE:
@@ -227,7 +227,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	}
 
 	printer::inst()->print_msg(L1,"Device %lu work size %lu / %lu.", ctx->deviceIdx, ctx->workSize, MaximumWorkSize);
-#ifdef CL_VERSION_2_0
+#if defined(CL_VERSION_2_0) && !defined(CONF_ENFORCE_OpenCL_1_2)
 	const cl_queue_properties CommandQueueProperties[] = { 0, 0, 0 };
 	ctx->CommandQueues = clCreateCommandQueueWithProperties(opencl_ctx, ctx->DeviceID, CommandQueueProperties, &ret);
 #else
