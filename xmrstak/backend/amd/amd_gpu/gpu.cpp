@@ -226,6 +226,10 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
+	/* Some kernel spawn 8 times more threads than the user is configuring.
+	 * To give the user the correct maximum work size we divide the hardware specific max by 8.
+	 */
+	MaximumWorkSize /= 8;
 	printer::inst()->print_msg(L1,"Device %lu work size %lu / %lu.", ctx->deviceIdx, ctx->workSize, MaximumWorkSize);
 #if defined(CL_VERSION_2_0) && !defined(CONF_ENFORCE_OpenCL_1_2)
 	const cl_queue_properties CommandQueueProperties[] = { 0, 0, 0 };
