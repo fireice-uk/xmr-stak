@@ -446,7 +446,7 @@ add_library(xmr-stak-c
     ${SRCFILES_C}
 )
 set_property(TARGET xmr-stak-c PROPERTY C_STANDARD 99)
-target_link_libraries(xmr-stak-c ${LIBS})
+target_link_libraries(xmr-stak-c ${MHTD} ${LIBS})
 
 # compile generic backend files
 file(GLOB BACKEND_CPP
