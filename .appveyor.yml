@@ -28,4 +28,5 @@ build_script:
 test_script:
   - cd c:\xmr-stak\build\bin\Release
   - dir
+  - copy C:\xmr-stak-dep\openssl\bin\* .
   - xmr-stak.exe --help

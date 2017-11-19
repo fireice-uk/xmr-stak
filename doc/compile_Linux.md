@@ -73,5 +73,7 @@ If you want to compile the binary without installing libraries / compiler or jus
 ```
     cmake -DCMAKE_LINK_STATIC=ON -DXMR-STAK_COMPILE=generic .
     make install
+    cd bin\Release
+    copy C:\xmr-stak-dep\openssl\bin\* .
 ```
 Note - cmake caches variables, so if you want to do a dynamic build later you need to specify '-DCMAKE_LINK_STATIC=OFF'
