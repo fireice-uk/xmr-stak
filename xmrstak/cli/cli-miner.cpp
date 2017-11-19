@@ -302,18 +302,19 @@ int main(int argc, char *argv[])
 		if(opName.compare("-h") == 0 || opName.compare("--help") == 0)
 		{
 			help();
-			// \todo give return code to win_exit to allow passing CI
-			//win_exit();
+			win_exit(0);
 			return 0;
 		}
 		if(opName.compare("-v") == 0 || opName.compare("--version") == 0)
 		{
 			std::cout<< "Version: " << get_version_str_short() << std::endl;
+			win_exit();
 			return 0;
 		}
 		else if(opName.compare("-V") == 0 || opName.compare("--version-long") == 0)
 		{
 			std::cout<< "Version: " << get_version_str() << std::endl;
+			win_exit();
 			return 0;
 		}
 		else if(opName.compare("--noCPU") == 0)
@@ -432,13 +433,13 @@ int main(int argc, char *argv[])
 	if(!jconf::inst()->parse_config(params::inst().configFile.c_str()))
 	{
 		win_exit();
-		return 0;
+		return 1;
 	}
 
 	if (!BackendConnector::self_test())
 	{
 		win_exit();
-		return 0;
+		return 1;
 	}
 
 #ifndef CONF_NO_HTTPD
@@ -447,7 +448,7 @@ int main(int argc, char *argv[])
 		if (!httpd::inst()->start_daemon())
 		{
 			win_exit();
-			return 0;
+			return 1;
 		}
 	}
 #endif

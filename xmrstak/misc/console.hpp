@@ -49,4 +49,4 @@ private:
 	FILE* logfile;
 };
 
-void win_exit();
+void win_exit(size_t code = 1);
