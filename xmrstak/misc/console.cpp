@@ -220,15 +220,16 @@ void printer::print_str(const char* str)
 
 //Do a press any key for the windows folk. *insert any key joke here*
 #ifdef _WIN32
-void win_exit()
+void win_exit(size_t code)
 {
 	printer::inst()->print_str("Press any key to exit.");
 	get_key();
-	std::exit(1);
+	std::exit(code);
 }
 
 #else
-void win_exit() { 
-	std::exit(1);
+void win_exit(size_t code) 
+{ 
+	std::exit(code);
 }
 #endif // _WIN32
