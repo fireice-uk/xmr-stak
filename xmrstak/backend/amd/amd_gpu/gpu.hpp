@@ -4,14 +4,14 @@
 
 #if defined(__APPLE__)
 #include <OpenCL/cl.h>
+#include <string>
+#include <sstream>
+#include <iostream>
 #else
 #include <CL/cl.h>
 #endif
 
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <stdint.h>
+include <stdint.h>
 #include <vector>
 
 #define ERR_SUCCESS (0)
