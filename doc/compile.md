@@ -9,6 +9,7 @@
 * [Compile on Windows](compile_Windows.md)
 * [Compile on Linux](compile_Linux.md)
 * [Compile on FreeBSD](compile_FreeBSD.md)
+* [Compile on MacOS](compile_MacOS.md)
 
 ## Build System
 
@@ -30,6 +31,7 @@ After the configuration you need to compile the miner, follow the guide for your
 * [Compile in Windows](compile_Windows.md)
 * [Compile in Linux](compile_Linux.md)
 * [Compile in FreeBSD](compile_FreeBSD.md)
+* [Compile in MacOS](compile_MacOS.md)
 
 ## Generic Build Options
 - `CMAKE_INSTALL_PREFIX` install miner to the home folder
