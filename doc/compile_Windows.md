@@ -81,15 +81,19 @@
   mkdir build
   cd build
   ```
-  - with CUDA 8
+  - for CUDA 8*
     ```
     cmake -G "Visual Studio 15 2017 Win64" -T v140,host=x64 ..
     ```
-  - with CUDA 9
+  - for CUDA 9 and/or AMD GPUs, CPU
     ```
     cmake -G "Visual Studio 15 2017 Win64" -T v141,host=x64 ..
     ```
   ```
   cmake --build . --config Release --target install
   cd bin\Release
+  copy C:\xmr-stak-dep\openssl\bin\* .
   ```
+
+\* Miner is also compiled for AMD GPUs (if the AMD APP SDK is installed) and CPUs.
+CUDA 8 requires a downgrade to the old v140 tool chain.
