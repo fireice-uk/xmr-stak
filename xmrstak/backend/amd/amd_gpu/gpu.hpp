@@ -8,10 +8,8 @@
 #include <CL/cl.h>
 #endif
 
-#include <string>
-#include <sstream>
-#include <iostream>
 #include <stdint.h>
+#include <string>
 #include <vector>
 
 #define ERR_SUCCESS (0)
