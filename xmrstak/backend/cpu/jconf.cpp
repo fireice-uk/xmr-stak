@@ -116,7 +116,10 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	if(mode == nullptr || no_prefetch == nullptr || aff == nullptr)
 		return false;
 
-	if(!mode->IsBool() || !no_prefetch->IsBool())
+	if(!mode->IsBool() && !mode->IsNumber())
+		return false;
+
+	if(!no_prefetch->IsBool())
 		return false;
 
 	if(!aff->IsNumber() && !aff->IsBool())
@@ -125,7 +128,11 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	if(aff->IsNumber() && aff->GetInt64() < 0)
 		return false;
 
-	cfg.bDoubleMode = mode->GetBool();
+	if(mode->IsNumber())
+		cfg.iMultiway = (int)mode->GetInt64();
+	else
+		cfg.iMultiway = mode->GetBool() ? 2 : 1;
+
 	cfg.bNoPrefetch = no_prefetch->GetBool();
 
 	if(aff->IsNumber())
