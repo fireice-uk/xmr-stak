@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include <string>
 
 #define ERR_SUCCESS (0)
 #define ERR_OCL_API (2)
