@@ -16,7 +16,7 @@ The build system is CMake, if you are not familiar with CMake you can learn more
 
 By default the miner will be build with all dependencies. Each optional dependency can be disabled (this will reduce the miner features).
 
-There are two easy ways to set variables for `cmake` to configure *xmr-stak*
+There are three easy ways to set variables for `cmake` to configure *xmr-stak*
 - use the ncurses GUI
   - `ccmake ..`
   - edit your options
@@ -25,6 +25,13 @@ There are two easy ways to set variables for `cmake` to configure *xmr-stak*
   - enable a option: `cmake .. -DNAME_OF_THE_OPTION=ON`
   - disable a option `cmake .. -DNAME_OF_THE_OPTION=OFF`
   - set a value `cmake .. -DNAME_OF_THE_OPTION=value`
+-Change Variables inside the CMakeLists.txt file 
+  - Each build option variable is able to be changed inside the CMakeLists file. 
+  - You can Crtl + F to search for the variable
+  - Use ON or OFF to switch between enabling and disabling each variable. ON or OFF has to be in all caps.
+  
+  Examples: ![alt text](https://i.imgur.com/1eMs0a2.png "Screenshot")
+            ![alt text](https://i.imgur.com/hoeQQWz.png "Screenshot")
 
 After the configuration you need to compile the miner, follow the guide for your platform:
 * [Compile in Windows](compile_Windows.md)
