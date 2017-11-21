@@ -30,8 +30,10 @@ There are three easy ways to set variables for `cmake` to configure *xmr-stak*
   - You can Crtl + F to search for the variable
   - Use ON or OFF to switch between enabling and disabling each variable. ON or OFF has to be in all caps.
   
-  Examples: ![alt text](https://i.imgur.com/1eMs0a2.png "Screenshot")
-            ![alt text](https://i.imgur.com/hoeQQWz.png "Screenshot")
+  Examples: 
+  
+ ![alt text](https://i.imgur.com/1eMs0a2.png "Screenshot")
+ ![alt text](https://i.imgur.com/hoeQQWz.png "Screenshot")
 
 After the configuration you need to compile the miner, follow the guide for your platform:
 * [Compile in Windows](compile_Windows.md)
