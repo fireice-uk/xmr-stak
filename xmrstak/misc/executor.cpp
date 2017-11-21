@@ -625,7 +625,10 @@ inline const char* hps_format(double h, char* buf, size_t l)
 {
 	if(std::isnormal(h) || h == 0.0)
 	{
-		snprintf(buf, l, " %03.1f", h);
+		if(h < 10.0)
+			snprintf(buf, l, "  %03.1f", h);
+		else
+			snprintf(buf, l, " %04.1f", h);
 		return buf;
 	}
 	else
@@ -723,9 +726,9 @@ void executor::hashrate_report(std::string& out)
 			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
 			
 			out.append("HASHRATE REPORT - ").append(name).append("\n");
-			out.append("| ID | 10s |  60s |  15m |");
+			out.append("| ID |  10s |  60s |  15m |");
 			if(nthd != 1)
-				out.append(" ID | 10s |  60s |  15m |\n");
+				out.append(" ID |  10s |  60s |  15m |\n");
 			else
 				out.append(1, '\n');
 
