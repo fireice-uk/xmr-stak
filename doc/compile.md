@@ -26,7 +26,7 @@ There are three easy ways to set variables for `cmake` to configure *xmr-stak*
   - disable a option `cmake .. -DNAME_OF_THE_OPTION=OFF`
   - set a value `cmake .. -DNAME_OF_THE_OPTION=value`
 
--Change Variables inside the CMakeLists.txt file 
+- Change Variables inside the CMakeLists.txt file 
   - Each build option variable is able to be changed inside the CMakeLists file. 
   - You can Crtl + F to search for the variable
   - Use ON or OFF to switch between enabling and disabling each variable. ON or OFF has to be in all caps.
