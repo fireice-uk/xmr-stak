@@ -158,6 +158,7 @@ bool jconf::GetPoolConfig(size_t id, pool_cfg& cfg)
 	}
 	else /* Special case - user selected same weights for everything */
 		cfg.weight = 0.0;
+        return true;
 }
 
 bool jconf::TlsSecureAlgos()
