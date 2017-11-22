@@ -40,6 +40,8 @@ Usage: xmr-stak [OPTION]...
   --cpu FILE            CPU backend miner config file
   --noAMD               disable the AMD miner backend
   --amd FILE            AMD backend miner config file
+  --noNVIDIA            disable the NVIDIA miner backend
+  --nvidia FILE         NVIDIA backend miner config file
 
 The Following options temporary overwrites the config file settings:
   -o, --url URL         pool url and port, e.g. pool.usxmrpool.com:3333
