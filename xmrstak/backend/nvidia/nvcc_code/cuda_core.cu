@@ -167,10 +167,10 @@ __forceinline__ __device__ uint32_t shuffle(volatile uint32_t* ptr,const uint32_
 #endif
 }
 
+template<size_t ITERATIONS, uint32_t THREAD_SHIFT, uint32_t MASK>
 #ifdef XMR_STAK_THREADS
 __launch_bounds__( XMR_STAK_THREADS * 4 )
 #endif
-template<size_t ITERATIONS, uint32_t THREAD_SHIFT, uint32_t MASK>
 __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b )
 {
 	__shared__ uint32_t sharedMemory[1024];
