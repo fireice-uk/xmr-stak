@@ -20,7 +20,7 @@ The number of files depends on the available backends.
 1) Double click the `xmr-stak.exe` file
 2) Fill in the pool url, username and password
 
-## Usage on Linux
+## Usage on Linux & MacOS
 1) Open a terminal within the folder with the binary
 2) Start the miner with `./xmr-stak`
 
@@ -40,6 +40,8 @@ Usage: xmr-stak [OPTION]...
   --cpu FILE            CPU backend miner config file
   --noAMD               disable the AMD miner backend
   --amd FILE            AMD backend miner config file
+  --noNVIDIA            disable the NVIDIA miner backend
+  --nvidia FILE         NVIDIA backend miner config file
 
 The Following options temporary overwrites the config file settings:
   -o, --url URL         pool url and port, e.g. pool.usxmrpool.com:3333

@@ -476,7 +476,7 @@ std::vector<GpuContext> getAMDDevices(int index)
 						if(clStatus == CL_SUCCESS)
 						{
 							std::string devVendor(devVendorVec.data());
-							if( devVendor.find("Advanced Micro Devices") != std::string::npos)
+							if( devVendor.find("Advanced Micro Devices") != std::string::npos || devVendor.find("AMD") != std::string::npos)
 							{
 								GpuContext ctx;
 								ctx.deviceIdx = k;
@@ -541,7 +541,7 @@ int getAMDPlatformIdx()
 
 			clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, infoSize, platformNameVec.data(), NULL);
 			std::string platformName(platformNameVec.data());
-			if( platformName.find("Advanced Micro Devices") != std::string::npos)
+			if( platformName.find("Advanced Micro Devices") != std::string::npos || platformName.find("Apple") != std::string::npos)
 			{
 				platformIndex = i;
 				printer::inst()->print_msg(L0,"Found AMD platform index id = %i, name = %s",i , platformName.c_str());

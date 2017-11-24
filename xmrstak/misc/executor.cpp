@@ -459,6 +459,7 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 void disable_sigpipe()
 {
 	struct sigaction sa;
+	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = SIG_IGN;
 	sa.sa_flags = 0;
 	if (sigaction(SIGPIPE, &sa, 0) == -1)
@@ -624,7 +625,10 @@ inline const char* hps_format(double h, char* buf, size_t l)
 {
 	if(std::isnormal(h) || h == 0.0)
 	{
-		snprintf(buf, l, " %03.1f", h);
+		if(h < 10.0)
+			snprintf(buf, l, "  %03.1f", h);
+		else
+			snprintf(buf, l, " %04.1f", h);
 		return buf;
 	}
 	else
@@ -722,9 +726,9 @@ void executor::hashrate_report(std::string& out)
 			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
 			
 			out.append("HASHRATE REPORT - ").append(name).append("\n");
-			out.append("| ID | 10s |  60s |  15m |");
+			out.append("| ID |  10s |  60s |  15m |");
 			if(nthd != 1)
-				out.append(" ID | 10s |  60s |  15m |\n");
+				out.append(" ID |  10s |  60s |  15m |\n");
 			else
 				out.append(1, '\n');
 
