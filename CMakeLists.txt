@@ -39,6 +39,20 @@ set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "${BUILD_TYPE}")
 set(XMR-STAK_CURRENCY "all" CACHE STRING "select miner currency")
 set_property(CACHE XMR-STAK_CURRENCY PROPERTY STRINGS "all;monero;aeon")
 
+
+set(XMR-STAK_COMPILE "native" CACHE STRING "select CPU compute architecture")
+set_property(CACHE XMR-STAK_COMPILE PROPERTY STRINGS "native;generic")
+if("${XMR-STAK_COMPILE}" STREQUAL "native")
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+        set(CMAKE_CXX_FLAGS "-march=native -mtune=native ${CMAKE_CXX_FLAGS}")
+        set(CMAKE_C_FLAGS "-march=native -mtune=native ${CMAKE_C_FLAGS}")
+    endif()
+elseif("${XMR-STAK_COMPILE}" STREQUAL "generic")
+    add_definitions("-DCONF_ENFORCE_OpenCL_1_2=1")
+else()
+    message(FATAL_ERROR "XMR-STAK_COMPILE is set to an unknown value '${XMR-STAK_COMPILE}'")
+endif()
+
 if("${XMR-STAK_CURRENCY}" STREQUAL "all")
     message(STATUS "Set miner currency to 'monero' and 'aeon'")
 elseif("${XMR-STAK_CURRENCY}" STREQUAL "aeon")
@@ -63,7 +77,7 @@ if(CUDA_ENABLE)
     find_package(CUDA 7.5)
 
     if(CUDA_FOUND)
-
+        list(APPEND BACKEND_TYPES "nvidia")
         option(XMR-STAK_LARGEGRID "Support large CUDA block count > 128" ON)
         if(XMR-STAK_LARGEGRID)
             add_definitions("-DXMR_STAK_LARGEGRID=${XMR-STAK_LARGEGRID}")
@@ -97,6 +111,10 @@ if(CUDA_ENABLE)
             list(APPEND DEFAULT_CUDA_ARCH "70")
         endif()
         set(CUDA_ARCH "${DEFAULT_CUDA_ARCH}" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
+
+        # generate comma separated list with architectures
+        string(REPLACE ";" "+" STR_CUDA_ARCH "${CUDA_ARCH}")
+        add_definitions("-DXMRSTAK_CUDA_ARCH_LIST=${STR_CUDA_ARCH}")
 
         # validate architectures (only numbers are allowed)
         foreach(CUDA_ARCH_ELEM ${CUDA_ARCH})
@@ -172,6 +190,12 @@ if(CUDA_ENABLE)
                 # for CUDA 7.5 fix compile error: https://github.com/fireice-uk/xmr-stak/issues/34
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" "-D_MWAITXINTRIN_H_INCLUDED")
             endif()
+
+            if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND CUDA_VERSION VERSION_EQUAL 9.0)
+                # workaround find_package(CUDA) is using the wrong path to the CXX host compiler
+                # overwrite the CUDA host compiler variable with the used CXX MSVC
+                set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE FILEPATH "Host side compiler used by NVCC" FORCE)
+            endif()
         else()
             message(FATAL_ERROR "selected CUDA compiler '${CUDA_COMPILER}' is not supported")
         endif()
@@ -227,6 +251,7 @@ if(OpenCL_ENABLE)
     # find package will use the previews searched path variables
     find_package(OpenCL)
     if(OpenCL_FOUND)
+        list(APPEND BACKEND_TYPES "amd")
         include_directories(SYSTEM ${OpenCL_INCLUDE_DIRS})
         #set(LIBS ${LIBS} ${OpenCL_LIBRARY})
         link_directories(${OpenCL_LIBRARY})
@@ -244,6 +269,8 @@ endif()
 option(CPU_ENABLE "Enable or disable CPU support" ON)
 if(NOT CPU_ENABLE)
     add_definitions("-DCONF_NO_CPU")
+else()
+    list(APPEND BACKEND_TYPES "cpu")
 endif()
 
 ################################################################################
@@ -353,6 +380,37 @@ if(WIN32)
 endif()
 
 ################################################################################
+# Versioning
+################################################################################
+
+# Get the current working branch
+execute_process(
+  COMMAND git rev-parse --abbrev-ref HEAD
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_BRANCH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Get the latest abbreviated commit hash of the working branch
+execute_process(
+  COMMAND git log -1 --format=%h
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_COMMIT_HASH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(NOT "${GIT_COMMIT_HASH}" STREQUAL "")
+	add_definitions("-DGIT_COMMIT_HASH=${GIT_COMMIT_HASH}")
+endif()
+if(NOT "${GIT_BRANCH}" STREQUAL "")
+	add_definitions("-DGIT_BRANCH=${GIT_BRANCH}")
+endif()
+
+# generate backend string
+string(REPLACE ";" "-" STR_BACKEND_TYPES "${BACKEND_TYPES}")
+add_definitions("-DBACKEND_TYPE=${STR_BACKEND_TYPES}")
+
+################################################################################
 # Compile & Link
 ################################################################################
 
@@ -388,7 +446,7 @@ add_library(xmr-stak-c
     ${SRCFILES_C}
 )
 set_property(TARGET xmr-stak-c PROPERTY C_STANDARD 99)
-target_link_libraries(xmr-stak-c ${LIBS})
+target_link_libraries(xmr-stak-c ${MHTD} ${LIBS})
 
 # compile generic backend files
 file(GLOB BACKEND_CPP

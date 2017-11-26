@@ -185,7 +185,15 @@ void tls_socket::print_error()
 	char *buf = nullptr;
 	size_t len = BIO_get_mem_data(err_bio, &buf);
 
-	pCallback->set_socket_error(buf, len);
+	if(buf == nullptr)
+	{
+		if(jconf::inst()->TlsSecureAlgos())
+			pCallback->set_socket_error("Unknown TLS error. Secure TLS maybe unspported, try setting tls_secure_algo to false.");
+		else
+			pCallback->set_socket_error("Unknown TLS error.");
+	}
+	else
+		pCallback->set_socket_error(buf, len);
 
 	BIO_free(err_bio);
 }
@@ -290,40 +298,41 @@ bool tls_socket::connect()
 		return false;
 	}
 
-	if(pCallback->pool_id != executor::dev_pool_id)
+	//Base64 encode digest
+	BIO *bmem, *b64;
+	b64 = BIO_new(BIO_f_base64());
+	bmem = BIO_new(BIO_s_mem());
+
+	BIO_puts(bmem, "SHA256:");
+	b64 = BIO_push(b64, bmem);
+	BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+	BIO_write(b64, md, dlen);
+	BIO_flush(b64);
+
+	const char* conf_md = pCallback->get_tls_fp();
+	char *b64_md = nullptr;
+	size_t b64_len = BIO_get_mem_data(bmem, &b64_md);
+
+	if(strlen(conf_md) == 0)
 	{
-		//Base64 encode digest
-		BIO *bmem, *b64;
-		b64 = BIO_new(BIO_f_base64());
-		bmem = BIO_new(BIO_s_mem());
-
-		BIO_puts(bmem, "SHA256:");
-		b64 = BIO_push(b64, bmem);
-		BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-		BIO_write(b64, md, dlen);
-		BIO_flush(b64);
-
-		const char* conf_md = jconf::inst()->GetTlsFingerprint();
-		char *b64_md = nullptr;
-		size_t b64_len = BIO_get_mem_data(bmem, &b64_md);
-
-		if(strlen(conf_md) == 0)
-		{
-			printer::inst()->print_msg(L1, "Server fingerprint: %.*s", (int)b64_len, b64_md);
-		}
-		else if(strncmp(b64_md, conf_md, b64_len) != 0)
-		{
-			printer::inst()->print_msg(L0, "FINGERPRINT FAILED CHECK: %.*s was given, %s was configured",
-				(int)b64_len, b64_md, conf_md);
-
-			pCallback->set_socket_error("FINGERPRINT FAILED CHECK");
-			BIO_free_all(b64);
-			X509_free(cert);
-			return false;
-		}
-
-		BIO_free_all(b64);
+		if(!pCallback->is_dev_pool())
+			printer::inst()->print_msg(L1, "TLS fingerprint [%s] %.*s", pCallback->get_pool_addr(), (int)b64_len, b64_md);
 	}
+	else if(strncmp(b64_md, conf_md, b64_len) != 0)
+	{
+		if(!pCallback->is_dev_pool())
+		{
+			printer::inst()->print_msg(L0, "FINGERPRINT FAILED CHECK [%s] %.*s was given, %s was configured", 
+				pCallback->get_pool_addr(), (int)b64_len, b64_md, conf_md);
+		}
+
+		pCallback->set_socket_error("FINGERPRINT FAILED CHECK");
+		BIO_free_all(b64);
+		X509_free(cert);
+		return false;
+	}
+
+	BIO_free_all(b64);
 
 	X509_free(cert);
 	return true;

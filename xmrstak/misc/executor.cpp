@@ -29,18 +29,22 @@
 #include "xmrstak/backend/miner_work.hpp"
 #include "xmrstak/backend/globalStates.hpp"
 #include "xmrstak/backend/backendConnector.hpp"
+#include "xmrstak/backend/iBackend.hpp"
 
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/donate-level.hpp"
+#include "xmrstak/version.hpp"
 #include "xmrstak/http/webdesign.hpp"
 
 #include <thread>
 #include <string>
 #include <cmath>
 #include <algorithm>
+#include <functional>
 #include <assert.h>
 #include <time.h>
+
 
 #ifdef _WIN32
 #define strncasecmp _strnicmp
@@ -58,22 +62,16 @@ void executor::push_timed_event(ex_event&& ev, size_t sec)
 
 void executor::ex_clock_thd()
 {
-	size_t iSwitchPeriod = sec_to_ticks(iDevDonatePeriod);
-	size_t iDevPortion = (size_t)floor(((double)iSwitchPeriod) * fDevDonationLevel);
-
-	//No point in bothering with less than 10 sec
-	if(iDevPortion < sec_to_ticks(10))
-		iDevPortion = 0;
-
-	//Add 2 seconds to compensate for connect
-	if(iDevPortion != 0)
-		iDevPortion += sec_to_ticks(2);
-
+	size_t tick = 0;
 	while (true)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(size_t(iTickTime)));
 
 		push_event(ex_event(EV_PERF_TICK));
+
+		//Eval pool choice every fourth tick
+		if((tick++ & 0x03) == 0)
+			push_event(ex_event(EV_EVAL_POOL_CHOICE));
 
 		// Service timed events
 		std::unique_lock<std::mutex> lck(timed_event_mutex);
@@ -90,49 +88,190 @@ void executor::ex_clock_thd()
 				ev++;
 		}
 		lck.unlock();
+	}
+}
 
-		if(iDevPortion == 0)
+bool executor::get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev)
+{
+	size_t limit = jconf::inst()->GetGiveUpLimit();
+	size_t wait = jconf::inst()->GetNetRetry();
+
+	if(limit == 0 || is_dev) limit = (-1); //No limit = limit of 2^64-1
+
+	size_t pool_count = 0;
+	size_t over_limit = 0;
+	for(jpsock& pool : pools)
+	{
+		if(pool.is_dev_pool() != is_dev)
 			continue;
 
-		iSwitchPeriod--;
-		if(iSwitchPeriod == 0)
-		{
-			push_event(ex_event(EV_SWITCH_POOL, usr_pool_id));
-			iSwitchPeriod = sec_to_ticks(iDevDonatePeriod);
-		}
-		else if(iSwitchPeriod == iDevPortion)
-		{
-			push_event(ex_event(EV_SWITCH_POOL, dev_pool_id));
-		}
-	}
-}
+		// Only eval live pools
+		size_t num, dtime;
+		if(pool.get_disconnects(num, dtime))
+			set_timestamp();
 
-void executor::sched_reconnect()
-{
-	iReconnectAttempts++;
-	size_t iLimit = jconf::inst()->GetGiveUpLimit();
-	if(iLimit != 0 && iReconnectAttempts > iLimit)
+		if(dtime == 0 || (dtime >= wait && num <= limit))
+			eval_pools.emplace_back(&pool);
+
+		pool_count++;
+		if(num > limit)
+			over_limit++;
+	}
+
+	if(eval_pools.size() == 0)
 	{
-		printer::inst()->print_msg(L0, "Give up limit reached. Exitting.");
-		exit(0);
+		if(!is_dev)
+		{
+			if(xmrstak::globalStates::inst().pool_id != invalid_pool_id)
+			{
+				printer::inst()->print_msg(L0, "All pools are dead. Idling...");
+				auto work = xmrstak::miner_work();
+				xmrstak::pool_data dat;
+				xmrstak::globalStates::inst().switch_work(work, dat);
+			}
+
+			if(over_limit == pool_count)
+			{
+				printer::inst()->print_msg(L0, "All pools are over give up limit. Exitting.");
+				exit(0);
+			}
+
+			return false;
+		}
+		else
+			return get_live_pools(eval_pools, false);
 	}
 
-	long long unsigned int rt = jconf::inst()->GetNetRetry();
-	printer::inst()->print_msg(L1, "Pool connection lost. Waiting %lld s before retry (attempt %llu).",
-		rt, int_port(iReconnectAttempts));
-
-	auto work = xmrstak::miner_work();
-	xmrstak::pool_data dat;
-
-	xmrstak::globalStates::inst().switch_work(work, dat);
-
-	push_timed_event(ex_event(EV_RECONNECT, usr_pool_id), rt);
+	return true;
 }
 
-void executor::log_socket_error(std::string&& sError)
+/*
+ * This event is called by the timer and whenever something relevant happens.
+ * The job here is to decide if we want to connect, disconnect, or switch jobs (or do nothing)
+ */
+void executor::eval_pool_choice()
 {
+	std::vector<jpsock*> eval_pools;
+	eval_pools.reserve(pools.size());
+
+	bool dev_time = is_dev_time();
+	if(!get_live_pools(eval_pools, dev_time))
+		return;
+
+	size_t running = 0;
+	for(jpsock* pool : eval_pools)
+	{
+		if(pool->is_running())
+			running++;
+	}
+
+	// Special case - if we are without a pool, connect to all find a live pool asap
+	if(running == 0)
+	{
+		if(dev_time)
+			printer::inst()->print_msg(L1, "Fast-connecting to dev pool ...");
+
+		for(jpsock* pool : eval_pools)
+		{
+			if(pool->can_connect())
+			{
+				if(!dev_time)
+					printer::inst()->print_msg(L1, "Fast-connecting to %s pool ...", pool->get_pool_addr());
+				std::string error;
+				if(!pool->connect(error))
+					log_socket_error(pool, std::move(error));
+			}
+		}
+
+		return;
+	}
+
+	std::sort(eval_pools.begin(), eval_pools.end(), [](jpsock* a, jpsock* b) { return b->get_pool_weight(true) < a->get_pool_weight(true); });
+	jpsock* goal = eval_pools[0];
+
+	if(goal->get_pool_id() != xmrstak::globalStates::inst().pool_id)
+	{
+		if(!goal->is_running() && goal->can_connect())
+		{
+			if(dev_time)
+				printer::inst()->print_msg(L1, "Connecting to dev pool ...");
+			else
+				printer::inst()->print_msg(L1, "Connecting to %s pool ...", goal->get_pool_addr());
+
+			std::string error;
+			if(!goal->connect(error))
+				log_socket_error(goal, std::move(error));
+			return;
+		}
+
+		if(goal->is_logged_in())
+		{
+			pool_job oPoolJob;
+			if(!goal->get_current_job(oPoolJob))
+			{
+				goal->disconnect();
+				return;
+			}
+
+			size_t prev_pool_id = current_pool_id;
+			current_pool_id = goal->get_pool_id();
+			on_pool_have_job(current_pool_id, oPoolJob);
+
+			jpsock* prev_pool = pick_pool_by_id(prev_pool_id);
+			if(prev_pool == nullptr || (!prev_pool->is_dev_pool() && !goal->is_dev_pool()))
+				reset_stats();
+
+			if(goal->is_dev_pool() && (prev_pool != nullptr && !prev_pool->is_dev_pool()))
+				last_usr_pool_id = prev_pool_id;
+			else
+				last_usr_pool_id = invalid_pool_id;
+
+			return;
+		}
+	}
+	else
+	{
+		/* All is good - but check if we can do better */
+		std::sort(eval_pools.begin(), eval_pools.end(), [](jpsock* a, jpsock* b) { return b->get_pool_weight(false) < a->get_pool_weight(false); }); 
+		jpsock* goal2 = eval_pools[0];
+
+		if(goal->get_pool_id() != goal2->get_pool_id())
+		{
+			if(!goal2->is_running() && goal2->can_connect())
+			{
+				printer::inst()->print_msg(L1, "Background-connect to %s pool ...", goal2->get_pool_addr());
+				std::string error;
+				if(!goal2->connect(error))
+					log_socket_error(goal2, std::move(error));
+				return;
+			}
+		}
+	}
+
+	if(!dev_time)
+	{
+		for(jpsock& pool : pools)
+		{
+			if(goal->is_logged_in() && pool.is_logged_in() && pool.get_pool_id() != goal->get_pool_id())
+				pool.disconnect(true);
+
+			if(pool.is_dev_pool() && pool.is_logged_in())
+				pool.disconnect(true);
+		}
+	}
+}
+
+void executor::log_socket_error(jpsock* pool, std::string&& sError)
+{
+	std::string pool_name;
+	pool_name.reserve(128);
+	pool_name.append("[").append(pool->get_pool_addr()).append("] ");
+	sError.insert(0, pool_name);
+
 	vSocketLog.emplace_back(std::move(sError));
 	printer::inst()->print_msg(L1, "SOCKET ERROR - %s", vSocketLog.back().msg.c_str());
+
+	push_event(ex_event(EV_EVAL_POOL_CHOICE));
 }
 
 void executor::log_result_error(std::string&& sError)
@@ -172,70 +311,48 @@ jpsock* executor::pick_pool_by_id(size_t pool_id)
 	if(pool_id == invalid_pool_id)
 		return nullptr;
 
-	if(pool_id == dev_pool_id)
-		return dev_pool;
-	else
-		return usr_pool;
+	for(jpsock& pool : pools)
+		if(pool.get_pool_id() == pool_id)
+			return &pool;
+
+	return nullptr;
 }
 
 void executor::on_sock_ready(size_t pool_id)
 {
 	jpsock* pool = pick_pool_by_id(pool_id);
 
-	if(pool_id == dev_pool_id)
-	{
-		if(::jconf::inst()->IsCurrencyMonero())
-		{
-			if(!pool->cmd_login("49gbAsWVZzh2UjRSW8Y5nXjhrvftsyZXJPcULYvUsWNMcFdLNfJBVq9L233ZQ9s3ucefrGCGk9RucfiN83U3VdqyFvZJBxF", "x"))
-				pool->disconnect();
-		}
-		else
-		{
-			if(!pool->cmd_login("WmtAjPsFCyWeED2UrzC96zheXSYocrqyQYRxuurapzZkPVjn3xiTHzBZwWRwRrm9B69kGthajVsRxgwqc2goCBdW2VDpA3ZQ4", "aeon"))
-				pool->disconnect();
-		}
+	if(pool->is_dev_pool())
+		printer::inst()->print_msg(L1, "Dev pool connected. Logging in...");
+	else
+		printer::inst()->print_msg(L1, "Pool %s connected. Logging in...", pool->get_pool_addr());
 
-		current_pool_id = dev_pool_id;
-		printer::inst()->print_msg(L1, "Dev pool logged in. Switching work.");
-		return;
-	}
-
-	printer::inst()->print_msg(L1, "Connected. Logging in...");
-
-	if (!pool->cmd_login(jconf::inst()->GetWalletAddress(), jconf::inst()->GetPoolPwd()))
+	if(!pool->cmd_login())
 	{
 		if(!pool->have_sock_error())
 		{
-			log_socket_error(pool->get_call_error());
+			log_socket_error(pool, pool->get_call_error());
 			pool->disconnect();
 		}
 	}
-	else
-	{
-		iReconnectAttempts = 0;
-		reset_stats();
-	}
 }
 
-void executor::on_sock_error(size_t pool_id, std::string&& sError)
+void executor::on_sock_error(size_t pool_id, std::string&& sError, bool silent)
 {
 	jpsock* pool = pick_pool_by_id(pool_id);
 
-	if(pool_id == dev_pool_id)
-	{
-		pool->disconnect();
-
-		if(current_pool_id != dev_pool_id)
-			return;
-
-		printer::inst()->print_msg(L1, "Dev pool connection error. Switching work.");
-		on_switch_pool(usr_pool_id);
-		return;
-	}
-
-	log_socket_error(std::move(sError));
 	pool->disconnect();
-	sched_reconnect();
+
+	if(pool_id == current_pool_id)
+		current_pool_id = invalid_pool_id;
+
+	if(silent)
+		return;
+
+	if(!pool->is_dev_pool())
+		log_socket_error(pool, std::move(sError));
+	else
+		printer::inst()->print_msg(L1, "Dev pool socket error - mining on user pool...");
 }
 
 void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
@@ -245,9 +362,8 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 
 	jpsock* pool = pick_pool_by_id(pool_id);
 
-	xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob, oPoolJob.iWorkLen, oPoolJob.iTarget,
-		pool_id != dev_pool_id && ::jconf::inst()->NiceHashMode(), pool_id);
-	
+	xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob, oPoolJob.iWorkLen, oPoolJob.iTarget, pool->is_nicehash(), pool_id);
+
 	xmrstak::pool_data dat;
 	dat.iSavedNonce = oPoolJob.iSavedNonce;
 	dat.pool_id = pool_id;
@@ -261,7 +377,7 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 			prev_pool->save_nonce(dat.iSavedNonce);
 	}
 
-	if(pool_id == dev_pool_id)
+	if(pool->is_dev_pool())
 		return;
 
 	if(iPoolDiff != pool->get_current_diff())
@@ -270,21 +386,27 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 		printer::inst()->print_msg(L2, "Difficulty changed. Now: %llu.", int_port(iPoolDiff));
 	}
 
-	if(dat.pool_id == pool_id)
-		printer::inst()->print_msg(L3, "New block detected.");
+	if(dat.pool_id != pool_id)
+	{
+		if(dat.pool_id == invalid_pool_id)
+			printer::inst()->print_msg(L2, "Pool logged in.");
+		else
+			printer::inst()->print_msg(L2, "Pool switched.");
+	}
 	else
-		printer::inst()->print_msg(L3, "Pool switched.");
+		printer::inst()->print_msg(L3, "New block detected.");
 }
 
 void executor::on_miner_result(size_t pool_id, job_result& oResult)
 {
 	jpsock* pool = pick_pool_by_id(pool_id);
+	bool is_monero = jconf::inst()->IsCurrencyMonero();
 
-	if(pool_id == dev_pool_id)
+	if(pool->is_dev_pool())
 	{
 		//Ignore errors silently
 		if(pool->is_running() && pool->is_logged_in())
-			pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult);
+			pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult, pvThreads->at(oResult.iThreadId), is_monero);
 
 		return;
 	}
@@ -297,7 +419,7 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 
 	using namespace std::chrono;
 	size_t t_start = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
-	bool bResult = pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult);
+	bool bResult = pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult, pvThreads->at(oResult.iThreadId), is_monero);
 	size_t t_len = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count() - t_start;
 
 	if(t_len > 0xFFFF)
@@ -331,66 +453,27 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 	}
 }
 
-void executor::on_reconnect(size_t pool_id)
+#ifndef _WIN32
+
+#include <signal.h>
+void disable_sigpipe()
 {
-	jpsock* pool = pick_pool_by_id(pool_id);
-
-	std::string error;
-	if(pool_id == dev_pool_id)
-		return;
-
-	printer::inst()->print_msg(L1, "Connecting to pool %s ...", jconf::inst()->GetPoolAddress());
-
-	if(!pool->connect(jconf::inst()->GetPoolAddress(), error))
-	{
-		log_socket_error(std::move(error));
-		sched_reconnect();
-	}
+	struct sigaction sa;
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = SIG_IGN;
+	sa.sa_flags = 0;
+	if (sigaction(SIGPIPE, &sa, 0) == -1)
+		printer::inst()->print_msg(L1, "ERROR: Call to sigaction failed!");
 }
 
-void executor::on_switch_pool(size_t pool_id)
-{
-	if(pool_id == current_pool_id)
-		return;
-
-	jpsock* pool = pick_pool_by_id(pool_id);
-	if(pool_id == dev_pool_id)
-	{
-		std::string error;
-
-		// If it fails, it fails, we carry on on the usr pool
-		// as we never receive further events
-		printer::inst()->print_msg(L1, "Connecting to dev pool...");
-		std::string dev_pool_addr;
-		if(::jconf::inst()->IsCurrencyMonero())
-			dev_pool_addr = jconf::inst()->GetTlsSetting() ? "xmr.crypto-pool.fr:8888" : "xmr.crypto-pool.fr:7777";
-		else
-			dev_pool_addr = jconf::inst()->GetTlsSetting() ? "pool.aeon.hashvault.pro:3333" : "pool.aeon.hashvault.pro:5555";
-		if(!pool->connect(dev_pool_addr.c_str(), error))
-			printer::inst()->print_msg(L1, "Error connecting to dev pool. Staying with user pool.");
-	}
-	else
-	{
-		printer::inst()->print_msg(L1, "Switching back to user pool.");
-
-		current_pool_id = pool_id;
-		pool_job oPoolJob;
-
-		if(!pool->get_current_job(oPoolJob))
-		{
-			pool->disconnect();
-			return;
-		}
-
-		on_pool_have_job(current_pool_id, oPoolJob);
-
-		if(dev_pool->is_running())
-			push_timed_event(ex_event(EV_DEV_POOL_EXIT), 5);
-	}
-}
+#else
+inline void disable_sigpipe() {}
+#endif
 
 void executor::ex_main()
 {
+	disable_sigpipe();
+
 	assert(1000 % iTickTime == 0);
 
 	xmrstak::miner_work oWork = xmrstak::miner_work();
@@ -406,15 +489,43 @@ void executor::ex_main()
 
 	telem = new xmrstak::telemetry(pvThreads->size());
 
-	current_pool_id = usr_pool_id;
-	usr_pool = new jpsock(usr_pool_id, jconf::inst()->GetTlsSetting());
-	dev_pool = new jpsock(dev_pool_id, jconf::inst()->GetTlsSetting());
+	set_timestamp();
+	size_t pc = jconf::inst()->GetPoolCount();
+	bool tls = true;
+	for(size_t i=0; i < pc; i++)
+	{
+		jconf::pool_cfg cfg;
+ 		jconf::inst()->GetPoolConfig(i, cfg);
+#ifdef CONF_NO_TLS
+		if(cfg.tls)
+		{
+			printer::inst()->print_msg(L1, "ERROR: No miner was compiled without TLS support.");
+			win_exit();
+		}
+#endif
+		if(!cfg.tls) tls = false;
+		pools.emplace_back(i+1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
+	}
+
+	if(jconf::inst()->IsCurrencyMonero())
+	{
+		if(tls)
+			pools.emplace_front(0, "indeedminers.eu:1111", "", "", 0.0, true, false, "", true);
+		else
+			pools.emplace_front(0, "indeedminers.eu:1111", "", "", 0.0, true, false, "", true);
+	}
+	else
+	{
+		if(tls)
+			pools.emplace_front(0, "indeedminers.eu:2222", "", "", 0.0, true, false, "", true);
+		else
+			pools.emplace_front(0, "indeedminers.eu:2222", "", "", 0.0, true, false, "", true);
+	}
 
 	ex_event ev;
 	std::thread clock_thd(&executor::ex_clock_thd, this);
 
-	//This will connect us to the pool for the first time
-	push_event(ex_event(EV_RECONNECT, usr_pool_id));
+	eval_pool_choice();
 
 	// Place the default success result at position 0, it needs to
 	// be here even if our first result is a failure
@@ -435,7 +546,7 @@ void executor::ex_main()
 			break;
 
 		case EV_SOCK_ERROR:
-			on_sock_error(ev.iPoolId, std::move(ev.sSocketError));
+			on_sock_error(ev.iPoolId, std::move(ev.oSocketError.sSocketError), ev.oSocketError.silent);
 			break;
 
 		case EV_POOL_HAVE_JOB:
@@ -446,16 +557,12 @@ void executor::ex_main()
 			on_miner_result(ev.iPoolId, ev.oJobResult);
 			break;
 
-		case EV_RECONNECT:
-			on_reconnect(ev.iPoolId);
+		case EV_EVAL_POOL_CHOICE:
+			eval_pool_choice();
 			break;
 
-		case EV_SWITCH_POOL:
-			on_switch_pool(ev.iPoolId);
-			break;
-
-		case EV_DEV_POOL_EXIT:
-			dev_pool->disconnect();
+		case EV_GPU_RES_ERROR:
+			log_result_error(std::string(ev.oGpuError.error_str));
 			break;
 
 		case EV_PERF_TICK:
@@ -486,7 +593,7 @@ void executor::ex_main()
 				if(normal && fHighestHps < fHps)
 					fHighestHps = fHps;
 			}
-		break;
+			break;
 
 		case EV_USR_HASHRATE:
 		case EV_USR_RESULTS:
@@ -518,59 +625,145 @@ inline const char* hps_format(double h, char* buf, size_t l)
 {
 	if(std::isnormal(h) || h == 0.0)
 	{
-		snprintf(buf, l, " %03.1f", h);
+		if(h < 10.0)
+			snprintf(buf, l, "  %03.1f", h);
+		else
+			snprintf(buf, l, " %04.1f", h);
 		return buf;
 	}
 	else
 		return " (na)";
 }
 
-void executor::hashrate_report(std::string& out)
+bool executor::motd_filter_console(std::string& motd)
 {
-	char num[32];
-	size_t nthd = pvThreads->size();
+	if(motd.size() > motd_max_length)
+		return false;
 
-	out.reserve(256 + nthd * 64);
+	motd.erase(std::remove_if(motd.begin(), motd.end(), [](int chr)->bool { return !((chr >= 0x20 && chr <= 0x7e) || chr == '\n');}), motd.end());
+	return motd.size() > 0;
+}
 
-	double fTotal[3] = { 0.0, 0.0, 0.0};
-	size_t i;
+bool executor::motd_filter_web(std::string& motd)
+{
+	if(!motd_filter_console(motd))
+		return false;
 
-	out.append("HASHRATE REPORT\n");
-	out.append("| ID | 10s |  60s |  15m |");
-	if(nthd != 1)
-		out.append(" ID | 10s |  60s |  15m |\n");
-	else
-		out.append(1, '\n');
+	std::string tmp;
+	tmp.reserve(motd.size() + 128);
 
-	for (i = 0; i < nthd; i++)
+	for(size_t i=0; i < motd.size(); i++)
 	{
-		double fHps[3];
-
-		fHps[0] = telem->calc_telemetry_data(10000, i);
-		fHps[1] = telem->calc_telemetry_data(60000, i);
-		fHps[2] = telem->calc_telemetry_data(900000, i);
-
-		snprintf(num, sizeof(num), "| %2u |", (unsigned int)i);
-		out.append(num);
-		out.append(hps_format(fHps[0], num, sizeof(num))).append(" |");
-		out.append(hps_format(fHps[1], num, sizeof(num))).append(" |");
-		out.append(hps_format(fHps[2], num, sizeof(num))).append(1, ' ');
-
-		fTotal[0] += fHps[0];
-		fTotal[1] += fHps[1];
-		fTotal[2] += fHps[2];
-
-		if((i & 0x1) == 1) //Odd i's
-			out.append("|\n");
+		char c = motd[i];
+		switch(c)
+		{
+		case '&':
+			tmp.append("&amp;");
+			break;
+		case '"':
+			tmp.append("&quot;");
+			break;
+		case '\'':
+			tmp.append("&#039");
+			break;
+		case '<':
+			tmp.append("&lt;");
+			break;
+		case '>':
+			tmp.append("&gt;");
+			break;
+		case '\n':
+			tmp.append("<br>");
+			break;
+		default:
+			tmp.append(1, c);
+			break;
+		}
 	}
 
-	if((i & 0x1) == 1) //We had odd number of threads
-		out.append("|\n");
+	motd = std::move(tmp);
+	return true;
+}
 
-	if(nthd != 1)
-		out.append("-----------------------------------------------------\n");
-	else
-		out.append("---------------------------\n");
+void executor::hashrate_report(std::string& out)
+{
+	out.reserve(2048 + pvThreads->size() * 64);
+
+	if(jconf::inst()->PrintMotd())
+	{
+		std::string motd;
+		for(jpsock& pool : pools)
+		{
+			motd.empty();
+			if(pool.get_pool_motd(motd) && motd_filter_console(motd))
+			{
+				out.append("Message from ").append(pool.get_pool_addr()).append(":\n");
+				out.append(motd).append("\n");
+				out.append("-----------------------------------------------------\n");
+			}
+		}
+	}
+
+	char num[32];
+	double fTotal[3] = { 0.0, 0.0, 0.0};
+
+	for( uint32_t b = 0; b < 4u; ++b)
+	{
+		std::vector<xmrstak::iBackend*> backEnds;
+		std::copy_if(pvThreads->begin(), pvThreads->end(), std::back_inserter(backEnds),
+			[&](xmrstak::iBackend* backend)
+			{
+				return backend->backendType == b;
+			}
+		);
+
+		size_t nthd = backEnds.size();
+		if(nthd != 0)
+		{
+			size_t i;
+			auto bType = static_cast<xmrstak::iBackend::BackendType>(b);
+			std::string name(xmrstak::iBackend::getName(bType));
+			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+			
+			out.append("HASHRATE REPORT - ").append(name).append("\n");
+			out.append("| ID |  10s |  60s |  15m |");
+			if(nthd != 1)
+				out.append(" ID |  10s |  60s |  15m |\n");
+			else
+				out.append(1, '\n');
+
+			for (i = 0; i < nthd; i++)
+			{
+				double fHps[3];
+
+				uint32_t tid = backEnds[i]->iThreadNo;
+				fHps[0] = telem->calc_telemetry_data(10000, tid);
+				fHps[1] = telem->calc_telemetry_data(60000, tid);
+				fHps[2] = telem->calc_telemetry_data(900000, tid);
+
+				snprintf(num, sizeof(num), "| %2u |", (unsigned int)i);
+				out.append(num);
+				out.append(hps_format(fHps[0], num, sizeof(num))).append(" |");
+				out.append(hps_format(fHps[1], num, sizeof(num))).append(" |");
+				out.append(hps_format(fHps[2], num, sizeof(num))).append(1, ' ');
+
+				fTotal[0] += fHps[0];
+				fTotal[1] += fHps[1];
+				fTotal[2] += fHps[2];
+
+				if((i & 0x1) == 1) //Odd i's
+					out.append("|\n");
+			}
+
+			if((i & 0x1) == 1) //We had odd number of threads
+				out.append("|\n");
+
+			if(nthd != 1)
+				out.append("-----------------------------------------------------\n");
+			else
+				out.append("---------------------------\n");
+		}
+	}
 
 	out.append("Totals:  ");
 	out.append(hps_format(fTotal[0], num, sizeof(num)));
@@ -672,11 +865,13 @@ void executor::connection_report(std::string& out)
 
 	out.reserve(512);
 
-	jpsock* pool = pick_pool_by_id(dev_pool_id + 1);
+	jpsock* pool = pick_pool_by_id(current_pool_id);
+	if(pool != nullptr && pool->is_dev_pool())
+		pool = pick_pool_by_id(last_usr_pool_id);
 
 	out.append("CONNECTION REPORT\n");
-	out.append("Pool address    : ").append(jconf::inst()->GetPoolAddress()).append(1, '\n');
-	if (pool->is_running() && pool->is_logged_in())
+	out.append("Pool address    : ").append(pool != nullptr ? pool->get_pool_addr() : "<not connected>").append(1, '\n');
+	if(pool != nullptr && pool->is_running() && pool->is_logged_in())
 		out.append("Connected since : ").append(time_format(date, sizeof(date), tPoolConnTime)).append(1, '\n');
 	else
 		out.append("Connected since : <not connected>\n");
@@ -739,8 +934,32 @@ void executor::http_hashrate_report(std::string& out)
 
 	out.reserve(4096);
 
-	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Hashrate Report", "Hashrate Report");
+	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Hashrate Report", ver_html, "Hashrate Report");
 	out.append(buffer);
+
+	bool have_motd = false;
+	if(jconf::inst()->PrintMotd())
+	{
+		std::string motd;
+		for(jpsock& pool : pools)
+		{
+			motd.empty();
+			if(pool.get_pool_motd(motd) && motd_filter_web(motd))
+			{
+				if(!have_motd)
+				{
+					out.append(sHtmlMotdBoxStart);
+					have_motd = true;
+				}
+				
+				snprintf(buffer, sizeof(buffer), sHtmlMotdEntry, pool.get_pool_addr(), motd.c_str());
+				out.append(buffer);
+			}
+		}
+	}
+
+	if(have_motd)
+		out.append(sHtmlMotdBoxEnd);
 
 	snprintf(buffer, sizeof(buffer), sHtmlHashrateBodyHigh, (unsigned int)nthd + 3);
 	out.append(buffer);
@@ -784,7 +1003,7 @@ void executor::http_result_report(std::string& out)
 
 	out.reserve(4096);
 
-	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Result Report", "Result Report");
+	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Result Report", ver_html,  "Result Report");
 	out.append(buffer);
 
 	size_t iGoodRes = vMineResults[0].count, iTotalRes = iGoodRes;
@@ -830,12 +1049,15 @@ void executor::http_connection_report(std::string& out)
 
 	out.reserve(4096);
 
-	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Connection Report", "Connection Report");
+	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Connection Report", ver_html,  "Connection Report");
 	out.append(buffer);
 
-	jpsock* pool = pick_pool_by_id(dev_pool_id + 1);
+	jpsock* pool = pick_pool_by_id(current_pool_id);
+	if(pool != nullptr && pool->is_dev_pool())
+		pool = pick_pool_by_id(last_usr_pool_id);
+
 	const char* cdate = "not connected";
-	if (pool->is_running() && pool->is_logged_in())
+	if (pool != nullptr && pool->is_running() && pool->is_logged_in())
 		cdate = time_format(date, sizeof(date), tPoolConnTime);
 
 	size_t n_calls = iPoolCallTimes.size();
@@ -848,7 +1070,7 @@ void executor::http_connection_report(std::string& out)
 	}
 
 	snprintf(buffer, sizeof(buffer), sHtmlConnectionBodyHigh,
-		jconf::inst()->GetPoolAddress(),
+		pool != nullptr ? pool->get_pool_addr() : "not connected",
 		cdate, ping_time);
 	out.append(buffer);
 
@@ -918,10 +1140,12 @@ void executor::http_json_report(std::string& out)
 	for(size_t i=1; i < ln; i++)
 		iTotalRes += vMineResults[i].count;
 
-	jpsock* pool = pick_pool_by_id(dev_pool_id + 1);
+	jpsock* pool = pick_pool_by_id(current_pool_id);
+	if(pool != nullptr && pool->is_dev_pool())
+		pool = pick_pool_by_id(last_usr_pool_id);
 
 	size_t iConnSec = 0;
-	if(pool->is_running() && pool->is_logged_in())
+	if(pool != nullptr && pool->is_running() && pool->is_logged_in())
 	{
 		using namespace std::chrono;
 		iConnSec = duration_cast<seconds>(system_clock::now() - tPoolConnTime).count();
@@ -965,15 +1189,15 @@ void executor::http_json_report(std::string& out)
 		cn_error.append(buffer);
 	}
 
-	size_t bb_size = 1024 + hr_thds.size() + res_error.size() + cn_error.size();
+	size_t bb_size = 2048 + hr_thds.size() + res_error.size() + cn_error.size();
 	std::unique_ptr<char[]> bigbuf( new char[ bb_size ] );
 
 	int bb_len = snprintf(bigbuf.get(), bb_size, sJsonApiFormat,
-		hr_thds.c_str(), hr_buffer, a,
+		get_version_str().c_str(), hr_thds.c_str(), hr_buffer, a,
 		int_port(iPoolDiff), int_port(iGoodRes), int_port(iTotalRes), fAvgResTime, int_port(iPoolHashes),
 		int_port(iTopDiff[0]), int_port(iTopDiff[1]), int_port(iTopDiff[2]), int_port(iTopDiff[3]), int_port(iTopDiff[4]),
 		int_port(iTopDiff[5]), int_port(iTopDiff[6]), int_port(iTopDiff[7]), int_port(iTopDiff[8]), int_port(iTopDiff[9]),
-		res_error.c_str(), jconf::inst()->GetPoolAddress(), int_port(iConnSec), int_port(iPoolPing), cn_error.c_str());
+		res_error.c_str(), pool != nullptr ? pool->get_pool_addr() : "not connected", int_port(iConnSec), int_port(iPoolPing), cn_error.c_str());
 
 	out = std::string(bigbuf.get(), bigbuf.get() + bb_len);
 }

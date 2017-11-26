@@ -76,6 +76,7 @@ matrix:
         - XMRSTAK_CMAKE_FLAGS="-DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF"
 
 before_install:
+  - . CI/checkPRBranch
   - if [ $TRAVIS_OS_NAME = osx ]; then
       brew update;
       brew tap homebrew/science;

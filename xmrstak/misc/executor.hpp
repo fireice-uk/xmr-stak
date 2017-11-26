@@ -5,12 +5,14 @@
 #include "xmrstak/backend/iBackend.hpp"
 #include "xmrstak/misc/environment.hpp"
 #include "xmrstak/net/msgstruct.hpp"
+#include "xmrstak/donate-level.hpp"
 
 #include <atomic>
 #include <array>
 #include <list>
+#include <vector>
 #include <future>
-
+#include <chrono>
 
 class jpsock;
 
@@ -40,11 +42,6 @@ public:
 
 	inline void push_event(ex_event&& ev) { oEventQ.push(std::move(ev)); }
 	void push_timed_event(ex_event&& ev, size_t sec);
-	void log_result_error(std::string&& sError);
-
-	constexpr static size_t invalid_pool_id = 0;
-	constexpr static size_t dev_pool_id = 1;
-	constexpr static size_t usr_pool_id = 2;
 
 private:
 	struct timed_event
@@ -55,12 +52,25 @@ private:
 		timed_event(ex_event&& ev, size_t ticks) : event(std::move(ev)), ticks_left(ticks) {}
 	};
 
+	inline void set_timestamp() { dev_timestamp = get_timestamp(); };
+
 	// In miliseconds, has to divide a second (1000ms) into an integer number
 	constexpr static size_t iTickTime = 500;
 
 	// Dev donation time period in seconds. 100 minutes by default.
 	// We will divide up this period according to the config setting
 	constexpr static size_t iDevDonatePeriod = 100 * 60;
+
+	inline bool is_dev_time()
+	{
+		//Add 2 seconds to compensate for connect
+		constexpr size_t dev_portion = double(iDevDonatePeriod) * fDevDonationLevel + 2;
+
+		if(dev_portion < 12) //No point in bothering with less than 10s
+			return false;
+
+		return (get_timestamp() - dev_timestamp) % iDevDonatePeriod >= (iDevDonatePeriod - dev_portion);
+	};
 
 	std::list<timed_event> lTimedEvents;
 	std::mutex timed_event_mutex;
@@ -69,14 +79,13 @@ private:
 	xmrstak::telemetry* telem;
 	std::vector<xmrstak::iBackend*>* pvThreads;
 
-	size_t current_pool_id;
+	size_t current_pool_id = invalid_pool_id;
+	size_t last_usr_pool_id = invalid_pool_id;
+	size_t dev_timestamp;
 
-	jpsock* usr_pool;
-	jpsock* dev_pool;
+	std::list<jpsock> pools;
 
 	jpsock* pick_pool_by_id(size_t pool_id);
-
-	bool is_dev_time;
 
 	executor();
 
@@ -84,6 +93,10 @@ private:
 
 	void ex_clock_thd();
 	void pool_connect(jpsock* pool);
+
+	constexpr static size_t motd_max_length = 512;
+	bool motd_filter_console(std::string& motd);
+	bool motd_filter_web(std::string& motd);
 
 	void hashrate_report(std::string& out);
 	void result_report(std::string& out);
@@ -100,8 +113,6 @@ private:
 	std::string* pHttpString = nullptr;
 	std::promise<void> httpReady;
 	std::mutex httpMutex;
-
-	size_t iReconnectAttempts = 0;
 
 	struct sck_error_log
 	{
@@ -171,17 +182,17 @@ private:
 
 	double fHighestHps = 0.0;
 
-	void log_socket_error(std::string&& sError);
+	void log_socket_error(jpsock* pool, std::string&& sError);
+	void log_result_error(std::string&& sError);
 	void log_result_ok(uint64_t iActualDiff);
 
-	void sched_reconnect();
-
 	void on_sock_ready(size_t pool_id);
-	void on_sock_error(size_t pool_id, std::string&& sError);
+	void on_sock_error(size_t pool_id, std::string&& sError, bool silent);
 	void on_pool_have_job(size_t pool_id, pool_job& oPoolJob);
 	void on_miner_result(size_t pool_id, job_result& oResult);
-	void on_reconnect(size_t pool_id);
-	void on_switch_pool(size_t pool_id);
+	void connect_to_pools(std::list<jpsock*>& eval_pools);
+	bool get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev);
+	void eval_pool_choice();
 
 	inline size_t sec_to_ticks(size_t sec) { return sec * (1000 / iTickTime); }
 };

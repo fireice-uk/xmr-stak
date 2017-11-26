@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-extern const char sHtmlCssEtag [] = "00000006";
+extern const char sHtmlCssEtag [] = "00000009";
 extern const char sHtmlCssFile [] =
 	"body {"
 		"font-family: Tahoma, Arial, sans-serif;"
@@ -38,7 +38,13 @@ extern const char sHtmlCssFile [] =
 		"color: white;"
 		"padding: 10px;"
 		"font-weight: bold;"
-		"margin: 10px 0px;"
+		"margin: 0px;"
+		"margin-bottom: 10px;"
+	"}"
+
+	".version {"
+		"font-size: 75%;"
+		"text-align: right;"
 	"}"
 
 	".links {"
@@ -86,9 +92,37 @@ extern const char sHtmlCssFile [] =
 	".flex-item {"
 		"width: 33%;"
 		"margin: 3px;"
+	"}"
+
+	".motd-box {"
+		"background-color: #ccc;"
+		"padding: 0px 10px 5px 10px;"
+		"margin-bottom: 10px;"
+	"}"
+
+	".motd-head {"
+		"border-bottom: 1px solid #000;"
+		"margin-bottom: 0.5em;"
+		"padding: 0.5em 0em;"
+		"font-weight: bold;"
+	"}"
+
+	".motd-body {"
+		"overflow: hidden;"
 	"}";
 
 size_t sHtmlCssSize = sizeof(sHtmlCssFile) - 1;
+
+extern const char sHttpAuthRelam[] = "XMR-Stak-Miner";
+extern const char sHttpAuthOpaque[] = "6c071f0df539e234cadbcd79164af7a594e23ab42bccb834df796aead6ce96e4";
+
+extern const char sHtmlAccessDenied[] =
+	"<!DOCTYPE html><html>"
+	"<head><title>Access Denied</title></head>"
+	"<body><h1>Access Denied</h1><p>You have entered a wrong username or password</p></body>"
+	"</html>";
+
+size_t sHtmlAccessDeniedSize = sizeof(sHtmlAccessDenied) - 1;
 
 extern const char sHtmlCommonHeader [] =
 	"<!DOCTYPE html>"
@@ -97,6 +131,7 @@ extern const char sHtmlCommonHeader [] =
 	"<link rel='stylesheet' href='style.css' /><title>%s</title></head>"
 	"<body>"
 	"<div class='all'>"
+	"<div class='version'>%s</div>"
 	"<div class='header'><span style='color: rgb(255, 160, 0)'>XMR</span>-Stak Monero Miner</div>"
 
 	"<div class='flex-container'>"
@@ -111,6 +146,10 @@ extern const char sHtmlCommonHeader [] =
 		"</div>"
 	"</div>"
 	"<h4>%s</h4>";
+
+extern const char sHtmlMotdBoxStart[] = "<div class='motd-box'>";
+extern const char sHtmlMotdEntry[] = "<div class='motd-head'>Message from %s</div><div class='motd-body'>%s</div>";
+extern const char sHtmlMotdBoxEnd[] = "</div>";
 
 extern const char sHtmlHashrateBodyHigh [] =
 	"<div class=data>"
@@ -181,6 +220,8 @@ extern const char sJsonApiConnectionError[] =
 
 extern const char sJsonApiFormat [] =
 "{"
+	"\"version\":\"%s\","
+
 	"\"hashrate\":{"
 		"\"threads\":[%s],"
 		"\"total\":%s,"

@@ -59,13 +59,14 @@ namespace nvidia
 {
 
 #ifdef WIN32
-    HINSTANCE lib_handle;
+	HINSTANCE lib_handle;
 #else
-    void *lib_handle;
+	void *lib_handle;
 #endif
-	
+
 minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 {
+	this->backendType = iBackend::NVIDIA;
 	oWork = pWork;
 	bQuit = 0;
 	iThreadNo = (uint8_t)iNo;
@@ -78,8 +79,9 @@ minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 	ctx.device_bsleep = (int)cfg.bsleep;
 	this->affinity = cfg.cpu_aff;
 
+	std::unique_lock<std::mutex> lck(thd_aff_set);
 	std::future<void> order_guard = order_fix.get_future();
-	
+
 	oWorkThd = std::thread(&minethd::work_main, this);
 
 	order_guard.wait();
@@ -111,7 +113,7 @@ bool minethd::self_test()
 
 	//if(!bResult)
 	//	printer::inst()->print_msg(L0,
-	//	    "Cryptonight hash self-test failed. This might be caused by bad compiler optimizations.");
+	//	"Cryptonight hash self-test failed. This might be caused by bad compiler optimizations.");
 
 	return bResult;
 }
@@ -206,7 +208,10 @@ void minethd::work_main()
 		bindMemoryToNUMANode(affinity);
 
 	order_fix.set_value();
-	
+	std::unique_lock<std::mutex> lck(thd_aff_set);
+	lck.release();
+	std::this_thread::yield();
+
 	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
@@ -215,21 +220,22 @@ void minethd::work_main()
 
 	globalStates::inst().iConsumeCnt++;
 
-	if(/*cuda_get_deviceinfo(&ctx) != 1 ||*/ cryptonight_extra_cpu_init(&ctx) != 1)
+	if(cuda_get_deviceinfo(&ctx) != 0 || cryptonight_extra_cpu_init(&ctx) != 1)
 	{
 		printer::inst()->print_msg(L0, "Setup failed for GPU %d. Exitting.\n", (int)iThreadNo);
 		std::exit(0);
 	}
 
 	bool mineMonero = strcmp_i(::jconf::inst()->GetCurrency(), "monero");
-	
+
 	while (bQuit == 0)
 	{
 		if (oWork.bStall)
 		{
-			/*  We are stalled here because the executor didn't find a job for us yet,
-			    either because of network latency, or a socket problem. Since we are
-			    raison d'etre of this software it us sensible to just wait until we have something*/
+			/* We are stalled here because the executor didn't find a job for us yet,
+			 * either because of network latency, or a socket problem. Since we are
+			 * raison d'etre of this software it us sensible to just wait until we have something
+			 */
 
 			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -278,9 +284,9 @@ void minethd::work_main()
 
 				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, cpu_ctx);
 				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
-					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, foundNonce[i], bResult), oWork.iPoolId));
+					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, foundNonce[i], bResult, iThreadNo), oWork.iPoolId));
 				else
-					executor::inst()->log_result_error("NVIDIA Invalid Result");
+					executor::inst()->push_event(ex_event("NVIDIA Invalid Result", oWork.iPoolId));
 			}
 
 			iCount += h_per_round;

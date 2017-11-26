@@ -23,6 +23,7 @@
 
 #include <stdarg.h>
 #include <assert.h>
+#include <algorithm>
 
 #include "jpsock.hpp"
 #include "socks.hpp"
@@ -32,9 +33,6 @@
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/jext.hpp"
 #include "xmrstak/version.hpp"
-
-
-#define AGENTID_STR XMR_STAK_NAME "/" XMR_STAK_VERSION
 
 using namespace rapidjson;
 
@@ -94,7 +92,9 @@ struct jpsock::opq_json_val
 	opq_json_val(const Value* val) : val(val) {}
 };
 
-jpsock::jpsock(size_t id, bool tls) : pool_id(id)
+jpsock::jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sPassword, double pool_weight, bool dev_pool, bool tls, const char* tls_fp, bool nicehash) :
+	net_addr(sAddr), usr_login(sLogin), usr_pass(sPassword), tls_fp(tls_fp), pool_id(id), pool_weight(pool_weight), pool(dev_pool), nicehash(nicehash),
+	connect_time(0), connect_attempts(0), disconnect_time(0), quiet_close(false)
 {
 	sock_init();
 
@@ -189,7 +189,7 @@ bool jpsock::set_socket_error_strerr(const char* a, int res)
 void jpsock::jpsock_thread()
 {
 	jpsock_thd_main();
-	executor::inst()->push_event(ex_event(std::move(sSocketError), pool_id));
+	executor::inst()->push_event(ex_event(std::move(sSocketError), quiet_close, pool_id));
 
 	// If a call is wating, send an error to end it
 	bool bCallWaiting = false;
@@ -206,11 +206,16 @@ void jpsock::jpsock_thread()
 	if(bCallWaiting)
 		call_cond.notify_one();
 
-	bRunning = false;
 	bLoggedIn = false;
+
+	if(bHaveSocketError && !quiet_close)
+		disconnect_time = get_timestamp();
+	else
+		disconnect_time = 0;
 
 	std::unique_lock<std::mutex>(job_mutex);
 	memset(&oCurrentJob, 0, sizeof(oCurrentJob));
+	bRunning = false;
 }
 
 bool jpsock::jpsock_thd_main()
@@ -359,10 +364,11 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 	if (!params->val->IsObject())
 		return set_socket_error("PARSE error: Job error 1");
 
-	const Value * blob, *jobid, *target;
+	const Value *blob, *jobid, *target, *motd;
 	jobid = GetObjectMember(*params->val, "job_id");
 	blob = GetObjectMember(*params->val, "blob");
 	target = GetObjectMember(*params->val, "target");
+	motd = GetObjectMember(*params->val, "motd");
 
 	if (jobid == nullptr || blob == nullptr || target == nullptr ||
 		!jobid->IsString() || !blob->IsString() || !target->IsString())
@@ -408,6 +414,19 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 	else
 		return set_socket_error("PARSE error: Job error 5");
 
+	if(motd != nullptr && motd->IsString() && (motd->GetStringLength() & 0x01) == 0)
+	{
+		std::unique_lock<std::mutex>(motd_mutex);
+		if(motd->GetStringLength() > 0)
+		{
+			pool_motd.resize(motd->GetStringLength()/2 + 1);
+			if(!hex2bin(motd->GetString(), motd->GetStringLength(), (unsigned char*)&pool_motd.front()))
+				pool_motd.clear();
+		}
+		else
+			pool_motd.clear();
+	}
+
 	iJobDiff = t64_to_diff(oPoolJob.iTarget);
 
 	executor::inst()->push_event(ex_event(oPoolJob, pool_id));
@@ -417,25 +436,31 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 	return true;
 }
 
-bool jpsock::connect(const char* sAddr, std::string& sConnectError)
+bool jpsock::connect(std::string& sConnectError)
 {
+	ext_algo = ext_backend = ext_hashcount = ext_motd = false;
 	bHaveSocketError = false;
 	sSocketError.clear();
 	iJobDiff = 0;
+	connect_attempts++;
+	connect_time = get_timestamp();
 
-	if(sck->set_hostname(sAddr))
+	if(sck->set_hostname(net_addr.c_str()))
 	{
 		bRunning = true;
+		disconnect_time = 0;
 		oRecvThd = new std::thread(&jpsock::jpsock_thread, this);
 		return true;
 	}
 
+	disconnect_time = get_timestamp();
 	sConnectError = std::move(sSocketError);
 	return false;
 }
 
-void jpsock::disconnect()
+void jpsock::disconnect(bool quiet)
 {
+	quiet_close = quiet;
 	sck->close(false);
 
 	if(oRecvThd != nullptr)
@@ -446,6 +471,7 @@ void jpsock::disconnect()
 	}
 
 	sck->close(true);
+	quiet_close = false;
 }
 
 bool jpsock::cmd_ret_wait(const char* sPacket, opq_json_val& poResult)
@@ -493,12 +519,12 @@ bool jpsock::cmd_ret_wait(const char* sPacket, opq_json_val& poResult)
 	return bSuccess;
 }
 
-bool jpsock::cmd_login(const char* sLogin, const char* sPassword)
+bool jpsock::cmd_login()
 {
 	char cmd_buffer[1024];
 
-	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"login\",\"params\":{\"login\":\"%s\",\"pass\":\"%s\",\"agent\":\"" AGENTID_STR "\"},\"id\":1}\n",
-		sLogin, sPassword);
+	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"login\",\"params\":{\"login\":\"%s\",\"pass\":\"%s\",\"agent\":\"%s\"},\"id\":1}\n",
+		usr_login.c_str(), usr_pass.c_str(), get_version_str().c_str());
 
 	opq_json_val oResult(nullptr);
 
@@ -515,6 +541,7 @@ bool jpsock::cmd_login(const char* sLogin, const char* sPassword)
 
 	const Value* id = GetObjectMember(*oResult.val, "id");
 	const Value* job = GetObjectMember(*oResult.val, "job");
+	const Value* ext = GetObjectMember(*oResult.val, "extensions");
 
 	if (id == nullptr || job == nullptr || !id->IsString())
 	{
@@ -533,6 +560,29 @@ bool jpsock::cmd_login(const char* sLogin, const char* sPassword)
 	memset(sMinerId, 0, sizeof(sMinerId));
 	memcpy(sMinerId, id->GetString(), id->GetStringLength());
 
+	if(ext != nullptr && ext->IsArray())
+	{
+		for(size_t i=0; i < ext->Size(); i++)
+		{
+			const Value& jextname = ext->GetArray()[i];
+			
+			if(!jextname.IsString())
+				continue;
+
+			std::string tmp(jextname.GetString());
+			std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
+
+			if(tmp == "algo")
+				ext_algo = true;
+			else if(tmp == "backend")
+				ext_backend = true;
+			else if(tmp == "hashcount")
+				ext_hashcount = true;
+			else if(tmp == "motd")
+				ext_motd = true;
+		}
+	}
+
 	opq_json_val v(job);
 	if(!process_pool_job(&v))
 	{
@@ -541,15 +591,29 @@ bool jpsock::cmd_login(const char* sLogin, const char* sPassword)
 	}
 
 	bLoggedIn = true;
+	connect_attempts = 0;
 
 	return true;
 }
 
-bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult)
+bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult, xmrstak::iBackend* bend, bool algo_full_cn)
 {
 	char cmd_buffer[1024];
 	char sNonce[9];
 	char sResult[65];
+	/*Extensions*/
+	char sAlgo[64] = {0};
+	char sBackend[64] = {0};
+	char sHashcount[64] = {0};
+
+	if(ext_backend)
+		snprintf(sBackend, sizeof(sBackend), ",\"backend\":\"%s\"", xmrstak::iBackend::getName(bend->backendType));
+
+	if(ext_hashcount)
+		snprintf(sHashcount, sizeof(sHashcount), ",\"hashcount\":%llu", int_port(bend->iHashCount.load(std::memory_order_relaxed)));
+
+	if(ext_algo)
+		snprintf(sAlgo, sizeof(sAlgo), ",\"algo\":\"%s\"", algo_full_cn ? "cryptonight" : "cryptonight-lite");
 
 	bin2hex((unsigned char*)&iNonce, 4, sNonce);
 	sNonce[8] = '\0';
@@ -557,8 +621,8 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 	bin2hex(bResult, 32, sResult);
 	sResult[64] = '\0';
 
-	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"submit\",\"params\":{\"id\":\"%s\",\"job_id\":\"%s\",\"nonce\":\"%s\",\"result\":\"%s\"},\"id\":1}\n",
-		sMinerId, sJobId, sNonce, sResult);
+	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"submit\",\"params\":{\"id\":\"%s\",\"job_id\":\"%s\",\"nonce\":\"%s\",\"result\":\"%s\"%s%s%s},\"id\":1}\n",
+		sMinerId, sJobId, sNonce, sResult, sBackend, sHashcount, sAlgo);
 
 	opq_json_val oResult(nullptr);
 	return cmd_ret_wait(cmd_buffer, oResult);
@@ -579,6 +643,21 @@ bool jpsock::get_current_job(pool_job& job)
 
 	job = oCurrentJob;
 	return true;
+}
+
+bool jpsock::get_pool_motd(std::string& strin)
+{
+	if(!ext_motd) 
+		return false;
+
+	std::unique_lock<std::mutex>(motd_mutex);
+	if(pool_motd.size() > 0)
+	{
+		strin.assign(pool_motd);
+		return true;
+	}
+
+	return false;
 }
 
 inline unsigned char hf_hex2bin(char c, bool &err)

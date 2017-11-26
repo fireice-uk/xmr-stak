@@ -49,21 +49,45 @@ httpd::httpd()
 }
 
 int httpd::req_handler(void * cls,
-	        MHD_Connection* connection,
-	        const char* url,
-	        const char* method,
-	        const char* version,
-	        const char* upload_data,
-	        size_t* upload_data_size,
-	        void ** ptr)
+			MHD_Connection* connection,
+			const char* url,
+			const char* method,
+			const char* version,
+			const char* upload_data,
+			size_t* upload_data_size,
+			void ** ptr)
 {
 	struct MHD_Response * rsp;
 
 	if (strcmp(method, "GET") != 0)
 		return MHD_NO;
 
-	*ptr = nullptr;
+	if(strlen(jconf::inst()->GetHttpUsername()) != 0)
+	{
+		char* username;
+		int ret;
 
+		username = MHD_digest_auth_get_username(connection);
+		if (username == NULL)
+		{
+			rsp = MHD_create_response_from_buffer(sHtmlAccessDeniedSize, (void*)sHtmlAccessDenied, MHD_RESPMEM_PERSISTENT);
+			ret = MHD_queue_auth_fail_response(connection, sHttpAuthRelam, sHttpAuthOpaque, rsp, MHD_NO);
+			MHD_destroy_response(rsp);
+			return ret;
+		}
+		free(username);
+
+		ret = MHD_digest_auth_check(connection, sHttpAuthRelam, jconf::inst()->GetHttpUsername(), jconf::inst()->GetHttpPassword(), 300);
+		if (ret == MHD_INVALID_NONCE || ret == MHD_NO)
+		{
+			rsp = MHD_create_response_from_buffer(sHtmlAccessDeniedSize, (void*)sHtmlAccessDenied, MHD_RESPMEM_PERSISTENT);
+			ret = MHD_queue_auth_fail_response(connection, sHttpAuthRelam, sHttpAuthOpaque, rsp, (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO);
+			MHD_destroy_response(rsp);
+			return ret;
+		}
+	}
+
+	*ptr = nullptr;
 	std::string str;
 	if(strcasecmp(url, "/style.css") == 0)
 	{

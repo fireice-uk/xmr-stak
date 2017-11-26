@@ -4,7 +4,17 @@ extern const char sHtmlCssEtag[];
 extern const char sHtmlCssFile[];
 extern size_t sHtmlCssSize;
 
+extern const char sHtmlAccessDenied[];
+extern size_t sHtmlAccessDeniedSize;
+
+extern const char sHttpAuthRelam[];
+extern const char sHttpAuthOpaque[];
+
 extern const char sHtmlCommonHeader[];
+
+extern const char sHtmlMotdBoxStart[];
+extern const char sHtmlMotdEntry[];
+extern const char sHtmlMotdBoxEnd[];
 
 extern const char sHtmlHashrateBodyHigh[];
 extern const char sHtmlHashrateTableRow[];

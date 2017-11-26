@@ -57,7 +57,7 @@ bool BackendConnector::self_test()
 
 std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 {
-    globalStates::inst().iGlobalJobNo = 0;
+	globalStates::inst().iGlobalJobNo = 0;
 	globalStates::inst().iConsumeCnt = 0;
 
 
@@ -94,7 +94,7 @@ std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 			printer::inst()->print_msg(L0, "WARNING: backend CPU disabled.");
 	}
 #endif
-	
+
 	globalStates::inst().iThreadCount = pvThreads->size();
 	return pvThreads;
 }

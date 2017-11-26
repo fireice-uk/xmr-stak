@@ -16,7 +16,7 @@ struct configEditor
 
 	configEditor() 
 	{
-	
+
 	}
 
 	static bool file_exist( const std::string filename)
@@ -35,7 +35,7 @@ struct configEditor
 		std::ifstream fstream(filename);
 		m_fileContent = std::string(
 			(std::istreambuf_iterator<char>(fstream)),
-		    std::istreambuf_iterator<char>()
+			std::istreambuf_iterator<char>()
 		);
 		return fstream.good();
 	}
@@ -51,7 +51,7 @@ struct configEditor
 	{
 		m_fileContent = std::regex_replace(m_fileContent, std::regex(search), substring);
 	}
-	
+
 };
 
 } // namepsace xmrstak

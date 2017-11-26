@@ -30,7 +30,7 @@ public:
 
 private:
 	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx*);
-	
+
 	minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg);
 
 	void work_main();
@@ -45,6 +45,7 @@ private:
 	miner_work oWork;
 
 	std::promise<void> order_fix;
+	std::mutex thd_aff_set;
 
 	std::thread oWorkThd;
 	int64_t affinity;

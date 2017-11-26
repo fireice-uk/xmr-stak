@@ -30,20 +30,50 @@ struct job_result
 	uint8_t		bResult[32];
 	char		sJobID[64];
 	uint32_t	iNonce;
+	uint32_t	iThreadId;
 
 	job_result() {}
-	job_result(const char* sJobID, uint32_t iNonce, const uint8_t* bResult) : iNonce(iNonce)
+	job_result(const char* sJobID, uint32_t iNonce, const uint8_t* bResult, uint32_t iThreadId) : iNonce(iNonce), iThreadId(iThreadId)
 	{
 		memcpy(this->sJobID, sJobID, sizeof(job_result::sJobID));
 		memcpy(this->bResult, bResult, sizeof(job_result::bResult));
 	}
 };
 
+struct sock_err
+{
+	std::string sSocketError;
+	bool silent;
 
-enum ex_event_name { EV_INVALID_VAL, EV_SOCK_READY, EV_SOCK_ERROR,
-	EV_POOL_HAVE_JOB, EV_MINER_HAVE_RESULT, EV_PERF_TICK, EV_RECONNECT,
-	EV_SWITCH_POOL, EV_DEV_POOL_EXIT, EV_USR_HASHRATE, EV_USR_RESULTS, EV_USR_CONNSTAT,
-	EV_HASHRATE_LOOP, EV_HTML_HASHRATE, EV_HTML_RESULTS, EV_HTML_CONNSTAT, EV_HTML_JSON };
+	sock_err() {}
+	sock_err(std::string&& err, bool silent) : sSocketError(std::move(err)), silent(silent) { }
+	sock_err(sock_err&& from) : sSocketError(std::move(from.sSocketError)), silent(from.silent) {}
+
+	sock_err& operator=(sock_err&& from)
+	{
+		assert(this != &from);
+		sSocketError = std::move(from.sSocketError);
+		silent = from.silent;
+		return *this;
+	}
+
+	~sock_err() { }
+
+	sock_err(sock_err const&) = delete;
+	sock_err& operator=(sock_err const&) = delete;
+};
+
+// Unlike socket errors, GPU errors are read-only strings
+struct gpu_res_err
+{
+	const char* error_str;
+	gpu_res_err(const char* error_str) : error_str(error_str) {}
+};
+
+enum ex_event_name { EV_INVALID_VAL, EV_SOCK_READY, EV_SOCK_ERROR, EV_GPU_RES_ERROR,
+	EV_POOL_HAVE_JOB, EV_MINER_HAVE_RESULT, EV_PERF_TICK, EV_EVAL_POOL_CHOICE, 
+	EV_USR_HASHRATE, EV_USR_RESULTS, EV_USR_CONNSTAT, EV_HASHRATE_LOOP, 
+	EV_HTML_HASHRATE, EV_HTML_RESULTS, EV_HTML_CONNSTAT, EV_HTML_JSON };
 
 /*
    This is how I learned to stop worrying and love c++11 =).
@@ -64,11 +94,13 @@ struct ex_event
 	{
 		pool_job oPoolJob;
 		job_result oJobResult;
-		std::string sSocketError;
+		sock_err oSocketError;
+		gpu_res_err oGpuError;
 	};
 
 	ex_event() { iName = EV_INVALID_VAL; iPoolId = 0;}
-	ex_event(std::string&& err, size_t id) : iName(EV_SOCK_ERROR), iPoolId(id), sSocketError(std::move(err)) { }
+	ex_event(const char* gpu_err, size_t id) : iName(EV_GPU_RES_ERROR), iPoolId(id), oGpuError(gpu_err) {}
+	ex_event(std::string&& err, bool silent, size_t id) : iName(EV_SOCK_ERROR), iPoolId(id), oSocketError(std::move(err), silent) { }
 	ex_event(job_result dat, size_t id) : iName(EV_MINER_HAVE_RESULT), iPoolId(id), oJobResult(dat) {}
 	ex_event(pool_job dat, size_t id) : iName(EV_POOL_HAVE_JOB), iPoolId(id), oPoolJob(dat) {}
 	ex_event(ex_event_name ev, size_t id = 0) : iName(ev), iPoolId(id) {}
@@ -85,7 +117,7 @@ struct ex_event
 		switch(iName)
 		{
 		case EV_SOCK_ERROR:
-			new (&sSocketError) std::string(std::move(from.sSocketError));
+			new (&oSocketError) sock_err(std::move(from.oSocketError));
 			break;
 		case EV_MINER_HAVE_RESULT:
 			oJobResult = from.oJobResult;
@@ -93,6 +125,8 @@ struct ex_event
 		case EV_POOL_HAVE_JOB:
 			oPoolJob = from.oPoolJob;
 			break;
+		case EV_GPU_RES_ERROR:
+			oGpuError = from.oGpuError;
 		default:
 			break;
 		}
@@ -103,7 +137,7 @@ struct ex_event
 		assert(this != &from);
 
 		if(iName == EV_SOCK_ERROR)
-			sSocketError.~basic_string();
+			oSocketError.~sock_err();
 
 		iName = from.iName;
 		iPoolId = from.iPoolId;
@@ -111,8 +145,8 @@ struct ex_event
 		switch(iName)
 		{
 		case EV_SOCK_ERROR:
-			new (&sSocketError) std::string();
-			sSocketError = std::move(from.sSocketError);
+			new (&oSocketError) sock_err();
+			oSocketError = std::move(from.oSocketError);
 			break;
 		case EV_MINER_HAVE_RESULT:
 			oJobResult = from.oJobResult;
@@ -120,6 +154,8 @@ struct ex_event
 		case EV_POOL_HAVE_JOB:
 			oPoolJob = from.oPoolJob;
 			break;
+		case EV_GPU_RES_ERROR:
+			oGpuError = from.oGpuError;
 		default:
 			break;
 		}
@@ -130,6 +166,14 @@ struct ex_event
 	~ex_event()
 	{
 		if(iName == EV_SOCK_ERROR)
-			sSocketError.~basic_string();
+			oSocketError.~sock_err();
 	}
+};
+
+#include <chrono>
+//Get steady_clock timestamp - misc helper function
+inline size_t get_timestamp()
+{
+	using namespace std::chrono;
+	return time_point_cast<seconds>(steady_clock::now()).time_since_epoch().count();
 };

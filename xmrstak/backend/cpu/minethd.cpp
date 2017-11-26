@@ -94,6 +94,7 @@ bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 
 minethd::minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefetch, int64_t affinity)
 {
+	this->backendType = iBackend::CPU;
 	oWork = pWork;
 	bQuit = 0;
 	iThreadNo = (uint8_t)iNo;
@@ -101,6 +102,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefet
 	bNoPrefetch = no_prefetch;
 	this->affinity = affinity;
 
+	std::unique_lock<std::mutex> lck(thd_aff_set);
 	std::future<void> order_guard = order_fix.get_future();
 
 	if(double_work)
@@ -232,7 +234,7 @@ bool minethd::self_test()
 
 	if(!bResult)
 		printer::inst()->print_msg(L0,
-		    "Cryptonight hash self-test failed. This might be caused by bad compiler optimizations.");
+			"Cryptonight hash self-test failed. This might be caused by bad compiler optimizations.");
 
 	return bResult;
 }
@@ -252,7 +254,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 	{
 		win_exit();
 	}
-	
+
 
 	//Launch the requested number of single and double threads, to distribute
 	//load evenly we need to alternate single and double threads
@@ -278,7 +280,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		minethd* thd = new minethd(pWork, i + threadOffset, cfg.bDoubleMode, cfg.bNoPrefetch, cfg.iCpuAff);
 		pvThreads.push_back(thd);
 	}
-	
+
 	return pvThreads;
 }
 
@@ -339,6 +341,9 @@ void minethd::work_main()
 		bindMemoryToNUMANode(affinity);
 
 	order_fix.set_value();
+	std::unique_lock<std::mutex> lck(thd_aff_set);
+	lck.release();
+	std::this_thread::yield();
 
 	cn_hash_fun hash_fun;
 	cryptonight_ctx* ctx;
@@ -353,14 +358,16 @@ void minethd::work_main()
 	piHashVal = (uint64_t*)(result.bResult + 24);
 	piNonce = (uint32_t*)(oWork.bWorkBlob + 39);
 	globalStates::inst().inst().iConsumeCnt++;
+	result.iThreadId = iThreadNo;
 
 	while (bQuit == 0)
 	{
 		if (oWork.bStall)
 		{
-			/*  We are stalled here because the executor didn't find a job for us yet,
-			    either because of network latency, or a socket problem. Since we are
-			    raison d'etre of this software it us sensible to just wait until we have something*/
+			/* We are stalled here because the executor didn't find a job for us yet,
+			 * either because of network latency, or a socket problem. Since we are
+			 * raison d'etre of this software it us sensible to just wait until we have something
+			 */
 
 			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -466,6 +473,9 @@ void minethd::double_work_main()
 		bindMemoryToNUMANode(affinity);
 
 	order_fix.set_value();
+	std::unique_lock<std::mutex> lck(thd_aff_set);
+	lck.release();
+	std::this_thread::yield();
 
 	cn_hash_fun_dbl hash_fun;
 	cryptonight_ctx* ctx0;
@@ -534,17 +544,16 @@ void minethd::double_work_main()
 				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, nonce_chunk);
 			}
 
-
 			*piNonce0 = ++iNonce;
 			*piNonce1 = ++iNonce;
 
 			hash_fun(bDoubleWorkBlob, oWork.iWorkSize, bDoubleHashOut, ctx0, ctx1);
 
 			if (*piHashVal0 < oWork.iTarget)
-				executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce-1, bDoubleHashOut), oWork.iPoolId));
+				executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce-1, bDoubleHashOut, iThreadNo), oWork.iPoolId));
 
 			if (*piHashVal1 < oWork.iTarget)
-				executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce, bDoubleHashOut + 32), oWork.iPoolId));
+				executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce, bDoubleHashOut + 32, iThreadNo), oWork.iPoolId));
 
 			std::this_thread::yield();
 		}

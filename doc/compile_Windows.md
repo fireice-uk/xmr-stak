@@ -20,9 +20,22 @@
 - tested version: [cmake 3.9](https://cmake.org/files/v3.9/cmake-3.9.0-rc3-win64-x64.msi)
 - during the install choose the option `Add CMake to the system PATH for all users`
 
-### Dependencies OpenSSL/Hwloc and Microhttpd
+### Cuda 8.0+ (only needed to use NVIDIA GPUs)
 
-- download the precompiled binary from [https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip](https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip)
+- donwload and install [https://developer.nvidia.com/cuda-downloads](https://developer.nvidia.com/cuda-downloads)
+- for minimal install choose `Custom installation options` during the install and select
+    - CUDA/Develpment
+    - CUDA/Visual Studio Integration (ignore the warning during the install that VS2017 is not supported)
+    - CUDA/Runtime
+    - Driver components
+
+### AMD APP SDK 3.0 (only needed to use AMD GPUs)
+
+- download and install the latest version from [http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)
+
+### Dependencies OpenSSL/Hwloc and Microhttpd
+- with CUDA 8: download the version 1 of the precompiled binary from [https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip](https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip)
+- with CUDA 9: download the version 2 of the precompiled binary from [https://github.com/fireice-uk/xmr-stak-dep/releases/download/v2/xmr-stak-dep.zip](https://github.com/fireice-uk/xmr-stak-dep/releases/download/v2/xmr-stak-dep.zip)
 - unzip all to `C:\xmr-stak-dep`
 
 ### Validate the Dependency Folder
@@ -67,7 +80,20 @@
   set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc;C:\xmr-stak-dep\libmicrohttpd;C:\xmr-stak-dep\openssl
   mkdir build
   cd build
-  cmake -G "Visual Studio 15 2017 Win64" -T v140,host=x64 ..
+  ```
+  - for CUDA 8*
+    ```
+    cmake -G "Visual Studio 15 2017 Win64" -T v140,host=x64 ..
+    ```
+  - for CUDA 9 and/or AMD GPUs, CPU
+    ```
+    cmake -G "Visual Studio 15 2017 Win64" -T v141,host=x64 ..
+    ```
+  ```
   cmake --build . --config Release --target install
   cd bin\Release
+  copy C:\xmr-stak-dep\openssl\bin\* .
   ```
+
+\* Miner is also compiled for AMD GPUs (if the AMD APP SDK is installed) and CPUs.
+CUDA 8 requires a downgrade to the old v140 tool chain.

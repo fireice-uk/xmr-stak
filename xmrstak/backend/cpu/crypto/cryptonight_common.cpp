@@ -186,7 +186,7 @@ size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 
 		return 0;
 	}
-	
+
 	bRebootDesirable = TRUE;
 	return 1;
 #else

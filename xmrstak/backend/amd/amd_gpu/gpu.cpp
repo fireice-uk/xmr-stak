@@ -172,7 +172,7 @@ const char* err_to_str(cl_int ret)
 		return "CL_INVALID_LINKER_OPTIONS";
 	case CL_INVALID_DEVICE_PARTITION_COUNT:
 		return "CL_INVALID_DEVICE_PARTITION_COUNT";
-#ifdef CL_VERSION_2_0
+#if defined(CL_VERSION_2_0) && !defined(CONF_ENFORCE_OpenCL_1_2)
 	case CL_INVALID_PIPE_SIZE:
 		return "CL_INVALID_PIPE_SIZE";
 	case CL_INVALID_DEVICE_QUEUE:
@@ -226,8 +226,12 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
+	/* Some kernel spawn 8 times more threads than the user is configuring.
+	 * To give the user the correct maximum work size we divide the hardware specific max by 8.
+	 */
+	MaximumWorkSize /= 8;
 	printer::inst()->print_msg(L1,"Device %lu work size %lu / %lu.", ctx->deviceIdx, ctx->workSize, MaximumWorkSize);
-#ifdef CL_VERSION_2_0
+#if defined(CL_VERSION_2_0) && !defined(CONF_ENFORCE_OpenCL_1_2)
 	const cl_queue_properties CommandQueueProperties[] = { 0, 0, 0 };
 	ctx->CommandQueues = clCreateCommandQueueWithProperties(opencl_ctx, ctx->DeviceID, CommandQueueProperties, &ret);
 #else
@@ -386,42 +390,42 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 }
 
 const cl_platform_info attributeTypes[5] = {
-    CL_PLATFORM_NAME,
-    CL_PLATFORM_VENDOR,
-    CL_PLATFORM_VERSION,
-    CL_PLATFORM_PROFILE,
-    CL_PLATFORM_EXTENSIONS
+	CL_PLATFORM_NAME,
+	CL_PLATFORM_VENDOR,
+	CL_PLATFORM_VERSION,
+	CL_PLATFORM_PROFILE,
+	CL_PLATFORM_EXTENSIONS
 };
 
 const char* const attributeNames[] = {
-    "CL_PLATFORM_NAME",
-    "CL_PLATFORM_VENDOR",
-    "CL_PLATFORM_VERSION",
-    "CL_PLATFORM_PROFILE",
-    "CL_PLATFORM_EXTENSIONS"
+	"CL_PLATFORM_NAME",
+	"CL_PLATFORM_VENDOR",
+	"CL_PLATFORM_VERSION",
+	"CL_PLATFORM_PROFILE",
+	"CL_PLATFORM_EXTENSIONS"
 };
 
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
 
 void PrintDeviceInfo(cl_device_id device)
 {
-    char queryBuffer[1024];
-    int queryInt;
-    cl_int clError;
-    clError = clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(queryBuffer), &queryBuffer, NULL);
-    printf("    CL_DEVICE_NAME: %s\n", queryBuffer);
-    queryBuffer[0] = '\0';
-    clError = clGetDeviceInfo(device, CL_DEVICE_VENDOR, sizeof(queryBuffer), &queryBuffer, NULL);
-    printf("    CL_DEVICE_VENDOR: %s\n", queryBuffer);
-    queryBuffer[0] = '\0';
-    clError = clGetDeviceInfo(device, CL_DRIVER_VERSION, sizeof(queryBuffer), &queryBuffer, NULL);
-    printf("    CL_DRIVER_VERSION: %s\n", queryBuffer);
-    queryBuffer[0] = '\0';
-    clError = clGetDeviceInfo(device, CL_DEVICE_VERSION, sizeof(queryBuffer), &queryBuffer, NULL);
-    printf("    CL_DEVICE_VERSION: %s\n", queryBuffer);
-    queryBuffer[0] = '\0';
-    clError = clGetDeviceInfo(device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &queryInt, NULL);
-    printf("    CL_DEVICE_MAX_COMPUTE_UNITS: %d\n", queryInt);
+	char queryBuffer[1024];
+	int queryInt;
+	cl_int clError;
+	clError = clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(queryBuffer), &queryBuffer, NULL);
+	printf("    CL_DEVICE_NAME: %s\n", queryBuffer);
+	queryBuffer[0] = '\0';
+	clError = clGetDeviceInfo(device, CL_DEVICE_VENDOR, sizeof(queryBuffer), &queryBuffer, NULL);
+	printf("    CL_DEVICE_VENDOR: %s\n", queryBuffer);
+	queryBuffer[0] = '\0';
+	clError = clGetDeviceInfo(device, CL_DRIVER_VERSION, sizeof(queryBuffer), &queryBuffer, NULL);
+	printf("    CL_DRIVER_VERSION: %s\n", queryBuffer);
+	queryBuffer[0] = '\0';
+	clError = clGetDeviceInfo(device, CL_DEVICE_VERSION, sizeof(queryBuffer), &queryBuffer, NULL);
+	printf("    CL_DEVICE_VERSION: %s\n", queryBuffer);
+	queryBuffer[0] = '\0';
+	clError = clGetDeviceInfo(device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &queryInt, NULL);
+	printf("    CL_DEVICE_MAX_COMPUTE_UNITS: %d\n", queryInt);
 }
 
 uint32_t getNumPlatforms()
@@ -432,8 +436,11 @@ uint32_t getNumPlatforms()
 
 	// Get platform and device information
 	clStatus = clGetPlatformIDs(0, NULL, &num_platforms);
-	platforms = (cl_platform_id *) malloc(sizeof(cl_platform_id) * num_platforms);
-	clStatus = clGetPlatformIDs(num_platforms, platforms, NULL);
+	if(clStatus != CL_SUCCESS)
+	{
+		printer::inst()->print_msg(L1,"WARNING: %s when calling clGetPlatformIDs for number of platforms.", err_to_str(clStatus));
+		return 0u;
+	}
 
 	return num_platforms;
 }
@@ -448,39 +455,60 @@ std::vector<GpuContext> getAMDDevices(int index)
 
 	uint32_t numPlatforms = getNumPlatforms();
 
-
-    platforms = (cl_platform_id *) malloc(sizeof(cl_platform_id) * numPlatforms);
-    clStatus = clGetPlatformIDs(numPlatforms, platforms, NULL);
-
-	clStatus = clGetDeviceIDs( platforms[index], CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices);
-	device_list = (cl_device_id *) malloc(sizeof(cl_device_id)*num_devices);
-	clStatus = clGetDeviceIDs( platforms[index], CL_DEVICE_TYPE_GPU, num_devices, device_list, NULL);
-	for (int k = 0; k < num_devices; k++) {
-		cl_int clError;
-		std::vector<char> devVendorVec(1024);
-		clError = clGetDeviceInfo(device_list[k], CL_DEVICE_VENDOR, devVendorVec.size(), devVendorVec.data(), NULL);
-		std::string devVendor(devVendorVec.data());
-		if( devVendor.find("Advanced Micro Devices") != std::string::npos)
+	if(numPlatforms)
+	{
+		platforms = (cl_platform_id *) malloc(sizeof(cl_platform_id) * numPlatforms);
+		clStatus = clGetPlatformIDs(numPlatforms, platforms, NULL);
+		if(clStatus == CL_SUCCESS)
 		{
-			GpuContext ctx;
-			ctx.deviceIdx = k;
-			clError = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &(ctx.computeUnits), NULL);
-			size_t maxMem;
-			clError = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(size_t), &(maxMem), NULL);
-			clError = clGetDeviceInfo(device_list[k], CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(size_t), &(ctx.freeMem), NULL);
-			// if environment variable GPU_SINGLE_ALLOC_PERCENT is not set we can not allocate the full memory
-			ctx.freeMem = std::min(ctx.freeMem, maxMem);
-			std::vector<char> devNameVec(1024);
-			clError = clGetDeviceInfo(device_list[k], CL_DEVICE_NAME, devNameVec.size(), devNameVec.data(), NULL);
-			ctx.name = std::string(devNameVec.data());
-			printer::inst()->print_msg(L0,"Found OpenCL GPU %s.",ctx.name.c_str());
-			ctx.DeviceID = device_list[k];
-			ctxVec.push_back(ctx);
+			clStatus = clGetDeviceIDs( platforms[index], CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices);
+			if(clStatus == CL_SUCCESS)
+			{
+				device_list = (cl_device_id *) malloc(sizeof(cl_device_id)*num_devices);
+				clStatus = clGetDeviceIDs( platforms[index], CL_DEVICE_TYPE_GPU, num_devices, device_list, NULL);
+				if(clStatus == CL_SUCCESS)
+				{
+					for (int k = 0; k < num_devices; k++)
+					{
+						cl_int clError;
+						std::vector<char> devVendorVec(1024);
+						clError = clGetDeviceInfo(device_list[k], CL_DEVICE_VENDOR, devVendorVec.size(), devVendorVec.data(), NULL);
+						if(clStatus == CL_SUCCESS)
+						{
+							std::string devVendor(devVendorVec.data());
+							if( devVendor.find("Advanced Micro Devices") != std::string::npos)
+							{
+								GpuContext ctx;
+								ctx.deviceIdx = k;
+								clError = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &(ctx.computeUnits), NULL);
+								size_t maxMem;
+								clError = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(size_t), &(maxMem), NULL);
+								clError = clGetDeviceInfo(device_list[k], CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(size_t), &(ctx.freeMem), NULL);
+								// if environment variable GPU_SINGLE_ALLOC_PERCENT is not set we can not allocate the full memory
+								ctx.freeMem = std::min(ctx.freeMem, maxMem);
+								std::vector<char> devNameVec(1024);
+								clError = clGetDeviceInfo(device_list[k], CL_DEVICE_NAME, devNameVec.size(), devNameVec.data(), NULL);
+								ctx.name = std::string(devNameVec.data());
+								printer::inst()->print_msg(L0,"Found OpenCL GPU %s.",ctx.name.c_str());
+								ctx.DeviceID = device_list[k];
+								ctxVec.push_back(ctx);
+							}
+						}
+						else
+							printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get the device vendor name.", err_to_str(clStatus));
+					}
+				}
+				else
+					printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceIDs for device information.", err_to_str(clStatus));
+				free(device_list);
+			}
+			else
+				printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceIDs for of devices.", err_to_str(clStatus));
 		}
+		else
+			printer::inst()->print_msg(L1,"WARNING: %s when calling clGetPlatformIDs for platform information.", err_to_str(clStatus));
 	}
 	
-
-	free(device_list);
 	free(platforms);
 
 	return ctxVec;
@@ -500,24 +528,29 @@ int getAMDPlatformIdx()
 	cl_int clStatus;
 
 	platforms = (cl_platform_id *) malloc(sizeof(cl_platform_id) * numPlatforms);
-    clStatus = clGetPlatformIDs(numPlatforms, platforms, NULL);
+	clStatus = clGetPlatformIDs(numPlatforms, platforms, NULL);
 
 	int platformIndex = -1;
 
-	for (int i = 0; i < numPlatforms; i++) {
-		size_t infoSize;
-		clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, 0, NULL, &infoSize);
-		std::vector<char> platformNameVec(infoSize);
+	if(clStatus == CL_SUCCESS)
+	{
+		for (int i = 0; i < numPlatforms; i++) {
+			size_t infoSize;
+			clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, 0, NULL, &infoSize);
+			std::vector<char> platformNameVec(infoSize);
 
-		clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, infoSize, platformNameVec.data(), NULL);
-		std::string platformName(platformNameVec.data());
-		if( platformName.find("Advanced Micro Devices") != std::string::npos)
-		{
-			platformIndex = i;
-			printer::inst()->print_msg(L0,"Found AMD platform index id = %i, name = %s",i , platformName.c_str());
-			break;
+			clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, infoSize, platformNameVec.data(), NULL);
+			std::string platformName(platformNameVec.data());
+			if( platformName.find("Advanced Micro Devices") != std::string::npos)
+			{
+				platformIndex = i;
+				printer::inst()->print_msg(L0,"Found AMD platform index id = %i, name = %s",i , platformName.c_str());
+				break;
+			}
 		}
 	}
+	else
+		printer::inst()->print_msg(L1,"WARNING: %s when calling clGetPlatformIDs for platform information.", err_to_str(clStatus));
 
 	free(platforms);
 	return platformIndex;
@@ -547,27 +580,6 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 		return ERR_STUPID_PARAMS;
 	}
 
-
-
-	cl_platform_id * platforms = NULL;
-	cl_int clStatus;
-	uint32_t numPlatforms = getNumPlatforms();
-
-	platforms = (cl_platform_id *) malloc(sizeof(cl_platform_id) * numPlatforms);
-    clStatus = clGetPlatformIDs(numPlatforms, platforms, NULL);
-
-	size_t infoSize;
-	clGetPlatformInfo(platforms[platform_idx], CL_PLATFORM_VENDOR, 0, NULL, &infoSize);
-	std::vector<char> platformNameVec(infoSize);
-	clGetPlatformInfo(platforms[platform_idx], CL_PLATFORM_VENDOR, infoSize, platformNameVec.data(), NULL);
-	std::string platformName(platformNameVec.data());
-	if( platformName.find("Advanced Micro Devices") == std::string::npos)
-	{
-		printer::inst()->print_msg(L1,"WARNING: using non AMD device: %s", platformName.c_str());
-	}
-	
-	free(platforms);
-
 	/*MSVC skimping on devel costs by shoehorning C99 to be a subset of C++? Noooo... can't be.*/
 #ifdef __GNUC__
 	cl_platform_id PlatformIDList[entries];
@@ -578,6 +590,16 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clGetPlatformIDs for platform ID information.", err_to_str(ret));
 		return ERR_OCL_API;
+	}
+
+	size_t infoSize;
+	clGetPlatformInfo(PlatformIDList[platform_idx], CL_PLATFORM_VENDOR, 0, NULL, &infoSize);
+	std::vector<char> platformNameVec(infoSize);
+	clGetPlatformInfo(PlatformIDList[platform_idx], CL_PLATFORM_VENDOR, infoSize, platformNameVec.data(), NULL);
+	std::string platformName(platformNameVec.data());
+	if( platformName.find("Advanced Micro Devices") == std::string::npos)
+	{
+		printer::inst()->print_msg(L1,"WARNING: using non AMD device: %s", platformName.c_str());
 	}
 
 	if((ret = clGetDeviceIDs(PlatformIDList[platform_idx], CL_DEVICE_TYPE_GPU, 0, NULL, &entries)) != CL_SUCCESS)
@@ -674,7 +696,7 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 
 	input[input_len] = 0x01;
 	memset(input + input_len + 1, 0, 88 - input_len - 1);
-	
+
 	size_t numThreads = ctx->rawIntensity;
 
 	if((ret = clEnqueueWriteBuffer(ctx->CommandQueues, ctx->InputBuffer, CL_TRUE, 0, 88, input, 0, NULL, NULL)) != CL_SUCCESS)

@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <sstream>
+#include <algorithm>
+#include <vector>
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <device_functions.hpp>
@@ -270,6 +273,15 @@ extern "C" int cuda_get_devicecount( int* deviceCount)
 	return 1;
 }
 
+/** get device information
+ *
+ * @return 0 = all OK,
+ *         1 = something went wrong,
+ *         2 = gpu cannot be selected,
+ *         3 = context cannot be created
+ *         4 = not enough memory
+ *         5 = architecture not supported (not compiled for the gpu architecture)
+ */
 extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 {
 	cudaError_t err;
@@ -279,25 +291,25 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 	if(err != cudaSuccess)
 	{
 		printf("Unable to query CUDA driver version! Is an nVidia driver installed?\n");
-		return 0;
+		return 1;
 	}
 
 	if(version < CUDART_VERSION)
 	{
 		printf("Driver does not support CUDA %d.%d API! Update your nVidia driver!\n", CUDART_VERSION / 1000, (CUDART_VERSION % 1000) / 10);
-		return 0;
+		return 1;
 	}
 
 	int GPU_N;
 	if(cuda_get_devicecount(&GPU_N) == 0)
 	{
-		return 0;
+		return 1;
 	}
 
 	if(ctx->device_id >= GPU_N)
 	{
 		printf("Invalid device ID!\n");
-		return 0;
+		return 1;
 	}
 
 	cudaDeviceProp props;
@@ -305,7 +317,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 	if(err != cudaSuccess)
 	{
 		printf("\nGPU %d: %s\n%s line %d\n", ctx->device_id, cudaGetErrorString(err), __FILE__, __LINE__);
-		return 0;
+		return 1;
 	}
 
 	ctx->device_name = strdup(props.name);
@@ -313,7 +325,51 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 	ctx->device_arch[0] = props.major;
 	ctx->device_arch[1] = props.minor;
 
+	const int gpuArch = ctx->device_arch[0] * 10 + ctx->device_arch[1];
+
 	ctx->name = std::string(props.name);
+
+	std::vector<int> arch;
+#define XMRSTAK_PP_TOSTRING1(str) #str
+#define XMRSTAK_PP_TOSTRING(str) XMRSTAK_PP_TOSTRING1(str)
+	char const * archStringList = XMRSTAK_PP_TOSTRING(XMRSTAK_CUDA_ARCH_LIST);
+#undef XMRSTAK_PP_TOSTRING
+#undef XMRSTAK_PP_TOSTRING1
+	std::stringstream ss(archStringList);
+
+	//transform string list sperated with `+` into a vector of integers
+	int tmpArch;
+	while ( ss >> tmpArch )
+		arch.push_back( tmpArch );
+
+	if(gpuArch >= 20 && gpuArch < 30)
+	{
+		// compiled binary must support sm_20 for fermi
+		std::vector<int>::iterator it = std::find(arch.begin(), arch.end(), 20);
+		if(it == arch.end())
+		{
+			printf("WARNING: NVIDIA GPU %d: miner not compiled for the gpu architecture %d.\n", ctx->device_id, gpuArch);
+			return 5;
+		}
+	}
+	if(gpuArch >= 30)
+	{
+		// search the minimum architecture greater than sm_20
+		int minSupportedArch = 0;
+		/* - for newer architecture than fermi we need at least sm_30
+		 * or a architecture >= gpuArch
+		 * - it is not possible to use a gpu with a architecture >= 30
+		 *   with a sm_20 only compiled binary
+		 */
+		for(int i = 0; i < arch.size(); ++i)
+			if(minSupportedArch == 0 || (arch[i] >= 30 && arch[i] < minSupportedArch))
+				minSupportedArch = arch[i];
+		if(minSupportedArch < 30 || gpuArch < minSupportedArch)
+		{
+			printf("WARNING: NVIDIA GPU %d: miner not compiled for the gpu architecture %d.\n", ctx->device_id, gpuArch);
+			return 5;
+		}
+	}
 
 	// set all evice option those marked as auto (-1) to a valid value
 	if(ctx->device_blocks == -1)
@@ -347,9 +403,31 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			maxMemUsage = size_t(1024u) * byteToMiB;
 		}
 
+		int* tmp;
+		cudaError_t err;
+		// a device must be selected to get the right memory usage later on
+		err = cudaSetDevice(ctx->device_id);
+		if(err != cudaSuccess)
+		{
+			printf("WARNING: NVIDIA GPU %d: cannot be selected.\n", ctx->device_id);
+			return 2;
+		}
+		// trigger that a context on the gpu will be allocated
+		err = cudaMalloc(&tmp, 256);
+		if(err != cudaSuccess)
+		{
+			printf("WARNING: NVIDIA GPU %d: context cannot be created.\n", ctx->device_id);
+			return 3;
+		}
+
+
 		size_t freeMemory = 0;
 		size_t totalMemory = 0;
 		CUDA_CHECK(ctx->device_id, cudaMemGetInfo(&freeMemory, &totalMemory));
+
+		cudaFree(tmp);
+		// delete created context on the gpu
+		cudaDeviceReset();
 		
 		ctx->total_device_memory = totalMemory;
 		ctx->free_device_memory = freeMemory;
@@ -379,6 +457,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			printf("WARNING: NVIDIA GPU %d: already %s MiB memory in use, skip GPU.\n",
 				ctx->device_id,
 				std::to_string(usedMem/byteToMiB).c_str());
+			return 4;
 		}
 		else
 			maxMemUsage -= usedMem;
@@ -388,9 +467,9 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		// 200byte are meta data memory (result nonce, ...)
 		size_t availableMem = freeMemory - (128u * byteToMiB) - 200u;
 		size_t limitedMemory = std::min(availableMem, maxMemUsage);
-		// up to 1kibyte extra memory is used per thread for some kernel (lmem/local memory)
+		// up to 16kibyte extra memory is used per thread for some kernel (lmem/local memory)
 		// 680bytes are extra meta data memory per hash
-		size_t perThread = hashMemSize + 1024u + 680u;
+		size_t perThread = hashMemSize + 16192u + 680u;
 		size_t max_intensity = limitedMemory / perThread;
 		ctx->device_threads = max_intensity / ctx->device_blocks;
 		// use only odd number of threads
@@ -404,5 +483,5 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 
 	}
 
-	return 1;
+	return 0;
 }

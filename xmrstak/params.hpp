@@ -46,7 +46,7 @@ struct params
 		configFileCPU("cpu.txt"),
 		configFileNVIDIA("nvidia.txt")
 	{}
-	
+
 };
 
 } // namepsace xmrstak
