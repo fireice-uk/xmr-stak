@@ -361,7 +361,7 @@ if(HWLOC_ENABLE)
         PATH_SUFFIXES
             lib)
 
-    if("${HWLOC}" STREQUAL "MHTD-NOTFOUND" OR ${HWLOC_INCLUDE_DIR} STREQUAL "HWLOC_INCLUDE_DIR-NOTFOUND")
+    if("${HWLOC}" STREQUAL "HWLOC-NOTFOUND" OR ${HWLOC_INCLUDE_DIR} STREQUAL "HWLOC_INCLUDE_DIR-NOTFOUND")
         message(FATAL_ERROR "hwloc NOT found: use `-DHWLOC_ENABLE=OFF` to build without hwloc support")
     else()
         set(LIBS ${LIBS} ${HWLOC})
@@ -446,7 +446,10 @@ add_library(xmr-stak-c
     ${SRCFILES_C}
 )
 set_property(TARGET xmr-stak-c PROPERTY C_STANDARD 99)
-target_link_libraries(xmr-stak-c ${MHTD} ${LIBS})
+if(MICROHTTPD_ENABLE)
+    target_link_libraries(xmr-stak-c ${MHTD})
+endif()
+target_link_libraries(xmr-stak-c ${LIBS})
 
 # compile generic backend files
 file(GLOB BACKEND_CPP
