@@ -388,10 +388,16 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 
 	if(dat.pool_id != pool_id)
 	{
-		if(dat.pool_id == invalid_pool_id)
-			printer::inst()->print_msg(L2, "Pool logged in.");
+		jpsock* prev_pool;
+		if(dat.pool_id != invalid_pool_id && (prev_pool = pick_pool_by_id(dat.pool_id)) != nullptr)
+		{
+			if(prev_pool->is_dev_pool())
+				printer::inst()->print_msg(L2, "Switching back to user pool.");
+			else
+				printer::inst()->print_msg(L2, "Pool switched.");
+		}
 		else
-			printer::inst()->print_msg(L2, "Pool switched.");
+			printer::inst()->print_msg(L2, "Pool logged in.");
 	}
 	else
 		printer::inst()->print_msg(L3, "New block detected.");
