@@ -521,12 +521,6 @@ set(LIBRARY_OUTPUT_PATH "bin")
 
 target_link_libraries(xmr-stak ${LIBS} xmr-stak-c xmr-stak-backend)
 
-option(WIN_UAC "Add UAC manifest on Windows" ON)
-
-if(WIN_UAC AND CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    set_property(TARGET xmr-stak PROPERTY LINK_FLAGS "/level='requireAdministrator' /uiAccess='false'")
-endif()
-
 ################################################################################
 # Install
 ################################################################################

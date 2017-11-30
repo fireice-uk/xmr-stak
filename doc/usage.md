@@ -30,27 +30,7 @@ The number of files depends on the available backends.
 ## Command Line Options
 
 The miner allow to overwrite some of the settings via command line options.
-
-```
-Usage: xmr-stak [OPTION]...
-
-  -h, --help            show this help
-  -v, --version         show version number
-  -V, --version-long  show long version number
-  -c, --config FILE     common miner configuration file
-  --currency NAME       currency to mine: monero or aeon
-  --noCPU               disable the CPU miner backend
-  --cpu FILE            CPU backend miner config file
-  --noAMD               disable the AMD miner backend
-  --amd FILE            AMD backend miner config file
-  --noNVIDIA            disable the NVIDIA miner backend
-  --nvidia FILE         NVIDIA backend miner config file
-
-The Following options temporary overwrites the config file settings:
-  -o, --url URL         pool url and port, e.g. pool.usxmrpool.com:3333
-  -u, --user USERNAME   pool user name or wallet address
-  -p, --pass PASSWD     pool password, in the most cases x or empty ""
-```
+Run `xmr-stak --help` to show all available command line options.
 
 ## Docker image usage
 

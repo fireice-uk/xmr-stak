@@ -22,7 +22,7 @@ build_script:
   - mkdir build
   - cd build
   - set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc;C:\xmr-stak-dep\libmicrohttpd;C:\xmr-stak-dep\openssl;
-  - cmake -G "Visual Studio 14 2015 Win64" -T v140,host=x64 .. -DWIN_UAC=OFF -DCUDA_ARCH=30
+  - cmake -G "Visual Studio 14 2015 Win64" -T v140,host=x64 .. -DCUDA_ARCH=30
   - cmake --build . --config Release --target install
 
 test_script:

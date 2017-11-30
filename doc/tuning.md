@@ -1,6 +1,7 @@
 # Tuning Guide
 
 ## Content Overview
+* [Windows](windows)
 * [NVIDIA Backend](#nvidia-backend)
   * [Choose Value for `threads` and `blocks`](#choose-value-for-threads-and-blocks)
   * [Add more GPUs](#add-more-gpus)
@@ -9,6 +10,11 @@
   * [Add more GPUs](#add-more-gpus)
   * [Increase Memory Pool](#increase-memory-pool)
   * [Scratchpad Indexing](#scratchpad-indexing)
+
+## Windows
+"Run As Administrator" prompt (UAC) confirmation is needed to use large pages on Windows 7.
+On Windows 10 it is only needed once to set up the account to use them.
+Disable the dialog with the command line option `--noUAC`
 
 ## NVIDIA Backend
 
