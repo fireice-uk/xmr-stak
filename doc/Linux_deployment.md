@@ -1,5 +1,7 @@
 # Deploying portable **XMR-Stak** on Linux systems
 
+**This is an experimental feature** we reserve the right to remove the binary if we get too many issues.
+
 XMR-Stak releases include a pre-built portable version. If you are simply using it to avoid having to compile the application, you can simply download **xmr-stak-portbin-linux.tar.gz** from our [latest releases](https://github.com/fireice-uk/xmr-stak/releases/latest). Open up command line, and use the following commands:
 
 ```
