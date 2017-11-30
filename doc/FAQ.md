@@ -56,10 +56,9 @@ This typically means you are trying to run it on a CPU that does not have [AES](
 
 ## Virus Protection Alert
 
-Some Virus protection software flag the miner binary as *Male Ware*.
+Due to malware creators hijacking system for mining by embedding xmr-stak, some anti-virus software will flag it as *malware*.
 In this case the binary is moved to the quarantine area of the protection software.
-This is a wrong alert and not avoid by use.
-Add the binary to to protection software white list to solve this issue.s
+Add the binary or the folder containing the binary to the white list to solve this issue.
 
 ## Change Currency to Mine
 
