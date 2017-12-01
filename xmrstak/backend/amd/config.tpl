@@ -5,9 +5,12 @@ R"===(
  *  intensity    - Number of parallel GPU threads (nothing to do with CPU threads)
  *   worksize    - Number of local GPU threads (nothing to do with CPU threads)
  * affine_to_cpu - This will affine the thread to a CPU. This can make a GPU miner play along nicer with a CPU miner.
+ * strided_index - switch memory pattern used for the scratch pad memory
+ *                 false = use a contiguous block of memory per thread
+ *                 true  = use 16byte contiguous memory per thread, the next memory block has offset of intensity blocks
  * "gpu_threads_conf" :
  * [
- *	{ "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false },
+ *	{ "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false, "strided_index" : false },
  * ],
  */
 
