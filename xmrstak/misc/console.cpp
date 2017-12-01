@@ -222,8 +222,13 @@ void printer::print_str(const char* str)
 #ifdef _WIN32
 void win_exit(size_t code)
 {
-	printer::inst()->print_str("Press any key to exit.");
-	get_key();
+	size_t envSize = 0;
+	getenv_s(&envSize, nullptr, 0, "XMRSTAK_NOWAIT");
+	if(envSize == 0)
+	{
+		printer::inst()->print_str("Press any key to exit.");
+		get_key();
+	}
 	std::exit(code);
 }
 
