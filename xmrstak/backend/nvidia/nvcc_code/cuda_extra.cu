@@ -380,6 +380,10 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		 */
 		ctx->device_blocks = props.multiProcessorCount *
 			( props.major < 3 ? 2 : 3 );
+
+		// increase bfactor for low end devices to avoid that the miner is killed by the OS
+		if(props.multiProcessorCount < 6)
+			ctx->device_bfactor += 2;
 	}
 	if(ctx->device_threads == -1)
 	{

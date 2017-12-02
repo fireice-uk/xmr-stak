@@ -9,6 +9,7 @@
 #endif
 
 #include <stdint.h>
+#include <string>
 #include <vector>
 
 #define ERR_SUCCESS (0)

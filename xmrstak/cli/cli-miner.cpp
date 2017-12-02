@@ -87,6 +87,12 @@ void help()
 	cout<<"  -u, --user USERNAME   pool user name or wallet address"<<endl;
 	cout<<"  -p, --pass PASSWD     pool password, in the most cases x or empty \"\""<<endl;
 	cout<<" \n"<<endl;
+#ifdef _WIN32
+	cout<<"Environment variables:\n"<<endl;
+	cout<<"  XMRSTAK_NOWAIT        disable the dialog `Press any key to exit."<<std::endl;
+	cout<<"                	       for non UAC execution"<<endl;
+	cout<<" \n"<<endl;
+#endif
 	cout<< "Version: " << get_version_str_short() << endl;
 	cout<<"Brought to by fireice_uk and psychocrypt under GPLv3."<<endl;
 }

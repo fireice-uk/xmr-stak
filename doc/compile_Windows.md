@@ -34,8 +34,12 @@
 - download and install the latest version from [http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)
 
 ### Dependencies OpenSSL/Hwloc and Microhttpd
-- with CUDA 8: download the version 1 of the precompiled binary from [https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip](https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip)
-- with CUDA 9: download the version 2 of the precompiled binary from [https://github.com/fireice-uk/xmr-stak-dep/releases/download/v2/xmr-stak-dep.zip](https://github.com/fireice-uk/xmr-stak-dep/releases/download/v2/xmr-stak-dep.zip)
+- for CUDA 8*:
+  - download the version 1 of the precompiled binary from [https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip](https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip)
+  - version 1 of the pre-compiled dependencies is not compatible with Visual Studio Toolset v141
+- for CUDA 9 **and/or** AMD GPUs, CPU:
+  - download the version 2 of the precompiled binary from [https://github.com/fireice-uk/xmr-stak-dep/releases/download/v2/xmr-stak-dep.zip](https://github.com/fireice-uk/xmr-stak-dep/releases/download/v2/xmr-stak-dep.zip)
+  - version 2 of the pre-compiled dependencies is not compatible with Visual Studio Toolset v140
 - unzip all to `C:\xmr-stak-dep`
 
 ### Validate the Dependency Folder
@@ -81,15 +85,19 @@
   mkdir build
   cd build
   ```
-  - with CUDA 8
+  - for CUDA 8*
     ```
     cmake -G "Visual Studio 15 2017 Win64" -T v140,host=x64 ..
     ```
-  - with CUDA 9
+  - for CUDA 9 **and/or** AMD GPUs, CPU
     ```
     cmake -G "Visual Studio 15 2017 Win64" -T v141,host=x64 ..
     ```
   ```
   cmake --build . --config Release --target install
   cd bin\Release
+  copy C:\xmr-stak-dep\openssl\bin\* .
   ```
+
+\* Miner is also compiled for AMD GPUs (if the AMD APP SDK is installed) and CPUs.
+CUDA 8 requires a downgrade to the old v140 tool chain.

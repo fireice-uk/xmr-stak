@@ -20,7 +20,10 @@ The number of files depends on the available backends.
 1) Double click the `xmr-stak.exe` file
 2) Fill in the pool url, username and password
 
-## Usage on Linux
+`set XMRSTAK_NOWAIT=1` disable the dialog `Press any key to exit.` for non UAC execution.
+
+
+## Usage on Linux & MacOS
 1) Open a terminal within the folder with the binary
 2) Start the miner with `./xmr-stak`
 
@@ -40,11 +43,29 @@ Usage: xmr-stak [OPTION]...
   --cpu FILE            CPU backend miner config file
   --noAMD               disable the AMD miner backend
   --amd FILE            AMD backend miner config file
+  --noNVIDIA            disable the NVIDIA miner backend
+  --nvidia FILE         NVIDIA backend miner config file
 
 The Following options temporary overwrites the config file settings:
   -o, --url URL         pool url and port, e.g. pool.usxmrpool.com:3333
   -u, --user USERNAME   pool user name or wallet address
   -p, --pass PASSWD     pool password, in the most cases x or empty ""
+```
+
+## Docker image usage
+
+You can run the Docker image the following way:
+
+```
+docker run --rm -it -u $(id -u):$(id -g) --name fireice-uk/xmr-stak -v "$PWD":/mnt xmr-stak
+docker stop xmr-stak
+docker run --rm -it -u $(id -u):$(id -g) --name fireice-uk/xmr-stak -v "$PWD":/mnt xmr-stak --config config.txt
+```
+
+Debug the docker image by getting inside:
+
+```
+docker run --entrypoint=/bin/bash --rm -it -u $(id -u):$(id -g) --name fireice-uk/xmr-stak -v "$PWD":/mnt xmr-stak
 ```
 
 ## HTML and JSON API report configuraton
