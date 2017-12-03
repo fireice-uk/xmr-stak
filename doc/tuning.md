@@ -86,4 +86,4 @@ export GPU_SINGLE_ALLOC_PERCENT=99
 ### Scratchpad Indexing
 
 The layout of the hash scratchpad memory can be changed for each GPU with the option `strided_index` in `amd.txt`.
-Try to change the value from the default `false` to `true`.
+Try to change the value from the default `true` to `false`.
