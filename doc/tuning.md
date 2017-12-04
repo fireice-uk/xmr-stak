@@ -8,6 +8,7 @@
   * [Choose `intensity` and `worksize`](#choose-intensity-and-worksize)
   * [Add more GPUs](#add-more-gpus)
   * [Increase Memory Pool](#increase-memory-pool)
+  * [Scratchpad Indexing](#scratchpad-indexing)
 
 ## NVIDIA Backend
 
@@ -81,3 +82,8 @@ export GPU_SINGLE_ALLOC_PERCENT=99
 ```
 
 *Note:* Windows user must use `set` instead of `export` to define an environment variable.
+
+### Scratchpad Indexing
+
+The layout of the hash scratchpad memory can be changed for each GPU with the option `strided_index` in `amd.txt`.
+Try to change the value from the default `true` to `false`.

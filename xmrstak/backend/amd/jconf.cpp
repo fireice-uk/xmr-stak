@@ -103,13 +103,14 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	if(!oThdConf.IsObject())
 		return false;
 
-	const Value *idx, *intensity, *w_size, *aff;
+	const Value *idx, *intensity, *w_size, *aff, *stridedIndex;
 	idx = GetObjectMember(oThdConf, "index");
 	intensity = GetObjectMember(oThdConf, "intensity");
 	w_size = GetObjectMember(oThdConf, "worksize");
 	aff = GetObjectMember(oThdConf, "affine_to_cpu");
+	stridedIndex = GetObjectMember(oThdConf, "strided_index");
 
-	if(idx == nullptr || intensity == nullptr || w_size == nullptr || aff == nullptr)
+	if(idx == nullptr || intensity == nullptr || w_size == nullptr || aff == nullptr || stridedIndex == nullptr)
 		return false;
 
 	if(!idx->IsUint64() || !intensity->IsUint64() || !w_size->IsUint64())
@@ -118,9 +119,13 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	if(!aff->IsUint64() && !aff->IsBool())
 		return false;
 
+	if(!stridedIndex->IsBool())
+		return false;
+
 	cfg.index = idx->GetUint64();
 	cfg.intensity = intensity->GetUint64();
 	cfg.w_size = w_size->GetUint64();
+	cfg.stridedIndex = stridedIndex->GetBool();
 
 	if(aff->IsNumber())
 		cfg.cpu_aff = aff->GetInt64();
