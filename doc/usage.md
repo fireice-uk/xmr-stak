@@ -49,4 +49,4 @@ The Following options temporary overwrites the config file settings:
 
 ## HTML and JSON API report configuraton
 
-To configure the reports shown on the [README](README.md) side you need to edit the httpd_port variable. Then enable wifi on your phone and navigate to [miner ip address]:[httpd_port] in your phone browser. If you want to use the data in scripts, you can get the JSON version of the data at url [miner ip address]:[httpd_port]/api.json
+To configure the reports shown on the [README](https://github.com/fireice-uk/xmr-stak/blob/master/README.md) side you need to edit the httpd_port variable. Then enable wifi on your phone and navigate to [miner ip address]:[httpd_port] in your phone browser. If you want to use the data in scripts, you can get the JSON version of the data at url [miner ip address]:[httpd_port]/api.json
