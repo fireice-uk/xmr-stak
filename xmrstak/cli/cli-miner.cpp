@@ -82,7 +82,7 @@ void help()
 	cout<<"  --nvidia FILE         NVIDIA backend miner config file"<<endl;
 #endif
 	cout<<" "<<endl;
-	cout<<"The Following options temporary overwrites the config file settings:"<<endl;
+	cout<<"The Following options temporary overwrites the config entries of \nthe pool with the highest weight:"<<endl;
 	cout<<"  -o, --url URL         pool url and port, e.g. pool.usxmrpool.com:3333"<<endl;
 	cout<<"  -u, --user USERNAME   pool user name or wallet address"<<endl;
 	cout<<"  -p, --pass PASSWD     pool password, in the most cases x or empty \"\""<<endl;
