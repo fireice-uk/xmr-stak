@@ -280,8 +280,9 @@ void do_guided_config(bool userSetPasswd)
  *   - author: Cody Gray
  *   - date: Feb 4 '11
  */
-void UACDialog(const std::string& binaryName, const std::string& args)
+void UACDialog(const std::string& binaryName, std::string& args)
 {
+		args += " --noUAC";
 		SHELLEXECUTEINFO shExInfo = {0};
 		shExInfo.cbSize = sizeof(shExInfo);
 		shExInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
@@ -289,11 +290,11 @@ void UACDialog(const std::string& binaryName, const std::string& args)
 		shExInfo.lpVerb = "runas";     
 		shExInfo.lpFile = binaryName.c_str();
 		// disable UAC dialog (else the miner will go into a infinite loop)
-		shExInfo.lpParameters = (args + " --noUAC").c_str();
+		shExInfo.lpParameters = args.c_str();
 		shExInfo.lpDirectory = 0;
 		shExInfo.nShow = SW_SHOW;
 		shExInfo.hInstApp = 0;
-
+		
 		if(ShellExecuteEx(&shExInfo))
 		{
 			WaitForSingleObject(shExInfo.hProcess, INFINITE);
@@ -477,7 +478,11 @@ int main(int argc, char *argv[])
 	{
 		std::string minerArgs;
 		for(int i = 1; i < argc; i++)
-			minerArgs += std::string(" ") + argv[i];
+		{
+			minerArgs += " ";
+			minerArgs += argv[i];
+		}
+
 		UACDialog(argv[0], minerArgs);
 	}
 #endif
