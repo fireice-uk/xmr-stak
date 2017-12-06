@@ -479,7 +479,7 @@ std::vector<GpuContext> getAMDDevices(int index)
 		return ctxVec;
 	}
 
-	for (int k = 0; k < num_devices; k++)
+	for (size_t k = 0; k < num_devices; k++)
 	{
 		std::vector<char> devVendorVec(1024);
 		if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_VENDOR, devVendorVec.size(), devVendorVec.data(), NULL)) != CL_SUCCESS)
