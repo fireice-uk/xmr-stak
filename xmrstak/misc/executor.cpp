@@ -528,6 +528,30 @@ void executor::ex_main()
 			pools.emplace_front(0, "donate.xmr-stak.net:4444", "", "", 0.0, true, false, "", true);
 	}
 
+	/* find the pool with the highest weighting to allow overwriting of the
+	 * pool settings via command line options.
+	 */
+	std::vector<jpsock*> sorted_pools;
+	sorted_pools.reserve(pools.size());
+	for(jpsock& pool : pools)
+		sorted_pools.emplace_back(&pool);
+	std::sort(sorted_pools.begin(), sorted_pools.end(), [](jpsock* a, jpsock* b) { return b->get_pool_weight(true) < a->get_pool_weight(true); });
+
+ 	// overwrite pool address if cli option is used
+	auto& poolURL = xmrstak::params::inst().poolURL;	
+	if(!poolURL.empty())
+	{
+		sorted_pools[0]->set_pool_addr(poolURL.c_str());
+	}
+	// overwrite user pool login name if cli option is used
+	auto& poolUsername = xmrstak::params::inst().poolUsername;
+	if(!poolUsername.empty())
+		sorted_pools[0]->set_user_login(poolUsername.c_str());
+	// overwrite user pool login password if cli option is used
+	auto& poolPasswd = xmrstak::params::inst().poolPasswd;
+	if(!poolPasswd.empty())
+		sorted_pools[0]->set_user_passwd(poolPasswd.c_str());
+
 	ex_event ev;
 	std::thread clock_thd(&executor::ex_clock_thd, this);
 
