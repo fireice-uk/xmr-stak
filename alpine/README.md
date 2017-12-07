@@ -63,7 +63,6 @@ taken into concideration when defining THREADS
 
 e.g.:
 
-
 ``` bash
 AFFINE_TO_CPU=true
 # if THREADS=1
