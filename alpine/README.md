@@ -48,6 +48,31 @@ All config settings are changeable by environment variables
 * HTTP_LOGIN            - optional
 * HTTP_PASS             - optional
 * PREFER_IPV4           - default: true
+* CUSTOM_CPU            - default: false
+* THREADS               - default: 1
+* NO_PREFETCH           - default: true
+* LOW_POWER_MODE        - default: false
+* AFFINE_TO_CPU         - default: true
+
+##### CPU
+
+To setup custom CPU config, CUSTOM_CPU should be set to true
+
+To affine to cpu; set AFFINE_TO_CPU true, CPU(s) list start from 0 and this is
+taken into concideration when defining THREADS
+
+e.g.:
+
+
+``` bash
+AFFINE_TO_CPU=true
+# if THREADS=1
+    { "low_power_mode" : false, "no_prefetch" : true, "affine_to_cpu" : 0 },
+# or THREADS=3
+    { "low_power_mode" : false, "no_prefetch" : true, "affine_to_cpu" : 0 },
+    { "low_power_mode" : false, "no_prefetch" : true, "affine_to_cpu" : 1 },
+    { "low_power_mode" : false, "no_prefetch" : true, "affine_to_cpu" : 2 },
+```
 
 #### logs
 

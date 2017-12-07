@@ -6,15 +6,15 @@ RUN apk --no-cache upgrade \
                 automake \
                 autoconf \
                 openssl-dev \
-                build-base \
                 git \
+                build-base \
+                libmicrohttpd-dev \
         && git clone https://github.com/fireice-uk/xmr-stak.git \
         && cd xmr-stak \
         && cmake . \
                 -DCUDA_ENABLE=OFF \
                 -DOpenCL_ENABLE=OFF \
                 -DHWLOC_ENABLE=OFF \
-                -DMICROHTTPD_ENABLE=OFF \
         && make \
         && cd - \
         && mv /xmr-stak/bin/* /usr/local/bin/ \
@@ -27,5 +27,6 @@ RUN apk --no-cache upgrade \
 
 VOLUME /mnt
 WORKDIR /mnt
+
 COPY ["run.sh", "setup.sh", "./"]
 CMD ["./run.sh"]

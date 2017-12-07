@@ -3,6 +3,8 @@
 setup_variables() {
         # ${parameter:?}        - error out if parameter null or not set
         # ${parameter:-default} - set default value if parameter not set
+
+        # config.txt variables
         POOL_ADDRESS=${POOL_ADDRES:-pool.supportxmr.com:3333}
         WALLET_ADDRESS=${WALLET_ADDRESS:?}
         POOL_PASSWORD=${POOL_PASSWORD:-x}
@@ -27,6 +29,13 @@ setup_variables() {
         HTTP_LOGIN=${HTTP_LOGIN}
         HTTP_PASS=${HTTP_PASS}
         PREFER_IPV4=${PREFER_IPV4:-true}
+
+        # cpu.txt variables
+        CUSTOM_CPU=${CUSTOM_CPU:-false}
+        THREADS=${THREADS:-1}
+        NO_PREFETCH=${NO_PREFETCH:-true}
+        LOW_POWER_MODE=${LOW_POWER_MODE:-false}
+        AFFINE_TO_CPU=${AFFINE_TO_CPU:-false}
 }
 
 setup_config() {
@@ -35,7 +44,7 @@ setup_config() {
         # create configuration
         (command touch "$config") && {
                 # pool list
-                printf "\"%s\" :\n"           "pool_list"
+                printf "\"pool_list\" :\n"
                 printf "[{\n"
                 # string
                 printf "  \"%s\" : \"%s\",\n" "pool_address"    "$POOL_ADDRESS"
@@ -68,6 +77,34 @@ setup_config() {
                 printf "\"%s\" : %s,\n"       "verbose_level"   "$VERBOSE_LEVEL"
                 printf "\"%s\" : %s,\n"       "h_print_time"    "$H_PRINT_TIME"
                 printf "\"%s\" : %s,\n"       "httpd_port"      "$HTTPD_PORT"
+        } >> "$config"
+}
+
+setup_cpu() {
+        [[ "$CUSTOM_CPU" != "true" ]] && { return; }
+        local config=cpu.txt
+
+        # create cpu configuration
+        (command touch "$config") && {
+                printf "\"cpu_threads_conf\" :\n"
+                printf "[\n"
+                if [[ "$AFFINE_TO_CPU" != "true" ]]; then
+                        for i in $(seq "$THREADS"); do
+                                printf "  { \"%s\" : %s, \"%s\" : %s, \"%s\" : %s },\n" \
+                                        "low_power_mode" "$LOW_POWER_MODE" \
+                                        "no_prefetch"    "$NO_PREFETCH" \
+                                        "affine_to_cpu"  "$AFFINE_TO_CPU"
+                        done
+                else
+                        # CPU(s) list start from 0
+                        for i in $(seq 0 "$((${THREADS}-1))"); do
+                                printf "  { \"%s\" : %s, \"%s\" : %s, \"%s\" : %s },\n" \
+                                        "low_power_mode" "$LOW_POWER_MODE" \
+                                        "no_prefetch"    "$NO_PREFETCH" \
+                                        "affine_to_cpu"  "$i"
+                        done
+                fi
+                printf "],\n"
         } >> "$config"
 }
 
