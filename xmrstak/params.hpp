@@ -24,6 +24,7 @@ struct params
 	bool useNVIDIA;
 	bool useCPU;
 
+	bool poolUseTls;
 	std::string poolURL;
 	std::string poolPasswd;
 	std::string poolUsername;
