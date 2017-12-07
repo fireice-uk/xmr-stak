@@ -297,6 +297,8 @@ void UACDialog(const std::string& binaryName, std::string& args)
 		
 		if(ShellExecuteEx(&shExInfo))
 		{
+			printer::inst()->print_msg(L0,
+				"This window has been opened because xmr-stak needed to run as administrator.  It can be safely closed now.");
 			WaitForSingleObject(shExInfo.hProcess, INFINITE);
 			CloseHandle(shExInfo.hProcess);
 			// do not start the miner twice
