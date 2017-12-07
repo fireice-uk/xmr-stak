@@ -169,7 +169,7 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 	return nullptr; //Should never happen
 }
 
-static const size_t MAX_N = 5;
+static constexpr size_t MAX_N = 5;
 bool minethd::self_test()
 {
 	alloc_msg msg = { 0 };
@@ -525,25 +525,26 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 
 void minethd::double_work_main()
 {
-	multiway_work_main(2, func_multi_selector(2, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
+	multiway_work_main<2>(func_multi_selector(2, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
 }
 
 void minethd::triple_work_main()
 {
-	multiway_work_main(3, func_multi_selector(3, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
+	multiway_work_main<3>(func_multi_selector(3, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
 }
 
 void minethd::quad_work_main()
 {
-	multiway_work_main(4, func_multi_selector(4, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
+	multiway_work_main<4>(func_multi_selector(4, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
 }
 
 void minethd::penta_work_main()
 {
-	multiway_work_main(5, func_multi_selector(5, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
+	multiway_work_main<5>(func_multi_selector(5, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
 }
 
-void minethd::prep_multiway_work(size_t N, uint8_t *bWorkBlob, uint32_t **piNonce)
+template<size_t N>
+void minethd::prep_multiway_work(uint8_t *bWorkBlob, uint32_t **piNonce)
 {
 	for (size_t i = 0; i < N; i++)
 	{
@@ -553,7 +554,8 @@ void minethd::prep_multiway_work(size_t N, uint8_t *bWorkBlob, uint32_t **piNonc
 	}
 }
 
-void minethd::multiway_work_main(size_t N, cn_hash_fun_multi hash_fun_multi)
+template<size_t N>
+void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 {
 	if(affinity >= 0) //-1 means no affinity
 		bindMemoryToNUMANode(affinity);
@@ -580,9 +582,9 @@ void minethd::multiway_work_main(size_t N, cn_hash_fun_multi hash_fun_multi)
 	}
 
 	if(!oWork.bStall)
-		prep_multiway_work(N, bWorkBlob, piNonce);
+		prep_multiway_work<N>(bWorkBlob, piNonce);
 
-	globalStates::inst().inst().iConsumeCnt++;
+	globalStates::inst().iConsumeCnt++;
 
 	while (bQuit == 0)
 	{
@@ -596,12 +598,12 @@ void minethd::multiway_work_main(size_t N, cn_hash_fun_multi hash_fun_multi)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
-			prep_multiway_work(N, bWorkBlob, piNonce);
+			prep_multiway_work<N>(bWorkBlob, piNonce);
 			continue;
 		}
 
-		size_t nonce_ctr = 0;
-		constexpr size_t nonce_chunk = 4096; //Needs to be a power of 2
+		constexpr uint32_t nonce_chunk = 4096;
+		int64_t nonce_ctr = 0;
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
@@ -618,9 +620,11 @@ void minethd::multiway_work_main(size_t N, cn_hash_fun_multi hash_fun_multi)
 				iTimestamp.store(iStamp, std::memory_order_relaxed);
 			}
 
-			if((nonce_ctr++ & (nonce_chunk/2 - 1)) == 0)
+			nonce_ctr -= N;
+			if(nonce_ctr <= 0)
 			{
-				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, (nonce_chunk/2) * N);
+				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, nonce_chunk);
+				nonce_ctr = nonce_chunk;
 			}
 
 			for (size_t i = 0; i < N; i++)
@@ -629,14 +633,18 @@ void minethd::multiway_work_main(size_t N, cn_hash_fun_multi hash_fun_multi)
 			hash_fun_multi(bWorkBlob, oWork.iWorkSize, bHashOut, ctx);
 
 			for (size_t i = 0; i < N; i++)
+			{
 				if (*piHashVal[i] < oWork.iTarget)
+				{
 					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce - N + 1 + i, bHashOut + 32 * i, iThreadNo), oWork.iPoolId));
+				}
+			}
 
 			std::this_thread::yield();
 		}
 
 		consume_work();
-		prep_multiway_work(N, bWorkBlob, piNonce);
+		prep_multiway_work<N>(bWorkBlob, piNonce);
 	}
 
 	for (int i = 0; i < N; i++)

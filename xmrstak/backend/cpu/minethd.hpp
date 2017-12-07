@@ -34,7 +34,11 @@ private:
 
 	minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity);
 
-	void multiway_work_main(size_t N, cn_hash_fun_multi hash_fun_multi);
+	template<size_t N>
+	void multiway_work_main(cn_hash_fun_multi hash_fun_multi);
+
+	template<size_t N>
+	void prep_multiway_work(uint8_t *bWorkBlob, uint32_t **piNonce);
 
 	void work_main();
 	void double_work_main();
@@ -43,7 +47,6 @@ private:
 	void penta_work_main();
 
 	void consume_work();
-	void prep_multiway_work(size_t N, uint8_t *bWorkBlob, uint32_t **piNonce);
 
 	uint64_t iJobNo;
 
