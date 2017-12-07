@@ -6,8 +6,8 @@ RUN apk --no-cache upgrade \
                 automake \
                 autoconf \
                 openssl-dev \
-                git \
                 build-base \
+                git \
         && git clone https://github.com/fireice-uk/xmr-stak.git \
         && cd xmr-stak \
         && cmake . \

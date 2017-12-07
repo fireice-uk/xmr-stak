@@ -52,5 +52,5 @@ All config settings are changeable by environment variables
 #### logs
 
 ``` bash
-docker logs -f xmr
+docker logs -f xmr-stak-alpine
 ```
