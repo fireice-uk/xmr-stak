@@ -376,7 +376,15 @@ int main(int argc, char *argv[])
 	}
 
 	bool uacDialog = true;
-	for(int i = 1; i < argc; ++i)
+	bool pool_url_set = false;
+	for(size_t i = 1; i < argc-1; i++)
+	{
+		std::string opName(argv[i]);
+		if(opName == "-o" || opName == "-O" || opName == "--url" || opName == "--tls-url")
+			pool_url_set = true;
+	}
+
+	for(size_t i = 1; i < argc; ++i)
 	{
 		std::string opName(argv[i]);
 		if(opName.compare("-h") == 0 || opName.compare("--help") == 0)
@@ -479,7 +487,7 @@ int main(int argc, char *argv[])
 		}
 		else if(opName.compare("-u") == 0 || opName.compare("--user") == 0)
 		{
-			if(params::inst().poolURL.empty())
+			if(!pool_url_set)
 			{
 				printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify username and password.");
 				win_exit();
@@ -497,7 +505,7 @@ int main(int argc, char *argv[])
 		}
 		else if(opName.compare("-p") == 0 || opName.compare("--pass") == 0)
 		{
-			if(params::inst().poolURL.empty())
+			if(!pool_url_set)
 			{
 				printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify username and password.");
 				win_exit();
