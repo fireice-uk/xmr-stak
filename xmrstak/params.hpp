@@ -29,6 +29,7 @@ struct params
 	bool userSetPwd = false;
 	std::string poolPasswd;
 	std::string poolUsername;
+	bool nicehashMode = false;
 
 	std::string currency;
 

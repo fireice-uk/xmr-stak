@@ -91,6 +91,7 @@ void help()
 	cout<<"  -O, --tls-url URL     TLS pool url and port, e.g. pool.usxmrpool.com:10443"<<endl;
 	cout<<"  -u, --user USERNAME   pool user name or wallet address"<<endl;
 	cout<<"  -p, --pass PASSWD     pool password, in the most cases x or empty \"\""<<endl;
+	cout<<"  --use-nicehash        the pool should run in nicehash mode"<<endl;
 	cout<<" \n"<<endl;
 #ifdef _WIN32
 	cout<<"Environment variables:\n"<<endl;
@@ -260,7 +261,7 @@ void do_guided_config()
 		nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/n)");
 	}
 	else
-		nicehash = false;
+		nicehash = params::inst().nicehashMode;
 
 	bool multipool;
 	if(!userSetPool)
@@ -498,6 +499,10 @@ int main(int argc, char *argv[])
 			}
 			params::inst().userSetPwd = true;
 			params::inst().poolPasswd = argv[i];
+		}
+		else if(opName.compare("--use-nicehash") == 0)
+		{
+			params::inst().nicehashMode = true;
 		}
 		else if(opName.compare("-c") == 0 || opName.compare("--config") == 0)
 		{

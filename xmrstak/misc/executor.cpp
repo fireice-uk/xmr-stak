@@ -520,8 +520,9 @@ void executor::ex_main()
 			
 			const char* wallet = params.poolUsername.empty() ? cfg.sWalletAddr : params.poolUsername.c_str();
 			const char* pwd = params.userSetPwd ? params.poolPasswd.c_str() : cfg.sPasswd;
+			bool nicehash = cfg.nicehash || params.nicehashMode;
 			
-			pools.emplace_back(i+1, cfg.sPoolAddr, wallet, pwd, 9.9, false, params.poolUseTls, cfg.tls_fingerprint, cfg.nicehash);
+			pools.emplace_back(i+1, cfg.sPoolAddr, wallet, pwd, 9.9, false, params.poolUseTls, cfg.tls_fingerprint, nicehash);
 		}
 		else
 			pools.emplace_back(i+1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
@@ -530,7 +531,7 @@ void executor::ex_main()
 	if(!xmrstak::params::inst().poolURL.empty() && !already_have_cli_pool)
 	{
 		auto& params = xmrstak::params::inst();
-		pools.emplace_front(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", false);
+		pools.emplace_front(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
 	}
 
 	if(jconf::inst()->IsCurrencyMonero())
