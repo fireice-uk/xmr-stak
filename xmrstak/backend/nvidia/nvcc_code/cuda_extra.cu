@@ -189,7 +189,22 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	}
 
 	cudaDeviceReset();
-	cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync);
+	switch(ctx->syncMode)
+	{
+	case 0:
+		cudaSetDeviceFlags(cudaDeviceScheduleAuto);
+		break;
+	case 1:
+		cudaSetDeviceFlags(cudaDeviceScheduleSpin);
+		break;
+	case 2:
+		cudaSetDeviceFlags(cudaDeviceScheduleYield);
+		break;
+	case 3:
+		cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync);
+		break;
+
+	};
 	cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
 
 	size_t hashMemSize;

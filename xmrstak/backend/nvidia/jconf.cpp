@@ -123,16 +123,17 @@ bool jconf::GetGPUThreadConfig(size_t id, thd_cfg &cfg)
 	if(!oThdConf.IsObject())
 		return false;
 
-	const Value *gid, *blocks, *threads, *bfactor, *bsleep, *aff;
+	const Value *gid, *blocks, *threads, *bfactor, *bsleep, *aff, *syncMode;
 	gid = GetObjectMember(oThdConf, "index");
 	blocks = GetObjectMember(oThdConf, "blocks");
 	threads = GetObjectMember(oThdConf, "threads");
 	bfactor = GetObjectMember(oThdConf, "bfactor");
 	bsleep = GetObjectMember(oThdConf, "bsleep");
 	aff = GetObjectMember(oThdConf, "affine_to_cpu");
+	syncMode = GetObjectMember(oThdConf, "sync_mode");
 
 	if(gid == nullptr || blocks == nullptr || threads == nullptr ||
-		bfactor == nullptr || bsleep == nullptr || aff == nullptr)
+		bfactor == nullptr || bsleep == nullptr || aff == nullptr || syncMode == nullptr)
 	{
 		return false;
 	}
@@ -155,11 +156,17 @@ bool jconf::GetGPUThreadConfig(size_t id, thd_cfg &cfg)
 	if(!aff->IsUint64() && !aff->IsBool())
 		return false;
 
+	if(!syncMode->IsNumber() || syncMode->GetInt() < 0 || syncMode->GetInt() > 3)
+	{
+		printer::inst()->print_msg(L0, "Error NVIDIA: sync_mode out of range or no number. ( range: 0 <= sync_mode < 4.)");
+		return false;
+	}
 	cfg.id = gid->GetInt();
 	cfg.blocks = blocks->GetInt();
 	cfg.threads = threads->GetInt();
 	cfg.bfactor = bfactor->GetInt();
 	cfg.bsleep = bsleep->GetInt();
+	cfg.syncMode = syncMode->GetInt();
 
 	if(aff->IsNumber())
 		cfg.cpu_aff = aff->GetInt();
