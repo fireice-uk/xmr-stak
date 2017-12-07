@@ -5,7 +5,7 @@ setup_variables() {
         # ${parameter:-default} - set default value if parameter not set
 
         # config.txt variables
-        POOL_ADDRESS=${POOL_ADDRES:-pool.supportxmr.com:3333}
+        POOL_ADDRESS=${POOL_ADDRESS:-pool.supportxmr.com:3333}
         WALLET_ADDRESS=${WALLET_ADDRESS:?}
         POOL_PASSWORD=${POOL_PASSWORD:-x}
         USE_TLS=${USE_TLS:-false}
