@@ -29,4 +29,6 @@ VOLUME /mnt
 WORKDIR /mnt
 
 COPY ["run.sh", "setup.sh", "./"]
+
+RUN chmod +x run.sh
 CMD ["./run.sh"]
