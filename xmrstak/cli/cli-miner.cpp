@@ -479,6 +479,13 @@ int main(int argc, char *argv[])
 		}
 		else if(opName.compare("-u") == 0 || opName.compare("--user") == 0)
 		{
+			if(params::inst().poolURL.empty())
+			{
+				printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify username and password.");
+				win_exit();
+				return 1;
+			}
+
 			++i;
 			if( i >=argc )
 			{
@@ -490,6 +497,13 @@ int main(int argc, char *argv[])
 		}
 		else if(opName.compare("-p") == 0 || opName.compare("--pass") == 0)
 		{
+			if(params::inst().poolURL.empty())
+			{
+				printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify username and password.");
+				win_exit();
+				return 1;
+			}
+
 			++i;
 			if( i >=argc )
 			{
