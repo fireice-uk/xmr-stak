@@ -4,6 +4,9 @@
 
 #if defined(__APPLE__)
 #include <OpenCL/cl.h>
+#include <string>
+#include <sstream>
+#include <iostream>
 #else
 #include <CL/cl.h>
 #endif
