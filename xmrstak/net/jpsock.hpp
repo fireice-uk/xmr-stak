@@ -59,10 +59,6 @@ public:
 	inline const char* get_tls_fp() { return tls_fp.c_str(); }
 	inline bool is_nicehash() { return nicehash; }
 
-	inline void set_pool_addr(const char* sAddr) { net_addr = sAddr; }
-	inline void set_user_login(const char* sLogin) { usr_login = sLogin; }
-	inline void set_user_passwd(const char* sPassword) { usr_pass = sPassword; }
-
 	bool get_pool_motd(std::string& strin);
 
 	std::string&& get_call_error();

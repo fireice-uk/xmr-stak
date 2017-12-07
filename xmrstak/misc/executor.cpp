@@ -497,8 +497,10 @@ void executor::ex_main()
 
 	set_timestamp();
 	size_t pc = jconf::inst()->GetPoolCount();
-	bool tls = true;
-	for(size_t i=0; i < pc; i++)
+	bool dev_tls = true;
+	bool already_have_cli_pool = false;
+	size_t i=0;
+	for(; i < pc; i++)
 	{
 		jconf::pool_cfg cfg;
  		jconf::inst()->GetPoolConfig(i, cfg);
@@ -509,48 +511,42 @@ void executor::ex_main()
 			win_exit();
 		}
 #endif
-		if(!cfg.tls) tls = false;
-		pools.emplace_back(i+1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
+		if(!cfg.tls) dev_tls = false;
+
+		if(!xmrstak::params::inst().poolURL.empty() && xmrstak::params::inst().poolURL == cfg.sPoolAddr)
+		{
+			auto& params = xmrstak::params::inst();
+			already_have_cli_pool = true;
+			
+			const char* wallet = params.poolUsername.empty() ? cfg.sWalletAddr : params.poolUsername.c_str();
+			const char* pwd = params.userSetPwd ? params.poolPasswd.c_str() : cfg.sPasswd;
+			
+			pools.emplace_back(i+1, cfg.sPoolAddr, wallet, pwd, 9.9, false, params.poolUseTls, cfg.tls_fingerprint, cfg.nicehash);
+		}
+		else
+			pools.emplace_back(i+1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
+	}
+
+	if(!xmrstak::params::inst().poolURL.empty() && !already_have_cli_pool)
+	{
+		auto& params = xmrstak::params::inst();
+		pools.emplace_front(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", false);
 	}
 
 	if(jconf::inst()->IsCurrencyMonero())
 	{
-		if(tls)
+		if(dev_tls)
 			pools.emplace_front(0, "donate.xmr-stak.net:6666", "", "", 0.0, true, true, "", false);
 		else
 			pools.emplace_front(0, "donate.xmr-stak.net:3333", "", "", 0.0, true, false, "", false);
 	}
 	else
 	{
-		if(tls)
+		if(dev_tls)
 			pools.emplace_front(0, "donate.xmr-stak.net:7777", "", "", 0.0, true, true, "", true);
 		else
 			pools.emplace_front(0, "donate.xmr-stak.net:4444", "", "", 0.0, true, false, "", true);
 	}
-
-	/* find the pool with the highest weighting to allow overwriting of the
-	 * pool settings via command line options.
-	 */
-	std::vector<jpsock*> sorted_pools;
-	sorted_pools.reserve(pools.size());
-	for(jpsock& pool : pools)
-		sorted_pools.emplace_back(&pool);
-	std::sort(sorted_pools.begin(), sorted_pools.end(), [](jpsock* a, jpsock* b) { return b->get_pool_weight(true) < a->get_pool_weight(true); });
-
- 	// overwrite pool address if cli option is used
-	auto& poolURL = xmrstak::params::inst().poolURL;	
-	if(!poolURL.empty())
-	{
-		sorted_pools[0]->set_pool_addr(poolURL.c_str());
-	}
-	// overwrite user pool login name if cli option is used
-	auto& poolUsername = xmrstak::params::inst().poolUsername;
-	if(!poolUsername.empty())
-		sorted_pools[0]->set_user_login(poolUsername.c_str());
-	// overwrite user pool login password if cli option is used
-	auto& poolPasswd = xmrstak::params::inst().poolPasswd;
-	if(!poolPasswd.empty())
-		sorted_pools[0]->set_user_passwd(poolPasswd.c_str());
 
 	ex_event ev;
 	std::thread clock_thd(&executor::ex_clock_thd, this);
@@ -565,7 +561,7 @@ void executor::ex_main()
 	if(jconf::inst()->GetVerboseLevel() >= 4)
 		push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 
-	size_t cnt = 0, i;
+	size_t cnt = 0;
 	while (true)
 	{
 		ev = oEventQ.pop();
