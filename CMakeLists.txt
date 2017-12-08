@@ -348,7 +348,7 @@ if(HWLOC_ENABLE)
             /usr/local
             /usr
             ENV "PROGRAMFILES(X86)"
-            ENV "MICROHTTPD_ROOT"
+            ENV "HWLOC_ROOT"
         PATH_SUFFIXES
             include)
 
