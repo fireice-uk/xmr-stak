@@ -29,16 +29,24 @@ public:
 	static cryptonight_ctx* minethd_alloc_ctx();
 
 private:
+	typedef void (*cn_hash_fun_multi)(const void*, size_t, void*, cryptonight_ctx**);
+	static cn_hash_fun_multi func_multi_selector(size_t N, bool bHaveAes, bool bNoPrefetch, bool mineMonero);
 
-	typedef void (*cn_hash_fun_dbl)(const void*, size_t, void*, cryptonight_ctx* __restrict, cryptonight_ctx* __restrict);
-	static cn_hash_fun_dbl func_dbl_selector(bool bHaveAes, bool bNoPrefetch, bool mineMonero);
+	minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity);
 
-	minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefetch, int64_t affinity);
+	template<size_t N>
+	void multiway_work_main(cn_hash_fun_multi hash_fun_multi);
+
+	template<size_t N>
+	void prep_multiway_work(uint8_t *bWorkBlob, uint32_t **piNonce);
 
 	void work_main();
 	void double_work_main();
+	void triple_work_main();
+	void quad_work_main();
+	void penta_work_main();
+
 	void consume_work();
-	uint32_t* prep_double_work(uint8_t bDoubleWorkBlob[sizeof(miner_work::bWorkBlob) * 2]);
 
 	uint64_t iJobNo;
 

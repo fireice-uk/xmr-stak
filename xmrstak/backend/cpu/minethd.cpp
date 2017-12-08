@@ -92,7 +92,7 @@ bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 #endif
 }
 
-minethd::minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefetch, int64_t affinity)
+minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity)
 {
 	this->backendType = iBackend::CPU;
 	oWork = pWork;
@@ -105,10 +105,25 @@ minethd::minethd(miner_work& pWork, size_t iNo, bool double_work, bool no_prefet
 	std::unique_lock<std::mutex> lck(thd_aff_set);
 	std::future<void> order_guard = order_fix.get_future();
 
-	if(double_work)
+	switch (iMultiway)
+	{
+	case 5:
+		oWorkThd = std::thread(&minethd::penta_work_main, this);
+		break;
+	case 4:
+		oWorkThd = std::thread(&minethd::quad_work_main, this);
+		break;
+	case 3:
+		oWorkThd = std::thread(&minethd::triple_work_main, this);
+		break;
+	case 2:
 		oWorkThd = std::thread(&minethd::double_work_main, this);
-	else
+		break;
+	case 1:
+	default:
 		oWorkThd = std::thread(&minethd::work_main, this);
+		break;
+	}
 
 	order_guard.wait();
 
@@ -154,6 +169,7 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 	return nullptr; //Should never happen
 }
 
+static constexpr size_t MAX_N = 5;
 bool minethd::self_test()
 {
 	alloc_msg msg = { 0 };
@@ -191,14 +207,15 @@ bool minethd::self_test()
 	if(res == 0 && fatal)
 		return false;
 
-	cryptonight_ctx *ctx0, *ctx1;
-	if((ctx0 = minethd_alloc_ctx()) == nullptr)
-		return false;
-
-	if((ctx1 = minethd_alloc_ctx()) == nullptr)
+	cryptonight_ctx *ctx[MAX_N] = {0};
+	for (int i = 0; i < MAX_N; i++)
 	{
-		cryptonight_free_ctx(ctx0);
-		return false;
+		if ((ctx[i] = minethd_alloc_ctx()) == nullptr)
+		{
+			for (int j = 0; j < i; j++)
+				cryptonight_free_ctx(ctx[j]);
+			return false;
+		}
 	}
 
 	bool bResult = true;
@@ -206,31 +223,52 @@ bool minethd::self_test()
 	bool mineMonero = ::jconf::inst()->IsCurrencyMonero();
 	if(mineMonero)
 	{
-		unsigned char out[64];
+		unsigned char out[32 * MAX_N];
 		cn_hash_fun hashf;
-		cn_hash_fun_dbl hashdf;
-
+		cn_hash_fun_multi hashf_multi;
 
 		hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, mineMonero);
-		hashf("This is a test", 14, out, ctx0);
+		hashf("This is a test", 14, out, ctx[0]);
 		bResult = memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
 		hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, mineMonero);
-		hashf("This is a test", 14, out, ctx0);
+		hashf("This is a test", 14, out, ctx[0]);
 		bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
-		hashdf = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), false, mineMonero);
-		hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
+		hashf_multi = func_multi_selector(2, ::jconf::inst()->HaveHardwareAes(), false, mineMonero);
+		hashf_multi("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx);
 		bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
-							   "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
+				"\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
 
-		hashdf = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), true, mineMonero);
-		hashdf("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx0, ctx1);
+		hashf_multi = func_multi_selector(2, ::jconf::inst()->HaveHardwareAes(), true, mineMonero);
+		hashf_multi("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx);
 		bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
-							   "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
+				"\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
+
+		hashf_multi = func_multi_selector(3, ::jconf::inst()->HaveHardwareAes(), false, mineMonero);
+		hashf_multi("This is a testThis is a testThis is a test", 14, out, ctx);
+		bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 96) == 0;
+
+		hashf_multi = func_multi_selector(4, ::jconf::inst()->HaveHardwareAes(), false, mineMonero);
+		hashf_multi("This is a testThis is a testThis is a testThis is a test", 14, out, ctx);
+		bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 128) == 0;
+
+		hashf_multi = func_multi_selector(5, ::jconf::inst()->HaveHardwareAes(), false, mineMonero);
+		hashf_multi("This is a testThis is a testThis is a testThis is a testThis is a test", 14, out, ctx);
+		bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 160) == 0;
 	}
-	cryptonight_free_ctx(ctx0);
-	cryptonight_free_ctx(ctx1);
+
+	for (int i = 0; i < MAX_N; i++)
+		cryptonight_free_ctx(ctx[i]);
 
 	if(!bResult)
 		printer::inst()->print_msg(L0,
@@ -272,12 +310,12 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 			printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory.");
 #endif
 
-			printer::inst()->print_msg(L1, "Starting %s thread, affinity: %d.", cfg.bDoubleMode ? "double" : "single", (int)cfg.iCpuAff);
+			printer::inst()->print_msg(L1, "Starting %dx thread, affinity: %d.", cfg.iMultiway, (int)cfg.iCpuAff);
 		}
 		else
-			printer::inst()->print_msg(L1, "Starting %s thread, no affinity.", cfg.bDoubleMode ? "double" : "single");
+			printer::inst()->print_msg(L1, "Starting %dx thread, no affinity.", cfg.iMultiway);
 		
-		minethd* thd = new minethd(pWork, i + threadOffset, cfg.bDoubleMode, cfg.bNoPrefetch, cfg.iCpuAff);
+		minethd* thd = new minethd(pWork, i + threadOffset, cfg.iMultiway, cfg.bNoPrefetch, cfg.iCpuAff);
 		pvThreads.push_back(thd);
 	}
 
@@ -326,7 +364,7 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, boo
 
 	// define aeon settings
 #if defined(CONF_NO_AEON) || defined(CONF_NO_MONERO)
-	// ignore 3rd bit if only on currency is active
+	// ignore 3rd bit if only one currency is active
 	digit.set(2, 0);
 #else
 	digit.set(2, !mineMonero);
@@ -416,22 +454,34 @@ void minethd::work_main()
 	cryptonight_free_ctx(ctx);
 }
 
-minethd::cn_hash_fun_dbl minethd::func_dbl_selector(bool bHaveAes, bool bNoPrefetch, bool mineMonero)
+minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes, bool bNoPrefetch, bool mineMonero)
 {
 	// We have two independent flag bits in the functions
 	// therefore we will build a binary digit and select the
 	// function as a two digit binary
-	// Digit order SOFT_AES, NO_PREFETCH, MINER_ALGO
+	// Digit order SOFT_AES, NO_PREFETCH
 
-	static const cn_hash_fun_dbl func_table[] = {
-		/* there will be 8 function entries if `CONF_NO_MONERO` and `CONF_NO_AEON`
-		 * is not defined. If one is defined there will be 4 entries.
+	static const cn_hash_fun_multi func_table[] = {
+		/* there will be 8*(MAX_N-1) function entries if `CONF_NO_MONERO` and `CONF_NO_AEON`
+		 * is not defined. If one is defined there will be 4*(MAX_N-1) entries.
 		 */
 #ifndef CONF_NO_MONERO
 		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
 		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
 		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
-		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>
+		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>,
+		cryptonight_triple_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
+		cryptonight_triple_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
+		cryptonight_triple_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
+		cryptonight_triple_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>,
+		cryptonight_quad_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
+		cryptonight_quad_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
+		cryptonight_quad_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
+		cryptonight_quad_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>,
+		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
+		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
+		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
+		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>
 #endif
 #if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_MONERO))
 		// comma will be added only if Monero and Aeon is build
@@ -441,33 +491,71 @@ minethd::cn_hash_fun_dbl minethd::func_dbl_selector(bool bHaveAes, bool bNoPrefe
 		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false>,
 		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true>,
 		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false>,
-		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true>
+		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true>,
+		cryptonight_triple_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false>,
+		cryptonight_triple_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true>,
+		cryptonight_triple_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false>,
+		cryptonight_triple_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true>,
+		cryptonight_quad_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false>,
+		cryptonight_quad_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true>,
+		cryptonight_quad_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false>,
+		cryptonight_quad_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true>,
+		cryptonight_penta_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false>,
+		cryptonight_penta_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true>,
+		cryptonight_penta_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false>,
+		cryptonight_penta_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true>
 #endif
 	};
 
-	std::bitset<3> digit;
+	std::bitset<2> digit;
 	digit.set(0, !bNoPrefetch);
 	digit.set(1, !bHaveAes);
 
 	// define aeon settings
 #if defined(CONF_NO_AEON) || defined(CONF_NO_MONERO)
-	// ignore 3rd bit if only on currency is active
-	digit.set(2, 0);
+	// ignore miner algo if only one currency is active
+	size_t miner_algo_base = 0;
 #else
-	digit.set(2, !mineMonero);
+	size_t miner_algo_base = mineMonero ? 0 : 4*(MAX_N-1);
 #endif
 
-	return func_table[digit.to_ulong()];
-}
-
-uint32_t* minethd::prep_double_work(uint8_t bDoubleWorkBlob[sizeof(miner_work::bWorkBlob) * 2])
-{
-	memcpy(bDoubleWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
-	memcpy(bDoubleWorkBlob + oWork.iWorkSize, oWork.bWorkBlob, oWork.iWorkSize);
-	return (uint32_t*)(bDoubleWorkBlob + oWork.iWorkSize + 39);
+	N = (N<2) ? 2 : (N>MAX_N) ? MAX_N : N;
+	return func_table[miner_algo_base + 4*(N-2) + digit.to_ulong()];
 }
 
 void minethd::double_work_main()
+{
+	multiway_work_main<2>(func_multi_selector(2, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
+}
+
+void minethd::triple_work_main()
+{
+	multiway_work_main<3>(func_multi_selector(3, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
+}
+
+void minethd::quad_work_main()
+{
+	multiway_work_main<4>(func_multi_selector(4, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
+}
+
+void minethd::penta_work_main()
+{
+	multiway_work_main<5>(func_multi_selector(5, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
+}
+
+template<size_t N>
+void minethd::prep_multiway_work(uint8_t *bWorkBlob, uint32_t **piNonce)
+{
+	for (size_t i = 0; i < N; i++)
+	{
+		memcpy(bWorkBlob + oWork.iWorkSize * i, oWork.bWorkBlob, oWork.iWorkSize);
+		if (i > 0)
+			piNonce[i] = (uint32_t*)(bWorkBlob + oWork.iWorkSize * i + 39);
+	}
+}
+
+template<size_t N>
+void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 {
 	if(affinity >= 0) //-1 means no affinity
 		bindMemoryToNUMANode(affinity);
@@ -477,31 +565,26 @@ void minethd::double_work_main()
 	lck.release();
 	std::this_thread::yield();
 
-	cn_hash_fun_dbl hash_fun;
-	cryptonight_ctx* ctx0;
-	cryptonight_ctx* ctx1;
+	cryptonight_ctx *ctx[MAX_N];
 	uint64_t iCount = 0;
-	uint64_t *piHashVal0, *piHashVal1;
-	uint32_t *piNonce0, *piNonce1;
-	uint8_t bDoubleHashOut[64];
-	uint8_t bDoubleWorkBlob[sizeof(miner_work::bWorkBlob) * 2];
+	uint64_t *piHashVal[MAX_N];
+	uint32_t *piNonce[MAX_N];
+	uint8_t bHashOut[MAX_N * 32];
+	uint8_t bWorkBlob[sizeof(miner_work::bWorkBlob) * MAX_N];
 	uint32_t iNonce;
 	job_result res;
 
-	hash_fun = func_dbl_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero());
-	ctx0 = minethd_alloc_ctx();
-	ctx1 = minethd_alloc_ctx();
-
-	piHashVal0 = (uint64_t*)(bDoubleHashOut + 24);
-	piHashVal1 = (uint64_t*)(bDoubleHashOut + 32 + 24);
-	piNonce0 = (uint32_t*)(bDoubleWorkBlob + 39);
+	for (size_t i = 0; i < N; i++)
+	{
+		ctx[i] = minethd_alloc_ctx();
+		piHashVal[i] = (uint64_t*)(bHashOut + 32 * i + 24);
+		piNonce[i] = (i == 0) ? (uint32_t*)(bWorkBlob + 39) : nullptr;
+	}
 
 	if(!oWork.bStall)
-		piNonce1 = prep_double_work(bDoubleWorkBlob);
-	else
-		piNonce1 = nullptr;
+		prep_multiway_work<N>(bWorkBlob, piNonce);
 
-	globalStates::inst().inst().iConsumeCnt++;
+	globalStates::inst().iConsumeCnt++;
 
 	while (bQuit == 0)
 	{
@@ -515,55 +598,57 @@ void minethd::double_work_main()
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
-			piNonce1 = prep_double_work(bDoubleWorkBlob);
+			prep_multiway_work<N>(bWorkBlob, piNonce);
 			continue;
 		}
 
-		size_t nonce_ctr = 0;
-		constexpr size_t nonce_chunk = 4096; //Needs to be a power of 2
+		constexpr uint32_t nonce_chunk = 4096;
+		int64_t nonce_ctr = 0;
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
 		if(oWork.bNiceHash)
-			iNonce = *piNonce0;
+			iNonce = *piNonce[0];
 
 		while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
-			if ((iCount & 0x7) == 0) //Store stats every 16 hashes
+			if ((iCount++ & 0x7) == 0)  //Store stats every 8*N hashes
 			{
 				using namespace std::chrono;
 				uint64_t iStamp = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
-				iHashCount.store(iCount, std::memory_order_relaxed);
+				iHashCount.store(iCount * N, std::memory_order_relaxed);
 				iTimestamp.store(iStamp, std::memory_order_relaxed);
 			}
-			iCount += 2;
-			
-			
-			if((nonce_ctr++ & (nonce_chunk/2 - 1)) == 0)
+
+			nonce_ctr -= N;
+			if(nonce_ctr <= 0)
 			{
 				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, nonce_chunk);
+				nonce_ctr = nonce_chunk;
 			}
 
-			*piNonce0 = ++iNonce;
-			*piNonce1 = ++iNonce;
+			for (size_t i = 0; i < N; i++)
+				*piNonce[i] = ++iNonce;
 
-			hash_fun(bDoubleWorkBlob, oWork.iWorkSize, bDoubleHashOut, ctx0, ctx1);
+			hash_fun_multi(bWorkBlob, oWork.iWorkSize, bHashOut, ctx);
 
-			if (*piHashVal0 < oWork.iTarget)
-				executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce-1, bDoubleHashOut, iThreadNo), oWork.iPoolId));
-
-			if (*piHashVal1 < oWork.iTarget)
-				executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce, bDoubleHashOut + 32, iThreadNo), oWork.iPoolId));
+			for (size_t i = 0; i < N; i++)
+			{
+				if (*piHashVal[i] < oWork.iTarget)
+				{
+					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce - N + 1 + i, bHashOut + 32 * i, iThreadNo), oWork.iPoolId));
+				}
+			}
 
 			std::this_thread::yield();
 		}
 
 		consume_work();
-		piNonce1 = prep_double_work(bDoubleWorkBlob);
+		prep_multiway_work<N>(bWorkBlob, piNonce);
 	}
 
-	cryptonight_free_ctx(ctx0);
-	cryptonight_free_ctx(ctx1);
+	for (int i = 0; i < N; i++)
+		cryptonight_free_ctx(ctx[i]);
 }
 
 } // namespace cpu
