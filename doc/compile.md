@@ -52,11 +52,6 @@ After the configuration you need to compile the miner, follow the guide for your
   - native means the miner binary can be used only on the system where it is compiled but will archive the highest hash rate
   - use `cmake .. -DXMR-STAK_COMPILE=generic` to run the miner on all CPU's with sse2
 
-### only available for Windows
-- `WIN_UAC` will enable or disable the "Run As Administrator" prompt on Windows.
-  - UAC confirmation is needed to use large pages on Windows 7.
-  - On Windows 10 it is only needed once to set up the account to use them.
-
 ## CPU Build Options
 
 - `CPU_ENABLE` allow to disable/enable the CPU backend of the miner
