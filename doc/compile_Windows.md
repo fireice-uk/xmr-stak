@@ -12,7 +12,7 @@
 - download VS2017 Community and install from [https://www.visualstudio.com/downloads/](https://www.visualstudio.com/downloads/)
 - during the install chose the components
   - `Desktop development with C++` (left side)
-  - `Toolset for Visual Studio C++ 2015.3 v140...` (right side)
+  - `VC++ 2015.3 v140 toolset for desktop` (right side)
 
 ### CMake for Win64
 
