@@ -537,7 +537,7 @@ void executor::ex_main()
 			win_exit();
 		}
 		
-		pools.emplace_front(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
+		pools.emplace_back(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
 	}
 
 	if(jconf::inst()->IsCurrencyMonero())
