@@ -152,8 +152,8 @@ bool jconf::GetPoolConfig(size_t id, pool_cfg& cfg)
 	size_t dlt = wt_max - wt_min;
 	if(dlt != 0)
 	{
-		/* Normalise weights between 0 and 9.9 */
-		cfg.weight = double(cfg.raw_weight - wt_min) * 9.9;
+		/* Normalise weights between 0 and 9.8 */
+		cfg.weight = double(cfg.raw_weight - wt_min) * 9.8;
 		cfg.weight /= dlt;
 	}
 	else /* Special case - user selected same weights for everything */
