@@ -29,7 +29,7 @@ cmake -G "Visual Studio 15 2017 Win64" -T v141,host=x64 ..
 
 echo Running build for Release config, Monero currency, and no DCOpenCL
 
-@cmake --build . --config Release --target install
+cmake --build . --config Release --target install
 
 echo Copying SSL libraries...
 
