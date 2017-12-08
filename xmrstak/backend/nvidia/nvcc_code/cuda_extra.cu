@@ -218,7 +218,6 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	}
 
 	size_t wsize = ctx->device_blocks * ctx->device_threads;
-	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_long_state, hashMemSize * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state, 50 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key1, 40 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key2, 40 * sizeof(uint32_t) * wsize));
@@ -228,6 +227,10 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_input, 21 * sizeof (uint32_t ) ));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_count, sizeof (uint32_t ) ));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_nonce, 10 * sizeof (uint32_t ) ));
+	CUDA_CHECK_MSG(
+		ctx->device_id,
+		"\n**suggestion: Try to reduce the value of the attribute 'threads' in the NVIDIA config file.**",
+		cudaMalloc(&ctx->d_long_state, hashMemSize * wsize));
 	return 1;
 }
 
@@ -254,7 +257,11 @@ extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, 
 	CUDA_CHECK(ctx->device_id, cudaMemset( ctx->d_result_nonce, 0xFF, 10 * sizeof (uint32_t ) ));
 	CUDA_CHECK(ctx->device_id, cudaMemset( ctx->d_result_count, 0, sizeof (uint32_t ) ));
 
-	CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_final<<<grid, block >>>( wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state ));
+	CUDA_CHECK_MSG_KERNEL(
+		ctx->device_id,
+		"\n**suggestion: Try to increase the value of the attribute 'bfactor' in the NVIDIA config file.**",
+		cryptonight_extra_gpu_final<<<grid, block >>>( wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state )
+	);
 
 	CUDA_CHECK(ctx->device_id, cudaMemcpy( rescount, ctx->d_result_count, sizeof (uint32_t ), cudaMemcpyDeviceToHost ));
 	CUDA_CHECK(ctx->device_id, cudaMemcpy( resnonce, ctx->d_result_nonce, 10 * sizeof (uint32_t ), cudaMemcpyDeviceToHost ));
