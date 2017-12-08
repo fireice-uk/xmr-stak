@@ -531,6 +531,12 @@ void executor::ex_main()
 	if(!xmrstak::params::inst().poolURL.empty() && !already_have_cli_pool)
 	{
 		auto& params = xmrstak::params::inst();
+		if(params.poolUsername.empty())
+		{
+			printer::inst()->print_msg(L1, "ERROR: You didn't specify the username / wallet address for %s", xmrstak::params::inst().poolURL.c_str());
+			win_exit();
+		}
+		
 		pools.emplace_front(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
 	}
 
