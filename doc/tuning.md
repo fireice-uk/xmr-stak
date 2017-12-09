@@ -1,6 +1,7 @@
 # Tuning Guide
 
 ## Content Overview
+* [Windows](windows)
 * [NVIDIA Backend](#nvidia-backend)
   * [Choose Value for `threads` and `blocks`](#choose-value-for-threads-and-blocks)
   * [Add more GPUs](#add-more-gpus)
@@ -8,6 +9,14 @@
   * [Choose `intensity` and `worksize`](#choose-intensity-and-worksize)
   * [Add more GPUs](#add-more-gpus)
   * [Increase Memory Pool](#increase-memory-pool)
+  * [Scratchpad Indexing](#scratchpad-indexing)
+* [CPU Backend](#cpu-backend)
+  * [Choose Value for `low_power_mode`](#choose-value-for-low_power_mode)
+
+## Windows
+"Run As Administrator" prompt (UAC) confirmation is needed to use large pages on Windows 7.
+On Windows 10 it is only needed once to set up the account to use them.
+Disable the dialog with the command line option `--noUAC`
 
 ## NVIDIA Backend
 
@@ -81,3 +90,20 @@ export GPU_SINGLE_ALLOC_PERCENT=99
 ```
 
 *Note:* Windows user must use `set` instead of `export` to define an environment variable.
+
+### Scratchpad Indexing
+
+The layout of the hash scratchpad memory can be changed for each GPU with the option `strided_index` in `amd.txt`.
+Try to change the value from the default `true` to `false`.
+
+## CPU Backend
+
+By default the CPU backend can be tuned in the config file `cpu.txt`
+
+### Choose Value for `low_power_mode`
+
+The optimal value for `low_power_mode` depends on the cache size of your CPU, and the number of threads.
+
+The `low_power_mode` can be set to a number between `1` to `5`. When set to a value `N` greater than `1`, this mode increases the single thread performance by `N` times, but also requires at least `2*N` MB of cache per thread. It can also be set to `false` or `true`. The value `false` is equivalent to `1`, and `true` is equivalent to `2`.
+
+This setting is particularly useful for CPUs with very large cache. For example the Intel Crystal Well Processors are equipped with 128MB L4 cache, enough to run 8 threads at an optimal `low_power_mode` value of `5`.

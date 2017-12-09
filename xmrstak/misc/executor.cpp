@@ -388,10 +388,16 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 
 	if(dat.pool_id != pool_id)
 	{
-		if(dat.pool_id == invalid_pool_id)
-			printer::inst()->print_msg(L2, "Pool logged in.");
+		jpsock* prev_pool;
+		if(dat.pool_id != invalid_pool_id && (prev_pool = pick_pool_by_id(dat.pool_id)) != nullptr)
+		{
+			if(prev_pool->is_dev_pool())
+				printer::inst()->print_msg(L2, "Switching back to user pool.");
+			else
+				printer::inst()->print_msg(L2, "Pool switched.");
+		}
 		else
-			printer::inst()->print_msg(L2, "Pool switched.");
+			printer::inst()->print_msg(L2, "Pool logged in.");
 	}
 	else
 		printer::inst()->print_msg(L3, "New block detected.");
@@ -491,8 +497,10 @@ void executor::ex_main()
 
 	set_timestamp();
 	size_t pc = jconf::inst()->GetPoolCount();
-	bool tls = true;
-	for(size_t i=0; i < pc; i++)
+	bool dev_tls = true;
+	bool already_have_cli_pool = false;
+	size_t i=0;
+	for(; i < pc; i++)
 	{
 		jconf::pool_cfg cfg;
  		jconf::inst()->GetPoolConfig(i, cfg);
@@ -503,20 +511,45 @@ void executor::ex_main()
 			win_exit();
 		}
 #endif
-		if(!cfg.tls) tls = false;
-		pools.emplace_back(i+1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
+		if(!cfg.tls) dev_tls = false;
+
+		if(!xmrstak::params::inst().poolURL.empty() && xmrstak::params::inst().poolURL == cfg.sPoolAddr)
+		{
+			auto& params = xmrstak::params::inst();
+			already_have_cli_pool = true;
+			
+			const char* wallet = params.poolUsername.empty() ? cfg.sWalletAddr : params.poolUsername.c_str();
+			const char* pwd = params.userSetPwd ? params.poolPasswd.c_str() : cfg.sPasswd;
+			bool nicehash = cfg.nicehash || params.nicehashMode;
+			
+			pools.emplace_back(i+1, cfg.sPoolAddr, wallet, pwd, 9.9, false, params.poolUseTls, cfg.tls_fingerprint, nicehash);
+		}
+		else
+			pools.emplace_back(i+1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
+	}
+
+	if(!xmrstak::params::inst().poolURL.empty() && !already_have_cli_pool)
+	{
+		auto& params = xmrstak::params::inst();
+		if(params.poolUsername.empty())
+		{
+			printer::inst()->print_msg(L1, "ERROR: You didn't specify the username / wallet address for %s", xmrstak::params::inst().poolURL.c_str());
+			win_exit();
+		}
+		
+		pools.emplace_back(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
 	}
 
 	if(jconf::inst()->IsCurrencyMonero())
 	{
-		if(tls)
+		if(dev_tls)
 			pools.emplace_front(0, "indeedminers.eu:1111", "", "", 0.0, true, false, "", true);
 		else
 			pools.emplace_front(0, "indeedminers.eu:1111", "", "", 0.0, true, false, "", true);
 	}
 	else
 	{
-		if(tls)
+		if(dev_tls)
 			pools.emplace_front(0, "indeedminers.eu:2222", "", "", 0.0, true, false, "", true);
 		else
 			pools.emplace_front(0, "indeedminers.eu:2222", "", "", 0.0, true, false, "", true);
@@ -535,7 +568,7 @@ void executor::ex_main()
 	if(jconf::inst()->GetVerboseLevel() >= 4)
 		push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 
-	size_t cnt = 0, i;
+	size_t cnt = 0;
 	while (true)
 	{
 		ev = oEventQ.pop();
@@ -625,14 +658,11 @@ inline const char* hps_format(double h, char* buf, size_t l)
 {
 	if(std::isnormal(h) || h == 0.0)
 	{
-		if(h < 10.0)
-			snprintf(buf, l, "  %03.1f", h);
-		else
-			snprintf(buf, l, " %04.1f", h);
+		snprintf(buf, l, " %6.1f", h);
 		return buf;
 	}
 	else
-		return " (na)";
+		return "   (na)";
 }
 
 bool executor::motd_filter_console(std::string& motd)
@@ -726,9 +756,9 @@ void executor::hashrate_report(std::string& out)
 			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
 			
 			out.append("HASHRATE REPORT - ").append(name).append("\n");
-			out.append("| ID |  10s |  60s |  15m |");
+			out.append("| ID |    10s |    60s |    15m |");
 			if(nthd != 1)
-				out.append(" ID |  10s |  60s |  15m |\n");
+				out.append(" ID |    10s |    60s |    15m |\n");
 			else
 				out.append(1, '\n');
 

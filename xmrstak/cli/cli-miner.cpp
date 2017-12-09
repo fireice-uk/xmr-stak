@@ -66,6 +66,9 @@ void help()
 	cout<<"  -v, --version         show version number"<<endl;
 	cout<<"  -V, --version-long    show long version number"<<endl;
 	cout<<"  -c, --config FILE     common miner configuration file"<<endl;
+#ifdef _WIN32
+	cout<<"  --noUAC               disable the UAC dialog"<<endl;
+#endif
 #if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_MONERO))
 	cout<<"  --currency NAME       currency to mine: monero or aeon"<<endl;
 #endif
@@ -82,11 +85,20 @@ void help()
 	cout<<"  --nvidia FILE         NVIDIA backend miner config file"<<endl;
 #endif
 	cout<<" "<<endl;
-	cout<<"The Following options temporary overwrites the config file settings:"<<endl;
+	cout<<"The following options can be used for automatic start without a guided config,"<<endl;
+	cout<<"If config exists then this pool will be top priority."<<endl;
 	cout<<"  -o, --url URL         pool url and port, e.g. pool.usxmrpool.com:3333"<<endl;
+	cout<<"  -O, --tls-url URL     TLS pool url and port, e.g. pool.usxmrpool.com:10443"<<endl;
 	cout<<"  -u, --user USERNAME   pool user name or wallet address"<<endl;
 	cout<<"  -p, --pass PASSWD     pool password, in the most cases x or empty \"\""<<endl;
+	cout<<"  --use-nicehash        the pool should run in nicehash mode"<<endl;
 	cout<<" \n"<<endl;
+#ifdef _WIN32
+	cout<<"Environment variables:\n"<<endl;
+	cout<<"  XMRSTAK_NOWAIT        disable the dialog `Press any key to exit."<<std::endl;
+	cout<<"                	       for non UAC execution"<<endl;
+	cout<<" \n"<<endl;
+#endif
 	cout<< "Version: " << get_version_str_short() << endl;
 	cout<<"Brought to by fireice_uk and psychocrypt under GPLv3."<<endl;
 }
@@ -153,7 +165,16 @@ std::string get_multipool_entry(bool& final)
 		", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
 }
 
-void do_guided_config(bool userSetPasswd)
+inline void prompt_once(bool& prompted)
+{
+	if(!prompted)
+	{
+		std::cout<<"Please enter:"<<std::endl;
+		prompted = true;
+	}
+}
+
+void do_guided_config()
 {
 	using namespace xmrstak;
 
@@ -164,10 +185,13 @@ void do_guided_config(bool userSetPasswd)
 
 	configEditor configTpl{};
 	configTpl.set(std::string(tpl));
-	std::cout<<"Please enter:"<<std::endl;
+	bool prompted = false;
+	
 	auto& currency = params::inst().currency;
 	if(currency.empty())
 	{
+		prompt_once(prompted);
+
 		std::string tmp;
 #if defined(CONF_NO_AEON)
 		tmp = "monero";
@@ -187,6 +211,8 @@ void do_guided_config(bool userSetPasswd)
 	bool userSetPool = true;
 	if(pool.empty())
 	{
+		prompt_once(prompted);
+
 		userSetPool = false;
 		if(currency == "monero")
 			std::cout<<"- Pool address: e.g. pool.usxmrpool.com:3333"<<std::endl;
@@ -198,25 +224,44 @@ void do_guided_config(bool userSetPasswd)
 	auto& userName = params::inst().poolUsername;
 	if(userName.empty())
 	{
+		prompt_once(prompted);
+
 		std::cout<<"- Username (wallet address or pool login):"<<std::endl;
 		std::cin >> userName;
 	}
 
 	auto& passwd = params::inst().poolPasswd;
-	if(passwd.empty() && (!userSetPasswd))
+	if(passwd.empty() && !params::inst().userSetPwd)
 	{
+		prompt_once(prompted);
+
 		// clear everything from stdin to allow an empty password
 		std::cin.clear(); std::cin.ignore(INT_MAX,'\n');
 		std::cout<<"- Password (mostly empty or x):"<<std::endl;
 		getline(std::cin, passwd);
 	}
 
+	bool tls;
 #ifdef CONF_NO_TLS
-	bool tls = false;
+	tls = false;
 #else
-	bool tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)");
+	if(!userSetPool)
+	{
+		prompt_once(prompted);
+		tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)");
+	}
+	else
+		tls = params::inst().poolUseTls;
 #endif
-	bool nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/n)");
+
+	bool nicehash;
+	if(!userSetPool)
+	{
+		prompt_once(prompted);
+		nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/n)");
+	}
+	else
+		nicehash = params::inst().nicehashMode;
 
 	bool multipool;
 	if(!userSetPool)
@@ -263,6 +308,41 @@ void do_guided_config(bool userSetPasswd)
 	std::cout<<"Configuration stored in file '"<<params::inst().configFile<<"'"<<std::endl;
 }
 
+#ifdef _WIN32
+/** start the miner as administrator
+ *
+ * This function based on the stackoverflow post
+ *   - source: https://stackoverflow.com/a/4893508
+ *   - author: Cody Gray
+ *   - date: Feb 4 '11
+ */
+void UACDialog(const std::string& binaryName, std::string& args)
+{
+		args += " --noUAC";
+		SHELLEXECUTEINFO shExInfo = {0};
+		shExInfo.cbSize = sizeof(shExInfo);
+		shExInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+		shExInfo.hwnd = 0;
+		shExInfo.lpVerb = "runas";     
+		shExInfo.lpFile = binaryName.c_str();
+		// disable UAC dialog (else the miner will go into a infinite loop)
+		shExInfo.lpParameters = args.c_str();
+		shExInfo.lpDirectory = 0;
+		shExInfo.nShow = SW_SHOW;
+		shExInfo.hInstApp = 0;
+		
+		if(ShellExecuteEx(&shExInfo))
+		{
+			printer::inst()->print_msg(L0,
+				"This window has been opened because xmr-stak needed to run as administrator.  It can be safely closed now.");
+			WaitForSingleObject(shExInfo.hProcess, INFINITE);
+			CloseHandle(shExInfo.hProcess);
+			// do not start the miner twice
+			std::exit(0);
+		}
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 #ifndef CONF_NO_TLS
@@ -295,8 +375,16 @@ int main(int argc, char *argv[])
 		params::inst().executablePrefix += seperator;
 	}
 
-	bool userSetPasswd = false;
-	for(int i = 1; i < argc; ++i)
+	bool uacDialog = true;
+	bool pool_url_set = false;
+	for(size_t i = 1; i < argc-1; i++)
+	{
+		std::string opName(argv[i]);
+		if(opName == "-o" || opName == "-O" || opName == "--url" || opName == "--tls-url")
+			pool_url_set = true;
+	}
+
+	for(size_t i = 1; i < argc; ++i)
 	{
 		std::string opName(argv[i]);
 		if(opName.compare("-h") == 0 || opName.compare("--help") == 0)
@@ -383,9 +471,29 @@ int main(int argc, char *argv[])
 				return 1;
 			}
 			params::inst().poolURL = argv[i];
+			params::inst().poolUseTls = false;
+		}
+		else if(opName.compare("-O") == 0 || opName.compare("--tls-url") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '-O/--tls-url' given");
+				win_exit();
+				return 1;
+			}
+			params::inst().poolURL = argv[i];
+			params::inst().poolUseTls = true;
 		}
 		else if(opName.compare("-u") == 0 || opName.compare("--user") == 0)
 		{
+			if(!pool_url_set)
+			{
+				printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify username and password.");
+				win_exit();
+				return 1;
+			}
+
 			++i;
 			if( i >=argc )
 			{
@@ -397,6 +505,13 @@ int main(int argc, char *argv[])
 		}
 		else if(opName.compare("-p") == 0 || opName.compare("--pass") == 0)
 		{
+			if(!pool_url_set)
+			{
+				printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify username and password.");
+				win_exit();
+				return 1;
+			}
+
 			++i;
 			if( i >=argc )
 			{
@@ -404,8 +519,12 @@ int main(int argc, char *argv[])
 				win_exit();
 				return 1;
 			}
-			userSetPasswd = true;
+			params::inst().userSetPwd = true;
 			params::inst().poolPasswd = argv[i];
+		}
+		else if(opName.compare("--use-nicehash") == 0)
+		{
+			params::inst().nicehashMode = true;
 		}
 		else if(opName.compare("-c") == 0 || opName.compare("--config") == 0)
 		{
@@ -418,6 +537,10 @@ int main(int argc, char *argv[])
 			}
 			params::inst().configFile = argv[i];
 		}
+		else if(opName.compare("--noUAC") == 0)
+		{
+			uacDialog = false;
+		}
 		else
 		{
 			printer::inst()->print_msg(L0, "Parameter unknown '%s'",argv[i]);
@@ -426,9 +549,23 @@ int main(int argc, char *argv[])
 		}
 	}
 
+#ifdef _WIN32
+	if(uacDialog)
+	{
+		std::string minerArgs;
+		for(int i = 1; i < argc; i++)
+		{
+			minerArgs += " ";
+			minerArgs += argv[i];
+		}
+
+		UACDialog(argv[0], minerArgs);
+	}
+#endif
+	
 	// check if we need a guided start
 	if(!configEditor::file_exist(params::inst().configFile))
-		do_guided_config(userSetPasswd);
+		do_guided_config();
 
 	if(!jconf::inst()->parse_config(params::inst().configFile.c_str()))
 	{

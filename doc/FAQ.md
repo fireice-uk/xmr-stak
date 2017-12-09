@@ -29,7 +29,7 @@ Reference: http://rybkaforum.net/cgi-bin/rybkaforum/topic_show.pl?pid=259791#pid
 
 ## VirtualAlloc failed
 
-If you set up the user rights properly (see above), and your system has 4-8GB of RAM (50%+ use), there is a significant chance that there simply won't be a large enough chunk of contiguous memory because Windows is fairly bad at mitigating memory fragmentation.
+If you set up the user rights properly ([see above](https://github.com/fireice-uk/xmr-stak/blob/master/doc/FAQ.md#selockmemoryprivilege-failed)), and your system has 4-8GB of RAM (50%+ use), there is a significant chance that there simply won't be a large enough chunk of contiguous memory because Windows is fairly bad at mitigating memory fragmentation.
 
 If that happens, disable all auto-staring applications and run the miner after a reboot.
 
@@ -56,10 +56,8 @@ This typically means you are trying to run it on a CPU that does not have [AES](
 
 ## Virus Protection Alert
 
-Some Virus protection software flag the miner binary as *Male Ware*.
-In this case the binary is moved to the quarantine area of the protection software.
-This is a wrong alert and not avoid by use.
-Add the binary to to protection software white list to solve this issue.s
+Some virus protection software flags the miner binary as *malware*. This is a false positive — the software does not contain any malware (and since it is open source, you can verify that yourself!)
+If your antivirus software flags **xmr-stak**, it will likely move it to its quarantine area. You may have to whitelist **xmr-stak** in your antivirus.
 
 ## Change Currency to Mine
 

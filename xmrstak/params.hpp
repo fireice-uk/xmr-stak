@@ -24,9 +24,12 @@ struct params
 	bool useNVIDIA;
 	bool useCPU;
 
+	bool poolUseTls = false;
 	std::string poolURL;
+	bool userSetPwd = false;
 	std::string poolPasswd;
 	std::string poolUsername;
+	bool nicehashMode = false;
 
 	std::string currency;
 

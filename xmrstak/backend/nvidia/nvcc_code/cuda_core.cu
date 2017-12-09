@@ -167,10 +167,10 @@ __forceinline__ __device__ uint32_t shuffle(volatile uint32_t* ptr,const uint32_
 #endif
 }
 
+template<size_t ITERATIONS, uint32_t THREAD_SHIFT, uint32_t MASK>
 #ifdef XMR_STAK_THREADS
 __launch_bounds__( XMR_STAK_THREADS * 4 )
 #endif
-template<size_t ITERATIONS, uint32_t THREAD_SHIFT, uint32_t MASK>
 __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b )
 {
 	__shared__ uint32_t sharedMemory[1024];
@@ -327,18 +327,22 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx)
 
 	for ( int i = 0; i < partcount; i++ )
 	{
-        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase2<ITERATIONS,THREAD_SHIFT,MASK><<<
-            grid,
-            block4,
-            block4.x * sizeof(uint32_t) * static_cast< int >( ctx->device_arch[0] < 3 )
-        >>>(
-            ctx->device_blocks*ctx->device_threads,
-            ctx->device_bfactor,
-            i,
-            ctx->d_long_state,
-            ctx->d_ctx_a,
-            ctx->d_ctx_b
-        ));
+        CUDA_CHECK_MSG_KERNEL(
+			ctx->device_id,
+			"\n**suggestion: Try to increase the value of the attribute 'bfactor' or \nreduce 'threads' in the NVIDIA config file.**",
+			cryptonight_core_gpu_phase2<ITERATIONS,THREAD_SHIFT,MASK><<<
+				grid,
+				block4,
+				block4.x * sizeof(uint32_t) * static_cast< int >( ctx->device_arch[0] < 3 )
+			>>>(
+				ctx->device_blocks*ctx->device_threads,
+				ctx->device_bfactor,
+				i,
+				ctx->d_long_state,
+				ctx->d_ctx_a,
+				ctx->d_ctx_b
+			)
+	    );
 
 		if ( partcount > 1 && ctx->device_bsleep > 0) compat_usleep( ctx->device_bsleep );
 	}

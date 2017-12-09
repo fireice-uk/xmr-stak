@@ -9,6 +9,7 @@
 * [Compile on Windows](compile_Windows.md)
 * [Compile on Linux](compile_Linux.md)
 * [Compile on FreeBSD](compile_FreeBSD.md)
+* [Compile on MacOS](compile_MacOS.md)
 
 ## Build System
 
@@ -30,6 +31,7 @@ After the configuration you need to compile the miner, follow the guide for your
 * [Compile in Windows](compile_Windows.md)
 * [Compile in Linux](compile_Linux.md)
 * [Compile in FreeBSD](compile_FreeBSD.md)
+* [Compile in MacOS](compile_MacOS.md)
 
 ## Generic Build Options
 - `CMAKE_INSTALL_PREFIX` install miner to the home folder
@@ -49,11 +51,6 @@ After the configuration you need to compile the miner, follow the guide for your
 - `XMR-STAK_COMPILE` select the CPU compute architecture (default: native)
   - native means the miner binary can be used only on the system where it is compiled but will archive the highest hash rate
   - use `cmake .. -DXMR-STAK_COMPILE=generic` to run the miner on all CPU's with sse2
-
-### only available for Windows
-- `WIN_UAC` will enable or disable the "Run As Administrator" prompt on Windows.
-  - UAC confirmation is needed to use large pages on Windows 7.
-  - On Windows 10 it is only needed once to set up the account to use them.
 
 ## CPU Build Options
 

@@ -332,7 +332,8 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 
 	char options[256];
 	snprintf(options, sizeof(options), 
-		"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu", hasIterations, threadMemMask, int_port(ctx->workSize));
+		"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d", 
+		hasIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex ? 1 : 0);
 	ret = clBuildProgram(ctx->Program, 1, &ctx->DeviceID, options, NULL, NULL);
 	if(ret != CL_SUCCESS)
 	{
@@ -448,68 +449,85 @@ uint32_t getNumPlatforms()
 std::vector<GpuContext> getAMDDevices(int index)
 {
 	std::vector<GpuContext> ctxVec;
-	cl_platform_id * platforms = NULL;
+	std::vector<cl_platform_id> platforms;
+	std::vector<cl_device_id> device_list;
+
 	cl_int clStatus;
 	cl_uint num_devices;
-	cl_device_id *device_list = NULL;
-
 	uint32_t numPlatforms = getNumPlatforms();
 
-	if(numPlatforms)
+	if(numPlatforms == 0)
+		return ctxVec;
+
+	platforms.resize(numPlatforms);
+	if((clStatus = clGetPlatformIDs(numPlatforms, platforms.data(), NULL)) != CL_SUCCESS)
 	{
-		platforms = (cl_platform_id *) malloc(sizeof(cl_platform_id) * numPlatforms);
-		clStatus = clGetPlatformIDs(numPlatforms, platforms, NULL);
-		if(clStatus == CL_SUCCESS)
-		{
-			clStatus = clGetDeviceIDs( platforms[index], CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices);
-			if(clStatus == CL_SUCCESS)
-			{
-				device_list = (cl_device_id *) malloc(sizeof(cl_device_id)*num_devices);
-				clStatus = clGetDeviceIDs( platforms[index], CL_DEVICE_TYPE_GPU, num_devices, device_list, NULL);
-				if(clStatus == CL_SUCCESS)
-				{
-					for (int k = 0; k < num_devices; k++)
-					{
-						cl_int clError;
-						std::vector<char> devVendorVec(1024);
-						clError = clGetDeviceInfo(device_list[k], CL_DEVICE_VENDOR, devVendorVec.size(), devVendorVec.data(), NULL);
-						if(clStatus == CL_SUCCESS)
-						{
-							std::string devVendor(devVendorVec.data());
-							if( devVendor.find("Advanced Micro Devices") != std::string::npos)
-							{
-								GpuContext ctx;
-								ctx.deviceIdx = k;
-								clError = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &(ctx.computeUnits), NULL);
-								size_t maxMem;
-								clError = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(size_t), &(maxMem), NULL);
-								clError = clGetDeviceInfo(device_list[k], CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(size_t), &(ctx.freeMem), NULL);
-								// if environment variable GPU_SINGLE_ALLOC_PERCENT is not set we can not allocate the full memory
-								ctx.freeMem = std::min(ctx.freeMem, maxMem);
-								std::vector<char> devNameVec(1024);
-								clError = clGetDeviceInfo(device_list[k], CL_DEVICE_NAME, devNameVec.size(), devNameVec.data(), NULL);
-								ctx.name = std::string(devNameVec.data());
-								printer::inst()->print_msg(L0,"Found OpenCL GPU %s.",ctx.name.c_str());
-								ctx.DeviceID = device_list[k];
-								ctxVec.push_back(ctx);
-							}
-						}
-						else
-							printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get the device vendor name.", err_to_str(clStatus));
-					}
-				}
-				else
-					printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceIDs for device information.", err_to_str(clStatus));
-				free(device_list);
-			}
-			else
-				printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceIDs for of devices.", err_to_str(clStatus));
-		}
-		else
-			printer::inst()->print_msg(L1,"WARNING: %s when calling clGetPlatformIDs for platform information.", err_to_str(clStatus));
+		printer::inst()->print_msg(L1,"WARNING: %s when calling clGetPlatformIDs for platform information.", err_to_str(clStatus));
+		return ctxVec;
 	}
-	
-	free(platforms);
+
+	if((clStatus = clGetDeviceIDs( platforms[index], CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices)) != CL_SUCCESS)
+	{
+		printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceIDs for of devices.", err_to_str(clStatus));
+		return ctxVec;
+	}
+
+	device_list.resize(num_devices);
+	if((clStatus = clGetDeviceIDs( platforms[index], CL_DEVICE_TYPE_GPU, num_devices, device_list.data(), NULL)) != CL_SUCCESS)
+	{
+		printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceIDs for device information.", err_to_str(clStatus));
+		return ctxVec;
+	}
+
+	for (size_t k = 0; k < num_devices; k++)
+	{
+		std::vector<char> devVendorVec(1024);
+		if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_VENDOR, devVendorVec.size(), devVendorVec.data(), NULL)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get the device vendor name for device %u.", err_to_str(clStatus), k);
+			continue;
+		}
+		
+		std::string devVendor(devVendorVec.data());
+		if( devVendor.find("Advanced Micro Devices") != std::string::npos || devVendor.find("AMD") != std::string::npos)
+		{
+			GpuContext ctx;
+			std::vector<char> devNameVec(1024);
+			size_t maxMem;
+
+			if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &(ctx.computeUnits), NULL)) != CL_SUCCESS)
+			{
+				printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DEVICE_MAX_COMPUTE_UNITS for device %u.", err_to_str(clStatus), k);
+				continue;
+			}
+
+			if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(size_t), &(maxMem), NULL)) != CL_SUCCESS)
+			{
+				printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DEVICE_MAX_MEM_ALLOC_SIZE for device %u.", err_to_str(clStatus), k);
+				continue;
+			}
+
+			if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(size_t), &(ctx.freeMem), NULL)) != CL_SUCCESS)
+			{
+				printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DEVICE_GLOBAL_MEM_SIZE for device %u.", err_to_str(clStatus), k);
+				continue;
+			}
+
+			if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_NAME, devNameVec.size(), devNameVec.data(), NULL)) != CL_SUCCESS)
+			{
+				printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DEVICE_NAME for device %u.", err_to_str(clStatus), k);
+				continue;
+			}
+			printer::inst()->print_msg(L0,"Found OpenCL GPU %s.",ctx.name.c_str());
+
+			// if environment variable GPU_SINGLE_ALLOC_PERCENT is not set we can not allocate the full memory
+			ctx.deviceIdx = k;
+			ctx.freeMem = std::min(ctx.freeMem, maxMem);
+			ctx.name = std::string(devNameVec.data());
+			ctx.DeviceID = device_list[k];
+			ctxVec.push_back(ctx);
+		}
+	}
 
 	return ctxVec;
 }
@@ -541,7 +559,7 @@ int getAMDPlatformIdx()
 
 			clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, infoSize, platformNameVec.data(), NULL);
 			std::string platformName(platformNameVec.data());
-			if( platformName.find("Advanced Micro Devices") != std::string::npos)
+			if( platformName.find("Advanced Micro Devices") != std::string::npos || platformName.find("Apple") != std::string::npos)
 			{
 				platformIndex = i;
 				printer::inst()->print_msg(L0,"Found AMD platform index id = %i, name = %s",i , platformName.c_str());
