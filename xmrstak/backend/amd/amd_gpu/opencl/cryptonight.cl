@@ -411,7 +411,11 @@ void AESExpandKey256(uint *keybuf)
 	}
 }
 
-#define IDX(x)	(x)
+#if(STRIDED_INDEX==0)
+#   define IDX(x)	(x)
+#else
+#   define IDX(x)	((x) * (Threads))
+#endif
 
 __attribute__((reqd_work_group_size(WORKSIZE, 8, 1)))
 __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ulong *states, ulong Threads)
@@ -440,7 +444,12 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 	if(gIdx < Threads)
 	{
 		states += 25 * gIdx;
+
+#if(STRIDED_INDEX==0)
 		Scratchpad += gIdx * (ITERATIONS >> 2);
+#else
+		Scratchpad += gIdx;
+#endif
 
 		((ulong8 *)State)[0] = vload8(0, input);
 		State[8] = input[8];
@@ -519,7 +528,11 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 	if(gIdx < Threads)
 	{
 		states += 25 * gIdx;
+#if(STRIDED_INDEX==0)
 		Scratchpad += gIdx * (ITERATIONS >> 2);
+#else
+		Scratchpad += gIdx;
+#endif
 
 		a[0] = states[0] ^ states[4];
 		b[0] = states[2] ^ states[6];
@@ -588,7 +601,11 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 	if(gIdx < Threads)
 	{
 		states += 25 * gIdx;
+#if(STRIDED_INDEX==0)
 		Scratchpad += gIdx * (ITERATIONS >> 2);
+#else
+		Scratchpad += gIdx;
+#endif
 
 		#if defined(__Tahiti__) || defined(__Pitcairn__)
 

@@ -9,6 +9,7 @@
 #endif
 
 #include <stdint.h>
+#include <string>
 #include <vector>
 
 #define ERR_SUCCESS (0)
@@ -23,6 +24,7 @@ struct GpuContext
 	size_t deviceIdx;
 	size_t rawIntensity;
 	size_t workSize;
+	int stridedIndex;
 
 	/*Output vars*/
 	cl_device_id DeviceID;

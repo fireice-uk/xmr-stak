@@ -11,7 +11,8 @@ typedef struct {
 	int device_blocks;
 	int device_threads;
 	int device_bfactor;
-	int device_bsleep;
+	int device_bsleep;	
+	int syncMode;
 
 	uint32_t *d_input;
 	uint32_t inputlen;

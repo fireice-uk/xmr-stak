@@ -22,7 +22,7 @@ public:
 	bool parse_config(const char* sFilename = params::inst().configFileCPU.c_str());
 
 	struct thd_cfg {
-		bool bDoubleMode;
+		int iMultiway;
 		bool bNoPrefetch;
 		long long iCpuAff;
 	};
