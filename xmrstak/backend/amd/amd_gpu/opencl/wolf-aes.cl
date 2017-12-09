@@ -84,6 +84,30 @@ uint4 AES_Round(const __local uint (*AES2D)[4], const uint4 X, const uint4 key)
     Y ^= key;
     return(Y);
 }
+uint4 AES_Round(const __local uint (*AES2D)[4], const uint4 X, uint4 key)
+{
+	key.s0 ^= AES2D[0[BYTE(X.s0, 0)];
+    key.s1 ^= AES2D[0[BYTE(X.s1, 0)];
+    key.s2 ^= AES2D[0[BYTE(X.s2, 0)];
+    key.s3 ^= AES2D[0[BYTE(X.s3, 0)];
+
+	key.s0 ^= AES2D[2][BYTE(X.s2, 2)];
+    key.s1 ^= AES2D[2][BYTE(X.s3, 2)];
+    key.s2 ^= AES2D[2][BYTE(X.s0, 2)];
+    key.s3 ^= AES2D[2][BYTE(X.s1, 2)];
+
+	key.s0 ^= AES2D[1][BYTE(X.s1, 1)];
+    key.s1 ^= AES2D[1][BYTE(X.s2, 1)];
+    key.s2 ^= AES2D[1][BYTE(X.s3, 1)];
+    key.s3 ^= AES2D[1][BYTE(X.s0, 1)];
+
+	key.s0 ^= AES2D[3][BYTE(X.s3, 3)];
+    key.s1 ^= AES2D[3][BYTE(X.s0, 3)];
+    key.s2 ^= AES2D[3][BYTE(X.s1, 3)];
+    key.s3 ^= AES2D[3][BYTE(X.s2, 3)];
+
+    return key;
+}
 
 #endif
 
