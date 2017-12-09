@@ -418,7 +418,7 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 {
 	ulong State[25];
 	uint ExpandedKey1[256];
-	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
+	__local uint AES2D[4][256];
 	uint4 text;
 
 	const ulong gIdx = get_global_id(0) - get_global_offset(0);
@@ -428,10 +428,10 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 		i += WORKSIZE * 8)
 	{
 		const uint tmp = AES0_C[i];
-		AES0[i] = tmp;
-		AES1[i] = rotate(tmp, 8U);
-		AES2[i] = rotate(tmp, 16U);
-		AES3[i] = rotate(tmp, 24U);
+		AES2D[0][i] = tmp;
+		AES2D[1][i] = rotate(tmp, 8U);
+		AES2D[2][i] = rotate(tmp, 16U);
+		AES2D[3][i] = rotate(tmp, 24U);
 	}
 
 	barrier(CLK_LOCAL_MEM_FENCE);
@@ -486,7 +486,7 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 		{
 			#pragma unroll
 			for(int j = 0; j < 10; ++j)
-				text = AES_Round(AES0, AES1, AES2, AES3, text, ((uint4 *)ExpandedKey1)[j]);
+				text = AES_Round(AES2D, text, ((uint4 *)ExpandedKey1)[j]);
 
 			Scratchpad[IDX((i << 3) + get_local_id(1))] = text;
 		}
@@ -498,17 +498,17 @@ __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
 __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Threads)
 {
 	ulong a[2], b[2];
-	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
+	__local uint AES2D[4][256];
 
 	const ulong gIdx = get_global_id(0) - get_global_offset(0);
 
 	for(int i = get_local_id(0); i < 256; i += WORKSIZE)
 	{
 		const uint tmp = AES0_C[i];
-		AES0[i] = tmp;
-		AES1[i] = rotate(tmp, 8U);
-		AES2[i] = rotate(tmp, 16U);
-		AES3[i] = rotate(tmp, 24U);
+		AES2D[0][i] = tmp;
+		AES2D[1][i] = rotate(tmp, 8U);
+		AES2D[2][i] = rotate(tmp, 16U);
+		AES2D[3][i] = rotate(tmp, 24U);
 	}
 
 	barrier(CLK_LOCAL_MEM_FENCE);
@@ -540,7 +540,7 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 			ulong c[2];
 
 			((uint4 *)c)[0] = Scratchpad[IDX((a[0] & MASK) >> 4)];
-			((uint4 *)c)[0] = AES_Round(AES0, AES1, AES2, AES3, ((uint4 *)c)[0], ((uint4 *)a)[0]);
+			((uint4 *)c)[0] = AES_Round(AES2D, ((uint4 *)c)[0], ((uint4 *)a)[0]);
 			//b_x ^= ((uint4 *)c)[0];
 
 			Scratchpad[IDX((a[0] & MASK) >> 4)] = b_x ^ ((uint4 *)c)[0];
@@ -564,7 +564,7 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 __attribute__((reqd_work_group_size(WORKSIZE, 8, 1)))
 __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global uint *Branch0, __global uint *Branch1, __global uint *Branch2, __global uint *Branch3, ulong Threads)
 {
-	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
+	__local uint AES2D[4][256];
 	uint ExpandedKey2[256];
 	ulong State[25];
 	uint4 text;
@@ -576,10 +576,10 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 		i += WORKSIZE * 8)
 	{
 		const uint tmp = AES0_C[i];
-		AES0[i] = tmp;
-		AES1[i] = rotate(tmp, 8U);
-		AES2[i] = rotate(tmp, 16U);
-		AES3[i] = rotate(tmp, 24U);
+		AES2D[0][i] = tmp;
+		AES2D[1][i] = rotate(tmp, 8U);
+		AES2D[2][i] = rotate(tmp, 16U);
+		AES2D[3][i] = rotate(tmp, 24U);
 	}
 
 	barrier(CLK_LOCAL_MEM_FENCE);
@@ -617,7 +617,7 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 
 			#pragma unroll
 			for(int j = 0; j < 10; ++j)
-				text = AES_Round(AES0, AES1, AES2, AES3, text, ((uint4 *)ExpandedKey2)[j]);
+				text = AES_Round(AES2D, text, ((uint4 *)ExpandedKey2)[j]);
 		}
 
 		vstore2(as_ulong2(text), get_local_id(1) + 4, states);
