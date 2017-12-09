@@ -418,7 +418,8 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		
 		// no limit by default 1TiB
 		size_t maxMemUsage = byteToMiB * byteToMiB;
-	    if(props.major == 6)
+		if(props.major == 6)
+		{
 			if(props.multiProcessorCount < 15)
 			{
 				// limit memory usage for GPUs for pascal < GTX1070
@@ -429,6 +430,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 				// limit memory usage for GPUs for pascal GTX1070, GTX1080
 				maxMemUsage = size_t(4096u) * byteToMiB;
 			}
+		}
 		if(props.major < 6)
 		{
 			// limit memory usage for GPUs before pascal
