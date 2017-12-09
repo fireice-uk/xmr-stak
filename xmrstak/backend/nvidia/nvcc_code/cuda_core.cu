@@ -19,7 +19,7 @@ extern "C" void compat_usleep(uint64_t waitTime)
             HANDLE timer;
             LARGE_INTEGER ft;
 
-            ft.QuadPart = -(10*waitTime); // Convert to 100 nanosecond interval, negative value indicates relative time
+            ft.QuadPart = -10ll * int64_t(waitTime); // Convert to 100 nanosecond interval, negative value indicates relative time
 
             timer = CreateWaitableTimer(NULL, TRUE, NULL);
             SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
