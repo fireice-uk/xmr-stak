@@ -52,38 +52,42 @@ psychocrypt:
 ```
 
 ## Release Checksums
+
+Please use the [Developer PGP Key's](doc/pgp_keys.md) to verify the integrity of the precompiled binaries.
+
 ```
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA256
 
-XMR-Stak 2.0.0 Windows Build Checksums
+XMR-Stak 2.1.0 Windows Build Checksums
+
+compiled by: psychocrypt
 
 $ sha1sum *
-316aafce7e9e9b9ac76a3c559d2df2ce0d8e0f0e  libeay32.dll
-fd5251b1b9a44be590eed18fd6563661c662e095  ssleay32.dll
-9c81da9334db8ade7255bf201a2f90c571f09969  xmrstak_cuda_backend.dll
-b41b1baea01189c6acfdb03b66b332ae615519b0  xmr-stak.exe
-0d90f03886af567100cd0ab780f7a50557e3dafa  xmrstak_opencl_backend.dll
+3f1634244ccd336f7df581e3c82e1c6ca38ce714  libeay32.dll
+538f3bd9dfcafc379e912562bcf343333f5375c7  ssleay32.dll
+152042d47afaf9a42d4330440c62d81082fc8e4e  xmrstak_cuda_backend.dll
+0effc72e21382d22a0b8221ee55e470093b39715  xmr-stak.exe
+3b6ea8d155e89dc876bf6bb436d6826e33a62955  xmrstak_opencl_backend.dll
 
 $ sha3sum *
-627b5f8c7b67e45b1ff1e344ba841ee45cbab78d03f35bc572a53e77  libeay32.dll
-1f587006e26d0a6e0969d0f562ebf622783e3898a0239e4bc08d129f  ssleay32.dll
-e9cd4a682a208a68c012635924dc320d4da1b222d358ca21e326f30d  xmrstak_cuda_backend.dll
-37b4891b43694548ee3ba83174985b8300a30808fd5e469f6273c0b7  xmr-stak.exe
-b574a18d3f729123dfc4efe857021e0d3b48e428562d340acc5de426  xmrstak_opencl_backend.dll
+5aeefca7278be1b2706d99bf89fa23646931f881aff8bbca33654eb1  libeay32.dll
+6b696caa620b0c6372881b11e503313152b5191c2d5497b26f81ab79  ssleay32.dll
+3a0079c2e4f303a48c4c94817ace2c6de077b099c08d3e2e25d206f2  xmrstak_cuda_backend.dll
+1623c54b05329dcd08e477cf9ba750c44a246227359cff42b1c5bb4d  xmr-stak.exe
+4826eb52a346e1ec5d979c745a4d642f13dd76e2a9a4b2f9d4bd149a  xmrstak_opencl_backend.dll
 
-$ date
-Sun 19 Nov 16:54:14 GMT 2017
+date
+Sat Dec  9 13:10:01 CET 2017
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2
 
-iQEcBAEBCAAGBQJaEberAAoJEPsk95p+1Bw012QH/A+c1M1+Jt4tHvSrgYDgMt/g
-i/r4ZaCUj8Q43Q/PRo1V5ZwGAjPQp23qMp1b2PX+B9nRZD61uXN4+LX6BJuK8Cvp
-eDS3weWHYP0OJHXdSr/2u1VbL09u3att7BhXj8N5Y1k/DnyXtxIFafDZb6rOwOyu
-r0iUMMjFNrQBJe3RdrGLeGTc1atxVTnLsa5TmBT8NZTIVk9tfpEzCcyvvfwKuK5T
-fjzzOR4m0HcbzOxIqydOLWXkX1oOTHjq1TSCuZ+W1vcp8drCtlY5zM5ckYDD4818
-cvX6gTCsFYfLw/p+sz+DN7kh7zJlCvIFga3HaFByxCSuyMY08qerXS/0862ZMdo=
-=Gf/1
+iQEcBAEBCAAGBQJaK9N7AAoJEAUWOMCIZelDBesH/11/YJYV/a1545QcKlTVrSJS
+S51nGVlhn1Opi3FIUadaHf+INqJgQmE6+8PSaWo74WdX1TCaCgwszqI+o4EYEKZu
+/+/Lmc19++WCFSIV6RozEG/7bGuRO+R+xstm1yh/5Y3DrxJrZFq2fmRu/sodryz9
+Iw8tBcUfZUz+M8OepeMUfmu3wqzbOEAJLEw2OSPwkHACTpVFc2n3MWMDxqrRb3GU
+YjZrxSMEGU/viSz88uGovbqVU53Ala6jCvqunDcibZ6BoXbSI4qgyUjCcc+uxm1k
+xnzF5fgwWHuXH4l3CXQcU/2y6I5in+rNvWT0/pMNSRp5kRDu0SSLYLK/FIIFhNQ=
+=KNpx
 -----END PGP SIGNATURE-----
-
 ```
