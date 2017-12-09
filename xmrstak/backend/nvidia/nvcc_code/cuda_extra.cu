@@ -404,7 +404,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			( props.major < 3 ? 2 : 3 );
 
 		// increase bfactor for low end devices to avoid that the miner is killed by the OS
-		if(props.multiProcessorCount < 6)
+		if(props.multiProcessorCount <= 6)
 			ctx->device_bfactor += 2;
 	}
 	if(ctx->device_threads == -1)
@@ -418,6 +418,19 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		
 		// no limit by default 1TiB
 		size_t maxMemUsage = byteToMiB * byteToMiB;
+		if(props.major == 6)
+		{
+			if(props.multiProcessorCount < 15)
+			{
+				// limit memory usage for GPUs for pascal < GTX1070
+				maxMemUsage = size_t(2048u) * byteToMiB;
+			}
+			else if(props.multiProcessorCount <= 20)
+			{
+				// limit memory usage for GPUs for pascal GTX1070, GTX1080
+				maxMemUsage = size_t(4096u) * byteToMiB;
+			}
+		}
 		if(props.major < 6)
 		{
 			// limit memory usage for GPUs before pascal
