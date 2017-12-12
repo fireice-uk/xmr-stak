@@ -211,6 +211,11 @@ void printer::print_str(const char* str)
 	std::unique_lock<std::mutex> lck(print_mutex);
 	fputs(str, stdout);
 
+	if (b_flush_stdout)
+	{
+		fflush(stdout);
+	}
+
 	if(logfile != nullptr)
 	{
 		fputs(str, logfile);
