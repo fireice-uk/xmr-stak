@@ -120,10 +120,10 @@ private:
 			{
 				//Reports seem to indicate splitting a physical device into two works better:
 				conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
-				"    \"intensity\" : " + std::to_string((intensity >> 6) * 32) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
+				"    \"intensity\" : " + std::to_string((intensity >> 7) * 64) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
 				"    \"affine_to_cpu\" : false, \"strided_index\" : false\n" +
 				"  },\n";
-				intensity -= (intensity >> 6) * 32;
+				intensity -= (intensity >> 7) * 64;
 				//Bigger CU count always on the 2nd virtual device, because the system usually takes CU0:
 				conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
 				"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
