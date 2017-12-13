@@ -522,7 +522,13 @@ std::vector<GpuContext> getAMDDevices(int index)
 
 			// if environment variable GPU_SINGLE_ALLOC_PERCENT is not set we can not allocate the full memory
 			ctx.deviceIdx = k;
-			ctx.freeMem = std::min(ctx.freeMem, maxMem);
+			/*
+			* System does __not always__ report true memory left, 
+			* only the max amount we can allocate at once...
+			* It is a __hack__ to not be querying the max alloc before each
+			* and every alloc if trying to figure out the amount available.
+			*/
+			ctx.freeMem = maxMem * std::floor(ctx.freeMem / maxMem);
 			ctx.name = std::string(devNameVec.data());
 			ctx.DeviceID = device_list[k];
 			ctxVec.push_back(ctx);

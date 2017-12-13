@@ -103,13 +103,13 @@ private:
 			//Each CU is 64 threads executed in an SIMT fashion:
 			size_t maxThreadsAvailable = maxComputeUnitsAvailable << 6;
 			//Keep 128MiB memory free (value is randomly chosen):
-			size_t availableMem = ctx.freeMem - (128u << 20);
+			size_t availableMem = ctx.freeMem - (128u * 1024u * 1024u);
 			//224byte extra memory is used per thread for meta data
 			size_t perThread = hashMemSize + 224u;
 			size_t maxIntensity = availableMem / perThread;
 			size_t possibleIntensity = std::min(maxThreadsAvailable, maxIntensity);
 			//Alias intensity against the smallest work group size possible:
-			size_t intensity = (possibleIntensity >> 3) << 3;
+			size_t intensity = (possibleIntensity >> 3) * 8;
 			conf += std::string("  // gpu: ") + ctx.name + " memory:" + std::to_string(availableMem >> 20) + "\n";
 			conf += std::string("  // compute units: ") + std::to_string(ctx.computeUnits) + "\n";
 			//set 8 threads per block (this is a good value for the most gpus)
@@ -118,10 +118,10 @@ private:
 			{
 				//Reports seem to indicate splitting a physical device into two works better:
 				conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
-				"    \"intensity\" : " + std::to_string((intensity >> 7) << 6) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
+				"    \"intensity\" : " + std::to_string((intensity >> 7) * 64) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
 				"    \"affine_to_cpu\" : false, \"strided_index\" : false\n" +
 				"  },\n";
-				intensity -= (intensity >> 7) << 6;
+				intensity -= (intensity >> 7) * 64;
 				//Bigger CU count always on the 2nd virtual device, because the system usually takes CU0:
 				conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
 				"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
