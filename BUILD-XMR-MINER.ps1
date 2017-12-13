@@ -35,7 +35,7 @@ try
 
     Write-Host "Importing scripts. " -NoNewline
 
-    . ".\scripts\powershell\Install-CMake.ps1"
+    #. ".\scripts\powershell\Install-CMake.ps1"
     
     Write-Host "Done.`r`n" -ForegroundColor Green
 
@@ -47,7 +47,7 @@ try
     $buildPathExists = Test-Path $buildPath
     $cmakeGenerator = "Visual Studio 15 2017 Win64"
     $cmakeToolset = "v141,host=x64"
-    $cmakeArguments = "--build . -DXMR-STAK_CURRENCY=monero -DOpenSSL_ENABLE=OFF -DXMR-STAK_COMPILE=generic --config Release --target install -DXMR-STAK_CURRENCY=monero -DOpenSSL_ENABLE=OFF -DXMR-STAK_COMPILE=generic"
+    $cmakeArguments = "--build . -DXMR-STAK_CURRENCY=monero -DOpenSSL_ENABLE=OFF -DXMR-STAK_COMPILE=generic -MICROHTTPD_ENABLE=OFF --config Release --target install"
 
     $xmrStakDepPath = "C:\xmr-stak-dep"
     $xmrStakDepPathExists = (Test-Path $xmrStakDepPath)
@@ -57,7 +57,7 @@ try
     $openSslPath = "C:\xmr-stak-dep\openssl"
     $sslBinaryPath = "C:\xmr-stak-dep\openssl\bin\*"
 
-    $cmakePrefixPath = "$hwlocPath;$libmicrohttpd;$sslBinaryPath"
+    $cmakePrefixPath = "$hwlocPath;$libmicrohttpd;$openSslPath"
 
     $buildInstructionsUri = "https://github.com/fireice-uk/xmr-stak/blob/dev/doc/compile_Windows.md#dependencies-opensslhwloc-and-microhttpd"
 
@@ -72,16 +72,16 @@ try
     $openSslPathExists = Test-Path $openSslPath
     $allDependenciesExist = ($hwlocPathExists -and $libmicrohttpdPathExists -and $openSslPathExists)
 
-    if ($buildPathExists)
-    {
-        $deleteResponse = Read-Host "`r`nThe '\build' directory aready exists, would you like to delete it and continue? (Y/n)"
-        $confirmedDelete = ([System.String]::IsNullOrWhiteSpace($deleteResponse) -or ($deleteResponse -ieq "Y"))
-        If (!($confirmedDelete))
-        {
-            Write-Host "`r`nBuild directory already exists at `"$buildPath`", please delete the directory and try again." -ForegroundColor Red
-            Exit
-        }
-    }
+    #if ($buildPathExists)
+    #{
+    #    $deleteResponse = Read-Host "`r`nThe '\build' directory aready exists, would you like to delete it and continue? (Y/n)"
+    #    $confirmedDelete = ([System.String]::IsNullOrWhiteSpace($deleteResponse) -or ($deleteResponse -ieq "Y"))
+    #    If (!($confirmedDelete))
+    #    {
+    #        Write-Host "`r`nBuild directory already exists at `"$buildPath`", please delete the directory and try again." -ForegroundColor Red
+    #        Exit
+    #    }
+    #}
 
     if (!($xmrStakDepPathExists))
     {
@@ -159,7 +159,7 @@ try
 
         If (!($libmicrohttpdPathExists))
         {
-            Write-Host "Microhttpd was not found at '$libmicrohttpdPath'." -ForegroundColor Red
+            Write-Host "Microhttpd was not found at '$libmicrohttpdPath'." -ForegroundColor Red            
         }
 
         If (!($openSslPathExists))
@@ -187,7 +187,7 @@ try
 
     Write-Host "Setting CMAKE_PREFIX_PATH environment variable..." -NoNewLine
     
-    Set-Variable -Name "CMAKE_PREFIX_PATH" -Value "$hwlocPath;$libmicrohttpd;$sslBinaryPath" -Scope Global -Description "CMAKE_PREFIX_PATH" -Force | Out-Null
+    Set-Variable -Name "CMAKE_PREFIX_PATH" -Value "$cmakePrefixPath" -Scope Global -Description "CMAKE_PREFIX_PATH" -Force
 
     Write-Host "Done.`r`n" -ForegroundColor Green
 

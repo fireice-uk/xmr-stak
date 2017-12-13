@@ -27,9 +27,12 @@ cd build
 
 cmake -G "Visual Studio 15 2017 Win64" -T v141,host=x64 ..
 
+::-DXMR-STAK_COMPILE=generic 
+cmake .. -DXMR-STAK_CURRENCY=monero -DOpenSSL_ENABLE=OFF -MICROHTTPD_ENABLE=OFF
+
 echo Running build for Release config, Monero currency, and no DCOpenCL
 
-cmake --build . --config Release --target install
+cmake --build . --config Release --target install 
 
 echo Copying SSL libraries...
 
