@@ -493,7 +493,6 @@ std::vector<GpuContext> getAMDDevices(int index)
 		{
 			GpuContext ctx;
 			std::vector<char> devNameVec(1024);
-			size_t maxMem;
 
 			if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &(ctx.computeUnits), NULL)) != CL_SUCCESS)
 			{
@@ -501,7 +500,7 @@ std::vector<GpuContext> getAMDDevices(int index)
 				continue;
 			}
 
-			if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(size_t), &(maxMem), NULL)) != CL_SUCCESS)
+			if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(size_t), &(ctx.maxAlloc), NULL)) != CL_SUCCESS)
 			{
 				printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DEVICE_MAX_MEM_ALLOC_SIZE for device %u.", err_to_str(clStatus), k);
 				continue;
@@ -522,7 +521,13 @@ std::vector<GpuContext> getAMDDevices(int index)
 
 			// if environment variable GPU_SINGLE_ALLOC_PERCENT is not set we can not allocate the full memory
 			ctx.deviceIdx = k;
-			ctx.freeMem = std::min(ctx.freeMem, maxMem);
+			/*
+			* System does __not always__ report true memory left, 
+			* only the max amount we can allocate at once...
+			* It is a __hack__ to not be querying the max alloc before each
+			* and every alloc if trying to figure out the amount available.
+			*/
+			ctx.freeMem = ctx.maxAlloc * std::floor(ctx.freeMem / ctx.maxAlloc);
 			ctx.name = std::string(devNameVec.data());
 			ctx.DeviceID = device_list[k];
 			ctxVec.push_back(ctx);
