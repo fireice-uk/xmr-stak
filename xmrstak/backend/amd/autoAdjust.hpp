@@ -71,6 +71,28 @@ public:
 
 private:
 
+	/*
+    * Some GPUs will fail allocations even if they have enough space.
+	* As drivers for certain cards artificially limit the individual allocation sizes.
+	* ex: Vega Frontier Edition (16GB) will need this function.
+	*/
+	size_t validateIntensity(size_t maxAlloc, size_t intensity)
+	{
+		size_t hashMemSize;
+		if(::jconf::inst()->IsCurrencyMonero())
+		{
+			hashMemSize = MONERO_MEMORY;
+		}
+		else
+		{
+			hashMemSize = AEON_MEMORY;
+		}
+		//224byte extra memory is used per thread for meta data
+		size_t perThread = hashMemSize + 224u;
+		intensity = std::min(intensity, maxAlloc / perThread);
+		//Alias intensity against the smallest work group size possible:
+		return (intensity >> 3) * 8;
+	}
 	void generateThreadConfig(const int platformIndex)
 	{
 		// load the template of the backend config into a char variable
@@ -119,21 +141,22 @@ private:
 			if (maxComputeUnitsAvailable > 1)
 			{
 				//Reports seem to indicate splitting a physical device into two works better:
+				maxIntensity = validateIntensity(ctx.maxAlloc, (intensity >> 7) * 64);
 				conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
-				"    \"intensity\" : " + std::to_string((intensity >> 7) * 64) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
+				"    \"intensity\" : " + std::to_string(maxIntensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
 				"    \"affine_to_cpu\" : false, \"strided_index\" : false\n" +
 				"  },\n";
-				intensity -= (intensity >> 7) * 64;
+				intensity -= maxIntensity;
 				//Bigger CU count always on the 2nd virtual device, because the system usually takes CU0:
 				conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
-				"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
+				"    \"intensity\" : " + std::to_string(validateIntensity(ctx.maxAlloc, intensity)) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
 				"    \"affine_to_cpu\" : false, \"strided_index\" : false\n" +
 				"  },\n";
 			}
 			else
 			{
 				conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
-				"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
+				"    \"intensity\" : " + std::to_string(validateIntensity(ctx.maxAlloc, intensity)) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
 				"    \"affine_to_cpu\" : false, \"strided_index\" : true\n" +
 				"  },\n";
 			}

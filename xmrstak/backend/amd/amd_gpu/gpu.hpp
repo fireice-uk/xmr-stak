@@ -35,6 +35,7 @@ struct GpuContext
 	cl_program Program;
 	cl_kernel Kernels[7];
 	size_t freeMem;
+	size_t maxAlloc;
 	int computeUnits;
 	std::string name;
 
