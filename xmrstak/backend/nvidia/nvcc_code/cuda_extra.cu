@@ -6,7 +6,6 @@
 #include <vector>
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <device_functions.hpp>
 #include  <algorithm>
 #include "xmrstak/jconf.hpp"
 

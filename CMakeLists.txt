@@ -108,7 +108,11 @@ if(CUDA_ENABLE)
         endif()
         # add Volta support for CUDA >= 9.0
         if(NOT CUDA_VERSION VERSION_LESS 9.0)
-            list(APPEND DEFAULT_CUDA_ARCH "70")
+            # Volta GPUs are currently not supported on MACOSX
+            # https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#cuda-general-known-issues
+            if(NOT APPLE)
+                list(APPEND DEFAULT_CUDA_ARCH "70")
+            endif()
         endif()
         set(CUDA_ARCH "${DEFAULT_CUDA_ARCH}" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
 
