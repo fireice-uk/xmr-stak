@@ -51,6 +51,7 @@
 
 #ifdef _WIN32
 #	define strcasecmp _stricmp
+#	include <windows.h>
 #endif // _WIN32
 
 void do_benchmark();
