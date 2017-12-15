@@ -187,24 +187,24 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 		return 0;
 	}
 
-	cudaDeviceReset();
+	CUDA_CHECK(ctx->device_id, cudaDeviceReset());
 	switch(ctx->syncMode)
 	{
 	case 0:
-		cudaSetDeviceFlags(cudaDeviceScheduleAuto);
+		CUDA_CHECK(ctx->device_id, cudaSetDeviceFlags(cudaDeviceScheduleAuto));
 		break;
 	case 1:
-		cudaSetDeviceFlags(cudaDeviceScheduleSpin);
+		CUDA_CHECK(ctx->device_id, cudaSetDeviceFlags(cudaDeviceScheduleSpin));
 		break;
 	case 2:
-		cudaSetDeviceFlags(cudaDeviceScheduleYield);
+		CUDA_CHECK(ctx->device_id, cudaSetDeviceFlags(cudaDeviceScheduleYield));
 		break;
 	case 3:
-		cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync);
+		CUDA_CHECK(ctx->device_id, cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync));
 		break;
 
 	};
-	cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
+	CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
 
 	size_t hashMemSize;
 	if(::jconf::inst()->IsCurrencyMonero())
@@ -463,9 +463,9 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		size_t totalMemory = 0;
 		CUDA_CHECK(ctx->device_id, cudaMemGetInfo(&freeMemory, &totalMemory));
 
-		cudaFree(tmp);
+		CUDA_CHECK(ctx->device_id, cudaFree(tmp));
 		// delete created context on the gpu
-		cudaDeviceReset();
+		CUDA_CHECK(ctx->device_id, cudaDeviceReset());
 		
 		ctx->total_device_memory = totalMemory;
 		ctx->free_device_memory = freeMemory;
