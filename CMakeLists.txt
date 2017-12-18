@@ -228,7 +228,7 @@ if(OpenCL_ENABLE)
             ENV AMDAPPSDKROOT
             ENV ATISTREAMSDKROOT
             ENV "PROGRAMFILES(X86)"
-	    /usr
+            /usr
         PATH_SUFFIXES
             include
             OpenCL/common/inc
@@ -247,7 +247,7 @@ if(OpenCL_ENABLE)
         PATH_SUFFIXES
             "AMD APP/lib/x86_64"
             lib/x86_64
-	    lib/x86_64-linux-gnu
+            lib/x86_64-linux-gnu
             lib/x64
             OpenCL/common/lib/x64)
     # find package will use the previews searched path variables
