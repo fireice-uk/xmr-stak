@@ -228,7 +228,7 @@ if(OpenCL_ENABLE)
             ENV AMDAPPSDKROOT
             ENV ATISTREAMSDKROOT
             ENV "PROGRAMFILES(X86)"
-	    /usr/include
+	    /usr
         PATH_SUFFIXES
             include
             OpenCL/common/inc
