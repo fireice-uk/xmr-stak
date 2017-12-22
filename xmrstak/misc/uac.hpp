@@ -1,4 +1,9 @@
 #pragma once
+
+#ifdef _WIN32
+#include "xmrstak/misc/console.hpp"
+
+#include <string>
 #include <windows.h>
 
 BOOL IsElevated() 
@@ -17,18 +22,18 @@ BOOL IsElevated()
 	return fRet;
 }
 
-BOOL SelfElevate(const char* my_path)
+BOOL SelfElevate(const char* my_path, const std::string& params)
 {
 	if (IsElevated())
 		return FALSE;
 
 	SHELLEXECUTEINFO shExecInfo = { 0 };
 	shExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
-	shExecInfo.fMask = NULL;
+	shExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
 	shExecInfo.hwnd = NULL;
 	shExecInfo.lpVerb = "runas";
 	shExecInfo.lpFile = my_path;
-	shExecInfo.lpParameters = NULL;
+	shExecInfo.lpParameters = params.c_str();
 	shExecInfo.lpDirectory = NULL;
 	shExecInfo.nShow = SW_SHOW;
 	shExecInfo.hInstApp = NULL;
@@ -36,9 +41,11 @@ BOOL SelfElevate(const char* my_path)
 	if (!ShellExecuteEx(&shExecInfo))
 		return FALSE;
 
-	// Hide our window and loiter in the background to make scripting easier
-	// ShowWindow(GetConsoleWindow(), SW_HIDE);
-	// WaitForSingleObject(shExecInfo.hProcess, INFINITE);
+	// Loiter in the background to make scripting easier
+	printer::inst()->print_msg(L0, "This window has been opened because xmr-stak needed to run as administrator.  It can be safely closed now.");
+	WaitForSingleObject(shExecInfo.hProcess, INFINITE);
+	std::exit(0);
 
 	return TRUE;
 }
+#endif

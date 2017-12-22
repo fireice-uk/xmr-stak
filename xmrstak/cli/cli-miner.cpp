@@ -52,6 +52,7 @@
 #ifdef _WIN32
 #	define strcasecmp _stricmp
 #	include <windows.h>
+#	include "xmrstak/misc/uac.hpp"
 #endif // _WIN32
 
 void do_benchmark();
@@ -309,41 +310,6 @@ void do_guided_config()
 	std::cout<<"Configuration stored in file '"<<params::inst().configFile<<"'"<<std::endl;
 }
 
-#ifdef _WIN32
-/** start the miner as administrator
- *
- * This function based on the stackoverflow post
- *   - source: https://stackoverflow.com/a/4893508
- *   - author: Cody Gray
- *   - date: Feb 4 '11
- */
-void UACDialog(const std::string& binaryName, std::string& args)
-{
-		args += " --noUAC";
-		SHELLEXECUTEINFO shExInfo = {0};
-		shExInfo.cbSize = sizeof(shExInfo);
-		shExInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
-		shExInfo.hwnd = 0;
-		shExInfo.lpVerb = "runas";     
-		shExInfo.lpFile = binaryName.c_str();
-		// disable UAC dialog (else the miner will go into a infinite loop)
-		shExInfo.lpParameters = args.c_str();
-		shExInfo.lpDirectory = 0;
-		shExInfo.nShow = SW_SHOW;
-		shExInfo.hInstApp = 0;
-		
-		if(ShellExecuteEx(&shExInfo))
-		{
-			printer::inst()->print_msg(L0,
-				"This window has been opened because xmr-stak needed to run as administrator.  It can be safely closed now.");
-			WaitForSingleObject(shExInfo.hProcess, INFINITE);
-			CloseHandle(shExInfo.hProcess);
-			// do not start the miner twice
-			std::exit(0);
-		}
-}
-#endif
-
 int main(int argc, char *argv[])
 {
 #ifndef CONF_NO_TLS
@@ -551,7 +517,7 @@ int main(int argc, char *argv[])
 	}
 
 #ifdef _WIN32
-	if(uacDialog)
+	if(uacDialog && !IsElevated())
 	{
 		std::string minerArgs;
 		for(int i = 1; i < argc; i++)
@@ -560,7 +526,7 @@ int main(int argc, char *argv[])
 			minerArgs += argv[i];
 		}
 
-		UACDialog(argv[0], minerArgs);
+		SelfElevate(argv[0], minerArgs);
 	}
 #endif
 	
