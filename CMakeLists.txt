@@ -108,7 +108,11 @@ if(CUDA_ENABLE)
         endif()
         # add Volta support for CUDA >= 9.0
         if(NOT CUDA_VERSION VERSION_LESS 9.0)
-            list(APPEND DEFAULT_CUDA_ARCH "70")
+            # Volta GPUs are currently not supported on MACOSX
+            # https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#cuda-general-known-issues
+            if(NOT APPLE)
+                list(APPEND DEFAULT_CUDA_ARCH "70")
+            endif()
         endif()
         set(CUDA_ARCH "${DEFAULT_CUDA_ARCH}" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
 
@@ -191,7 +195,9 @@ if(CUDA_ENABLE)
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" "-D_MWAITXINTRIN_H_INCLUDED")
             endif()
 
-            if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND CUDA_VERSION VERSION_EQUAL 9.0)
+            if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND
+                (CUDA_VERSION VERSION_EQUAL 9.0 OR CUDA_VERSION VERSION_EQUAL 9.1)
+            )
                 # workaround find_package(CUDA) is using the wrong path to the CXX host compiler
                 # overwrite the CUDA host compiler variable with the used CXX MSVC
                 set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE FILEPATH "Host side compiler used by NVCC" FORCE)
@@ -228,6 +234,7 @@ if(OpenCL_ENABLE)
             ENV AMDAPPSDKROOT
             ENV ATISTREAMSDKROOT
             ENV "PROGRAMFILES(X86)"
+            /usr
         PATH_SUFFIXES
             include
             OpenCL/common/inc
@@ -246,6 +253,7 @@ if(OpenCL_ENABLE)
         PATH_SUFFIXES
             "AMD APP/lib/x86_64"
             lib/x86_64
+            lib/x86_64-linux-gnu
             lib/x64
             OpenCL/common/lib/x64)
     # find package will use the previews searched path variables
@@ -435,7 +443,9 @@ if(CMAKE_LINK_STATIC)
     set(BUILD_SHARED_LIBRARIES OFF)
     set(DL_LIB ${CMAKE_DL_LIBS})
     set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-    set(LIBS "-static-libgcc -static-libstdc++ ${LIBS}")
+    if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR ${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
+        set(LIBS "-static-libgcc -static-libstdc++ ${LIBS}")
+    endif()
 endif()
 
 # compile C files

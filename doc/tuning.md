@@ -1,7 +1,7 @@
 # Tuning Guide
 
 ## Content Overview
-* [Windows](windows)
+* [Windows](#windows)
 * [NVIDIA Backend](#nvidia-backend)
   * [Choose Value for `threads` and `blocks`](#choose-value-for-threads-and-blocks)
   * [Add more GPUs](#add-more-gpus)

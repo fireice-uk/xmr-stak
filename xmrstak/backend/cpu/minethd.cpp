@@ -427,8 +427,7 @@ void minethd::work_main()
 		{
 			if ((iCount++ & 0xF) == 0) //Store stats every 16 hashes
 			{
-				using namespace std::chrono;
-				uint64_t iStamp = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
+				uint64_t iStamp = get_timestamp_ms();
 				iHashCount.store(iCount, std::memory_order_relaxed);
 				iTimestamp.store(iStamp, std::memory_order_relaxed);
 			}
@@ -614,8 +613,7 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 		{
 			if ((iCount++ & 0x7) == 0)  //Store stats every 8*N hashes
 			{
-				using namespace std::chrono;
-				uint64_t iStamp = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
+				uint64_t iStamp = get_timestamp_ms();
 				iHashCount.store(iCount * N, std::memory_order_relaxed);
 				iTimestamp.store(iStamp, std::memory_order_relaxed);
 			}

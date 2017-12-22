@@ -51,6 +51,8 @@
 
 #ifdef _WIN32
 #	define strcasecmp _stricmp
+#	include <windows.h>
+#	include "xmrstak/misc/uac.hpp"
 #endif // _WIN32
 
 void do_benchmark();
@@ -308,41 +310,6 @@ void do_guided_config()
 	std::cout<<"Configuration stored in file '"<<params::inst().configFile<<"'"<<std::endl;
 }
 
-#ifdef _WIN32
-/** start the miner as administrator
- *
- * This function based on the stackoverflow post
- *   - source: https://stackoverflow.com/a/4893508
- *   - author: Cody Gray
- *   - date: Feb 4 '11
- */
-void UACDialog(const std::string& binaryName, std::string& args)
-{
-		args += " --noUAC";
-		SHELLEXECUTEINFO shExInfo = {0};
-		shExInfo.cbSize = sizeof(shExInfo);
-		shExInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
-		shExInfo.hwnd = 0;
-		shExInfo.lpVerb = "runas";     
-		shExInfo.lpFile = binaryName.c_str();
-		// disable UAC dialog (else the miner will go into a infinite loop)
-		shExInfo.lpParameters = args.c_str();
-		shExInfo.lpDirectory = 0;
-		shExInfo.nShow = SW_SHOW;
-		shExInfo.hInstApp = 0;
-		
-		if(ShellExecuteEx(&shExInfo))
-		{
-			printer::inst()->print_msg(L0,
-				"This window has been opened because xmr-stak needed to run as administrator.  It can be safely closed now.");
-			WaitForSingleObject(shExInfo.hProcess, INFINITE);
-			CloseHandle(shExInfo.hProcess);
-			// do not start the miner twice
-			std::exit(0);
-		}
-}
-#endif
-
 int main(int argc, char *argv[])
 {
 #ifndef CONF_NO_TLS
@@ -550,7 +517,7 @@ int main(int argc, char *argv[])
 	}
 
 #ifdef _WIN32
-	if(uacDialog)
+	if(uacDialog && !IsElevated())
 	{
 		std::string minerArgs;
 		for(int i = 1; i < argc; i++)
@@ -559,7 +526,7 @@ int main(int argc, char *argv[])
 			minerArgs += argv[i];
 		}
 
-		UACDialog(argv[0], minerArgs);
+		SelfElevate(argv[0], minerArgs);
 	}
 #endif
 	
@@ -619,9 +586,7 @@ int main(int argc, char *argv[])
 
 	executor::inst()->ex_start(jconf::inst()->DaemonMode());
 
-	using namespace std::chrono;
-	uint64_t lastTime = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
-
+	uint64_t lastTime = get_timestamp_ms();
 	int key;
 	while(true)
 	{
@@ -642,7 +607,7 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		uint64_t currentTime = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
+		uint64_t currentTime = get_timestamp_ms();
 
 		/* Hard guard to make sure we never get called more than twice per second */
 		if( currentTime - lastTime < 500)
@@ -664,7 +629,7 @@ void do_benchmark()
 	xmrstak::miner_work oWork = xmrstak::miner_work("", work, sizeof(work), 0, false, 0);
 	pvThreads = xmrstak::BackendConnector::thread_starter(oWork);
 
-	uint64_t iStartStamp = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
+	uint64_t iStartStamp = get_timestamp_ms();
 
 	std::this_thread::sleep_for(std::chrono::seconds(60));
 
