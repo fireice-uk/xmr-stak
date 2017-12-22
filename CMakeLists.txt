@@ -443,7 +443,9 @@ if(CMAKE_LINK_STATIC)
     set(BUILD_SHARED_LIBRARIES OFF)
     set(DL_LIB ${CMAKE_DL_LIBS})
     set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-    set(LIBS "-static-libgcc -static-libstdc++ ${LIBS}")
+    if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR ${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
+        set(LIBS "-static-libgcc -static-libstdc++ ${LIBS}")
+    endif()
 endif()
 
 # compile C files
