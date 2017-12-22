@@ -249,8 +249,7 @@ void minethd::work_main()
 			}
 
 			iCount += pGpuCtx->rawIntensity;
-			using namespace std::chrono;
-			uint64_t iStamp = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
+			uint64_t iStamp = get_timestamp_ms();
 			iHashCount.store(iCount, std::memory_order_relaxed);
 			iTimestamp.store(iStamp, std::memory_order_relaxed);
 			std::this_thread::yield();
