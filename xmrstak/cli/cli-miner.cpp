@@ -586,9 +586,7 @@ int main(int argc, char *argv[])
 
 	executor::inst()->ex_start(jconf::inst()->DaemonMode());
 
-	using namespace std::chrono;
-	uint64_t lastTime = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
-
+	uint64_t lastTime = get_timestamp_ms();
 	int key;
 	while(true)
 	{
@@ -609,7 +607,7 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		uint64_t currentTime = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
+		uint64_t currentTime = get_timestamp_ms();
 
 		/* Hard guard to make sure we never get called more than twice per second */
 		if( currentTime - lastTime < 500)
@@ -631,7 +629,7 @@ void do_benchmark()
 	xmrstak::miner_work oWork = xmrstak::miner_work("", work, sizeof(work), 0, false, 0);
 	pvThreads = xmrstak::BackendConnector::thread_starter(oWork);
 
-	uint64_t iStartStamp = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
+	uint64_t iStartStamp = get_timestamp_ms();
 
 	std::this_thread::sleep_for(std::chrono::seconds(60));
 
