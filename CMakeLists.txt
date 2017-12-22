@@ -16,10 +16,6 @@ list(APPEND CMAKE_PREFIX_PATH "$ENV{CUDA_ROOT}")
 # allow user to extent CMAKE_PREFIX_PATH via environment variable
 list(APPEND CMAKE_PREFIX_PATH "$ENV{CMAKE_PREFIX_PATH}")
 
-################################################################################
-# CMake user options
-################################################################################
-
 # gcc 5.1 is the first GNU version without CoW strings
 # https://github.com/fireice-uk/xmr-stak-nvidia/pull/10#issuecomment-290821792
 # If you remove this guard to compile with older gcc versions the miner will produce
@@ -29,6 +25,66 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
         message(FATAL_ERROR "g++ version must be at least 5.1!")
     endif()
 endif()
+
+################################################################################
+# Compiler options
+################################################################################
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wall")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wextra")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Werror")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wdouble-promotion")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wmissing-include-dirs")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wunknown-pragmas")
+    # Higher levels (max is 5) produce some strange warnings
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wstrict-overflow=2")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wtrampolines")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wundef")
+    # currently not used be should be activated
+    #list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wshadow")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wcast-align")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wwrite-strings")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wsign-conversion")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wvector-operation-performance")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wdate-time")
+    list(APPEND XMRSTAK_CXX_COMPILE_OPTIONS "-Wuseless-cast")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wlogical-op")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wno-aggressive-loop-optimizations")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wno-multichar")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wopenmp-simd")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wpacked")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wdisabled-optimization")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wformat-nonliteral")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wformat-security")
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wformat-y2k")
+    list(APPEND XMRSTAK_CXX_COMPILE_OPTIONS "-Wctor-dtor-privacy")
+    list(APPEND XMRSTAK_CXX_COMPILE_OPTIONS "-Wdelete-non-virtual-dtor")
+    list(APPEND XMRSTAK_CXX_COMPILE_OPTIONS "-Wliteral-suffix")
+    list(APPEND XMRSTAK_CXX_COMPILE_OPTIONS "-Wnon-virtual-dtor")
+    list(APPEND XMRSTAK_CXX_COMPILE_OPTIONS "-Woverloaded-virtual")
+    list(APPEND XMRSTAK_CXX_COMPILE_OPTIONS "-Wsign-promo")
+    list(APPEND XMRSTAK_CXX_COMPILE_OPTIONS "-Wnoexcept")
+    if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
+        list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wsuggest-final-types")
+        list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wsuggest-final-methods")
+        list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wnormalized")
+        list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wformat-signedness")
+    endif()
+    if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.0)
+        list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wnull-dereference")
+        list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wduplicated-cond")
+        list(APPEND XMRSTAK_COMPILE_OPTIONS "-Wsubobject-linkage")
+    endif()
+    string(REPLACE ";" "," XMRSTAK_COMPILE_OPTIONS_GPU "${XMRSTAK_COMPILE_OPTIONS}")
+
+    # can not be used with cuda
+    list(APPEND XMRSTAK_COMPILE_OPTIONS "-pedantic")
+endif()
+
+################################################################################
+# CMake user options
+################################################################################
 
 set(BUILD_TYPE "Release;Debug")
 if(NOT CMAKE_BUILD_TYPE)
@@ -189,7 +245,7 @@ if(CUDA_ENABLE)
             if(CUDA_KEEP_FILES)
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" --keep --keep-dir "${PROJECT_BINARY_DIR}")
             endif(CUDA_KEEP_FILES)
-        
+
             if(CUDA_VERSION VERSION_LESS 8.0)
                 # for CUDA 7.5 fix compile error: https://github.com/fireice-uk/xmr-stak/issues/34
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" "-D_MWAITXINTRIN_H_INCLUDED")
@@ -202,6 +258,7 @@ if(CUDA_ENABLE)
                 # overwrite the CUDA host compiler variable with the used CXX MSVC
                 set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE FILEPATH "Host side compiler used by NVCC" FORCE)
             endif()
+            set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" "-Xcompiler ${XMRSTAK_COMPILE_OPTIONS_GPU}")
         else()
             message(FATAL_ERROR "selected CUDA compiler '${CUDA_COMPILER}' is not supported")
         endif()
@@ -241,7 +298,7 @@ if(OpenCL_ENABLE)
             "AMD APP/include")
 
     find_library(OpenCL_LIBRARY
-        NAMES 
+        NAMES
             OpenCL
             OpenCL.lib
         NO_DEFAULT_PATH
@@ -455,6 +512,7 @@ add_library(xmr-stak-c
     STATIC
     ${SRCFILES_C}
 )
+#target_compile_options(xmr-stak-c PRIVATE ${XMRSTAK_COMPILE_OPTIONS})
 set_property(TARGET xmr-stak-c PROPERTY C_STANDARD 99)
 if(MICROHTTPD_ENABLE)
     target_link_libraries(xmr-stak-c ${MHTD})
@@ -475,11 +533,13 @@ add_library(xmr-stak-backend
     STATIC
     ${BACKEND_CPP}
 )
+target_compile_options(xmr-stak-backend PRIVATE ${XMRSTAK_COMPILE_OPTIONS})
+target_compile_options(xmr-stak-backend PRIVATE ${XMRSTAK_CXX_COMPILE_OPTIONS})
 target_link_libraries(xmr-stak-backend xmr-stak-c ${CMAKE_DL_LIBS})
 
 # compile CUDA backend
 if(CUDA_FOUND)
-    file(GLOB CUDASRCFILES 
+    file(GLOB CUDASRCFILES
         "xmrstak/backend/nvidia/nvcc_code/*.cu"
         "xmrstak/backend/nvidia/*.cpp")
 
@@ -507,13 +567,15 @@ endif()
 
 # compile AMD backend
 if(OpenCL_FOUND)
-    file(GLOB OPENCLSRCFILES  
+    file(GLOB OPENCLSRCFILES
         "xmrstak/backend/amd/amd_gpu/*.cpp"
         "xmrstak/backend/amd/*.cpp")
     add_library(xmrstak_opencl_backend
         SHARED
         ${OPENCLSRCFILES}
     )
+    target_compile_options(xmrstak_opencl_backend PRIVATE ${XMRSTAK_COMPILE_OPTIONS})
+    target_compile_options(xmrstak_opencl_backend PRIVATE ${XMRSTAK_CXX_COMPILE_OPTIONS})
     target_link_libraries(xmrstak_opencl_backend ${OpenCL_LIBRARY} )
     target_link_libraries(xmrstak_opencl_backend xmr-stak-backend)
 endif()
@@ -527,6 +589,9 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 else()
     add_executable(xmr-stak ${SRCFILES_CPP})
 endif()
+
+target_compile_options(xmr-stak PRIVATE ${XMRSTAK_CXX_COMPILE_OPTIONS})
+target_compile_options(xmr-stak PRIVATE ${XMRSTAK_COMPILE_OPTIONS})
 
 set(EXECUTABLE_OUTPUT_PATH "bin")
 set(LIBRARY_OUTPUT_PATH "bin")
