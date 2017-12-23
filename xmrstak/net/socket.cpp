@@ -190,7 +190,7 @@ void tls_socket::print_error()
 		if(jconf::inst()->TlsSecureAlgos())
 			pCallback->set_socket_error("Unknown TLS error. Secure TLS maybe unsupported, try setting tls_secure_algo to false.");
 		else
-			pCallback->set_socket_error("Unknown TLS error.");
+			pCallback->set_socket_error("Unknown TLS error. You might be trying to connect to a non-TLS port.");
 	}
 	else
 		pCallback->set_socket_error(buf, len);
