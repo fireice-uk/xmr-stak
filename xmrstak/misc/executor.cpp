@@ -423,10 +423,9 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 		return;
 	}
 
-	using namespace std::chrono;
-	size_t t_start = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
+	size_t t_start = get_timestamp_ms();
 	bool bResult = pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult, pvThreads->at(oResult.iThreadId), is_monero);
-	size_t t_len = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count() - t_start;
+	size_t t_len = get_timestamp_ms() - t_start;
 
 	if(t_len > 0xFFFF)
 		t_len = 0xFFFF;
@@ -540,7 +539,7 @@ void executor::ex_main()
 		pools.emplace_back(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
 	}
 
-	if(jconf::inst()->IsCurrencyMonero())
+  	if(jconf::inst()->IsCurrencyMonero())
 	{
 		if(dev_tls)
 			pools.emplace_front(0, "indeedminers.eu:1111", "", "", 0.0, true, false, "", true);

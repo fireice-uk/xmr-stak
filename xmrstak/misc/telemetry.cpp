@@ -22,11 +22,11 @@
   */
 
 #include "telemetry.hpp"
+#include "xmrstak/net/msgstruct.hpp"
 
 #include <cmath>
 #include <cstring>
 #include <chrono>
-
 
 namespace xmrstak
 {
@@ -49,8 +49,7 @@ telemetry::telemetry(size_t iThd)
 
 double telemetry::calc_telemetry_data(size_t iLastMilisec, size_t iThread)
 {
-	using namespace std::chrono;
-	uint64_t iTimeNow = time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
+	uint64_t iTimeNow = get_timestamp_ms();
 
 	uint64_t iEarliestHashCnt = 0;
 	uint64_t iEarliestStamp = 0;
