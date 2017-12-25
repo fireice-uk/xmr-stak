@@ -317,10 +317,9 @@ void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_c
 
 		_mm_store_si128((__m128i *)&l0[idx0 & MASK], _mm_xor_si128(bx0, cx));
 		idx0 = _mm_cvtsi128_si64(cx);
-		bx0 = cx;
-
 		if(PREFETCH)
 			_mm_prefetch((const char*)&l0[idx0 & MASK], _MM_HINT_T0);
+		bx0 = cx;
 
 		uint64_t hi, lo, cl, ch;
 		cl = ((uint64_t*)&l0[idx0 & MASK])[0];
@@ -329,15 +328,15 @@ void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_c
 		lo = _umul128(idx0, cl, &hi);
 
 		al0 += hi;
-		ah0 += lo;
 		((uint64_t*)&l0[idx0 & MASK])[0] = al0;
+		al0 ^= cl;
+		if(PREFETCH)
+			_mm_prefetch((const char*)&l0[al0 & MASK], _MM_HINT_T0);
+		ah0 += lo;
 		((uint64_t*)&l0[idx0 & MASK])[1] = ah0;
 		ah0 ^= ch;
-		al0 ^= cl;
-		idx0 = al0;
 
-		if(PREFETCH)
-			_mm_prefetch((const char*)&l0[idx0 & MASK], _MM_HINT_T0);
+		idx0 = al0;
 	}
 
 	// Optim - 90% time boundary
