@@ -28,8 +28,8 @@ XMR-Stak is a universal Stratum pool miner. This miner supports CPUs, AMD and NV
   - auto configuration for each backend
 - open source software (GPLv3)
 - TLS support
-- HTML statistics
-- JSON API for monitoring
+- [HTML statistics](doc/usage.md#html-and-json-api-report-configuraton)
+- [JSON API for monitoring](doc/usage.md#html-and-json-api-report-configuraton)
 
 ## Supported altcoins
 
