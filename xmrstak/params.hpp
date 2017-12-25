@@ -38,6 +38,10 @@ struct params
 	std::string configFileNVIDIA;
 	std::string configFileCPU;
 
+	bool allowUAC = true;
+	std::string minerArg0;
+	std::string minerArgs;
+
 	params() :
 		binaryName("xmr-stak"),
 		executablePrefix(""),

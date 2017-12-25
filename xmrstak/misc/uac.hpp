@@ -2,6 +2,7 @@
 
 #ifdef _WIN32
 #include "xmrstak/misc/console.hpp"
+#include "xmrstak/params.hpp"
 
 #include <string>
 #include <windows.h>
@@ -22,7 +23,7 @@ BOOL IsElevated()
 	return fRet;
 }
 
-BOOL SelfElevate(const char* my_path, const std::string& params)
+BOOL SelfElevate(const std::string& my_path, const std::string& params)
 {
 	if (IsElevated())
 		return FALSE;
@@ -32,7 +33,7 @@ BOOL SelfElevate(const char* my_path, const std::string& params)
 	shExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
 	shExecInfo.hwnd = NULL;
 	shExecInfo.lpVerb = "runas";
-	shExecInfo.lpFile = my_path;
+	shExecInfo.lpFile = my_path.c_str();
 	shExecInfo.lpParameters = params.c_str();
 	shExecInfo.lpDirectory = NULL;
 	shExecInfo.nShow = SW_SHOW;
@@ -47,5 +48,20 @@ BOOL SelfElevate(const char* my_path, const std::string& params)
 	std::exit(0);
 
 	return TRUE;
+}
+
+VOID RequestElevation()
+{
+	if(IsElevated())
+		return;
+
+	if(!xmrstak::params::inst().allowUAC)
+	{
+		printer::inst()->print_msg(L0, "The miner needs to run as administrator, but you passed --noUAC option. Please remove it or set use_slow_memory to always.");
+		win_exit();
+		return;
+	}
+
+	SelfElevate(xmrstak::params::inst().minerArg0, xmrstak::params::inst().minerArgs);
 }
 #endif
