@@ -159,7 +159,7 @@ POOLCONF],
  *
  * httpd_port - Port we should listen on. Default, 0, will switch off the server.
  */
-"httpd_port" : 0,
+"httpd_port" : HTTP_PORT,
 
 /*
  * HTTP Authentication
