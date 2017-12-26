@@ -31,6 +31,7 @@ extern "C"
 #include "cryptonight.h"
 #include "cryptonight_aesni.h"
 #include "xmrstak/backend/cryptonight.hpp"
+#include "xmrstak/misc/console.hpp"
 #include "xmrstak/jconf.hpp"
 #include <stdio.h>
 #include <stdlib.h>
@@ -178,6 +179,7 @@ size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 
 	if(AddPrivilege(TEXT("SeLockMemoryPrivilege")) == 0)
 	{
+		printer::inst()->print_msg(L0, "Elevating because we need to set up fast memory privileges.");
 		RequestElevation();
 
 		if(AddLargePageRights())

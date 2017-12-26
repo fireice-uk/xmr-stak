@@ -64,4 +64,16 @@ VOID RequestElevation()
 
 	SelfElevate(xmrstak::params::inst().minerArg0, xmrstak::params::inst().minerArgs);
 }
+
+BOOL IsWindows10OrNewer()
+{
+    OSVERSIONINFOEX osvi = { 0 };
+    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    osvi.dwMajorVersion = 10;
+    osvi.dwMinorVersion = 0;
+    DWORDLONG dwlConditionMask = 0;
+    VER_SET_CONDITION(dwlConditionMask, VER_MAJORVERSION, VER_GREATER_EQUAL);
+    VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
+    return ::VerifyVersionInfo(&osvi, VER_MAJORVERSION | VER_MINORVERSION, dwlConditionMask);
+}
 #endif
