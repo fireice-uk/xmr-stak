@@ -368,7 +368,14 @@ int main(int argc, char *argv[])
 		params::inst().executablePrefix += seperator;
 	}
 
-	bool uacDialog = true;
+	params::inst().minerArg0 = argv[0];
+	params::inst().minerArgs.reserve(argc * 16);
+	for(int i = 1; i < argc; i++)
+	{
+		params::inst().minerArgs += " ";
+		params::inst().minerArgs += argv[i];
+	}
+
 	bool pool_url_set = false;
 	for(size_t i = 1; i < argc-1; i++)
 	{
@@ -554,7 +561,7 @@ int main(int argc, char *argv[])
 		}
 		else if(opName.compare("--noUAC") == 0)
 		{
-			uacDialog = false;
+			params::inst().allowUAC = false;
 		}
 		else
 		{
@@ -564,20 +571,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-#ifdef _WIN32
-	if(uacDialog && !IsElevated())
-	{
-		std::string minerArgs;
-		for(int i = 1; i < argc; i++)
-		{
-			minerArgs += " ";
-			minerArgs += argv[i];
-		}
-
-		SelfElevate(argv[0], minerArgs);
-	}
-#endif
-	
 	// check if we need a guided start
 	if(!configEditor::file_exist(params::inst().configFile))
 		do_guided_config();
@@ -587,6 +580,15 @@ int main(int argc, char *argv[])
 		win_exit();
 		return 1;
 	}
+
+#ifdef _WIN32
+	/* For Windows 7 and 8 request elevation at all times unless we are using slow memory */
+	if(jconf::inst()->GetSlowMemSetting() != jconf::slow_mem_cfg::always_use && !IsWindows10OrNewer())
+	{
+		printer::inst()->print_msg(L0, "Elevating due to Windows 7 or 8. You need Windows 10 to use fast memory without UAC elevation.");
+		RequestElevation();
+	}
+#endif
 
 	if (!BackendConnector::self_test())
 	{
