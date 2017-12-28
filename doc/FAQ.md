@@ -11,8 +11,6 @@
 
 ## "Obtaining SeLockMemoryPrivilege failed."
 
-Please see [config.txt](config.txt) under section **LARGE PAGE SUPPORT**
-
 For professional versions of Windows see [this article](https://msdn.microsoft.com/en-gb/library/ms190730.aspx).
 Make sure to reboot afterwards!
 
