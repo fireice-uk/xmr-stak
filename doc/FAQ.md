@@ -1,7 +1,7 @@
 # FAQ
 
 ## Content Overview
-* [SeLockMemoryPrivilege failed](#selockmemoryprivilege-failed)
+* ["Obtaining SeLockMemoryPrivilege failed."](#obtaining-selockmemoryprivilege-failed)
 * [VirtualAlloc failed](#virtualalloc-failed)
 * [Error msvcp140.dll and vcruntime140.dll not available](#error-msvcp140dll-and-vcruntime140dll-not-available)
 * [Error: MEMORY ALLOC FAILED: mmap failed](#error-memory-alloc-failed-mmap-failed)
@@ -9,23 +9,26 @@
 * [Virus Protection Alert](#virus-protection-alert)
 * [Change Currency to Mine](#change-currency-to-mine)
 
-## SeLockMemoryPrivilege failed
+## "Obtaining SeLockMemoryPrivilege failed."
 
 Please see [config.txt](config.txt) under section **LARGE PAGE SUPPORT**
 
-For Windows 7 pro, or Windows 8 and above see [this article](https://msdn.microsoft.com/en-gb/library/ms190730.aspx)  (make sure to reboot afterwards!).
+For professional versions of Windows see [this article](https://msdn.microsoft.com/en-gb/library/ms190730.aspx).
+Make sure to reboot afterwards!
 
-For Windows 7 Home :
+For Windows 7/10 Home:
 
-1) Download and install [Windows Server 2003 Resource Kit Tools](https://www.microsoft.com/en-us/download/details.aspx?id=17657).  Ignore incompatiablity warning during installation.
+1) Download and install [Windows Server 2003 Resource Kit Tools](https://www.microsoft.com/en-us/download/details.aspx?id=17657). Ignore any incompatibility warning during installation.
 
-2) In cmd or power shell: `ntrights -u %USERNAME% +r SeLockMemoryPrivilege`  (where %USERNAME% is the user that will be running the program.  This command needs to be run as admin)
+2) Open cmd or PowerShell as an administrator.
 
-3) Reboot.
+3) Use `ntrights -u %USERNAME% +r SeLockMemoryPrivilege` where %USERNAME% is the user that will be running the program.
+
+4) Reboot.
 
 Reference: http://rybkaforum.net/cgi-bin/rybkaforum/topic_show.pl?pid=259791#pid259791
 
-*Warning: do not download ntrights.exe from any other site other then the offical Microsoft download page.*
+*Warning: Do not download ntrights.exe from any other site other than the offical Microsoft download page.*
 
 ## VirtualAlloc failed
 
