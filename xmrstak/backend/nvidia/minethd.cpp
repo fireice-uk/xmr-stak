@@ -76,7 +76,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 	ctx.device_blocks = (int)cfg.blocks;
 	ctx.device_threads = (int)cfg.threads;
 	ctx.device_bfactor = (int)cfg.bfactor;
-	ctx.device_bsleep = (int)cfg.bsleep;
+	ctx.device_bsleep = cfg.bsleep;
 	ctx.syncMode = cfg.syncMode;
 	this->affinity = cfg.cpu_aff;
 

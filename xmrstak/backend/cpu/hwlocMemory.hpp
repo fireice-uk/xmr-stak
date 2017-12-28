@@ -7,6 +7,6 @@
  * Set the default memory policy for the current thread to bind memory to the
  * NUMA node.
  *
- * @param puId core id
+ * @param core_id id of the core to which the memory should be pinned
  */
-void bindMemoryToNUMANode( size_t puId );
+void bindMemoryToNUMANode( int core_id );

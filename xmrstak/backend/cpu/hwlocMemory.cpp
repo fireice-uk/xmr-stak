@@ -11,11 +11,17 @@
  * Set the default memory policy for the current thread to bind memory to the
  * NUMA node.
  *
- * @param puId core id
+ * @param core_id id of the core to which the memory should be pinned
  */
-void bindMemoryToNUMANode( size_t puId )
+void bindMemoryToNUMANode( int core_id )
 {
-	int depth;
+
+	if(core_id < 0)
+	{
+		printer::inst()->print_msg(L0, "hwloc: WARNING bindMemoryToNUMANode called with negative core id");
+		return;
+	}
+	uint32_t puId = static_cast<uint32_t>(core_id);
 	hwloc_topology_t topology;
 
 	hwloc_topology_init(&topology);
@@ -28,9 +34,14 @@ void bindMemoryToNUMANode( size_t puId )
 		return;
 	}
 
-	depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PU);
+	uint32_t depth = 0u;
+	int returnedDepth = hwloc_get_type_depth(topology, HWLOC_OBJ_PU);
 
-	for( size_t i = 0;
+	// do not interpret error codes a size
+	if(returnedDepth >=0 )
+		depth = static_cast<uint32_t>(returnedDepth);
+
+	for( uint32_t i = 0u;
 		i < hwloc_get_nbobjs_by_depth(topology, depth);
 		i++ )
 	{
@@ -57,7 +68,7 @@ void bindMemoryToNUMANode( size_t puId )
 }
 #else
 
-void bindMemoryToNUMANode( size_t )
+void bindMemoryToNUMANode( int )
 {
 }
 

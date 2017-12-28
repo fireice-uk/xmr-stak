@@ -234,7 +234,7 @@ bool jpsock::jpsock_thd_main()
 		if(ret <= 0)
 			return false;
 
-		datalen += ret;
+		datalen += (size_t)ret;
 
 		if (datalen >= sizeof(buf))
 		{
@@ -247,7 +247,7 @@ bool jpsock::jpsock_thd_main()
 		while ((lnend = (char*)memchr(lnstart, '\n', datalen)) != nullptr)
 		{
 			lnend++;
-			int lnlen = lnend - lnstart;
+			size_t lnlen = (uint64_t)lnend - (uint64_t)lnstart;
 
 			if (!process_line(lnstart, lnlen))
 			{

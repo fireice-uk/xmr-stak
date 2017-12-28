@@ -20,6 +20,11 @@ struct uint3  blockDim;
 #define __shfl(a,b,c) 1
 #endif
 
+#ifndef __CUDA_ARCH__
+// define cuda arch for the host path
+#	define __CUDA_ARCH__ 0
+#endif
+
 #define AES_BLOCK_SIZE  16
 #define AES_KEY_SIZE    32
 #define INIT_SIZE_BLK   8

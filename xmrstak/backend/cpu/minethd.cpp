@@ -70,10 +70,18 @@ namespace xmrstak
 namespace cpu
 {
 
-bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
+bool minethd::thd_setaffinity(std::thread::native_handle_type h, int32_t core_id)
 {
+	if(core_id < 0)
+		return false;
+
+	size_t cpu_id = static_cast<size_t>(core_id);
 #if defined(_WIN32)
-	return SetThreadAffinityMask(h, 1ULL << cpu_id) != 0;
+	// we can only pin up to 64 threads
+	if(cpu_id < 64)
+		return SetThreadAffinityMask(h, 1ULL << cpu_id) != 0;
+	else
+		return false;
 #elif defined(__APPLE__)
 	thread_port_t mach_thread;
 	thread_affinity_policy_data_t policy = { static_cast<integer_t>(cpu_id) };
@@ -92,7 +100,7 @@ bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 #endif
 }
 
-minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity)
+minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int32_t affinity)
 {
 	this->backendType = iBackend::CPU;
 	oWork = pWork;
@@ -208,11 +216,11 @@ bool minethd::self_test()
 		return false;
 
 	cryptonight_ctx *ctx[MAX_N] = {0};
-	for (int i = 0; i < MAX_N; i++)
+	for (size_t i = 0; i < MAX_N; i++)
 	{
 		if ((ctx[i] = minethd_alloc_ctx()) == nullptr)
 		{
-			for (int j = 0; j < i; j++)
+			for (size_t j = 0u; j < i; j++)
 				cryptonight_free_ctx(ctx[j]);
 			return false;
 		}
@@ -223,7 +231,7 @@ bool minethd::self_test()
 	bool mineMonero = ::jconf::inst()->IsCurrencyMonero();
 	if(mineMonero)
 	{
-		unsigned char out[32 * MAX_N];
+		unsigned char out[32u * MAX_N];
 		cn_hash_fun hashf;
 		cn_hash_fun_multi hashf_multi;
 
@@ -267,7 +275,7 @@ bool minethd::self_test()
 				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 160) == 0;
 	}
 
-	for (int i = 0; i < MAX_N; i++)
+	for (size_t i = 0; i < MAX_N; i++)
 		cryptonight_free_ctx(ctx[i]);
 
 	if(!bResult)
@@ -310,7 +318,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 			printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory.");
 #endif
 
-			printer::inst()->print_msg(L1, "Starting %dx thread, affinity: %d.", cfg.iMultiway, (int)cfg.iCpuAff);
+			printer::inst()->print_msg(L1, "Starting %dx thread, affinity: %d.", cfg.iMultiway, cfg.iCpuAff);
 		}
 		else
 			printer::inst()->print_msg(L1, "Starting %dx thread, no affinity.", cfg.iMultiway);
@@ -570,7 +578,7 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 	uint32_t *piNonce[MAX_N];
 	uint8_t bHashOut[MAX_N * 32];
 	uint8_t bWorkBlob[sizeof(miner_work::bWorkBlob) * MAX_N];
-	uint32_t iNonce;
+	uint32_t iNonce = 0u;
 	job_result res;
 
 	for (size_t i = 0; i < N; i++)
@@ -618,7 +626,7 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 				iTimestamp.store(iStamp, std::memory_order_relaxed);
 			}
 
-			nonce_ctr -= N;
+			nonce_ctr -= static_cast<int64_t>(N);
 			if(nonce_ctr <= 0)
 			{
 				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, nonce_chunk);
@@ -645,7 +653,7 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 		prep_multiway_work<N>(bWorkBlob, piNonce);
 	}
 
-	for (int i = 0; i < N; i++)
+	for (size_t i = 0; i < N; i++)
 		cryptonight_free_ctx(ctx[i]);
 }
 

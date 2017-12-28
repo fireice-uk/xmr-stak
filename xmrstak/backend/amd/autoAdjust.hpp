@@ -117,9 +117,10 @@ private:
 			size_t maxIntensity = availableMem / perThread;
 			size_t possibleIntensity = std::min( maxThreads , maxIntensity );
 			// map intensity to a multiple of the compute unit count, 8 is the number of threads per work group
-			size_t intensity = (possibleIntensity / (8 * ctx.computeUnits)) * ctx.computeUnits * 8;
+			size_t compUnits = size_t(ctx.computeUnits);
+			size_t intensity = (possibleIntensity / (8u * compUnits)) * compUnits * 8u;
 			conf += std::string("  // gpu: ") + ctx.name + " memory:" + std::to_string(availableMem / byteToMiB) + "\n";
-			conf += std::string("  // compute units: ") + std::to_string(ctx.computeUnits) + "\n";
+			conf += std::string("  // compute units: ") + std::to_string(compUnits) + "\n";
 			// set 8 threads per block (this is a good value for the most gpus)
 			conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
 				"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +

@@ -90,9 +90,9 @@ __device__ __forceinline__ void cryptonight_aes_set_key( uint32_t * __restrict__
 	}
 }
 
-__global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restrict__ d_input, uint32_t len, uint32_t startNonce, uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_a, uint32_t * __restrict__ d_ctx_b, uint32_t * __restrict__ d_ctx_key1, uint32_t * __restrict__ d_ctx_key2 )
+__global__ void cryptonight_extra_gpu_prepare( uint32_t threads, uint32_t * __restrict__ d_input, uint32_t len, uint32_t startNonce, uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_a, uint32_t * __restrict__ d_ctx_b, uint32_t * __restrict__ d_ctx_key1, uint32_t * __restrict__ d_ctx_key2 )
 {
-	int thread = ( blockDim.x * blockIdx.x + threadIdx.x );
+	const uint32_t thread = ( blockDim.x * blockIdx.x + threadIdx.x );
 
 	if ( thread >= threads )
 		return;
@@ -123,9 +123,9 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
 	memcpy( d_ctx_key2 + thread * 40, ctx_key2, 40 * 4 );
 }
 
-__global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint32_t * __restrict__ d_res_nonce, uint32_t * __restrict__ d_ctx_state )
+__global__ void cryptonight_extra_gpu_final( uint32_t threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint32_t * __restrict__ d_res_nonce, uint32_t * __restrict__ d_ctx_state )
 {
-	const int thread = blockDim.x * blockIdx.x + threadIdx.x;
+	const uint32_t thread = blockDim.x * blockIdx.x + threadIdx.x;
 
 	if ( thread >= threads )
 		return;
@@ -216,7 +216,7 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 		hashMemSize = AEON_MEMORY;
 	}
 
-	size_t wsize = ctx->device_blocks * ctx->device_threads;
+	size_t wsize = (size_t)ctx->device_blocks * (size_t)ctx->device_threads;
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state, 50 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key1, 40 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key2, 40 * sizeof(uint32_t) * wsize));
@@ -235,10 +235,10 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 
 extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce)
 {
-	int threadsperblock = 128;
-	uint32_t wsize = ctx->device_blocks * ctx->device_threads;
+	uint32_t threadsperblock = 128u;
+	uint32_t wsize = (size_t)ctx->device_blocks * (size_t)ctx->device_threads;
 
-	dim3 grid( ( wsize + threadsperblock - 1 ) / threadsperblock );
+	dim3 grid( ( wsize + threadsperblock - 1u ) / threadsperblock );
 	dim3 block( threadsperblock );
 
 	CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<<<grid, block >>>( wsize, ctx->d_input, ctx->inputlen, startNonce,
@@ -247,10 +247,10 @@ extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce
 
 extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce)
 {
-	int threadsperblock = 128;
-	uint32_t wsize = ctx->device_blocks * ctx->device_threads;
+	uint32_t threadsperblock = 128u;
+	uint32_t wsize = (size_t)ctx->device_blocks * (size_t)ctx->device_threads;
 
-	dim3 grid( ( wsize + threadsperblock - 1 ) / threadsperblock );
+	dim3 grid( ( wsize + threadsperblock - 1u ) / threadsperblock );
 	dim3 block( threadsperblock );
 
 	CUDA_CHECK(ctx->device_id, cudaMemset( ctx->d_result_nonce, 0xFF, 10 * sizeof (uint32_t ) ));
@@ -271,7 +271,7 @@ extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, 
 	 */
 	if(*rescount > 10)
 		*rescount = 10;
-	for(int i=0; i < *rescount; i++)
+	for(uint32_t i=0; i < *rescount; i++)
 		resnonce[i] += startNonce;
 }
 
@@ -382,7 +382,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		 * - it is not possible to use a gpu with a architecture >= 30
 		 *   with a sm_20 only compiled binary
 		 */
-		for(int i = 0; i < arch.size(); ++i)
+		for(size_t i = 0; i < arch.size(); ++i)
 			if(minSupportedArch == 0 || (arch[i] >= 30 && arch[i] < minSupportedArch))
 				minSupportedArch = arch[i];
 		if(minSupportedArch < 30 || gpuArch < minSupportedArch)
@@ -509,9 +509,9 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		// 680bytes are extra meta data memory per hash
 		size_t perThread = hashMemSize + 16192u + 680u;
 		size_t max_intensity = limitedMemory / perThread;
-		ctx->device_threads = max_intensity / ctx->device_blocks;
+		ctx->device_threads = (int)max_intensity / ctx->device_blocks;
 		// use only odd number of threads
-		ctx->device_threads = ctx->device_threads & 0xFFFFFFFE;
+		ctx->device_threads = ctx->device_threads & (int)0xFFFFFFFE;
 
 		if(props.major == 2 && ctx->device_threads > 64)
 		{

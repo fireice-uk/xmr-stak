@@ -7,6 +7,7 @@ class jpsock;
 class base_socket
 {
 public:
+	virtual ~base_socket(){};
 	virtual bool set_hostname(const char* sAddr) = 0;
 	virtual bool connect() = 0;
 	virtual int recv(char* buf, unsigned int len) = 0;

@@ -41,12 +41,6 @@ static inline void port_sleep(size_t sec)
 }
 #endif // _WIN32
 
-#if 0
-static inline long long unsigned int int_port(size_t i)
-{
-	return i;
-}
-#endif
 
 #include "gpu.hpp"
 
@@ -188,34 +182,7 @@ void printer::inst()->print_msg(L1,const char* fmt, ...);
 void printer::inst()->print_str(const char* str);
 #endif
 
-char* LoadTextFile(const char* filename)
-{
-	size_t flen;
-	char* out;
-	FILE* kernel = fopen(filename, "rb");
-
-	if(kernel == NULL)
-		return NULL;
-
-	fseek(kernel, 0, SEEK_END);
-	flen = ftell(kernel);
-	fseek(kernel, 0, SEEK_SET);
-
-	out = (char*)malloc(flen+1);
-	size_t r = fread(out, flen, 1, kernel);
-	fclose(kernel);
-
-	if(r != 1)
-	{
-		free(out);
-		return NULL;
-	}
-
-	out[flen] = '\0';
-	return out;
-}
-
-size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_code)
+int InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_code)
 {
 	size_t MaximumWorkSize;
 	cl_int ret;
@@ -323,7 +290,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	ctx->Program = clCreateProgramWithSource(opencl_ctx, 1, (const char**)&source_code, NULL, &ret);
+	ctx->Program = clCreateProgramWithSource(opencl_ctx, 1, &source_code, NULL, &ret);
 	if(ret != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clCreateProgramWithSource on the contents of cryptonight.cl", err_to_str(ret));
@@ -390,49 +357,9 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	return 0;
 }
 
-const cl_platform_info attributeTypes[5] = {
-	CL_PLATFORM_NAME,
-	CL_PLATFORM_VENDOR,
-	CL_PLATFORM_VERSION,
-	CL_PLATFORM_PROFILE,
-	CL_PLATFORM_EXTENSIONS
-};
-
-const char* const attributeNames[] = {
-	"CL_PLATFORM_NAME",
-	"CL_PLATFORM_VENDOR",
-	"CL_PLATFORM_VERSION",
-	"CL_PLATFORM_PROFILE",
-	"CL_PLATFORM_EXTENSIONS"
-};
-
-#define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
-
-void PrintDeviceInfo(cl_device_id device)
-{
-	char queryBuffer[1024];
-	int queryInt;
-	cl_int clError;
-	clError = clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(queryBuffer), &queryBuffer, NULL);
-	printf("    CL_DEVICE_NAME: %s\n", queryBuffer);
-	queryBuffer[0] = '\0';
-	clError = clGetDeviceInfo(device, CL_DEVICE_VENDOR, sizeof(queryBuffer), &queryBuffer, NULL);
-	printf("    CL_DEVICE_VENDOR: %s\n", queryBuffer);
-	queryBuffer[0] = '\0';
-	clError = clGetDeviceInfo(device, CL_DRIVER_VERSION, sizeof(queryBuffer), &queryBuffer, NULL);
-	printf("    CL_DRIVER_VERSION: %s\n", queryBuffer);
-	queryBuffer[0] = '\0';
-	clError = clGetDeviceInfo(device, CL_DEVICE_VERSION, sizeof(queryBuffer), &queryBuffer, NULL);
-	printf("    CL_DEVICE_VERSION: %s\n", queryBuffer);
-	queryBuffer[0] = '\0';
-	clError = clGetDeviceInfo(device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &queryInt, NULL);
-	printf("    CL_DEVICE_MAX_COMPUTE_UNITS: %d\n", queryInt);
-}
-
 uint32_t getNumPlatforms()
 {
 	cl_uint num_platforms = 0;
-	cl_platform_id * platforms = NULL;
 	cl_int clStatus;
 
 	// Get platform and device information
@@ -466,14 +393,14 @@ std::vector<GpuContext> getAMDDevices(int index)
 		return ctxVec;
 	}
 
-	if((clStatus = clGetDeviceIDs( platforms[index], CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices)) != CL_SUCCESS)
+	if((clStatus = clGetDeviceIDs( platforms[size_t(index)], CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceIDs for of devices.", err_to_str(clStatus));
 		return ctxVec;
 	}
 
 	device_list.resize(num_devices);
-	if((clStatus = clGetDeviceIDs( platforms[index], CL_DEVICE_TYPE_GPU, num_devices, device_list.data(), NULL)) != CL_SUCCESS)
+	if((clStatus = clGetDeviceIDs( platforms[size_t(index)], CL_DEVICE_TYPE_GPU, num_devices, device_list.data(), NULL)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceIDs for device information.", err_to_str(clStatus));
 		return ctxVec;
@@ -552,7 +479,7 @@ int getAMDPlatformIdx()
 
 	if(clStatus == CL_SUCCESS)
 	{
-		for (int i = 0; i < numPlatforms; i++) {
+		for (uint32_t i = 0; i < numPlatforms; i++) {
 			size_t infoSize;
 			clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, 0, NULL, &infoSize);
 			std::vector<char> platformNameVec(infoSize);
@@ -561,7 +488,7 @@ int getAMDPlatformIdx()
 			std::string platformName(platformNameVec.data());
 			if( platformName.find("Advanced Micro Devices") != std::string::npos || platformName.find("Apple") != std::string::npos)
 			{
-				platformIndex = i;
+				platformIndex = int(i);
 				printer::inst()->print_msg(L0,"Found AMD platform index id = %i, name = %s",i , platformName.c_str());
 				break;
 			}
@@ -577,7 +504,7 @@ int getAMDPlatformIdx()
 // RequestedDeviceIdxs is a list of OpenCL device indexes
 // NumDevicesRequested is number of devices in RequestedDeviceIdxs list
 // Returns 0 on success, -1 on stupid params, -2 on OpenCL API error
-size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
+int InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 {
 
 	cl_context opencl_ctx;
@@ -598,13 +525,9 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 		return ERR_STUPID_PARAMS;
 	}
 
-	/*MSVC skimping on devel costs by shoehorning C99 to be a subset of C++? Noooo... can't be.*/
-#ifdef __GNUC__
-	cl_platform_id PlatformIDList[entries];
-#else
-	cl_platform_id* PlatformIDList = (cl_platform_id*)_alloca(entries * sizeof(cl_platform_id));
-#endif
-	if((ret = clGetPlatformIDs(entries, PlatformIDList, NULL)) != CL_SUCCESS)
+	std::vector<cl_platform_id> PlatformIDList(entries);
+
+	if((ret = clGetPlatformIDs(entries, PlatformIDList.data(), NULL)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clGetPlatformIDs for platform ID information.", err_to_str(ret));
 		return ERR_OCL_API;
@@ -627,7 +550,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	}
 
 	// Same as the platform index sanity check, except we must check all requested device indexes
-	for(int i = 0; i < num_gpus; ++i)
+	for(size_t i = 0; i < num_gpus; ++i)
 	{
 		if(entries <= ctx[i].deviceIdx)
 		{
@@ -636,37 +559,29 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 		}
 	}
 
-#ifdef __GNUC__
-	cl_device_id DeviceIDList[entries];
-#else
-	cl_device_id* DeviceIDList = (cl_device_id*)_alloca(entries * sizeof(cl_device_id));
-#endif
-	if((ret = clGetDeviceIDs(PlatformIDList[platform_idx], CL_DEVICE_TYPE_GPU, entries, DeviceIDList, NULL)) != CL_SUCCESS)
+	std::vector<cl_device_id> DeviceIDList(entries);
+
+	if((ret = clGetDeviceIDs(PlatformIDList[platform_idx], CL_DEVICE_TYPE_GPU, entries, DeviceIDList.data(), NULL)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clGetDeviceIDs for device ID information.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
 
-	// Indexes sanity checked above
-#ifdef __GNUC__
-	cl_device_id TempDeviceList[num_gpus];
-#else
-	cl_device_id* TempDeviceList = (cl_device_id*)_alloca(entries * sizeof(cl_device_id));
-#endif
-	for(int i = 0; i < num_gpus; ++i)
+	std::vector<cl_device_id> TempDeviceList(entries);
+
+	for(size_t i = 0; i < num_gpus; ++i)
 	{
 		ctx[i].DeviceID = DeviceIDList[ctx[i].deviceIdx];
 		TempDeviceList[i] = DeviceIDList[ctx[i].deviceIdx];
 	}
 
-	opencl_ctx = clCreateContext(NULL, num_gpus, TempDeviceList, NULL, NULL, &ret);
+	opencl_ctx = clCreateContext(NULL, num_gpus, TempDeviceList.data(), NULL, NULL, &ret);
 	if(ret != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clCreateContext.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
 
-	//char* source_code = LoadTextFile(sSourcePath);
 
 	const char *cryptonightCL =
 			#include "./opencl/cryptonight.cl"
@@ -694,7 +609,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_BLAKE256"), blake256CL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_GROESTL256"), groestl256CL);
 
-	for(int i = 0; i < num_gpus; ++i)
+	for(size_t i = 0; i < num_gpus; ++i)
 	{
 		if((ret = InitOpenCLGpu(opencl_ctx, &ctx[i], source_code.c_str())) != ERR_SUCCESS)
 		{

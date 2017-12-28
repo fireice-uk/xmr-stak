@@ -26,6 +26,7 @@
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/misc/executor.hpp"
+#include "xmrstak/misc/utility.hpp"
 
 #ifndef CONF_NO_TLS
 #include <openssl/ssl.h>
@@ -67,7 +68,8 @@ bool plain_socket::set_hostname(const char* sAddr)
 	sPort[0] = '\0';
 	sPort++;
 
-	addrinfo hints = { 0 };
+	addrinfo hints;
+	memset(&hints, 0, sizeof(addrinfo));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
@@ -97,15 +99,15 @@ bool plain_socket::set_hostname(const char* sAddr)
 		return pCallback->set_socket_error("CONNECT error: I found some DNS records but no IPv4 or IPv6 addresses.");
 	}
 	else if (!ipv4.empty() && ipv6.empty())
-		pSockAddr = ipv4[rand() % ipv4.size()];
+		pSockAddr = ipv4[(size_t)rand() % ipv4.size()];
 	else if (ipv4.empty() && !ipv6.empty())
-		pSockAddr = ipv6[rand() % ipv6.size()];
+		pSockAddr = ipv6[(size_t)rand() % ipv6.size()];
 	else if (!ipv4.empty() && !ipv6.empty())
 	{
 		if(jconf::inst()->PreferIpv4())
-			pSockAddr = ipv4[rand() % ipv4.size()];
+			pSockAddr = ipv4[(size_t)rand() % ipv4.size()];
 		else
-			pSockAddr = ipv6[rand() % ipv6.size()];
+			pSockAddr = ipv6[(size_t)rand() % ipv6.size()];
 	}
 
 	hSocket = socket(pSockAddr->ai_family, pSockAddr->ai_socktype, pSockAddr->ai_protocol);
@@ -122,7 +124,7 @@ bool plain_socket::set_hostname(const char* sAddr)
 
 bool plain_socket::connect()
 {
-	int ret = ::connect(hSocket, pSockAddr->ai_addr, (int)pSockAddr->ai_addrlen);
+	int ret = ::connect(hSocket, pSockAddr->ai_addr, pSockAddr->ai_addrlen);
 
 	freeaddrinfo(pAddrRoot);
 	pAddrRoot = nullptr;
@@ -147,7 +149,7 @@ int plain_socket::recv(char* buf, unsigned int len)
 
 bool plain_socket::send(const char* buf)
 {
-	int pos = 0, slen = strlen(buf);
+	size_t pos = 0u, slen = strlen(buf);
 	while (pos != slen)
 	{
 		int ret = ::send(hSocket, buf + pos, slen - pos, 0);
@@ -157,13 +159,13 @@ bool plain_socket::send(const char* buf)
 			return false;
 		}
 		else
-			pos += ret;
+			pos += (size_t)ret;
 	}
 
 	return true;
 }
 
-void plain_socket::close(bool free)
+void plain_socket::close(bool /*free*/)
 {
 	if(hSocket != INVALID_SOCKET)
 	{
@@ -183,7 +185,7 @@ void tls_socket::print_error()
 	ERR_print_errors(err_bio);
 
 	char *buf = nullptr;
-	size_t len = BIO_get_mem_data(err_bio, &buf);
+	size_t len = (size_t)BIO_get_mem_data(err_bio, &buf);
 
 	if(buf == nullptr)
 	{
@@ -306,12 +308,13 @@ bool tls_socket::connect()
 	BIO_puts(bmem, "SHA256:");
 	b64 = BIO_push(b64, bmem);
 	BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-	BIO_write(b64, md, dlen);
-	BIO_flush(b64);
+	BIO_write(b64, md, (int)dlen);
+	int ret = BIO_flush(b64);
+	xmrstak::ignore_unused(ret);
 
 	const char* conf_md = pCallback->get_tls_fp();
 	char *b64_md = nullptr;
-	size_t b64_len = BIO_get_mem_data(bmem, &b64_md);
+	size_t b64_len = (size_t)BIO_get_mem_data(bmem, &b64_md);
 
 	if(strlen(conf_md) == 0)
 	{
@@ -340,7 +343,7 @@ bool tls_socket::connect()
 
 int tls_socket::recv(char* buf, unsigned int len)
 {
-	int ret = BIO_read(bio, buf, len);
+	int ret = BIO_read(bio, buf, (int)len);
 
 	if(ret == 0)
 		pCallback->set_socket_error("RECEIVE error: socket closed");

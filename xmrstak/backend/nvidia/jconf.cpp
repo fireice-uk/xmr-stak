@@ -180,7 +180,6 @@ bool jconf::parse_config(const char* sFilename)
 {
 	FILE * pFile;
 	char * buffer;
-	size_t flen;
 
 	pFile = fopen(sFilename, "rb");
 	if (pFile == NULL)
@@ -190,7 +189,15 @@ bool jconf::parse_config(const char* sFilename)
 	}
 
 	fseek(pFile,0,SEEK_END);
-	flen = ftell(pFile);
+	int64_t file_len = ftell(pFile);
+	if(file_len == -1L)
+	{
+		fclose(pFile);
+		printer::inst()->print_msg(L0, "Error opening file - %s.", sFilename);
+		return false;
+	}
+	size_t flen = static_cast<size_t>(file_len);
+	
 	rewind(pFile);
 
 	if(flen >= 64*1024)
@@ -249,7 +256,7 @@ bool jconf::parse_config(const char* sFilename)
 
 	for(size_t i = 0; i < iConfigCnt; i++)
 	{
-		if(oConfigValues[i].iName != i)
+		if((size_t)oConfigValues[i].iName != i)
 		{
 			printer::inst()->print_msg(L0, "Code error. oConfigValues are not in order. %s",oConfigValues[i].sName);
 			return false;

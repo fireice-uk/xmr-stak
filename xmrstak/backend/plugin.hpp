@@ -88,11 +88,10 @@ struct plugin
 		return fn_starterBackend(threadOffset, pWork, env);
 	}
 
-	std::string m_backendName;
-
 	typedef std::vector<iBackend*>* (*starterBackend_t)(uint32_t threadOffset, miner_work& pWork, environment& env);
 
 	starterBackend_t fn_starterBackend;
+	std::string m_backendName;
 
 #ifdef WIN32
 	HINSTANCE libBackend;

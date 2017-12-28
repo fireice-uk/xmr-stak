@@ -369,7 +369,7 @@ int main(int argc, char *argv[])
 	}
 
 	params::inst().minerArg0 = argv[0];
-	params::inst().minerArgs.reserve(argc * 16);
+	params::inst().minerArgs.reserve(static_cast<size_t>(argc * 16));
 	for(int i = 1; i < argc; i++)
 	{
 		params::inst().minerArgs += " ";
@@ -377,14 +377,14 @@ int main(int argc, char *argv[])
 	}
 
 	bool pool_url_set = false;
-	for(size_t i = 1; i < argc-1; i++)
+	for(size_t i = 1u; i < size_t(argc - 1); i++)
 	{
 		std::string opName(argv[i]);
 		if(opName == "-o" || opName == "-O" || opName == "--url" || opName == "--tls-url")
 			pool_url_set = true;
 	}
 
-	for(size_t i = 1; i < argc; ++i)
+	for(size_t i = 1u; i < size_t(argc); ++i)
 	{
 		std::string opName(argv[i]);
 		if(opName.compare("-h") == 0 || opName.compare("--help") == 0)
@@ -420,7 +420,7 @@ int main(int argc, char *argv[])
 		else if(opName.compare("--cpu") == 0)
 		{
 			++i;
-			if( i >=argc )
+			if( i >= size_t(argc) )
 			{
 				printer::inst()->print_msg(L0, "No argument for parameter '--cpu' given");
 				win_exit();
@@ -431,7 +431,7 @@ int main(int argc, char *argv[])
 		else if(opName.compare("--amd") == 0)
 		{
 			++i;
-			if( i >=argc )
+			if( i >= size_t(argc) )
 			{
 				printer::inst()->print_msg(L0, "No argument for parameter '--amd' given");
 				win_exit();
@@ -442,7 +442,7 @@ int main(int argc, char *argv[])
 		else if(opName.compare("--nvidia") == 0)
 		{
 			++i;
-			if( i >=argc )
+			if( i >= size_t(argc) )
 			{
 				printer::inst()->print_msg(L0, "No argument for parameter '--nvidia' given");
 				win_exit();
@@ -453,7 +453,7 @@ int main(int argc, char *argv[])
 		else if(opName.compare("--currency") == 0)
 		{
 			++i;
-			if( i >=argc )
+			if( i >= size_t(argc) )
 			{
 				printer::inst()->print_msg(L0, "No argument for parameter '--currency' given");
 				win_exit();
@@ -464,7 +464,7 @@ int main(int argc, char *argv[])
 		else if(opName.compare("-o") == 0 || opName.compare("--url") == 0)
 		{
 			++i;
-			if( i >=argc )
+			if( i >= size_t(argc) )
 			{
 				printer::inst()->print_msg(L0, "No argument for parameter '-o/--url' given");
 				win_exit();
@@ -476,7 +476,7 @@ int main(int argc, char *argv[])
 		else if(opName.compare("-O") == 0 || opName.compare("--tls-url") == 0)
 		{
 			++i;
-			if( i >=argc )
+			if( i >= size_t(argc) )
 			{
 				printer::inst()->print_msg(L0, "No argument for parameter '-O/--tls-url' given");
 				win_exit();
@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
 			}
 
 			++i;
-			if( i >=argc )
+			if( i >= size_t(argc) )
 			{
 				printer::inst()->print_msg(L0, "No argument for parameter '-u/--user' given");
 				win_exit();
@@ -513,7 +513,7 @@ int main(int argc, char *argv[])
 			}
 
 			++i;
-			if( i >=argc )
+			if( i >= size_t(argc) )
 			{
 				printer::inst()->print_msg(L0, "No argument for parameter '-p/--pass' given");
 				win_exit();
@@ -529,7 +529,7 @@ int main(int argc, char *argv[])
 		else if(opName.compare("-c") == 0 || opName.compare("--config") == 0)
 		{
 			++i;
-			if( i >=argc )
+			if( i >= size_t(argc) )
 			{
 				printer::inst()->print_msg(L0, "No argument for parameter '-c/--config' given");
 				win_exit();
@@ -540,7 +540,7 @@ int main(int argc, char *argv[])
 		else if(opName.compare("-i") == 0 || opName.compare("--httpd") == 0)
 		{
 			++i;
-			if( i >=argc )
+			if( i >= size_t(argc) )
 			{
 				printer::inst()->print_msg(L0, "No argument for parameter '-i/--httpd' given");
 				win_exit();
@@ -559,10 +559,12 @@ int main(int argc, char *argv[])
 
 			params::inst().httpd_port = ret;
 		}
+#ifdef _WIN32
 		else if(opName.compare("--noUAC") == 0)
 		{
 			params::inst().allowUAC = false;
 		}
+#endif
 		else
 		{
 			printer::inst()->print_msg(L0, "Parameter unknown '%s'",argv[i]);

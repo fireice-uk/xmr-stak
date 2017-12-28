@@ -24,7 +24,7 @@ public:
 	struct thd_cfg {
 		int iMultiway;
 		bool bNoPrefetch;
-		long long iCpuAff;
+		int32_t iCpuAff;
 	};
 
 	size_t GetThreadCount();
