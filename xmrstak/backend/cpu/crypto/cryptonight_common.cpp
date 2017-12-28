@@ -188,7 +188,7 @@ size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 			bRebootDesirable = TRUE;
 		}
 		else
-			msg->warning = "Obtaning SeLockMemoryPrivilege failed.";
+			msg->warning = "Obtaining SeLockMemoryPrivilege failed.";
 
 		return 0;
 	}
