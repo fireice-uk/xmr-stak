@@ -5,7 +5,7 @@
 #if defined(__APPLE__)
 #include <OpenCL/cl.h>
 #else
-#include <CL/cl.h>
+#include <CL/cl_ext.h>
 #endif
 
 #include <stdint.h>
@@ -23,6 +23,7 @@ struct GpuContext
 	/*Input vars*/
 	size_t deviceIdx;
 	size_t rawIntensity;
+	size_t rawExtraIntensity;
 	size_t workSize;
 	int stridedIndex;
 
@@ -31,7 +32,7 @@ struct GpuContext
 	cl_command_queue CommandQueues;
 	cl_mem InputBuffer;
 	cl_mem OutputBuffer;
-	cl_mem ExtraBuffers[6];
+	cl_mem ExtraBuffers[7];
 	cl_program Program;
 	cl_kernel Kernels[7];
 	size_t freeMem;

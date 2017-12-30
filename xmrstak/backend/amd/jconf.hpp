@@ -27,6 +27,7 @@ public:
 		size_t w_size;
 		long long cpu_aff;
 		bool stridedIndex;
+		size_t extraIntensity;
 	};
 
 	size_t GetThreadCount();

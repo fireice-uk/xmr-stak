@@ -10,7 +10,7 @@ R"===(
  *                 false = use a contiguous block of memory per thread
  * "gpu_threads_conf" :
  * [
- *	{ "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false, "strided_index" : true },
+ *	{ "index" : 0, "intensity" : 1000, "extra_intensity" : 0, "worksize" : 8, "affine_to_cpu" : false, "strided_index" : true },
  * ],
  */
 
