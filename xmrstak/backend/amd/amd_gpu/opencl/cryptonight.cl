@@ -414,11 +414,12 @@ void AESExpandKey256(uint *keybuf)
 #if(STRIDED_INDEX==0)
 #   define IDX(x)	(x)
 #else
-#   define IDX(x)	((x) * (Threads))
+#   define IDX(x)	((x) * (BlockSize))
 #endif
 
 __attribute__((reqd_work_group_size(WORKSIZE, 8, 1)))
-__kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ulong *states, ulong Threads)
+__kernel void cn0(__global ulong *input, __global uint4 *Scratchpad0, __global ulong *states,
+	__global uint4 *Scratchpad1)
 {
 	ulong State[25];
 	uint ExpandedKey1[256];
@@ -426,6 +427,9 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 	uint4 text;
 
 	const ulong gIdx = get_global_id(0) - get_global_offset(0);
+
+	__global uint4 *Scratchpad = gIdx < C_rawIntensity ? Scratchpad0 : Scratchpad1;
+	ulong BlockSize =  gIdx < C_rawIntensity ? C_rawIntensity : C_rawExtraIntensity;
 
 	for(int i = get_local_id(1) * WORKSIZE + get_local_id(0);
 		i < 256;
@@ -441,14 +445,14 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 	barrier(CLK_LOCAL_MEM_FENCE);
 
 	// do not use early return here
-	if(gIdx < Threads)
+	if(gIdx < C_Threads)
 	{
 		states += 25 * gIdx;
 
 #if(STRIDED_INDEX==0)
-		Scratchpad += gIdx * (ITERATIONS >> 2);
+		Scratchpad += (gIdx - (gIdx < C_rawIntensity ? 0 : C_rawIntensity)) * (ITERATIONS >> 2);
 #else
-		Scratchpad += gIdx;
+		Scratchpad += (gIdx - (gIdx < C_rawIntensity ? 0 : C_rawIntensity));
 #endif
 
 		((ulong8 *)State)[0] = vload8(0, input);
@@ -472,7 +476,7 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 	mem_fence(CLK_GLOBAL_MEM_FENCE);
 
 	// do not use early return here
-	if(gIdx < Threads)
+	if(gIdx < C_Threads)
 	{
 		#pragma unroll
 		for(int i = 0; i < 25; ++i) states[i] = State[i];
@@ -488,7 +492,7 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 	mem_fence(CLK_LOCAL_MEM_FENCE);
 
 	// do not use early return here
-	if(gIdx < Threads)
+	if(gIdx < C_Threads)
 	{
 		#pragma unroll 2
 		for(int i = 0; i < (ITERATIONS >> 5); ++i)
@@ -504,12 +508,16 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 }
 
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
-__kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Threads)
+__kernel void cn1(__global uint4 *Scratchpad0, __global ulong *states,
+	__global uint4 *Scratchpad1)
 {
 	ulong a[2], b[2];
 	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
 
 	const ulong gIdx = get_global_id(0) - get_global_offset(0);
+		
+	__global uint4 *Scratchpad = gIdx < C_rawIntensity ? Scratchpad0 : Scratchpad1;
+	ulong BlockSize =  gIdx < C_rawIntensity ? C_rawIntensity : C_rawExtraIntensity;
 
 	for(int i = get_local_id(0); i < 256; i += WORKSIZE)
 	{
@@ -525,13 +533,13 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 	uint4 b_x;
 		
 	// do not use early return here
-	if(gIdx < Threads)
+	if(gIdx < C_Threads)
 	{
 		states += 25 * gIdx;
 #if(STRIDED_INDEX==0)
-		Scratchpad += gIdx * (ITERATIONS >> 2);
+		Scratchpad += (gIdx - (gIdx < C_rawIntensity ? 0 : C_rawIntensity)) * (ITERATIONS >> 2);
 #else
-		Scratchpad += gIdx;
+		Scratchpad += (gIdx - (gIdx < C_rawIntensity ? 0 : C_rawIntensity));
 #endif
 
 		a[0] = states[0] ^ states[4];
@@ -545,7 +553,7 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 	mem_fence(CLK_LOCAL_MEM_FENCE);
 
 	// do not use early return here
-	if(gIdx < Threads)
+	if(gIdx < C_Threads)
 	{
 		#pragma unroll 8
 		for(int i = 0; i < ITERATIONS; ++i)
@@ -575,7 +583,10 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 }
 
 __attribute__((reqd_work_group_size(WORKSIZE, 8, 1)))
-__kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global uint *Branch0, __global uint *Branch1, __global uint *Branch2, __global uint *Branch3, ulong Threads)
+__kernel void cn2(__global uint4 *Scratchpad0, __global ulong *states,
+	__global uint *Branch0, __global uint *Branch1, __global uint *Branch2,
+	__global uint *Branch3,
+	__global uint4 *Scratchpad1)
 {
 	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
 	uint ExpandedKey2[256];
@@ -583,6 +594,9 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 	uint4 text;
 	
 	const ulong gIdx = get_global_id(0) - get_global_offset(0);
+
+	__global uint4 *Scratchpad = gIdx < C_rawIntensity ? Scratchpad0 : Scratchpad1;
+	ulong BlockSize =  gIdx < C_rawIntensity ? C_rawIntensity : C_rawExtraIntensity;
 
 	for(int i = get_local_id(1) * WORKSIZE + get_local_id(0);
 		i < 256;
@@ -598,13 +612,13 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 	barrier(CLK_LOCAL_MEM_FENCE);
 
 	// do not use early return here
-	if(gIdx < Threads)
+	if(gIdx < C_Threads)
 	{
 		states += 25 * gIdx;
 #if(STRIDED_INDEX==0)
-		Scratchpad += gIdx * (ITERATIONS >> 2);
+		Scratchpad += (gIdx - (gIdx < C_rawIntensity ? 0 : C_rawIntensity)) * (ITERATIONS >> 2);
 #else
-		Scratchpad += gIdx;
+		Scratchpad += (gIdx - (gIdx < C_rawIntensity ? 0 : C_rawIntensity));
 #endif
 
 		#if defined(__Tahiti__) || defined(__Pitcairn__)
@@ -625,7 +639,7 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 	barrier(CLK_LOCAL_MEM_FENCE);
 
 	// do not use early return here
-	if(gIdx < Threads)
+	if(gIdx < C_Threads)
 	{
 		#pragma unroll 2
 		for(int i = 0; i < (ITERATIONS >> 5); ++i)
@@ -643,7 +657,7 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
 	// do not use early return here
-	if(gIdx < Threads)
+	if(gIdx < C_Threads)
 	{
 		if(!get_local_id(1))
 		{
@@ -656,16 +670,16 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 			switch(State[0] & 3)
 			{
 				case 0:
-					Branch0[atomic_inc(Branch0 + Threads)] = get_global_id(0) - get_global_offset(0);
+					Branch0[atomic_inc(Branch0 + C_Threads)] = get_global_id(0) - get_global_offset(0);
 					break;
 				case 1:
-					Branch1[atomic_inc(Branch1 + Threads)] = get_global_id(0) - get_global_offset(0);
+					Branch1[atomic_inc(Branch1 + C_Threads)] = get_global_id(0) - get_global_offset(0);
 					break;
 				case 2:
-					Branch2[atomic_inc(Branch2 + Threads)] = get_global_id(0) - get_global_offset(0);
+					Branch2[atomic_inc(Branch2 + C_Threads)] = get_global_id(0) - get_global_offset(0);
 					break;
 				case 3:
-					Branch3[atomic_inc(Branch3 + Threads)] = get_global_id(0) - get_global_offset(0);
+					Branch3[atomic_inc(Branch3 + C_Threads)] = get_global_id(0) - get_global_offset(0);
 					break;
 			}
 		}

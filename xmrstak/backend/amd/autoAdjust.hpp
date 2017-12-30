@@ -21,7 +21,7 @@
 #if defined(__APPLE__)
 #include <OpenCL/cl.h>
 #else
-#include <CL/cl.h>
+#include <CL/cl_ext.h>
 #endif
 
 
@@ -122,7 +122,8 @@ private:
 			conf += std::string("  // compute units: ") + std::to_string(ctx.computeUnits) + "\n";
 			// set 8 threads per block (this is a good value for the most gpus)
 			conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
-				"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
+				"    \"intensity\" : " + std::to_string(intensity) + ", \"extra_intensity\" : 0,\n"
+			    "    \"worksize\" : " + std::to_string(8) + ",\n" +
 				"    \"affine_to_cpu\" : false, \"strided_index\" : true\n"
 				"  },\n";
 			++i;

@@ -268,8 +268,8 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		hasIterations = AEON_ITER;
 	}
 
-	size_t g_thd = ctx->rawIntensity;
-	ctx->ExtraBuffers[0] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, hashMemSize * g_thd, NULL, &ret);
+	size_t g_thd = ctx->rawIntensity + ctx->rawExtraIntensity;
+	ctx->ExtraBuffers[0] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, hashMemSize * ctx->rawIntensity, NULL, &ret);
 	if(ret != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clCreateBuffer to create hash scratchpads buffer.", err_to_str(ret));
@@ -329,11 +329,30 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		printer::inst()->print_msg(L1,"Error %s when calling clCreateProgramWithSource on the contents of cryptonight.cl", err_to_str(ret));
 		return ERR_OCL_API;
 	}
+	if(ctx->rawExtraIntensity > 0)
+	{
+#ifdef CL_MEM_USE_PERSISTENT_MEM_AMD
+		printer::inst()->print_msg(L1,"AMD extra memory is available. You can use the option 'extra_intensity'");
+		ctx->ExtraBuffers[6] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE | CL_MEM_USE_PERSISTENT_MEM_AMD, hashMemSize * ctx->rawExtraIntensity, NULL, &ret);
+#else
+		printer::inst()->print_msg(L1,"WARNING: AMD extra memory is NOT available. You can use the option 'extra_intensity' but is has maybe no effect.");
+		ctx->ExtraBuffers[6] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE , hashMemSize * ctx->rawExtraIntensity, NULL, &ret);
+#endif
+		if(ret != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1,"Error %s when calling clCreateBuffer to create hash extra scratchpads buffer.", err_to_str(ret));
+			return ERR_OCL_API;
+		}
+	}
 
-	char options[256];
+	uint64_t numThreads = ctx->rawIntensity + ctx->rawExtraIntensity;
+	uint64_t rawIntensity = ctx->rawIntensity;
+	uint64_t rawExtraIntensity = ctx->rawExtraIntensity;
+	char options[512];
 	snprintf(options, sizeof(options), 
-		"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d", 
-		hasIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex ? 1 : 0);
+		"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d -DC_Threads=%llu -DC_rawIntensity=%llu -DC_rawExtraIntensity=%llu",
+		hasIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex ? 1 : 0,
+		numThreads,rawIntensity,rawExtraIntensity);
 	ret = clBuildProgram(ctx->Program, 1, &ctx->DeviceID, options, NULL, NULL);
 	if(ret != CL_SUCCESS)
 	{
@@ -715,7 +734,8 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 	input[input_len] = 0x01;
 	memset(input + input_len + 1, 0, 88 - input_len - 1);
 
-	size_t numThreads = ctx->rawIntensity;
+	size_t numThreads = ctx->rawIntensity + ctx->rawExtraIntensity;
+	size_t rawIntensity = ctx->rawIntensity;
 
 	if((ret = clEnqueueWriteBuffer(ctx->CommandQueues, ctx->InputBuffer, CL_TRUE, 0, 88, input, 0, NULL, NULL)) != CL_SUCCESS)
 	{
@@ -743,11 +763,11 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 		return ERR_OCL_API;
 	}
 
-	// Threads
-	if((ret = clSetKernelArg(ctx->Kernels[0], 3, sizeof(cl_ulong), &numThreads)) != CL_SUCCESS)
+	// ExtraScratchpads
+	if((ret = clSetKernelArg(ctx->Kernels[0], 3, sizeof(cl_mem), ctx->ExtraBuffers + 6)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 0, argument 3.", err_to_str(ret));
-		return(ERR_OCL_API);
+		return ERR_OCL_API;
 	}
 
 	// CN2 Kernel
@@ -766,11 +786,12 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 		return ERR_OCL_API;
 	}
 
-	// Threads
-	if((ret = clSetKernelArg(ctx->Kernels[1], 2, sizeof(cl_ulong), &numThreads)) != CL_SUCCESS)
+
+	// ExtraScratchpads
+	if((ret = clSetKernelArg(ctx->Kernels[1], 2, sizeof(cl_mem), ctx->ExtraBuffers + 6)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 1, argument 2.", err_to_str(ret));
-		return(ERR_OCL_API);
+		return ERR_OCL_API;
 	}
 
 	// CN3 Kernel
@@ -816,11 +837,11 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 		return ERR_OCL_API;
 	}
 
-	// Threads
-	if((ret = clSetKernelArg(ctx->Kernels[2], 6, sizeof(cl_ulong), &numThreads)) != CL_SUCCESS)
+	// ExtraScratchpads
+	if((ret = clSetKernelArg(ctx->Kernels[2], 6, sizeof(cl_mem), ctx->ExtraBuffers + 6)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 2, argument 6.", err_to_str(ret));
-		return(ERR_OCL_API);
+		return ERR_OCL_API;
 	}
 
 	for(int i = 0; i < 4; ++i)
@@ -864,7 +885,7 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 	size_t BranchNonces[4];
 	memset(BranchNonces,0,sizeof(size_t)*4);
 
-	size_t g_intensity = ctx->rawIntensity;
+	size_t g_intensity = ctx->rawIntensity + ctx->rawExtraIntensity;
 	size_t w_size = ctx->workSize;
 	// round up to next multiple of w_size
 	size_t g_thd = ((g_intensity + w_size - 1u) / w_size) * w_size;
