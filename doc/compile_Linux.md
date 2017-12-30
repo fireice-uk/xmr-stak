@@ -83,6 +83,7 @@
     ./configure --prefix=/usr/local
     make
     sudo make install
+    cd ..
     git clone http://github.com/fireice-uk/xmr-stak
     cd xmr-stak
     mkdir build
