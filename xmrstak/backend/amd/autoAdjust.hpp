@@ -118,6 +118,19 @@ private:
 			size_t possibleIntensity = std::min( maxThreads , maxIntensity );
 			// map intensity to a multiple of the compute unit count, 8 is the number of threads per work group
 			size_t intensity = (possibleIntensity / (8 * ctx.computeUnits)) * ctx.computeUnits * 8;
+			//If the intensity is 0, then it's because the multiple of the unit count is greater than intensity
+			if (intensity == 0) {
+				/* See Issues:
+				 * https://github.com/fireice-uk/xmr-stak/issues/81
+				 * https://github.com/fireice-uk/xmr-stak/issues/472
+				 * https://github.com/fireice-uk/xmr-stak/issues/490
+				 * Note that it appears that Northern Islands GPUs (HD 6XXX) are unaffected by
+				 * these environment variables, according to my testing (dougvj)
+				 */
+				printer::inst()->print_msg(L0, "WARNING: Autodetected intensity unexpectedly low. Try setting GPU_SINGLE_ALLOC_PERCENT and etc.");
+				intensity = possibleIntensity;
+
+			}
 			conf += std::string("  // gpu: ") + ctx.name + " memory:" + std::to_string(availableMem / byteToMiB) + "\n";
 			conf += std::string("  // compute units: ") + std::to_string(ctx.computeUnits) + "\n";
 			// set 8 threads per block (this is a good value for the most gpus)
