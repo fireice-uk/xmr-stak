@@ -21,7 +21,7 @@ XMR-Stak is a universal Stratum pool miner. This miner supports CPUs, AMD and NV
 ## Features
 
 - support all common backends (CPU/x86, AMD-GPU and NVIDIA-GPU)
-- support all common OS (Linux, Windows and MacOS)
+- support all common OS (Linux, Windows and macOS)
 - supports algorithm cryptonight for Monero (XMR) and cryptonight-light (AEON)
 - easy to use
   - guided start (no need to edit a config file for the first start)

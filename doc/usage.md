@@ -23,7 +23,7 @@ The number of files depends on the available backends.
 `set XMRSTAK_NOWAIT=1` disable the dialog `Press any key to exit.` for non UAC execution.
 
 
-## Usage on Linux & MacOS
+## Usage on Linux & macOS
 1) Open a terminal within the folder with the binary
 2) Start the miner with `./xmr-stak`
 
