@@ -749,7 +749,7 @@ void cryptonight_penta_hash(const void* input, size_t len, void* output, crypton
 
 // This most lovely creation will do 6 cn hashes at a time.
 template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
-void cryptonight_hexa_hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+void cryptonight_penta_hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
 {
 	for (size_t i = 0; i < 6; i++)
 	{
@@ -767,6 +767,9 @@ void cryptonight_hexa_hash(const void* input, size_t len, void* output, cryptoni
 	uint64_t* h3 = (uint64_t*)ctx[3]->hash_state;
 	uint8_t* l4 = ctx[4]->long_state;
 	uint64_t* h4 = (uint64_t*)ctx[4]->hash_state;
+	uint8_t* l5 = ctx[5]->long_state;
+	uint64_t* h5 = (uint64_t*)ctx[5]->hash_state;
+	
 
 	__m128i ax0 = _mm_set_epi64x(h0[1] ^ h0[5], h0[0] ^ h0[4]);
 	__m128i bx0 = _mm_set_epi64x(h0[3] ^ h0[7], h0[2] ^ h0[6]);
@@ -778,16 +781,19 @@ void cryptonight_hexa_hash(const void* input, size_t len, void* output, cryptoni
 	__m128i bx3 = _mm_set_epi64x(h3[3] ^ h3[7], h3[2] ^ h3[6]);
 	__m128i ax4 = _mm_set_epi64x(h4[1] ^ h4[5], h4[0] ^ h4[4]);
 	__m128i bx4 = _mm_set_epi64x(h4[3] ^ h4[7], h4[2] ^ h4[6]);
+	__m128i ax5 = _mm_set_epi64x(h5[1] ^ h4[5], h4[0] ^ h4[4]);
+	__m128i bx5 = _mm_set_epi64x(h5[3] ^ h4[7], h4[2] ^ h4[6]);
 	__m128i cx0 = _mm_set_epi64x(0, 0);
 	__m128i cx1 = _mm_set_epi64x(0, 0);
 	__m128i cx2 = _mm_set_epi64x(0, 0);
 	__m128i cx3 = _mm_set_epi64x(0, 0);
 	__m128i cx4 = _mm_set_epi64x(0, 0);
+	__m128i cx5 = _mm_set_epi64x(0, 0);
 
 	for (size_t i = 0; i < ITERATIONS/2; i++)
 	{
-		uint64_t idx0, idx1, idx2, idx3, idx4, hi, lo;
-		__m128i *ptr0, *ptr1, *ptr2, *ptr3, *ptr4;
+		uint64_t idx0, idx1, idx2, idx3, idx4, idx5, hi, lo;
+		__m128i *ptr0, *ptr1, *ptr2, *ptr3, *ptr4, *ptr5;
 
 		// EVEN ROUND
 		CN_STEP1(ax0, bx0, cx0, l0, ptr0, idx0);
@@ -795,24 +801,28 @@ void cryptonight_hexa_hash(const void* input, size_t len, void* output, cryptoni
 		CN_STEP1(ax2, bx2, cx2, l2, ptr2, idx2);
 		CN_STEP1(ax3, bx3, cx3, l3, ptr3, idx3);
 		CN_STEP1(ax4, bx4, cx4, l4, ptr4, idx4);
+		CN_STEP1(ax5, bx5, cx5, l5, ptr5, idx5);
 
 		CN_STEP2(ax0, bx0, cx0, l0, ptr0, idx0);
 		CN_STEP2(ax1, bx1, cx1, l1, ptr1, idx1);
 		CN_STEP2(ax2, bx2, cx2, l2, ptr2, idx2);
 		CN_STEP2(ax3, bx3, cx3, l3, ptr3, idx3);
 		CN_STEP2(ax4, bx4, cx4, l4, ptr4, idx4);
+		CN_STEP2(ax5, bx5, cx5, l5, ptr5, idx5);
 
 		CN_STEP3(ax0, bx0, cx0, l0, ptr0, idx0);
 		CN_STEP3(ax1, bx1, cx1, l1, ptr1, idx1);
 		CN_STEP3(ax2, bx2, cx2, l2, ptr2, idx2);
 		CN_STEP3(ax3, bx3, cx3, l3, ptr3, idx3);
 		CN_STEP3(ax4, bx4, cx4, l4, ptr4, idx4);
+		CN_STEP4(ax5, bx5, cx5, l5, ptr5, idx5);
 
 		CN_STEP4(ax0, bx0, cx0, l0, ptr0, idx0);
 		CN_STEP4(ax1, bx1, cx1, l1, ptr1, idx1);
 		CN_STEP4(ax2, bx2, cx2, l2, ptr2, idx2);
 		CN_STEP4(ax3, bx3, cx3, l3, ptr3, idx3);
 		CN_STEP4(ax4, bx4, cx4, l4, ptr4, idx4);
+		CN_STEP4(ax5, bx5, cx5, l5, ptr5, idx5);
 
 		// ODD ROUND
 		CN_STEP1(ax0, cx0, bx0, l0, ptr0, idx0);
@@ -820,24 +830,28 @@ void cryptonight_hexa_hash(const void* input, size_t len, void* output, cryptoni
 		CN_STEP1(ax2, cx2, bx2, l2, ptr2, idx2);
 		CN_STEP1(ax3, cx3, bx3, l3, ptr3, idx3);
 		CN_STEP1(ax4, cx4, bx4, l4, ptr4, idx4);
+		CN_STEP1(ax5, bx5, cx5, l5, ptr5, idx5);
 
 		CN_STEP2(ax0, cx0, bx0, l0, ptr0, idx0);
 		CN_STEP2(ax1, cx1, bx1, l1, ptr1, idx1);
 		CN_STEP2(ax2, cx2, bx2, l2, ptr2, idx2);
 		CN_STEP2(ax3, cx3, bx3, l3, ptr3, idx3);
 		CN_STEP2(ax4, cx4, bx4, l4, ptr4, idx4);
+		CN_STEP2(ax5, bx5, cx5, l5, ptr5, idx5);
 
 		CN_STEP3(ax0, cx0, bx0, l0, ptr0, idx0);
 		CN_STEP3(ax1, cx1, bx1, l1, ptr1, idx1);
 		CN_STEP3(ax2, cx2, bx2, l2, ptr2, idx2);
 		CN_STEP3(ax3, cx3, bx3, l3, ptr3, idx3);
 		CN_STEP3(ax4, cx4, bx4, l4, ptr4, idx4);
+		CN_STEP3(ax5, bx5, cx5, l5, ptr5, idx5);
 
 		CN_STEP4(ax0, cx0, bx0, l0, ptr0, idx0);
 		CN_STEP4(ax1, cx1, bx1, l1, ptr1, idx1);
 		CN_STEP4(ax2, cx2, bx2, l2, ptr2, idx2);
 		CN_STEP4(ax3, cx3, bx3, l3, ptr3, idx3);
 		CN_STEP4(ax4, cx4, bx4, l4, ptr4, idx4);
+		CN_STEP4(ax5, bx5, cx5, l5, ptr5, idx5);
 	}
 
 	for (size_t i = 0; i < 6; i++)
@@ -847,3 +861,4 @@ void cryptonight_hexa_hash(const void* input, size_t len, void* output, cryptoni
 		extra_hashes[ctx[i]->hash_state[0] & 3](ctx[i]->hash_state, 200, (char*)output + 32 * i);
 	}
 }
+
