@@ -781,8 +781,8 @@ void cryptonight_hexa_hash(const void* input, size_t len, void* output, cryptoni
 	__m128i bx3 = _mm_set_epi64x(h3[3] ^ h3[7], h3[2] ^ h3[6]);
 	__m128i ax4 = _mm_set_epi64x(h4[1] ^ h4[5], h4[0] ^ h4[4]);
 	__m128i bx4 = _mm_set_epi64x(h4[3] ^ h4[7], h4[2] ^ h4[6]);
-	__m128i ax5 = _mm_set_epi64x(h5[1] ^ h4[5], h4[0] ^ h4[4]);
-	__m128i bx5 = _mm_set_epi64x(h5[3] ^ h4[7], h4[2] ^ h4[6]);
+	__m128i ax5 = _mm_set_epi64x(h5[1] ^ h5[5], h5[0] ^ h5[4]);
+	__m128i bx5 = _mm_set_epi64x(h5[3] ^ h5[7], h5[2] ^ h5[6]);
 	__m128i cx0 = _mm_set_epi64x(0, 0);
 	__m128i cx1 = _mm_set_epi64x(0, 0);
 	__m128i cx2 = _mm_set_epi64x(0, 0);
