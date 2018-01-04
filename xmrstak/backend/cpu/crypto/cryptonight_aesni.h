@@ -749,7 +749,7 @@ void cryptonight_penta_hash(const void* input, size_t len, void* output, crypton
 
 // This most lovely creation will do 6 cn hashes at a time.
 template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
-void cryptonight_penta_hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+void cryptonight_hexa_hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
 {
 	for (size_t i = 0; i < 6; i++)
 	{
