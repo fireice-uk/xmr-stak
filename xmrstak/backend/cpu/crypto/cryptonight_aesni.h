@@ -815,7 +815,7 @@ void cryptonight_hexa_hash(const void* input, size_t len, void* output, cryptoni
 		CN_STEP3(ax2, bx2, cx2, l2, ptr2, idx2);
 		CN_STEP3(ax3, bx3, cx3, l3, ptr3, idx3);
 		CN_STEP3(ax4, bx4, cx4, l4, ptr4, idx4);
-		CN_STEP4(ax5, bx5, cx5, l5, ptr5, idx5);
+		CN_STEP3(ax5, bx5, cx5, l5, ptr5, idx5);
 
 		CN_STEP4(ax0, bx0, cx0, l0, ptr0, idx0);
 		CN_STEP4(ax1, bx1, cx1, l1, ptr1, idx1);
