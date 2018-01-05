@@ -552,7 +552,7 @@ void minethd::penta_work_main()
 
 void minethd::hexa_work_main()
 {
-	multiway_work_main<6>(func_multi_selector(5, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
+	multiway_work_main<6>(func_multi_selector(6, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
 }
 
 template<size_t N>
