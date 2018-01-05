@@ -1000,6 +1000,151 @@ void cryptonight_sepa_hash(const void* input, size_t len, void* output, cryptoni
 	}
 }
 
+// This most lovely creation will do 8 cn hashes at a time. 
+template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
+void cryptonight_octa_hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+{
+	for (size_t i = 0; i < 8; i++)
+	{
+		keccak((const uint8_t *)input + len * i, len, ctx[i]->hash_state, 200);
+		cn_explode_scratchpad<MEM, SOFT_AES, PREFETCH>((__m128i*)ctx[i]->hash_state, (__m128i*)ctx[i]->long_state);
+	}
+
+	uint8_t* l0 = ctx[0]->long_state;
+	uint64_t* h0 = (uint64_t*)ctx[0]->hash_state;
+	uint8_t* l1 = ctx[1]->long_state;
+	uint64_t* h1 = (uint64_t*)ctx[1]->hash_state;
+	uint8_t* l2 = ctx[2]->long_state;
+	uint64_t* h2 = (uint64_t*)ctx[2]->hash_state;
+	uint8_t* l3 = ctx[3]->long_state;
+	uint64_t* h3 = (uint64_t*)ctx[3]->hash_state;
+	uint8_t* l4 = ctx[4]->long_state;
+	uint64_t* h4 = (uint64_t*)ctx[4]->hash_state;
+	uint8_t* l5 = ctx[5]->long_state;
+	uint64_t* h5 = (uint64_t*)ctx[5]->hash_state;
+	uint8_t* l6 = ctx[6]->long_state;
+	uint64_t* h6 = (uint64_t*)ctx[6]->hash_state;
+	uint8_t* l7 = ctx[7]->long_state;
+	uint64_t* h7 = (uint64_t*)ctx[7]->hash_state;
+
+	
+
+	__m128i ax0 = _mm_set_epi64x(h0[1] ^ h0[5], h0[0] ^ h0[4]);
+	__m128i bx0 = _mm_set_epi64x(h0[3] ^ h0[7], h0[2] ^ h0[6]);
+	__m128i ax1 = _mm_set_epi64x(h1[1] ^ h1[5], h1[0] ^ h1[4]);
+	__m128i bx1 = _mm_set_epi64x(h1[3] ^ h1[7], h1[2] ^ h1[6]);
+	__m128i ax2 = _mm_set_epi64x(h2[1] ^ h2[5], h2[0] ^ h2[4]);
+	__m128i bx2 = _mm_set_epi64x(h2[3] ^ h2[7], h2[2] ^ h2[6]);
+	__m128i ax3 = _mm_set_epi64x(h3[1] ^ h3[5], h3[0] ^ h3[4]);
+	__m128i bx3 = _mm_set_epi64x(h3[3] ^ h3[7], h3[2] ^ h3[6]);
+	__m128i ax4 = _mm_set_epi64x(h4[1] ^ h4[5], h4[0] ^ h4[4]);
+	__m128i bx4 = _mm_set_epi64x(h4[3] ^ h4[7], h4[2] ^ h4[6]);
+	__m128i ax5 = _mm_set_epi64x(h5[1] ^ h5[5], h5[0] ^ h5[4]);
+	__m128i bx5 = _mm_set_epi64x(h5[3] ^ h5[7], h5[2] ^ h5[6]);
+	__m128i ax6 = _mm_set_epi64x(h6[1] ^ h6[5], h6[0] ^ h6[4]);
+	__m128i bx6 = _mm_set_epi64x(h6[3] ^ h6[7], h6[2] ^ h6[6]);
+	__m128i ax7 = _mm_set_epi64x(h7[1] ^ h7[5], h7[0] ^ h7[4]);
+	__m128i bx7 = _mm_set_epi64x(h7[3] ^ h7[7], h7[2] ^ h7[6]);
+	__m128i cx0 = _mm_set_epi64x(0, 0);
+	__m128i cx1 = _mm_set_epi64x(0, 0);
+	__m128i cx2 = _mm_set_epi64x(0, 0);
+	__m128i cx3 = _mm_set_epi64x(0, 0);
+	__m128i cx4 = _mm_set_epi64x(0, 0);
+	__m128i cx5 = _mm_set_epi64x(0, 0);
+	__m128i cx6 = _mm_set_epi64x(0, 0);
+	__m128i cx7 = _mm_set_epi64x(0, 0);
+
+
+	for (size_t i = 0; i < ITERATIONS/2; i++)
+	{
+		uint64_t idx0, idx1, idx2, idx3, idx4, idx5, idx6, idx7, hi, lo;
+		__m128i *ptr0, *ptr1, *ptr2, *ptr3, *ptr4, *ptr5, *ptr6, *ptr7;
+
+		// EVEN ROUND
+		CN_STEP1(ax0, bx0, cx0, l0, ptr0, idx0);
+		CN_STEP1(ax1, bx1, cx1, l1, ptr1, idx1);
+		CN_STEP1(ax2, bx2, cx2, l2, ptr2, idx2);
+		CN_STEP1(ax3, bx3, cx3, l3, ptr3, idx3);
+		CN_STEP1(ax4, bx4, cx4, l4, ptr4, idx4);
+		CN_STEP1(ax5, bx5, cx5, l5, ptr5, idx5);
+		CN_STEP1(ax6, bx6, cx6, l6, ptr6, idx6);
+		CN_STEP1(ax7, bx7, cx7, l7, ptr7, idx7);
+
+		CN_STEP2(ax0, bx0, cx0, l0, ptr0, idx0);
+		CN_STEP2(ax1, bx1, cx1, l1, ptr1, idx1);
+		CN_STEP2(ax2, bx2, cx2, l2, ptr2, idx2);
+		CN_STEP2(ax3, bx3, cx3, l3, ptr3, idx3);
+		CN_STEP2(ax4, bx4, cx4, l4, ptr4, idx4);
+		CN_STEP2(ax5, bx5, cx5, l5, ptr5, idx5);
+		CN_STEP2(ax6, bx6, cx6, l6, ptr6, idx6);
+		CN_STEP2(ax7, bx7, cx7, l7, ptr7, idx7);
+
+		CN_STEP3(ax0, bx0, cx0, l0, ptr0, idx0);
+		CN_STEP3(ax1, bx1, cx1, l1, ptr1, idx1);
+		CN_STEP3(ax2, bx2, cx2, l2, ptr2, idx2);
+		CN_STEP3(ax3, bx3, cx3, l3, ptr3, idx3);
+		CN_STEP3(ax4, bx4, cx4, l4, ptr4, idx4);
+		CN_STEP3(ax5, bx5, cx5, l5, ptr5, idx5);
+		CN_STEP3(ax6, bx6, cx6, l6, ptr6, idx6);
+		CN_STEP3(ax7, bx7, cx7, l7, ptr7, idx7);
+
+		CN_STEP4(ax0, bx0, cx0, l0, ptr0, idx0);
+		CN_STEP4(ax1, bx1, cx1, l1, ptr1, idx1);
+		CN_STEP4(ax2, bx2, cx2, l2, ptr2, idx2);
+		CN_STEP4(ax3, bx3, cx3, l3, ptr3, idx3);
+		CN_STEP4(ax4, bx4, cx4, l4, ptr4, idx4);
+		CN_STEP4(ax5, bx5, cx5, l5, ptr5, idx5);
+		CN_STEP4(ax6, bx6, cx6, l6, ptr6, idx6);
+		CN_STEP4(ax7, bx7, cx7, l7, ptr7, idx7);
+
+		// ODD ROUND
+		CN_STEP1(ax0, cx0, bx0, l0, ptr0, idx0);
+		CN_STEP1(ax1, cx1, bx1, l1, ptr1, idx1);
+		CN_STEP1(ax2, cx2, bx2, l2, ptr2, idx2);
+		CN_STEP1(ax3, cx3, bx3, l3, ptr3, idx3);
+		CN_STEP1(ax4, cx4, bx4, l4, ptr4, idx4);
+		CN_STEP1(ax5, bx5, cx5, l5, ptr5, idx5);
+		CN_STEP1(ax6, bx6, cx6, l6, ptr6, idx6);
+		CN_STEP1(ax7, bx7, cx7, l7, ptr7, idx7);
+
+		CN_STEP2(ax0, cx0, bx0, l0, ptr0, idx0);
+		CN_STEP2(ax1, cx1, bx1, l1, ptr1, idx1);
+		CN_STEP2(ax2, cx2, bx2, l2, ptr2, idx2);
+		CN_STEP2(ax3, cx3, bx3, l3, ptr3, idx3);
+		CN_STEP2(ax4, cx4, bx4, l4, ptr4, idx4);
+		CN_STEP2(ax5, bx5, cx5, l5, ptr5, idx5);
+		CN_STEP2(ax6, bx6, cx6, l6, ptr6, idx6);
+		CN_STEP2(ax7, bx7, cx7, l7, ptr7, idx7);
+
+		CN_STEP3(ax0, cx0, bx0, l0, ptr0, idx0);
+		CN_STEP3(ax1, cx1, bx1, l1, ptr1, idx1);
+		CN_STEP3(ax2, cx2, bx2, l2, ptr2, idx2);
+		CN_STEP3(ax3, cx3, bx3, l3, ptr3, idx3);
+		CN_STEP3(ax4, cx4, bx4, l4, ptr4, idx4);
+		CN_STEP3(ax5, bx5, cx5, l5, ptr5, idx5);
+		CN_STEP3(ax6, bx6, cx6, l6, ptr6, idx6);
+		CN_STEP3(ax7, bx7, cx7, l7, ptr7, idx7);
+
+		CN_STEP4(ax0, cx0, bx0, l0, ptr0, idx0);
+		CN_STEP4(ax1, cx1, bx1, l1, ptr1, idx1);
+		CN_STEP4(ax2, cx2, bx2, l2, ptr2, idx2);
+		CN_STEP4(ax3, cx3, bx3, l3, ptr3, idx3);
+		CN_STEP4(ax4, cx4, bx4, l4, ptr4, idx4);
+		CN_STEP4(ax5, bx5, cx5, l5, ptr5, idx5);
+		CN_STEP4(ax6, bx6, cx6, l6, ptr6, idx6);
+		CN_STEP4(ax7, bx7, cx7, l7, ptr7, idx7);
+
+	}
+
+	for (size_t i = 0; i < 8; i++)
+	{
+		cn_implode_scratchpad<MEM, SOFT_AES, PREFETCH>((__m128i*)ctx[i]->long_state, (__m128i*)ctx[i]->hash_state);
+		keccakf((uint64_t*)ctx[i]->hash_state, 24);
+		extra_hashes[ctx[i]->hash_state[0] & 3](ctx[i]->hash_state, 200, (char*)output + 32 * i);
+	}
+}
+
+
 // This most lovely creation will do 10 cn hashes at a time. BROKEN
 template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
 void cryptonight_deca_hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
