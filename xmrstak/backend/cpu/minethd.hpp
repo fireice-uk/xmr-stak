@@ -46,6 +46,7 @@ private:
 	void quad_work_main();
 	void penta_work_main();
 	void hexa_work_main();
+	void deca_work_main();
 
 	void consume_work();
 
