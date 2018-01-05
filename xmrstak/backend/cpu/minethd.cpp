@@ -497,7 +497,7 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		cryptonight_sepa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
 		cryptonight_sepa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
 		cryptonight_sepa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
-		cryptonight_sepa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>
+		cryptonight_sepa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>,
 		cryptonight_deca_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
 		cryptonight_deca_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
 		cryptonight_deca_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
