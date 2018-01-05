@@ -48,6 +48,7 @@ private:
 	void hexa_work_main();
 	void sepa_work_main();
 	void octa_work_main();
+	void enna_work_main();
 	void deca_work_main();
 
 	void consume_work();
