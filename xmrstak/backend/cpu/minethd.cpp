@@ -110,6 +110,9 @@ minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch,
 	case 10:
 		oWorkThd = std::thread(&minethd::deca_work_main, this);
 		break;
+	case 8:
+		oWorkThd = std::thread(&minethd::octa_work_main, this);
+		break;
 	case 7:
 		oWorkThd = std::thread(&minethd::sepa_work_main, this);
 		break;
@@ -498,6 +501,10 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		cryptonight_sepa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
 		cryptonight_sepa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
 		cryptonight_sepa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>,
+		cryptonight_octa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
+		cryptonight_octa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
+		cryptonight_octa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
+		cryptonight_octa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>,
 		cryptonight_deca_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
 		cryptonight_deca_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
 		cryptonight_deca_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
@@ -572,6 +579,11 @@ void minethd::hexa_work_main()
 void minethd::sepa_work_main()
 {
 	multiway_work_main<7>(func_multi_selector(7, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
+}
+	
+void minethd::octa_work_main()
+{
+	multiway_work_main<8>(func_multi_selector(8, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
 }
 	
 void minethd::deca_work_main()
