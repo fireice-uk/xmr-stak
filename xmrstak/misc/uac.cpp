@@ -1,5 +1,3 @@
-#pragma once
-
 #ifdef _WIN32
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/params.hpp"
