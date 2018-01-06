@@ -18,7 +18,11 @@ make install
 
 ### For AMD GPUs
 
-> 🖐 We need help with AMD GPU compilation instructions. Please submit a PR if you managed to install [AMD APP SDK](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/) and to compile `xmr-stak` on MacOS.
+```shell
+brew install hwloc libmicrohttpd gcc openssl cmake
+cmake . -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=ON
+make install
+```
 
 ### For CPU-only mining
 
