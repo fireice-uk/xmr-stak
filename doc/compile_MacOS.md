@@ -18,6 +18,8 @@ make install
 
 ### For AMD GPUs
 
+OpenCL is bundled with Xcode, so no other depedency then the basic ones needed. Just enable OpenCL via the `-DOpenCL_ENABLE=ON` CMake option.
+
 ```shell
 brew install hwloc libmicrohttpd gcc openssl cmake
 cmake . -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=ON
