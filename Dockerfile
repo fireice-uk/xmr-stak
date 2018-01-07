@@ -23,4 +23,6 @@ VOLUME /mnt
 
 WORKDIR /mnt
 
+EXPOSE 1600
+
 ENTRYPOINT ["/usr/local/bin/xmr-stak"]
