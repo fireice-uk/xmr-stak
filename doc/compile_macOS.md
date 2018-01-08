@@ -1,4 +1,4 @@
-# Compile **xmr-stak** for MacOS
+# Compile **xmr-stak** for macOS
 
 ## Dependencies
 
@@ -18,7 +18,7 @@ make install
 
 ### For AMD GPUs
 
-> 🖐 We need help with AMD GPU compilation instructions. Please submit a PR if you managed to install [AMD APP SDK](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/) and to compile `xmr-stak` on MacOS.
+> 🖐 We need help with AMD GPU compilation instructions. Please submit a PR if you managed to install [AMD APP SDK](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/) and to compile `xmr-stak` on macOS.
 
 ### For CPU-only mining
 

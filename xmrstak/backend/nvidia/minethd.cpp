@@ -166,7 +166,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 		if(cfg.cpu_aff >= 0)
 		{
 #if defined(__APPLE__)
-			printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory.");
+			printer::inst()->print_msg(L1, "WARNING on macOS thread affinity is only advisory.");
 #endif
 
 			printer::inst()->print_msg(L1, "Starting NVIDIA GPU thread %d, affinity: %d.", i, (int)cfg.cpu_aff);
