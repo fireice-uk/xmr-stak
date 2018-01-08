@@ -778,12 +778,12 @@ void executor::hashrate_report(std::string& out)
 				out.append(hps_format(fHps[2], num, sizeof(num))).append(1, ' ');
 				
 				fTotal[0] += (std::isnormal(fHps[0])) ? fHps[0] : 0.0;
-				fTotal[0] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
-				fTotal[0] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
+				fTotal[1] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
+				fTotal[2] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
 				
 				fTotalCur[0] += (std::isnormal(fHps[0])) ? fHps[0] : 0.0;
-				fTotalCur[0] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
-				fTotalCur[0] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
+				fTotalCur[1] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
+				fTotalCur[2] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
 
 				if((i & 0x1) == 1) //Odd i's
 					out.append("|\n");
