@@ -3,6 +3,7 @@ R"===(
 #define WOLF_SKEIN_CL
 
 // Vectorized Skein implementation macros and functions by Wolf
+// Updated by taisel
 
 #define SKEIN_KS_PARITY	0x1BD11BDAA9FC1A22
 
