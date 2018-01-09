@@ -142,7 +142,7 @@ private:
 			}
 
 			L3KB_size = ((get_masked(cpu_info[1], 31, 22) + 1) * (get_masked(cpu_info[1], 21, 12) + 1) *
-				(get_masked(cpu_info[1], 11, 0) + 1) * (cpu_info[2] + 1)) / halfHashMemSize;
+				(get_masked(cpu_info[1], 11, 0) + 1) * (cpu_info[2] + 1)) / 1024;
 
 			return true;
 		}
