@@ -86,6 +86,9 @@ void help()
 	cout<<"  --noNVIDIA            disable the NVIDIA miner backend"<<endl;
 	cout<<"  --nvidia FILE         NVIDIA backend miner config file"<<endl;
 #endif
+#ifndef CONF_NO_HTTPD
+	cout<<"  -i --httpd HTTP_PORT  HTTP interface port"<<endl;
+#endif
 	cout<<" "<<endl;
 	cout<<"The following options can be used for automatic start without a guided config,"<<endl;
 	cout<<"If config exists then this pool will be top priority."<<endl;
@@ -209,6 +212,28 @@ void do_guided_config()
 		currency = tmp;
 	}
 
+	auto& http_port = params::inst().httpd_port;
+	if(http_port == params::httpd_port_unset)
+	{
+#if defined(CONF_NO_HTTPD)
+		http_port = params::httpd_port_disabled;
+#else
+		std::cout<<"- Do you want to use the HTTP interface?" <<std::endl;
+		std::cout<<"Unlike the screen display, browser interface is not affected by the GPU lag." <<std::endl;
+		std::cout<<"If you don't want to use it, please enter 0, otherwise enter port number that the miner should listen on" <<std::endl;
+
+		int32_t port;
+		while(!(std::cin >> port) || port < 0 || port > 65535)
+		{
+			std::cin.clear();
+			std::cin.ignore(INT_MAX, '\n');
+			std::cout << "Invalid port number. Please enter a number between 0 and 65535." << std::endl;
+		}
+
+		http_port = port;
+#endif
+	}
+
 	auto& pool = params::inst().poolURL;
 	bool userSetPool = true;
 	if(pool.empty())
@@ -306,6 +331,7 @@ void do_guided_config()
 
 	configTpl.replace("POOLCONF", pool_table);
 	configTpl.replace("CURRENCY", currency);
+	configTpl.replace("HTTP_PORT", std::to_string(http_port));
 	configTpl.write(params::inst().configFile);
 	std::cout<<"Configuration stored in file '"<<params::inst().configFile<<"'"<<std::endl;
 }
@@ -342,7 +368,14 @@ int main(int argc, char *argv[])
 		params::inst().executablePrefix += seperator;
 	}
 
-	bool uacDialog = true;
+	params::inst().minerArg0 = argv[0];
+	params::inst().minerArgs.reserve(argc * 16);
+	for(int i = 1; i < argc; i++)
+	{
+		params::inst().minerArgs += " ";
+		params::inst().minerArgs += argv[i];
+	}
+
 	bool pool_url_set = false;
 	for(size_t i = 1; i < argc-1; i++)
 	{
@@ -504,9 +537,31 @@ int main(int argc, char *argv[])
 			}
 			params::inst().configFile = argv[i];
 		}
+		else if(opName.compare("-i") == 0 || opName.compare("--httpd") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '-i/--httpd' given");
+				win_exit();
+				return 1;
+			}
+
+			char* endp = nullptr;
+			long int ret = strtol(argv[i], &endp, 10);
+
+			if(endp == nullptr || ret < 0 || ret > 65535)
+			{
+				printer::inst()->print_msg(L0, "Argument for parameter '-i/--httpd' must be a number between 0 and 65535");
+				win_exit();
+				return 1;
+			}
+
+			params::inst().httpd_port = ret;
+		}
 		else if(opName.compare("--noUAC") == 0)
 		{
-			uacDialog = false;
+			params::inst().allowUAC = false;
 		}
 		else
 		{
@@ -516,20 +571,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-#ifdef _WIN32
-	if(uacDialog && !IsElevated())
-	{
-		std::string minerArgs;
-		for(int i = 1; i < argc; i++)
-		{
-			minerArgs += " ";
-			minerArgs += argv[i];
-		}
-
-		SelfElevate(argv[0], minerArgs);
-	}
-#endif
-	
 	// check if we need a guided start
 	if(!configEditor::file_exist(params::inst().configFile))
 		do_guided_config();
@@ -540,22 +581,35 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+#ifdef _WIN32
+	/* For Windows 7 and 8 request elevation at all times unless we are using slow memory */
+	if(jconf::inst()->GetSlowMemSetting() != jconf::slow_mem_cfg::always_use && !IsWindows10OrNewer())
+	{
+		printer::inst()->print_msg(L0, "Elevating due to Windows 7 or 8. You need Windows 10 to use fast memory without UAC elevation.");
+		RequestElevation();
+	}
+#endif
+
 	if (!BackendConnector::self_test())
 	{
 		win_exit();
 		return 1;
 	}
 
-#ifndef CONF_NO_HTTPD
-	if(jconf::inst()->GetHttpdPort() != 0)
+	if(jconf::inst()->GetHttpdPort() != uint16_t(params::httpd_port_disabled))
 	{
+#ifdef CONF_NO_HTTPD
+		printer::inst()->print_msg(L0, "HTTPD port is enabled but this binary was compiled without HTTP support!");
+		win_exit();
+		return 1;
+#else
 		if (!httpd::inst()->start_daemon())
 		{
 			win_exit();
 			return 1;
 		}
-	}
 #endif
+	}
 
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_str(get_version_str_short().c_str());
