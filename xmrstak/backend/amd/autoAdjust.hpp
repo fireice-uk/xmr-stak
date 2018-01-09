@@ -101,7 +101,16 @@ private:
 			 * sowing down the memory performance because of TLB cache misses
 			 */
 			size_t maxThreads = 1000u;
-			if(ctx.name.compare("gfx901") == 0)
+			if(
+				ctx.name.compare("gfx901") == 0 ||
+				ctx.name.compare("gfx904") == 0 ||
+				// APU
+				ctx.name.compare("gfx902") == 0 ||
+				// UNKNOWN
+				ctx.name.compare("gfx900") == 0 ||
+				ctx.name.compare("gfx903") == 0 ||
+				ctx.name.compare("gfx905") == 0
+			)
 			{
 				/* Increase the number of threads for AMD VEGA gpus.
 				 * Limit the number of threads based on the issue: https://github.com/fireice-uk/xmr-stak/issues/5#issuecomment-339425089
