@@ -31,6 +31,7 @@ extern "C"
 #include "cryptonight.h"
 #include "cryptonight_aesni.h"
 #include "xmrstak/backend/cryptonight.hpp"
+#include "xmrstak/misc/console.hpp"
 #include "xmrstak/jconf.hpp"
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,6 +74,8 @@ void do_skein_hash(const void* input, size_t len, char* output) {
 void (* const extra_hashes[4])(const void *, size_t, char *) = {do_blake_hash, do_groestl_hash, do_jh_hash, do_skein_hash};
 
 #ifdef _WIN32
+#include "xmrstak/misc/uac.hpp"
+
 BOOL bRebootDesirable = FALSE; //If VirtualAlloc fails, suggest a reboot
 
 BOOL AddPrivilege(TCHAR* pszPrivilege)
@@ -176,13 +179,16 @@ size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 
 	if(AddPrivilege(TEXT("SeLockMemoryPrivilege")) == 0)
 	{
+		printer::inst()->print_msg(L0, "Elevating because we need to set up fast memory privileges.");
+		RequestElevation();
+
 		if(AddLargePageRights())
 		{
 			msg->warning = "Added SeLockMemoryPrivilege to the current account. You need to reboot for it to work";
 			bRebootDesirable = TRUE;
 		}
 		else
-			msg->warning = "Obtaning SeLockMemoryPrivilege failed.";
+			msg->warning = "Obtaining SeLockMemoryPrivilege failed.";
 
 		return 0;
 	}

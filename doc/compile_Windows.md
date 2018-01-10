@@ -22,7 +22,7 @@
 
 ### Cuda 8.0+ (only needed to use NVIDIA GPUs)
 
-- donwload and install [https://developer.nvidia.com/cuda-downloads](https://developer.nvidia.com/cuda-downloads)
+- download and install [https://developer.nvidia.com/cuda-downloads](https://developer.nvidia.com/cuda-downloads)
 - for minimal install choose `Custom installation options` during the install and select
     - CUDA/Develpment
     - CUDA/Visual Studio Integration (ignore the warning during the install that VS2017 is not supported)

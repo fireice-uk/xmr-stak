@@ -26,6 +26,9 @@ R"===(
  *       "affine_to_cpu" : false, "sync_mode" : 3,
  *     },
  * ],
+ * If you do not wish to mine with your nVidia GPU(s) then use:
+ * "gpu_threads_conf" :
+ * null,
  */
 
 "gpu_threads_conf" :

@@ -12,6 +12,9 @@ R"===(
  * [
  *	{ "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false, "strided_index" : true },
  * ],
+ * If you do not wish to mine with your AMD GPU(s) then use:
+ * "gpu_threads_conf" :
+ * null,
  */
 
 "gpu_threads_conf" : [
