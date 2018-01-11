@@ -25,7 +25,7 @@
     make install
 
     # Arch
-    sudo pacman -S base-devel hwloc openssl cmake libmicrohttpd
+    sudo pacman -S --needed base-devel hwloc openssl cmake libmicrohttpd
     git clone https://github.com/fireice-uk/xmr-stak.git
     mkdir xmr-stak/build
     cd xmr-stak/build
