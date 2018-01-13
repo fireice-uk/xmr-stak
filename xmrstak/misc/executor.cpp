@@ -50,6 +50,16 @@
 #define strncasecmp _strnicmp
 #endif // _WIN32
 
+#if defined(__GNUC__) && !defined(__clang__)
+#	pragma GCC diagnostic push
+/* ignore string literal errors in this file
+ * because of the usage of format strings out of an extern file the compiler can not
+ * validate the strings literals
+ */
+#	pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+
+
 executor::executor()
 {
 }
@@ -96,7 +106,7 @@ bool executor::get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev)
 	size_t limit = jconf::inst()->GetGiveUpLimit();
 	size_t wait = jconf::inst()->GetNetRetry();
 
-	if(limit == 0 || is_dev) limit = (-1); //No limit = limit of 2^64-1
+	if(limit == 0 || is_dev) limit = size_t(-1); //No limit = limit of 2^64-1
 
 	size_t pool_count = 0;
 	size_t over_limit = 0;
@@ -423,9 +433,9 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 		return;
 	}
 
-	size_t t_start = get_timestamp_ms();
+	uint64_t t_start = get_timestamp_ms();
 	bool bResult = pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult, pvThreads->at(oResult.iThreadId), is_monero);
-	size_t t_len = get_timestamp_ms() - t_start;
+	uint64_t t_len = get_timestamp_ms() - t_start;
 
 	if(t_len > 0xFFFF)
 		t_len = 0xFFFF;
@@ -909,8 +919,8 @@ void executor::connection_report(std::string& out)
 	if (n_calls > 1)
 	{
 		//Not-really-but-good-enough median
-		std::nth_element(iPoolCallTimes.begin(), iPoolCallTimes.begin() + n_calls/2, iPoolCallTimes.end());
-		out.append("Pool ping time  : ").append(std::to_string(iPoolCallTimes[n_calls/2])).append(" ms\n");
+		std::nth_element(iPoolCallTimes.begin(), iPoolCallTimes.begin() + static_cast<int64_t>(n_calls/2u), iPoolCallTimes.end());
+		out.append("Pool ping time  : ").append(std::to_string((int)iPoolCallTimes[n_calls/2u])).append(" ms\n");
 	}
 	else
 		out.append("Pool ping time  : (n/a)\n");
@@ -1094,7 +1104,7 @@ void executor::http_connection_report(std::string& out)
 	if (n_calls > 1)
 	{
 		//Not-really-but-good-enough median
-		std::nth_element(iPoolCallTimes.begin(), iPoolCallTimes.begin() + n_calls/2, iPoolCallTimes.end());
+		std::nth_element(iPoolCallTimes.begin(), iPoolCallTimes.begin() + static_cast<int64_t>(n_calls/2u), iPoolCallTimes.end());
 		ping_time = iPoolCallTimes[n_calls/2];
 	}
 
@@ -1173,7 +1183,7 @@ void executor::http_json_report(std::string& out)
 	if(pool != nullptr && pool->is_dev_pool())
 		pool = pick_pool_by_id(last_usr_pool_id);
 
-	size_t iConnSec = 0;
+	int64_t iConnSec = 0;
 	if(pool != nullptr && pool->is_running() && pool->is_logged_in())
 	{
 		using namespace std::chrono;
@@ -1202,7 +1212,7 @@ void executor::http_json_report(std::string& out)
 	if (n_calls > 1)
 	{
 		//Not-really-but-good-enough median
-		std::nth_element(iPoolCallTimes.begin(), iPoolCallTimes.begin() + n_calls/2, iPoolCallTimes.end());
+		std::nth_element(iPoolCallTimes.begin(), iPoolCallTimes.begin() + static_cast<int64_t>(n_calls/2u), iPoolCallTimes.end());
 		iPoolPing = iPoolCallTimes[n_calls/2];
 	}
 
@@ -1278,3 +1288,7 @@ void executor::get_http_report(ex_event_name ev_id, std::string& data)
 	ready.wait();
 	pHttpString = nullptr;
 }
+
+#if defined(__GNUC__) && !defined(__clang__)
+# pragma GCC diagnostic pop
+#endif

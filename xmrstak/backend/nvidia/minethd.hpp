@@ -48,7 +48,7 @@ private:
 	std::mutex thd_aff_set;
 
 	std::thread oWorkThd;
-	int64_t affinity;
+	int affinity;
 
 	nvid_ctx ctx;
 

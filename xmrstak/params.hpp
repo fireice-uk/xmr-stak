@@ -18,11 +18,11 @@ struct params
 		return *env.pParams;
 	}
 
-	std::string executablePrefix;
-	std::string binaryName;
-	bool useAMD;
-	bool useNVIDIA;
-	bool useCPU;
+	std::string executablePrefix = "";
+	std::string binaryName = "xmr-stak";
+	bool useAMD = true;
+	bool useNVIDIA = true;
+	bool useCPU = true;
 
 	bool poolUseTls = false;
 	std::string poolURL;
@@ -37,25 +37,16 @@ struct params
 
 	std::string currency;
 
-	std::string configFile;
-	std::string configFileAMD;
-	std::string configFileNVIDIA;
-	std::string configFileCPU;
+	std::string configFile = "config.txt";
+	std::string configFileAMD = "amd.txt";
+	std::string configFileNVIDIA = "nvidia.txt";
+	std::string configFileCPU = "cpu.txt";
 
 	bool allowUAC = true;
 	std::string minerArg0;
 	std::string minerArgs;
 
-	params() :
-		binaryName("xmr-stak"),
-		executablePrefix(""),
-		useAMD(true),
-		useNVIDIA(true),
-		useCPU(true),
-		configFile("config.txt"),
-		configFileAMD("amd.txt"),
-		configFileCPU("cpu.txt"),
-		configFileNVIDIA("nvidia.txt")
+	params()
 	{}
 
 };

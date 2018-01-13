@@ -173,18 +173,18 @@ struct ex_event
 
 #include <chrono>
 //Get steady_clock timestamp - misc helper function
-inline size_t get_timestamp()
+inline uint64_t get_timestamp()
 {
 	using namespace std::chrono;
-	return time_point_cast<seconds>(steady_clock::now()).time_since_epoch().count();
-};
+	return static_cast<uint64_t>(time_point_cast<seconds>(steady_clock::now()).time_since_epoch().count());
+}
 
 //Get milisecond timestamp
-inline size_t get_timestamp_ms()
+inline uint64_t get_timestamp_ms()
 {
 	using namespace std::chrono;
 	if(high_resolution_clock::is_steady)
-		return time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
+		return static_cast<uint64_t>(time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count());
 	else
-		return time_point_cast<milliseconds>(steady_clock::now()).time_since_epoch().count();
+		return static_cast<uint64_t>(time_point_cast<milliseconds>(steady_clock::now()).time_since_epoch().count());
 }

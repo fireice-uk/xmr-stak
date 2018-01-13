@@ -149,7 +149,7 @@ private:
 			throw(std::runtime_error("Cache object hasn't got attributes."));
 
 		size_t PUs = 0;
-		findChildrenByType(obj, HWLOC_OBJ_PU, [&PUs](hwloc_obj_t found) { PUs++; } );
+		findChildrenByType(obj, HWLOC_OBJ_PU, [&PUs](hwloc_obj_t /*found*/) { PUs++; } );
 
 		//Strange case, but we will handle it silently, surely there must be one PU somewhere?
 		if(PUs == 0)

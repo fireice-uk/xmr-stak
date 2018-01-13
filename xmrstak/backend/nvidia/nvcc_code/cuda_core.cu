@@ -297,10 +297,10 @@ __global__ void cryptonight_core_gpu_phase3( int threads, int bfactor, int parti
 template<size_t ITERATIONS, uint32_t MASK, uint32_t THREAD_SHIFT>
 void cryptonight_core_gpu_hash(nvid_ctx* ctx)
 {
-	dim3 grid( ctx->device_blocks );
-	dim3 block( ctx->device_threads );
-	dim3 block4( ctx->device_threads << 2 );
-	dim3 block8( ctx->device_threads << 3 );
+	dim3 grid( (uint32_t)ctx->device_blocks );
+	dim3 block( (uint32_t)ctx->device_threads );
+	dim3 block4( (uint32_t)ctx->device_threads << 2 );
+	dim3 block8( (uint32_t)ctx->device_threads << 3 );
 
 	int partcount = 1 << ctx->device_bfactor;
 

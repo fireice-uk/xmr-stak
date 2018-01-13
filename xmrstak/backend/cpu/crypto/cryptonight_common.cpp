@@ -33,6 +33,8 @@ extern "C"
 #include "xmrstak/backend/cryptonight.hpp"
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/jconf.hpp"
+#include "xmrstak/misc/utility.hpp"
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -196,6 +198,9 @@ size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 	bRebootDesirable = TRUE;
 	return 1;
 #else
+	xmrstak::ignore_unused(use_fast_mem);
+	xmrstak::ignore_unused(use_mlock);
+	xmrstak::ignore_unused(msg);
 	return 1;
 #endif // _WIN32
 }

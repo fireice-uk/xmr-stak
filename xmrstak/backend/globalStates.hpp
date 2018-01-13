@@ -6,7 +6,7 @@
 
 #include <atomic>
 
-constexpr static size_t invalid_pool_id = (-1);
+constexpr static size_t invalid_pool_id = (size_t)(-1);
 
 namespace xmrstak
 {

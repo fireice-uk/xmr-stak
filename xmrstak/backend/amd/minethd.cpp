@@ -142,7 +142,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 			printer::inst()->print_msg(L1, "WARNING on macOS thread affinity is only advisory.");
 #endif
 
-			printer::inst()->print_msg(L1, "Starting AMD GPU thread %d, affinity: %d.", i, (int)cfg.cpu_aff);
+			printer::inst()->print_msg(L1, "Starting AMD GPU thread %d, affinity: %d.", i, cfg.cpu_aff);
 		}
 		else
 			printer::inst()->print_msg(L1, "Starting AMD GPU thread %d, no affinity.", i);

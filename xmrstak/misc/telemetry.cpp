@@ -47,14 +47,14 @@ telemetry::telemetry(size_t iThd)
 	}
 }
 
-double telemetry::calc_telemetry_data(size_t iLastMilisec, size_t iThread)
+double telemetry::calc_telemetry_data(uint64_t iLastMilisec, size_t iThread)
 {
 	uint64_t iTimeNow = get_timestamp_ms();
 
-	uint64_t iEarliestHashCnt = 0;
+	uint64_t iEarliestHashCnt = 0u;
 	uint64_t iEarliestStamp = 0;
 	uint64_t iLastestStamp = 0;
-	uint64_t iLastestHashCnt = 0;
+	uint64_t iLastestHashCnt = 0u;
 	bool bHaveFullSet = false;
 
 	//Start at 1, buckettop points to next empty

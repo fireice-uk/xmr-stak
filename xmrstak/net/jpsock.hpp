@@ -49,12 +49,12 @@ public:
 		return ret;
 	}
 
-	inline size_t can_connect() { return get_timestamp() != connect_time; }
+	inline bool can_connect() { return get_timestamp() != connect_time; }
 	inline bool is_running() { return bRunning; }
 	inline bool is_logged_in() { return bLoggedIn; }
 	inline bool is_dev_pool() { return pool; }
 	inline size_t get_pool_id() { return pool_id; }
-	inline bool get_disconnects(size_t& att, size_t& time) { att = connect_attempts; time = disconnect_time != 0 ? get_timestamp() - disconnect_time + 1 : 0; return pool && usr_login[0]; }
+	inline bool get_disconnects(size_t& att, uint64_t& time) { att = (size_t)connect_attempts; time = (disconnect_time != 0 ? get_timestamp() - disconnect_time + 1 : 0); return pool && usr_login[0]; }
 	inline const char* get_pool_addr() { return net_addr.c_str(); }
 	inline const char* get_tls_fp() { return tls_fp.c_str(); }
 	inline bool is_nicehash() { return nicehash; }
@@ -98,9 +98,9 @@ private:
 	std::string pool_motd;
 	std::mutex motd_mutex;
 
-	size_t connect_time = 0;
-	std::atomic<size_t> connect_attempts;
-	std::atomic<size_t> disconnect_time;
+	uint64_t connect_time = 0;
+	std::atomic<uint64_t> connect_attempts;
+	std::atomic<uint64_t> disconnect_time;
 
 	std::atomic<bool> bRunning;
 	std::atomic<bool> bLoggedIn;

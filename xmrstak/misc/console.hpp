@@ -16,9 +16,10 @@ void reset_colour();
 
 // on MSVC sizeof(long int) = 4, gcc sizeof(long int) = 8, this is the workaround
 // now we can use %llu on both compilers
-inline long long unsigned int int_port(size_t i)
+template<typename T>
+inline long long unsigned int int_port(const T i)
 {
-	return i;
+	return static_cast<long long unsigned int>(i);
 }
 
 enum verbosity : size_t { L0 = 0, L1 = 1, L2 = 2, L3 = 3, L4 = 4, LINF = 100};

@@ -27,6 +27,13 @@
 #pragma once
 
 #ifdef __GNUC__
+#	ifndef __clang__
+		// pop will be called at the end of this file
+#		pragma GCC diagnostic push
+#		pragma GCC diagnostic ignored "-pedantic"
+#		pragma GCC diagnostic ignored "-Wsign-conversion"
+#	endif
+
 #include <x86intrin.h>
 #else
 #include <intrin.h>
@@ -123,3 +130,7 @@ static inline __m128i soft_aeskeygenassist(__m128i key, uint8_t rcon)
 	uint32_t X3 = sub_word(_mm_cvtsi128_si32(_mm_shuffle_epi32(key, 0xFF)));
 	return _mm_set_epi32(_rotr(X3, 8) ^ rcon, X3,_rotr(X1, 8) ^ rcon, X1);
 }
+
+#if defined(__GNUC__) && !defined(__clang__)
+#	pragma GCC diagnostic pop
+#endif
