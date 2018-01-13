@@ -107,6 +107,21 @@ minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch,
 
 	switch (iMultiway)
 	{
+	case 10:
+		oWorkThd = std::thread(&minethd::deca_work_main, this);
+		break;
+	case 9:
+		oWorkThd = std::thread(&minethd::enna_work_main, this);
+		break;
+	case 8:
+		oWorkThd = std::thread(&minethd::octa_work_main, this);
+		break;
+	case 7:
+		oWorkThd = std::thread(&minethd::sepa_work_main, this);
+		break;
+	case 6:
+		oWorkThd = std::thread(&minethd::hexa_work_main, this);
+		break;
 	case 5:
 		oWorkThd = std::thread(&minethd::penta_work_main, this);
 		break;
@@ -169,7 +184,7 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 	return nullptr; //Should never happen
 }
 
-static constexpr size_t MAX_N = 5;
+static constexpr size_t MAX_N = 15;
 bool minethd::self_test()
 {
 	alloc_msg msg = { 0 };
@@ -480,7 +495,28 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
 		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
 		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
-		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>
+		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>,
+		cryptonight_hexa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
+		cryptonight_hexa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
+		cryptonight_hexa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
+		cryptonight_hexa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>,
+		cryptonight_sepa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
+		cryptonight_sepa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
+		cryptonight_sepa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
+		cryptonight_sepa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>,
+		cryptonight_octa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
+		cryptonight_octa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
+		cryptonight_octa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
+		cryptonight_octa_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>,
+		cryptonight_enna_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
+		cryptonight_enna_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
+		cryptonight_enna_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
+		cryptonight_enna_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>,
+		cryptonight_deca_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
+		cryptonight_deca_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
+		cryptonight_deca_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
+		cryptonight_deca_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>
+		
 #endif
 #if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_MONERO))
 		// comma will be added only if Monero and Aeon is build
@@ -540,6 +576,30 @@ void minethd::quad_work_main()
 void minethd::penta_work_main()
 {
 	multiway_work_main<5>(func_multi_selector(5, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
+}
+
+void minethd::hexa_work_main()
+{
+	multiway_work_main<6>(func_multi_selector(6, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
+}
+
+void minethd::sepa_work_main()
+{
+	multiway_work_main<7>(func_multi_selector(7, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
+}
+	
+void minethd::octa_work_main()
+{
+	multiway_work_main<8>(func_multi_selector(8, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
+}
+void minethd::enna_work_main()
+{
+	multiway_work_main<9>(func_multi_selector(9, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
+}
+	
+void minethd::deca_work_main()
+{
+	multiway_work_main<10>(func_multi_selector(10, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, ::jconf::inst()->IsCurrencyMonero()));
 }
 
 template<size_t N>
