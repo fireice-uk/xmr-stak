@@ -75,10 +75,11 @@
 
 ## Compile
 
-- download and unzip `xmr-stak`
+- download `xmr-stak` [Source Code.zip](https://github.com/fireice-uk/xmr-stak/releases) and save to a location in your `User` folder
+- extract the Source Code.zip file
 - open the command line terminal `cmd`
-- `cd` to your unzipped source code directory
-- execute the following commands (NOTE: path to VS2017 can be different)
+- `cd` to the extracted source code directory
+- execute the following commands (NOTE: path to Visual Studio 2017 Community can be different)
   ```
   "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsMSBuildCmd.bat"
   set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc;C:\xmr-stak-dep\libmicrohttpd;C:\xmr-stak-dep\openssl
