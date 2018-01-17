@@ -75,7 +75,7 @@
 
 ## Compile
 
-- download `xmr-stak` [Source Code.zip](https://github.com/fireice-uk/xmr-stak/releases) and save to a location in your `User` folder
+- download `xmr-stak` [Source Code.zip](https://github.com/fireice-uk/xmr-stak/releases) and save to a location in your home folder (C:\Users\USERNAME\)
 - extract the Source Code.zip file
 - open the command line terminal `cmd`
 - `cd` to the extracted source code directory
@@ -86,6 +86,8 @@
   mkdir build
   cd build
   ```
+  - Sometimes Windows will `cd` to `C:\Users\USERNAME\source\build\` instead of `C:\Users\USERNAME\xmr-stak-<version>\build`. Ensure you are in the correct `build` directory before proceeding. 
+  
   - for CUDA 8*
     ```
     cmake -G "Visual Studio 15 2017 Win64" -T v140,host=x64 ..
