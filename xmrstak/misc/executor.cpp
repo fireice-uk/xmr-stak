@@ -761,6 +761,7 @@ void executor::hashrate_report(std::string& out)
 			else
 				out.append(1, '\n');
 
+			double fTotalCur[3] = { 0.0, 0.0, 0.0};
 			for (i = 0; i < nthd; i++)
 			{
 				double fHps[3];
@@ -775,10 +776,14 @@ void executor::hashrate_report(std::string& out)
 				out.append(hps_format(fHps[0], num, sizeof(num))).append(" |");
 				out.append(hps_format(fHps[1], num, sizeof(num))).append(" |");
 				out.append(hps_format(fHps[2], num, sizeof(num))).append(1, ' ');
-
-				fTotal[0] += fHps[0];
-				fTotal[1] += fHps[1];
-				fTotal[2] += fHps[2];
+				
+				fTotal[0] += (std::isnormal(fHps[0])) ? fHps[0] : 0.0;
+				fTotal[1] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
+				fTotal[2] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
+				
+				fTotalCur[0] += (std::isnormal(fHps[0])) ? fHps[0] : 0.0;
+				fTotalCur[1] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
+				fTotalCur[2] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
 
 				if((i & 0x1) == 1) //Odd i's
 					out.append("|\n");
@@ -786,21 +791,25 @@ void executor::hashrate_report(std::string& out)
 
 			if((i & 0x1) == 1) //We had odd number of threads
 				out.append("|\n");
-
-			if(nthd != 1)
-				out.append("-----------------------------------------------------\n");
-			else
-				out.append("---------------------------\n");
+			
+			out.append("Totals (").append(name).append("): ");
+			out.append(hps_format(fTotalCur[0], num, sizeof(num)));
+			out.append(hps_format(fTotalCur[1], num, sizeof(num)));
+			out.append(hps_format(fTotalCur[2], num, sizeof(num)));
+			out.append(" H/s\n");
+			
+			out.append("-----------------------------------------------------------------\n");
 		}
 	}
 
-	out.append("Totals:  ");
+	out.append("Totals (ALL):  ");
 	out.append(hps_format(fTotal[0], num, sizeof(num)));
 	out.append(hps_format(fTotal[1], num, sizeof(num)));
 	out.append(hps_format(fTotal[2], num, sizeof(num)));
 	out.append(" H/s\nHighest: ");
 	out.append(hps_format(fHighestHps, num, sizeof(num)));
 	out.append(" H/s\n");
+	out.append("-----------------------------------------------------------------\n");
 }
 
 char* time_format(char* buf, size_t len, std::chrono::system_clock::time_point time)
