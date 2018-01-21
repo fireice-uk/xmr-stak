@@ -559,7 +559,7 @@ int main(int argc, char *argv[])
 
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_str(get_version_str_short().c_str());
-	printer::inst()->print_str("\n\n");
+	printer::inst()->print_str("\n-------------------------------------------------------------------\n\n");
 	printer::inst()->print_str("Brought to you by fireice_uk and psychocrypt under GPLv3.\n");
 	printer::inst()->print_str("Based on CPU mining code by wolf9466 (heavily optimized by fireice_uk).\n");
 #ifndef CONF_NO_CUDA
@@ -568,14 +568,15 @@ int main(int argc, char *argv[])
 #ifndef CONF_NO_OPENCL
 	printer::inst()->print_str("Based on OpenCL mining code by wolf9466.\n");
 #endif
-	char buffer[64];
-	snprintf(buffer, sizeof(buffer), "\nConfigurable dev donation level is set to %.1f%%\n\n", fDevDonationLevel * 100.0);
-	printer::inst()->print_str(buffer);
+	printer::inst()->print_str("Colorscheme by poNgz0r.\n\n");
+	printer::inst()->print_str("-------------------------------------------------------------------\n");
+	set_colour(K_WHITE);
 	printer::inst()->print_str("You can use following keys to display reports:\n");
 	printer::inst()->print_str("'h' - hashrate\n");
 	printer::inst()->print_str("'r' - results\n");
 	printer::inst()->print_str("'c' - connection\n");
-	printer::inst()->print_str("-------------------------------------------------------------------\n");
+	reset_colour();
+	printer::inst()->print_str("-------------------------------------------------------------------\n\n");
 	if(::jconf::inst()->IsCurrencyMonero())
 		printer::inst()->print_msg(L0,"Start mining: MONERO");
 	else
