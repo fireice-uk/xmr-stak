@@ -24,8 +24,16 @@ The number of files depends on the available backends.
 
 
 ## Usage on Linux & MacOS
-1) Open a terminal within the folder with the binary
-2) Start the miner with `./xmr-stak`
+1) Build the binary with the following terminal commands:
+```
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+brew install cmake openssl hwloc libmicrohttpd
+git clone https://github.com/fireice-uk/xmr-stak.git
+cd xmr-stak
+cmake -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DCUDA_ENABLE=OFF .
+make install
+```
+2) Start the miner with `./bin/xmr-stak`
 
 ## Command Line Options
 
