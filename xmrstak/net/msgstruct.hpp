@@ -66,8 +66,9 @@ struct sock_err
 // Unlike socket errors, GPU errors are read-only strings
 struct gpu_res_err
 {
+	size_t idx; // GPU index
 	const char* error_str;
-	gpu_res_err(const char* error_str) : error_str(error_str) {}
+	gpu_res_err(const char* error_str, size_t idx) : error_str(error_str), idx(idx) {}
 };
 
 enum ex_event_name { EV_INVALID_VAL, EV_SOCK_READY, EV_SOCK_ERROR, EV_GPU_RES_ERROR,
@@ -99,7 +100,7 @@ struct ex_event
 	};
 
 	ex_event() { iName = EV_INVALID_VAL; iPoolId = 0;}
-	ex_event(const char* gpu_err, size_t id) : iName(EV_GPU_RES_ERROR), iPoolId(id), oGpuError(gpu_err) {}
+	ex_event(const char* gpu_err, size_t gpu_idx, size_t id) : iName(EV_GPU_RES_ERROR), iPoolId(id), oGpuError(gpu_err, gpu_idx) {}
 	ex_event(std::string&& err, bool silent, size_t id) : iName(EV_SOCK_ERROR), iPoolId(id), oSocketError(std::move(err), silent) { }
 	ex_event(job_result dat, size_t id) : iName(EV_MINER_HAVE_RESULT), iPoolId(id), oJobResult(dat) {}
 	ex_event(pool_job dat, size_t id) : iName(EV_POOL_HAVE_JOB), iPoolId(id), oPoolJob(dat) {}

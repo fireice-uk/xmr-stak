@@ -242,7 +242,10 @@ uint64_t jconf::GetAutohashTime()
 
 uint16_t jconf::GetHttpdPort()
 {
-	return prv->configValues[iHttpdPort]->GetUint();
+	if(xmrstak::params::inst().httpd_port == xmrstak::params::httpd_port_unset)
+		return prv->configValues[iHttpdPort]->GetUint();
+	else
+		return uint16_t(xmrstak::params::inst().httpd_port);
 }
 
 const char* jconf::GetHttpUsername()
