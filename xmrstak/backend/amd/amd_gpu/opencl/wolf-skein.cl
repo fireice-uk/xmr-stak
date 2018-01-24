@@ -30,10 +30,19 @@ static const __constant ulong SKEIN512_256_IV[8] =
 	p.s7 += q; \
 } while(0)
 
+ulong SKEIN_ROT(const uint2 x, const uint y)
+{
+	if(y < 32) return(as_ulong(amd_bitalign(x, x.s10, 32 - y)));
+	else return(as_ulong(amd_bitalign(x.s10, x, 32 - (y - 32))));
+}
+
 void SkeinMix8(ulong4 *pv0, ulong4 *pv1, const ulong4 rc)
 {
 	*pv0 += *pv1;
-	*pv1 = rotate(*pv1, (ulong4)rc);
+	(*pv1).s0 = SKEIN_ROT(as_uint2((*pv1).s0), rc.s0);
+	(*pv1).s1 = SKEIN_ROT(as_uint2((*pv1).s1), rc.s1);
+	(*pv1).s2 = SKEIN_ROT(as_uint2((*pv1).s2), rc.s2);
+	(*pv1).s3 = SKEIN_ROT(as_uint2((*pv1).s3), rc.s3);
 	*pv1 ^= *pv0;
 }
 
