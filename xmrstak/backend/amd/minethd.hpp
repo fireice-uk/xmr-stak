@@ -33,6 +33,7 @@ private:
 	void consume_work();
 
 	uint64_t iJobNo;
+	uint64_t lastPool;
 
 	static miner_work oGlobalWork;
 	miner_work oWork;
