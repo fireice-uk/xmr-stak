@@ -40,6 +40,7 @@ private:
 	static std::atomic<uint64_t> iConsumeCnt;
 	static uint64_t iThreadCount;
 	uint64_t iJobNo;
+	uint64_t lastPool;
 
 	static miner_work oGlobalWork;
 	miner_work oWork;

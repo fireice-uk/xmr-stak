@@ -172,6 +172,7 @@ void minethd::consume_work()
 {
 	memcpy(&oWork, &globalStates::inst().oGlobalWork, sizeof(miner_work));
 	iJobNo++;
+	lastPool=globalStates::inst().pool_id.load(std::memory_order_relaxed);
 	globalStates::inst().iConsumeCnt++;
 
 }
@@ -231,21 +232,30 @@ void minethd::work_main()
 
 			XMRRunJob(pGpuCtx, results);
 
-			for(size_t i = 0; i < results[0xFF]; i++)
+			/* Send shares only if we switched the pool or if the job has not changed.
+			 * The condition that shares get also evaluated if the pool is changed avoid
+			 * that the last bunch of hashes get automaticly ignored if we switch from the dev to the
+			 * user pool or via verse.
+			 */
+			if(globalStates::inst().pool_id.load(std::memory_order_relaxed) != lastPool ||
+				globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 			{
-				uint8_t	bWorkBlob[112];
-				uint8_t	bResult[32];
+				for(size_t i = 0; i < results[0xFF]; i++)
+				{
+					uint8_t	bWorkBlob[112];
+					uint8_t	bResult[32];
 
-				memcpy(bWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
-				memset(bResult, 0, sizeof(job_result::bResult));
+					memcpy(bWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
+					memset(bResult, 0, sizeof(job_result::bResult));
 
-				*(uint32_t*)(bWorkBlob + 39) = results[i];
+					*(uint32_t*)(bWorkBlob + 39) = results[i];
 
-				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, cpu_ctx);
-				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
-					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, results[i], bResult, iThreadNo), oWork.iPoolId));
-				else
-					executor::inst()->push_event(ex_event("AMD Invalid Result", pGpuCtx->deviceIdx, oWork.iPoolId));
+					hash_fun(bWorkBlob, oWork.iWorkSize, bResult, cpu_ctx);
+					if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
+						executor::inst()->push_event(ex_event(job_result(oWork.sJobID, results[i], bResult, iThreadNo), oWork.iPoolId));
+					else
+						executor::inst()->push_event(ex_event("AMD Invalid Result", pGpuCtx->deviceIdx, oWork.iPoolId));
+				}
 			}
 
 			iCount += pGpuCtx->rawIntensity;
