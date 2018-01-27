@@ -94,7 +94,6 @@ private:
 		}
 
 		std::string conf;
-		int i = 0;
 		for(auto& ctx : devVec)
 		{
 			/* 1000 is a magic selected limit, the reason is that more than 2GiB memory
@@ -127,14 +126,27 @@ private:
 			size_t possibleIntensity = std::min( maxThreads , maxIntensity );
 			// map intensity to a multiple of the compute unit count, 8 is the number of threads per work group
 			size_t intensity = (possibleIntensity / (8 * ctx.computeUnits)) * ctx.computeUnits * 8;
-			conf += std::string("  // gpu: ") + ctx.name + " memory:" + std::to_string(availableMem / byteToMiB) + "\n";
-			conf += std::string("  // compute units: ") + std::to_string(ctx.computeUnits) + "\n";
-			// set 8 threads per block (this is a good value for the most gpus)
-			conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
-				"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
-				"    \"affine_to_cpu\" : false, \"strided_index\" : true\n"
-				"  },\n";
-			++i;
+			//If the intensity is 0, then it's because the multiple of the unit count is greater than intensity
+			if (intensity == 0)
+			{
+				printer::inst()->print_msg(L0, "WARNING: Auto detected intensity unexpectedly low. Try to set the environment variable GPU_SINGLE_ALLOC_PERCENT.");
+				intensity = possibleIntensity;
+
+			}
+			if (intensity != 0)
+			{
+				conf += std::string("  // gpu: ") + ctx.name + " memory:" + std::to_string(availableMem / byteToMiB) + "\n";
+				conf += std::string("  // compute units: ") + std::to_string(ctx.computeUnits) + "\n";
+				// set 8 threads per block (this is a good value for the most gpus)
+				conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
+					"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
+					"    \"affine_to_cpu\" : false, \"strided_index\" : true\n"
+					"  },\n";
+			}
+			else
+			{
+				printer::inst()->print_msg(L0, "WARNING: Ignore gpu %s, %s MiB free memory is not enough to suggest settings.", ctx.name.c_str(), std::to_string(availableMem / byteToMiB).c_str());
+			}
 		}
 
 		configTpl.replace("PLATFORMINDEX",std::to_string(platformIndex));
