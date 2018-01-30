@@ -268,6 +268,14 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		hasIterations = AEON_ITER;
 	}
 
+	/* workaround to emulate CL_MEM_USE_PERSISTENT_MEM_AMD
+	 * on non AMD devices
+	 */
+	cl_mem_flags mem_use_persistent = 1 << 6;
+	// do not use persistent memory on non AMD devices
+	if(!ctx->isAMDGpu)
+		mem_use_persistent = 0;
+
 	size_t g_thd = ctx->rawIntensity;
 	ctx->ExtraBuffers[0] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, hashMemSize * g_thd, NULL, &ret);
 	if(ret != CL_SUCCESS)
@@ -276,7 +284,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	ctx->ExtraBuffers[1] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, 200 * g_thd, NULL, &ret);
+	ctx->ExtraBuffers[1] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE | mem_use_persistent, 200 * g_thd, NULL, &ret);
 	if(ret != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clCreateBuffer to create hash states buffer.", err_to_str(ret));
@@ -284,7 +292,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	}
 
 	// Blake-256 branches
-	ctx->ExtraBuffers[2] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, sizeof(cl_uint) * (g_thd + 2), NULL, &ret);
+	ctx->ExtraBuffers[2] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE | mem_use_persistent, sizeof(cl_uint) * (g_thd + 2), NULL, &ret);
 	if(ret != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clCreateBuffer to create Branch 0 buffer.", err_to_str(ret));
@@ -292,7 +300,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	}
 
 	// Groestl-256 branches
-	ctx->ExtraBuffers[3] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, sizeof(cl_uint) * (g_thd + 2), NULL, &ret);
+	ctx->ExtraBuffers[3] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE | mem_use_persistent, sizeof(cl_uint) * (g_thd + 2), NULL, &ret);
 	if(ret != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clCreateBuffer to create Branch 1 buffer.", err_to_str(ret));
@@ -300,7 +308,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	}
 
 	// JH-256 branches
-	ctx->ExtraBuffers[4] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, sizeof(cl_uint) * (g_thd + 2), NULL, &ret);
+	ctx->ExtraBuffers[4] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE | mem_use_persistent, sizeof(cl_uint) * (g_thd + 2), NULL, &ret);
 	if(ret != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clCreateBuffer to create Branch 2 buffer.", err_to_str(ret));
@@ -308,7 +316,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	}
 
 	// Skein-512 branches
-	ctx->ExtraBuffers[5] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, sizeof(cl_uint) * (g_thd + 2), NULL, &ret);
+	ctx->ExtraBuffers[5] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE | mem_use_persistent, sizeof(cl_uint) * (g_thd + 2), NULL, &ret);
 	if(ret != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clCreateBuffer to create Branch 3 buffer.", err_to_str(ret));
@@ -316,7 +324,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	}
 
 	// Assume we may find up to 0xFF nonces in one run - it's reasonable
-	ctx->OutputBuffer = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, sizeof(cl_uint) * 0x100, NULL, &ret);
+	ctx->OutputBuffer = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE | mem_use_persistent, sizeof(cl_uint) * 0x100, NULL, &ret);
 	if(ret != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clCreateBuffer to create output buffer.", err_to_str(ret));
@@ -492,6 +500,8 @@ std::vector<GpuContext> getAMDDevices(int index)
 		if( devVendor.find("Advanced Micro Devices") != std::string::npos || devVendor.find("AMD") != std::string::npos)
 		{
 			GpuContext ctx;
+			ctx.isAMDGpu = true;
+
 			std::vector<char> devNameVec(1024);
 			size_t maxMem;
 
