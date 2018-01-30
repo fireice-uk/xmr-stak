@@ -441,6 +441,12 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			maxMemUsage = size_t(1024u) * byteToMiB;
 		}
 
+		if(props.multiProcessorCount <= 6)
+		{
+			// limit memory usage for low end devices to reduce the number of threads
+			maxMemUsage = size_t(1024u) * byteToMiB;
+		}
+
 		int* tmp;
 		cudaError_t err;
 		// a device must be selected to get the right memory usage later on

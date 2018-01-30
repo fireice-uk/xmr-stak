@@ -25,7 +25,7 @@
 
 - Download and install https://developer.nvidia.com/cuda-downloads
 - For minimal install choose `Custom installation options` during the install and select
-    - CUDA/Develpment
+    - CUDA/Development
     - CUDA/Visual Studio Integration (ignore the warning during the install that VS2017 is not supported)
     - CUDA/Runtime
     - Driver components
