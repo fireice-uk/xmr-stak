@@ -38,6 +38,7 @@ struct GpuContext
 	int computeUnits;
 	std::string name;
 
+	bool isAMDGpu = true;
 	uint32_t Nonce;
 
 };
