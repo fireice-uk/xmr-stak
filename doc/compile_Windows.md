@@ -86,15 +86,16 @@
   "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 -vcvars_ver=14.11  
   
   "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsMSBuildCmd.bat"
-  
-  set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc;C:\xmr-stak-dep\libmicrohttpd;C:\xmr-stak-dep\openssl
   ```
 - Sometimes Windows will change the directory to `C:\Users\USERNAME\source\` instead of `C:\Users\USERNAME\xmr-stak-<version>\`. If that's the case execute `cd C:\Users\USERNAME\xmr-stak-<version>` followed by:
   ```
   mkdir build
   
   cd build
+  
+  set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc;C:\xmr-stak-dep\libmicrohttpd;C:\xmr-stak-dep\openssl
   ```
+
 ### CMake
 
 - See [build options](https://github.com/fireice-uk/xmr-stak/blob/master/doc/compile.md#build-system) to enable or disable dependencies.
