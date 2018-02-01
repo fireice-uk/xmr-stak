@@ -40,13 +40,18 @@ Download and install this [runtime package](https://go.microsoft.com/fwlink/?Lin
 
 ## Error: MEMORY ALLOC FAILED: mmap failed
 
-On Linux you will need to configure large page support `sudo sysctl -w vm.nr_hugepages=128` and increase your
-ulimit -l. To do this you need to add following lines to /etc/security/limits.conf:
+On Linux you will need to configure large page support and increase your ulimit -l. 
+
+To set large page support, add the following lines to /etc/sysctl.conf:
+    
+    vm.nr_hugepages=128
+
+To increase the ulimit, add following lines to /etc/security/limits.conf:
 
     * soft memlock 262144
     * hard memlock 262144
 
-Save file.  You WILL need to log out and log back in for these settings to take affect on your user (no need to reboot, just relogin in your session).
+You WILL need to log out and log back in for these settings to take affect on your user (no need to reboot, just relogin in your session).
 
 You can also do it Windows-style and simply run-as-root, but this is NOT recommended for security reasons.
 
