@@ -56,9 +56,10 @@ struct configVal {
 	Type iType;
 };
 
-//Same order as in configEnum, as per comment above
+// Same order as in configEnum, as per comment above
+// kNullType means any type
 configVal oConfigValues[] = {
-	{ aGpuThreadsConf, "gpu_threads_conf", kArrayType },
+	{ aGpuThreadsConf, "gpu_threads_conf", kNullType },
 	{ iPlatformIdx, "platform_index", kNumberType }
 };
 
@@ -67,6 +68,8 @@ constexpr size_t iConfigCnt = (sizeof(oConfigValues)/sizeof(oConfigValues[0]));
 inline bool checkType(Type have, Type want)
 {
 	if(want == have)
+		return true;
+	else if(want == kNullType)
 		return true;
 	else if(want == kTrueType && have == kFalseType)
 		return true;
