@@ -8,7 +8,7 @@
 
 ### Cuda 8.0+ (only needed to use NVIDIA GPUs)
 
-- donwload and install [https://developer.nvidia.com/cuda-downloads](https://developer.nvidia.com/cuda-downloads)
+- download and install [https://developer.nvidia.com/cuda-downloads](https://developer.nvidia.com/cuda-downloads)
 - for minimal install choose `Custom installation options` during the install and select
     - CUDA/Develpment
     - CUDA/Runtime
