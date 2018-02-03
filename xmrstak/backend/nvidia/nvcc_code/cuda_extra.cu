@@ -204,7 +204,13 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 		break;
 
 	};
-	CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
+	const int gpuArch = ctx->device_arch[0] * 10 + ctx->device_arch[1];
+
+	/* Disable L1 cache for GPUs before Volta.
+	 * L1 speed is increased and latency reduced with Volta.
+	 */
+	if(gpuArch < 70)
+		CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
 
 	size_t hashMemSize;
 	if(::jconf::inst()->IsCurrencyMonero())
