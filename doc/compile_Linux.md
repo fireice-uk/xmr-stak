@@ -2,15 +2,15 @@
 
 ## Install Dependencies
 
-### AMD APP SDK 3.0 (only needed to use AMD GPUs)
+### AMD APP SDK 3.0 (only needed for AMD GPUs)
 
-- download and install the latest version from [http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)
+- download and install the latest version from http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/
 
-### Cuda 8.0+ (only needed to use NVIDIA GPUs)
+### Cuda 8.0+ (only needed for NVIDIA GPUs)
 
-- donwload and install [https://developer.nvidia.com/cuda-downloads](https://developer.nvidia.com/cuda-downloads)
+- donwload and install https://developer.nvidia.com/cuda-downloads
 - for minimal install choose `Custom installation options` during the install and select
-    - CUDA/Develpment
+    - CUDA/Development
     - CUDA/Runtime
     - Driver components
 
@@ -23,6 +23,11 @@
     cd xmr-stak/build
     cmake ..
     make install
+
+    # If you get an error while compiling for an AMD GPU (e.g. make[2]: *** No rule to make target '/opt/AMDAPPSDK-3.0/lib/x86_64/libOpenCL.so',   needed by 'bin/libxmrstak_opencl_backend.so'. Stop.) execute the following and then compile again:
+
+    $ cd $AMDAPPSDKROOT/lib/x86_64
+    $ sudo ln -sf sdk/libOpenCL.so.1 libOpenCL.so
 
     # Arch
     sudo pacman -S --needed base-devel hwloc openssl cmake libmicrohttpd
@@ -104,4 +109,4 @@ If you want to compile the binary without installing libraries / compiler or jus
     cd bin\Release
     copy C:\xmr-stak-dep\openssl\bin\* .
 ```
-Note - cmake caches variables, so if you want to do a dynamic build later you need to specify '-DCMAKE_LINK_STATIC=OFF'
+Note - cmake caches variables, so if you want to do a dynamic build later you need to specify `-DCMAKE_LINK_STATIC=OFF`
