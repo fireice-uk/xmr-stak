@@ -117,6 +117,9 @@ private:
 				 */
 				maxThreads = 2024u;
 			}
+			// increase all intensity limits by two for aeon
+			if(!::jconf::inst()->IsCurrencyMonero())
+				maxThreads *= 2u;
 
 			// keep 128MiB memory free (value is randomly chosen)
 			size_t availableMem = ctx.freeMem - (128u * byteToMiB);
