@@ -86,7 +86,6 @@ bool minethd::init_gpus()
 {
 	size_t i, n = jconf::inst()->GetThreadCount();
 
-	printer::inst()->print_msg(L1, "Compiling code and initializing GPUs. This will take a while...");
 	vGpuData.resize(n);
 
 	jconf::thd_cfg cfg;

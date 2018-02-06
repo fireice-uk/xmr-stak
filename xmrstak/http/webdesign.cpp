@@ -29,7 +29,7 @@ extern const char sHtmlCssFile [] =
 	"}"
 
 	".all {"
-		"max-width:600px;"
+		"max-width:1200px;"
 		"margin: auto;"
 	"}"
 
@@ -70,8 +70,24 @@ extern const char sHtmlCssFile [] =
 
 	".data table {"
 		"width: 100%;"
-		"max-width: 600px;"
 	"}"
+
+	".data-wallet table th{"
+		"min-width: 125px;"
+	"}"
+
+	".data table td.wallet{"
+		"width: 100%;"
+		"max-width: 100px;"
+	"}"
+
+	".data table td.wallet span{"
+		"width: 100%;"
+		"display: block;"
+		"white-space: nowrap;"
+		"text-overflow: ellipsis;"
+		"overflow: hidden;"
+	"}"		
 
 	".letter {"
 		"font-weight: bold;"
@@ -166,11 +182,12 @@ extern const char sHtmlHashrateBodyLow [] =
 	"</div></div></body></html>";
 
 extern const char sHtmlConnectionBodyHigh [] =
-	"<div class=data>"
+	"<div class=\"data data-wallet\">"
 	"<table>"
+		"<tr><th>Wallet address</th><td class=\"wallet\"><span>%s</span></td></tr>"
 		"<tr><th>Pool address</th><td>%s</td></tr>"
 		"<tr><th>Connected since</th><td>%s</td></tr>"
-		"<tr><th>Pool ping time</th><td>%u ms</td></tr>"
+		"<tr><th>Ping</th><td>%u ms</td></tr>"
 	"</table>"
 	"<h4>Network error log</h4>"
 	"<table>"

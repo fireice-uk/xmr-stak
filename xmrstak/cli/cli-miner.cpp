@@ -568,19 +568,23 @@ int main(int argc, char *argv[])
 #ifndef CONF_NO_OPENCL
 	printer::inst()->print_str("Based on OpenCL mining code by wolf9466.\n");
 #endif
-	printer::inst()->print_str("Colorscheme by poNgz0r.\n\n");
+	printer::inst()->print_str("Colorscheme by ");
+	set_colour(K_RED);
+	printer::inst()->print_str("po");
+	set_colour(K_WHITE);
+	printer::inst()->print_str("Ngz");
+	set_colour(K_BLUE);
+	printer::inst()->print_str("0r");
+	reset_colour();
+	printer::inst()->print_str(" <-- I'm dutch, it's close. Admit it. Please? Ah well you probally never heard of us.\n\n");
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	set_colour(K_WHITE);
 	printer::inst()->print_str("You can use following keys to display reports:\n");
 	printer::inst()->print_str("'h' - hashrate\n");
 	printer::inst()->print_str("'r' - results\n");
 	printer::inst()->print_str("'c' - connection\n");
-	reset_colour();
 	printer::inst()->print_str("-------------------------------------------------------------------\n\n");
-	if(::jconf::inst()->IsCurrencyMonero())
-		printer::inst()->print_msg(L0,"Start mining: MONERO");
-	else
-		printer::inst()->print_msg(L0,"Start mining: AEON");
+	reset_colour();
 
 	if(strlen(jconf::inst()->GetOutputFile()) != 0)
 		printer::inst()->open_logfile(jconf::inst()->GetOutputFile());

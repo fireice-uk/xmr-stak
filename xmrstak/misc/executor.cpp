@@ -348,6 +348,9 @@ void executor::on_sock_ready(size_t pool_id)
 	else {
 		set_colour(K_YELLOW);
 		printer::inst()->print_msg(L1, "Pool: %s connected.", pool->get_pool_addr());
+		jconf::pool_cfg cfg;
+		jconf::inst()->GetPoolConfig(0, cfg);
+		printer::inst()->print_msg(L1, "Wallet: %s.", cfg.sWalletAddr);
 		printer::inst()->print_msg(L1, "Logging in...");
 		reset_colour();
 	}
@@ -899,8 +902,9 @@ void executor::hashrate_report(std::string& out)
 			auto bType = static_cast<xmrstak::iBackend::BackendType>(b);
 			std::string name(xmrstak::iBackend::getName(bType));
 			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
-
-			out.append("HASHRATE REPORT - ").append(name).append("\n");
+			out.append("\n-------------------------------------------------------------------\n");
+			out.append("---> Hashrate: ").append(name);
+			out.append("\n-------------------------------------------------------------------\n");
 			out.append("| ID |    10s |    60s |    15m |");
 			if (nthd != 1)
 				out.append(" ID |    10s |    60s |    15m |\n");
@@ -932,11 +936,6 @@ void executor::hashrate_report(std::string& out)
 
 			if ((i & 0x1) == 1) //We had odd number of threads
 				out.append("|\n");
-
-			if (nthd != 1)
-				out.append("-----------------------------------------------------\n");
-			else
-				out.append("---------------------------\n");
 		}
 	}
 
@@ -946,7 +945,8 @@ void executor::hashrate_report(std::string& out)
 	out.append(hps_format(fTotal[2], num, sizeof(num)));
 	out.append(" H/s\nHighest: ");
 	out.append(hps_format(fHighestHps, num, sizeof(num)));
-	out.append(" H/s\n");
+	out.append(" H/s");
+	out.append("\n-------------------------------------------------------------------\n\n");
 }
 
 char* time_format(char* buf, size_t len, std::chrono::system_clock::time_point time)
@@ -983,7 +983,9 @@ void executor::result_report(std::string& out)
 	for (size_t i = 1; i < ln; i++)
 		iTotalRes += vMineResults[i].count;
 
-	out.append("RESULT REPORT\n");
+	out.append("\n-------------------------------------------------------------------\n");
+	out.append("---> Shares:");
+	out.append("\n-------------------------------------------------------------------\n");
 	if (iTotalRes == 0)
 	{
 		out.append("You haven't found any results yet.\n");
@@ -999,17 +1001,17 @@ void executor::result_report(std::string& out)
 	snprintf(num, sizeof(num), " (%.1f %%)\n", 100.0 * iGoodRes / iTotalRes);
 
 	out.append("Difficulty       : ").append(std::to_string(iPoolDiff)).append(1, '\n');
-	out.append("Good results     : ").append(std::to_string(iGoodRes)).append(" / ").
+	out.append("Good shares      : ").append(std::to_string(iGoodRes)).append(" / ").
 		append(std::to_string(iTotalRes)).append(num);
 
 	if (iPoolCallTimes.size() != 0)
 	{
 		// Here we use iPoolCallTimes since it also gets reset when we disconnect
 		snprintf(num, sizeof(num), "%.1f sec\n", dConnSec / iPoolCallTimes.size());
-		out.append("Avg result time  : ").append(num);
+		out.append("Avg share time   : ").append(num);
 	}
 	out.append("Pool-side hashes : ").append(std::to_string(iPoolHashes)).append(2, '\n');
-	out.append("Top 10 best results found:\n");
+	out.append("Top 10 best shares found:\n");
 
 	for (size_t i = 0; i < 10; i += 2)
 	{
@@ -1024,13 +1026,15 @@ void executor::result_report(std::string& out)
 		out.append("| Count | Error text                       | Last seen           |\n");
 		for (size_t i = 1; i < ln; i++)
 		{
-			snprintf(num, sizeof(num), "| %5llu | %-32.32s | %s |\n", int_port(vMineResults[i].count),
+			snprintf(num, sizeof(num), "| %5llu | %-32.32s | %s |", int_port(vMineResults[i].count),
 				vMineResults[i].msg.c_str(), time_format(date, sizeof(date), vMineResults[i].time));
 			out.append(num);
 		}
 	}
 	else
-		out.append("Yay! No errors.\n");
+		out.append("Yay! No errors.");
+
+	out.append("\n-------------------------------------------------------------------\n\n");
 }
 
 void executor::connection_report(std::string& out)
@@ -1044,7 +1048,14 @@ void executor::connection_report(std::string& out)
 	if (pool != nullptr && pool->is_dev_pool())
 		pool = pick_pool_by_id(last_usr_pool_id);
 
-	out.append("CONNECTION REPORT\n");
+
+	jconf::pool_cfg cfg;
+	jconf::inst()->GetPoolConfig(0, cfg);
+
+	out.append("\n-------------------------------------------------------------------\n");
+	out.append("---> Connection:");
+	out.append("\n-------------------------------------------------------------------\n");
+	out.append("Wallet address  : ").append(cfg.sWalletAddr).append(1, '\n');
 	out.append("Pool address    : ").append(pool != nullptr ? pool->get_pool_addr() : "<not connected>").append(1, '\n');
 	if (pool != nullptr && pool->is_running() && pool->is_logged_in())
 		out.append("Connected since : ").append(time_format(date, sizeof(date), tPoolConnTime)).append(1, '\n');
@@ -1068,13 +1079,16 @@ void executor::connection_report(std::string& out)
 		out.append("| Date                | Error text                                             |\n");
 		for (size_t i = 0; i < ln; i++)
 		{
-			snprintf(num, sizeof(num), "| %s | %-54.54s |\n",
+			snprintf(num, sizeof(num), "| %s | %-54.54s |",
 				time_format(date, sizeof(date), vSocketLog[i].time), vSocketLog[i].msg.c_str());
 			out.append(num);
 		}
 	}
 	else
-		out.append("Yay! No errors.\n");
+		out.append("Yay! No errors.");
+
+
+	out.append("\n\n-------------------------------------------------------------------\n\n");
 }
 
 void executor::print_report(ex_event_name ev)
@@ -1243,8 +1257,12 @@ void executor::http_connection_report(std::string& out)
 		std::nth_element(iPoolCallTimes.begin(), iPoolCallTimes.begin() + n_calls / 2, iPoolCallTimes.end());
 		ping_time = iPoolCallTimes[n_calls / 2];
 	}
+	
+	jconf::pool_cfg cfg;
+	jconf::inst()->GetPoolConfig(0, cfg);
 
 	snprintf(buffer, sizeof(buffer), sHtmlConnectionBodyHigh,
+		cfg.sWalletAddr,
 		pool != nullptr ? pool->get_pool_addr() : "not connected",
 		cdate, ping_time);
 	out.append(buffer);
