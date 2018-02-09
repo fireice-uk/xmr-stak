@@ -6,6 +6,11 @@ XMR-Stak is a universal Stratum pool miner. This miner supports CPUs, AMD and NV
 ## HTML reports
 <img src="https://gist.githubusercontent.com/fireice-uk/2da301131ac01695ff79539a27b81d68/raw/4c09cdeee86f94df2e9dd86b927e64aded6184f5/xmr-stak-cpu-hashrate.png" width="260"> <img src="https://gist.githubusercontent.com/fireice-uk/2da301131ac01695ff79539a27b81d68/raw/4c09cdeee86f94df2e9dd86b927e64aded6184f5/xmr-stak-cpu-results.png" width="260"> <img src="https://gist.githubusercontent.com/fireice-uk/2da301131ac01695ff79539a27b81d68/raw/4c09cdeee86f94df2e9dd86b927e64aded6184f5/xmr-stak-cpu-connection.png" width="260">
 
+## Video setup guide on Windows
+
+[<img src="https://gist.githubusercontent.com/fireice-uk/3621b179d56f57a8ead6303d8e415cf6/raw/3215c7a8078a038efb14b8dd8fc2ba0a7731605c/vidguidetmb.jpg">](https://www.youtube.com/watch?v=m9XFoQvLH8Y)
+###### Video by Crypto Sewer
+
 ## Overview
 * [Features](#features)
 * [Supported altcoins](#supported-altcoins)
