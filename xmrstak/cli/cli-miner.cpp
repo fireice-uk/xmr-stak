@@ -95,6 +95,7 @@ void help()
 	cout<<"  -o, --url URL         pool url and port, e.g. pool.usxmrpool.com:3333"<<endl;
 	cout<<"  -O, --tls-url URL     TLS pool url and port, e.g. pool.usxmrpool.com:10443"<<endl;
 	cout<<"  -u, --user USERNAME   pool user name or wallet address"<<endl;
+	cout<<"  -r, --rigid RIGID     rig identifier for pool-side statistics (needs pool support)"<<endl;
 	cout<<"  -p, --pass PASSWD     pool password, in the most cases x or empty \"\""<<endl;
 	cout<<"  --use-nicehash        the pool should run in nicehash mode"<<endl;
 	cout<<" \n"<<endl;
@@ -146,6 +147,11 @@ std::string get_multipool_entry(bool& final)
 	std::cin.clear(); std::cin.ignore(INT_MAX,'\n');
 	std::cout<<"- Password (mostly empty or x):"<<std::endl;
 	getline(std::cin, passwd);
+	
+	std::string rigid;
+	std::cin.clear(); std::cin.ignore(INT_MAX,'\n');
+	std::cout<<"- Rig identifier for pool-side statistics (needs pool support). Can be empty:"<<std::endl;
+	getline(std::cin, rigid);
 
 #ifdef CONF_NO_TLS
 	bool tls = false;
@@ -165,9 +171,9 @@ std::string get_multipool_entry(bool& final)
 
 	final = !read_yes_no("- Do you want to add another pool? (y/n)");
 
-	return "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName +  "\", \"pool_password\" : \"" + 
-		passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " + bool_to_str(tls) + 
-		", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
+	return "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName + "\", \"rig_id\" : \"" + rigid +
+		"\", \"pool_password\" : \"" + passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " + 
+		bool_to_str(tls) + ", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
 }
 
 inline void prompt_once(bool& prompted)
@@ -268,6 +274,17 @@ void do_guided_config()
 		getline(std::cin, passwd);
 	}
 
+	auto& rigid = params::inst().poolRigid;
+	if(rigid.empty() && !params::inst().userSetRigid)
+	{
+		prompt_once(prompted);
+
+		// clear everything from stdin to allow an empty rigid
+		std::cin.clear(); std::cin.ignore(INT_MAX,'\n');
+		std::cout<<"- Rig identifier for pool-side statistics (needs pool support). Can be empty:"<<std::endl;
+		getline(std::cin, rigid);
+	}
+
 	bool tls;
 #ifdef CONF_NO_TLS
 	tls = false;
@@ -315,9 +332,9 @@ void do_guided_config()
 		pool_weight = 1;
 
 	std::string pool_table;
-	pool_table += "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName +  "\", \"pool_password\" : \"" + 
-		passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " + bool_to_str(tls) + 
-		", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
+	pool_table += "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName +  "\", \"rig_id\" : \"" + rigid +
+		"\", \"pool_password\" : \"" +  passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " + 
+		bool_to_str(tls) + ", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
 
 	if(multipool)
 	{
@@ -521,6 +538,26 @@ int main(int argc, char *argv[])
 			}
 			params::inst().userSetPwd = true;
 			params::inst().poolPasswd = argv[i];
+		}
+		else if(opName.compare("-r") == 0 || opName.compare("--rigid") == 0)
+		{
+			if(!pool_url_set)
+			{
+				printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify rigid.");
+				win_exit();
+				return 1;
+			}
+
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '-r/--rigid' given");
+				win_exit();
+				return 1;
+			}
+			
+			params::inst().userSetRigid = true;
+			params::inst().poolRigid = argv[i];
 		}
 		else if(opName.compare("--use-nicehash") == 0)
 		{

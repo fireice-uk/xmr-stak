@@ -28,6 +28,8 @@ struct params
 	std::string poolURL;
 	bool userSetPwd = false;
 	std::string poolPasswd;
+	bool userSetRigid = false;
+	std::string poolRigid;
 	std::string poolUsername;
 	bool nicehashMode = false;
 
