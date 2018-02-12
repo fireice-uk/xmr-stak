@@ -28,6 +28,7 @@ public:
 		long long cpu_aff;
 		int stridedIndex;
 		int memChunk;
+		bool compMode;
 	};
 
 	size_t GetThreadCount();

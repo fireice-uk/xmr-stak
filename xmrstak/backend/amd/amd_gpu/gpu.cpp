@@ -332,8 +332,8 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 
 	char options[256];
 	snprintf(options, sizeof(options), 
-		"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d -DMEM_CHUNK=%d",
-		hasIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex, int(1u<<ctx->memChunk));
+		"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d -DMEM_CHUNK=%d  -DCOMP_MODE=%d",
+		hasIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex, int(1u<<ctx->memChunk), ctx->compMode ? 1 : 0);
 	ret = clBuildProgram(ctx->Program, 1, &ctx->DeviceID, options, NULL, NULL);
 	if(ret != CL_SUCCESS)
 	{
@@ -873,10 +873,15 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 
 	size_t g_intensity = ctx->rawIntensity;
 	size_t w_size = ctx->workSize;
-	// round up to next multiple of w_size
-	size_t g_thd = ((g_intensity + w_size - 1u) / w_size) * w_size;
-	// number of global threads must be a multiple of the work group size (w_size)
-	assert(g_thd%w_size == 0);
+	size_t g_thd = g_intensity;
+
+	if(ctx->compMode)
+	{
+		// round up to next multiple of w_size
+		size_t g_thd = ((g_intensity + w_size - 1u) / w_size) * w_size;
+		// number of global threads must be a multiple of the work group size (w_size)
+		assert(g_thd%w_size == 0);
+	}
 
 	for(int i = 2; i < 6; ++i)
 	{
