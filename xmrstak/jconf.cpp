@@ -129,12 +129,13 @@ bool jconf::GetPoolConfig(size_t id, pool_cfg& cfg)
 		return false;
 
 	typedef const Value* cval;
-	cval jaddr, jlogin, jpasswd, jnicehash, jtls, jtlsfp, jwt;
+	cval jaddr, jlogin, jrigid, jpasswd, jnicehash, jtls, jtlsfp, jwt;
 	const Value& oThdConf = prv->configValues[aPoolList]->GetArray()[id];
 
 	/* We already checked presence and types */
 	jaddr = GetObjectMember(oThdConf, "pool_address");
 	jlogin = GetObjectMember(oThdConf, "wallet_address");
+	jrigid = GetObjectMember(oThdConf, "rig_id");
 	jpasswd = GetObjectMember(oThdConf, "pool_password");
 	jnicehash = GetObjectMember(oThdConf, "use_nicehash");
 	jtls = GetObjectMember(oThdConf, "use_tls");
@@ -143,6 +144,7 @@ bool jconf::GetPoolConfig(size_t id, pool_cfg& cfg)
 
 	cfg.sPoolAddr = jaddr->GetString();
 	cfg.sWalletAddr = jlogin->GetString();
+	cfg.sRigId = jrigid->GetString();
 	cfg.sPasswd = jpasswd->GetString();
 	cfg.nicehash = jnicehash->GetBool();
 	cfg.tls = jtls->GetBool();
@@ -420,8 +422,8 @@ bool jconf::parse_config(const char* sFilename)
 	std::vector<size_t> pool_weights;
 	pool_weights.reserve(pool_cnt);
 
-	const char* aPoolValues[] = { "pool_address", "wallet_address", "pool_password", "use_nicehash", "use_tls", "tls_fingerprint", "pool_weight" };
-	Type poolValTypes[] = { kStringType, kStringType, kStringType, kTrueType, kTrueType, kStringType, kNumberType };
+	const char* aPoolValues[] = { "pool_address", "wallet_address", "rig_id", "pool_password", "use_nicehash", "use_tls", "tls_fingerprint", "pool_weight" };
+	Type poolValTypes[] = { kStringType, kStringType, kStringType, kStringType, kTrueType, kTrueType, kStringType, kNumberType };
 
 	constexpr size_t pvcnt = sizeof(aPoolValues)/sizeof(aPoolValues[0]);
 	for(uint32_t i=0; i < pool_cnt; i++)

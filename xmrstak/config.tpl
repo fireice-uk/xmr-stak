@@ -2,6 +2,7 @@ R"===(
 /*
  * pool_address    - Pool address should be in the form "pool.supportxmr.com:3333". Only stratum pools are supported.
  * wallet_address  - Your wallet, or pool login.
+ * rig_id          - Rig identifier for pool-side statistics (needs pool support).
  * pool_password   - Can be empty in most cases or "x".
  * use_nicehash    - Limit the nonce to 3 bytes as required by nicehash.
  * use_tls         - This option will make us connect using Transport Layer Security.
