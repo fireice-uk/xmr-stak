@@ -212,6 +212,7 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 		hashMemSize = AEON_MEMORY;
 	}
 	cryptonight_ctx* ptr = (cryptonight_ctx*)_mm_malloc(sizeof(cryptonight_ctx), 4096);
+       ptr->variant = 0;
 
 	if(use_fast_mem == 0)
 	{

@@ -28,6 +28,8 @@ typedef struct {
 	std::string name;
 	size_t free_device_memory;
 	size_t total_device_memory;
+	int variant;
+	uint8_t nonce_flag;
 } nvid_ctx;
 
 extern "C" {

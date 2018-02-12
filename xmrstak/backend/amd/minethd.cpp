@@ -205,6 +205,7 @@ void minethd::work_main()
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
+			pGpuCtx->Variant = ((const uint8_t*)oWork.bWorkBlob)[0] >= 7 ? ((const uint8_t*)oWork.bWorkBlob)[0] - 6 : 0;
 			continue;
 		}
 
@@ -213,7 +214,8 @@ void minethd::work_main()
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		uint64_t target = oWork.iTarget;
-		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target);
+		pGpuCtx->Variant = ((const uint8_t*)oWork.bWorkBlob)[0] >= 7 ? ((const uint8_t*)oWork.bWorkBlob)[0] - 6 : 0;
+		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, pGpuCtx->Variant);
 
 		if(oWork.bNiceHash)
 			pGpuCtx->Nonce = *(uint32_t*)(oWork.bWorkBlob + 39);
@@ -224,6 +226,7 @@ void minethd::work_main()
 			if((round_ctr++ & 0xF) == 0)
 			{
 				globalStates::inst().calc_start_nonce(pGpuCtx->Nonce, oWork.bNiceHash, h_per_round * 16);
+				pGpuCtx->Nonce &= 0xfffffffe;
 			}
 
 			cl_uint results[0x100];
@@ -240,6 +243,7 @@ void minethd::work_main()
 				memset(bResult, 0, sizeof(job_result::bResult));
 
 				*(uint32_t*)(bWorkBlob + 39) = results[i];
+				cpu_ctx->variant = ((const uint8_t*)oWork.bWorkBlob)[0] >= 7 ? ((const uint8_t*)oWork.bWorkBlob)[0] - 6 : 0;
 
 				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, cpu_ctx);
 				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
@@ -256,6 +260,7 @@ void minethd::work_main()
 		}
 
 		consume_work();
+		pGpuCtx->Variant = ((const uint8_t*)oWork.bWorkBlob)[0] >= 7 ? ((const uint8_t*)oWork.bWorkBlob)[0] - 6 : 0;
 	}
 }
 

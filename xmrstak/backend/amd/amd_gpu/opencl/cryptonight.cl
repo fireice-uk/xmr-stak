@@ -84,6 +84,22 @@ XMRSTAK_INCLUDE_BLAKE256
 //#include "opencl/groestl256.cl"
 XMRSTAK_INCLUDE_GROESTL256
 
+#define VARIANT1_1(p, o) \
+  do if (variant > 0) \
+  { \
+    uint tmp32 = p[o].z; \
+    uint tmp = tmp32 >> 24; \
+    uint tmp1 = (tmp>>4)&1, tmp2 = (tmp>>5)&1, tmp3 = tmp1^tmp2; \
+    uint tmp0 = nonce_flag ? tmp3 : tmp1 + 1; \
+    tmp32 &= 0x00ffffff; tmp32 |= ((tmp & 0xef) | (tmp0<<4)) << 24; \
+    p[o].z = tmp32; \
+  } while(0)
+
+#define VARIANT1_2(p, o) VARIANT1_1(p, o)
+
+#define VARIANT1_INIT() \
+  const unsigned char nonce_flag = (get_global_id(0) - get_global_offset(0)) & 1
+
 static const __constant ulong keccakf_rndc[24] = 
 {
     0x0000000000000001, 0x0000000000008082, 0x800000000000808a,
@@ -504,12 +520,14 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 }
 
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
-__kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Threads)
+__kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Threads, int variant)
 {
 	ulong a[2], b[2];
 	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
 
 	const ulong gIdx = get_global_id(0) - get_global_offset(0);
+
+	VARIANT1_INIT();
 
 	for(int i = get_local_id(0); i < 256; i += WORKSIZE)
 	{
@@ -557,6 +575,7 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 			//b_x ^= ((uint4 *)c)[0];
 
 			Scratchpad[IDX((a[0] & MASK) >> 4)] = b_x ^ ((uint4 *)c)[0];
+			VARIANT1_1(Scratchpad, IDX((a[0] & MASK) >> 4));
 
 			uint4 tmp;
 			tmp = Scratchpad[IDX((c[0] & MASK) >> 4)];
@@ -565,6 +584,7 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 			a[0] += mul_hi(c[0], as_ulong2(tmp).s0);
 
 			Scratchpad[IDX((c[0] & MASK) >> 4)] = ((uint4 *)a)[0];
+			VARIANT1_2(Scratchpad, IDX((c[0] & MASK) >> 4));
 
 			((uint4 *)a)[0] ^= tmp;
 

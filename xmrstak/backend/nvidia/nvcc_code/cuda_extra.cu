@@ -175,6 +175,8 @@ extern "C" void cryptonight_extra_cpu_set_data( nvid_ctx* ctx, const void *data,
 {
 	ctx->inputlen = len;
 	CUDA_CHECK(ctx->device_id, cudaMemcpy( ctx->d_input, data, len, cudaMemcpyHostToDevice ));
+	ctx->variant = ((const uint8_t*)data)[0] >= 7 ? ((const uint8_t*)data)[0] - 6 : 0;
+	ctx->nonce_flag = ctx->variant >= 1 ? ((const uint32_t*)(((const uint8_t*)data) + 39))[0] & 0x01 : 0;
 }
 
 extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)

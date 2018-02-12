@@ -14,6 +14,7 @@ typedef struct {
 	uint8_t hash_state[224]; // Need only 200, explicit align
 	uint8_t* long_state;
 	uint8_t ctx_info[24]; //Use some of the extra memory for flags
+       int variant; // monero PoW tweaks
 } cryptonight_ctx;
 
 typedef struct {
