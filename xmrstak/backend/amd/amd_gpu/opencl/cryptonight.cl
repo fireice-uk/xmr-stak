@@ -399,7 +399,7 @@ static const __constant uchar rcon[8] = { 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x
 void AESExpandKey256(uint *keybuf)
 {
 	//#pragma unroll 4
-	for(uint c = 8, i = 1; c < 60; ++c)
+	for(uint c = 8, i = 1; c < 40; ++c)
 	{
 		// For 256-bit keys, an sbox permutation is done every other 4th uint generated, AND every 8th
 		uint t = ((!(c & 7)) || ((c & 7) == 4)) ? SubWord(keybuf[c - 1]) : keybuf[c - 1];
@@ -421,7 +421,7 @@ __attribute__((reqd_work_group_size(WORKSIZE, 8, 1)))
 __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ulong *states, ulong Threads)
 {
 	ulong State[25];
-	uint ExpandedKey1[256];
+	uint ExpandedKey1[40];
 	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
 	uint4 text;
 
@@ -578,7 +578,7 @@ __attribute__((reqd_work_group_size(WORKSIZE, 8, 1)))
 __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global uint *Branch0, __global uint *Branch1, __global uint *Branch2, __global uint *Branch3, ulong Threads)
 {
 	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
-	uint ExpandedKey2[256];
+	uint ExpandedKey2[40];
 	ulong State[25];
 	uint4 text;
 	
@@ -632,7 +632,7 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 		{
 			text ^= Scratchpad[IDX((i << 3) + get_local_id(1))];
 
-			#pragma unroll
+			#pragma unroll 10
 			for(int j = 0; j < 10; ++j)
 				text = AES_Round(AES0, AES1, AES2, AES3, text, ((uint4 *)ExpandedKey2)[j]);
 		}
