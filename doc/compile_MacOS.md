@@ -30,8 +30,8 @@ Extract the install to a temporary directory (noted here by 'temp-dir') this kee
 Make the following changes to the install.sh script in the created `temp-dir/` using your editor of choice.
 (these are basically find & replace commands, `sed` or similar will work just fine)
 
-* Find every mkdir command and replace the `--mode` option with `-m`
-* Find the cp command and replace the `-rvu` option with `-Rv`
+* Find every __mkdir__ command and replace the `--mode` option with `-m`
+* Find the __cp__ command and replace the `-rvu` option with `-Rv`
 
 Now run the `install.sh` file - it will prompt you with a EULA and options for install location:
 
@@ -47,7 +47,7 @@ If it installed correctly, you should now have the following folders in your ins
 * include
 * lib
 
-The environment variables have also been added to your `.bashrc` file, of course copy those into your shell of choice if you use someething else.
+The environment variables have also been added to your `.bashrc` file, of course copy those into your shell's _rc_ file of choice if you use someething else.
 
 __Compile xmr-stak__
 
@@ -66,11 +66,12 @@ xmr-stak --amd amd.txt
 
 My results using an intensity of 500, workersize of 8 (iMac AMD R9 M395 2048 MB) - But this is very slow to respond, and unusable during mining. Your milage may vary.
 
+```shell
 HASHRATE REPORT - AMD
 | ID |    10s |    60s |    15m |
 |  0 |  318.8 |   (na) |   (na) |
 ---------------------------
-
+```
 
 
 ### For CPU-only mining
