@@ -18,7 +18,42 @@ make install
 
 ### For AMD GPUs
 
-> 🖐 We need help with AMD GPU compilation instructions. Please submit a PR if you managed to install [AMD APP SDK](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/) and to compile `xmr-stak` on MacOS.
+First download the AMD SDK Installer (64bit) for Linux from here: https://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/
+
+Exract the archive then `cd </path/to/extracted/amd-sdk>`
+
+__Next what follows is customizing the installation script to work for MacOS.__
+
+Extract the install to a temporary directory (noted here by 'temp-dir') this keeps the install file so you can edit it:
+`./amdinstall.sh --target temp-dir --keep --nox11`
+
+Make the following changes to the install.sh script in the created `temp-dir/` using your editor of choice.
+(these are basically find & replace commands, `sed` or similar will work just fine)
+
+* Find every mkdir command and replace the `--mode` option with `-m`
+* Find the cp command and replace the `-rvu` option with `-Rv`
+
+Now run the `install.sh` file - it will prompt you with a EULA and options for install location:
+
+```shell
+sh ./install.sh
+```
+
+If it installed correctly, you should now have the following folders in your install directory of choice:
+
+* bin
+* docs
+* etc
+* include
+* lib
+
+The environment variables have also been added to your `.bashrc` file, of course copy those into your shell of choice if you use someething else.
+
+
+
+
+
+
 
 ### For CPU-only mining
 
