@@ -49,9 +49,27 @@ If it installed correctly, you should now have the following folders in your ins
 
 The environment variables have also been added to your `.bashrc` file, of course copy those into your shell of choice if you use someething else.
 
+__Compile xmr-stak__
 
+```shell
+cmake . -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOpenCL_ENABLE=ON -DCUDA_ENABLE=OFF -DHWLOC_ENABLE=OFF
+make install
+```
 
+__Conclusion__
 
+Set your options in amd.txt and your pool/wallet info in config.txt, then run with:
+
+```shell
+xmr-stak --amd amd.txt
+```
+
+My results using an intensity of 500, workersize of 8 (iMac AMD R9 M395 2048 MB) - But this is very slow to respond, and unusable during mining. Your milage may vary.
+
+HASHRATE REPORT - AMD
+| ID |    10s |    60s |    15m |
+|  0 |  318.8 |   (na) |   (na) |
+---------------------------
 
 
 
