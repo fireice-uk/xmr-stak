@@ -12,7 +12,7 @@ echo '['
  
 for (( c=1; c<=$NUMCORES; c++ ))
 do
-    echo "{ \"low_power_mode\" : true, \"no_prefetch\" : true, \"affine_to_cpu\" : $c },"
+    echo "{ \"low_power_mode\" : false, \"no_prefetch\" : true, \"affine_to_cpu\" : $c },"
 done
 
 echo '],'
