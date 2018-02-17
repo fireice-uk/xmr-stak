@@ -70,10 +70,10 @@ matrix:
         - CMAKE_C_COMPILER=gcc-7
         - XMRSTAK_CMAKE_FLAGS="-DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF"
 
-    - os: osx
-      compiler: gcc
-      env:
-        - XMRSTAK_CMAKE_FLAGS="-DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF"
+#    - os: osx
+#      compiler: gcc
+#      env:
+#        - XMRSTAK_CMAKE_FLAGS="-DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF"
 
 before_install:
   - . CI/checkPRBranch

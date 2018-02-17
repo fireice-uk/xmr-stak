@@ -92,8 +92,8 @@ struct jpsock::opq_json_val
 	opq_json_val(const Value* val) : val(val) {}
 };
 
-jpsock::jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sPassword, double pool_weight, bool dev_pool, bool tls, const char* tls_fp, bool nicehash) :
-	net_addr(sAddr), usr_login(sLogin), usr_pass(sPassword), tls_fp(tls_fp), pool_id(id), pool_weight(pool_weight), pool(dev_pool), nicehash(nicehash),
+jpsock::jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sRigId, const char* sPassword, double pool_weight, bool dev_pool, bool tls, const char* tls_fp, bool nicehash) :
+	net_addr(sAddr), usr_login(sLogin), usr_rigid(sRigId), usr_pass(sPassword), tls_fp(tls_fp), pool_id(id), pool_weight(pool_weight), pool(dev_pool), nicehash(nicehash),
 	connect_time(0), connect_attempts(0), disconnect_time(0), quiet_close(false)
 {
 	sock_init();
@@ -523,8 +523,8 @@ bool jpsock::cmd_login()
 {
 	char cmd_buffer[1024];
 
-	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"login\",\"params\":{\"login\":\"%s\",\"pass\":\"%s\",\"agent\":\"%s\"},\"id\":1}\n",
-		usr_login.c_str(), usr_pass.c_str(), get_version_str().c_str());
+	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"login\",\"params\":{\"login\":\"%s\",\"pass\":\"%s\",\"rigid\":\"%s\",\"agent\":\"%s\"},\"id\":1}\n",
+		usr_login.c_str(), usr_pass.c_str(), usr_rigid.c_str(), get_version_str().c_str());
 
 	opq_json_val oResult(nullptr);
 

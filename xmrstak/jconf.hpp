@@ -23,6 +23,7 @@ public:
 	struct pool_cfg {
 		const char* sPoolAddr;
 		const char* sWalletAddr;
+		const char* sRigId;
 		const char* sPasswd;
 		bool nicehash;
 		bool tls;

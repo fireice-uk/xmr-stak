@@ -1,4 +1,4 @@
-# Compile **xmr-stak** for MacOS
+# Compile **xmr-stak** for macOS
 
 ## Dependencies
 
@@ -18,7 +18,13 @@ make install
 
 ### For AMD GPUs
 
-> 🖐 We need help with AMD GPU compilation instructions. Please submit a PR if you managed to install [AMD APP SDK](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/) and to compile `xmr-stak` on MacOS.
+OpenCL is bundled with Xcode, so no other depedency then the basic ones needed. Just enable OpenCL via the `-DOpenCL_ENABLE=ON` CMake option.
+
+```shell
+brew install hwloc libmicrohttpd gcc openssl cmake
+cmake . -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=ON
+make install
+```
 
 ### For CPU-only mining
 

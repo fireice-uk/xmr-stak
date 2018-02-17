@@ -6,6 +6,11 @@ XMR-Stak is a universal Stratum pool miner. This miner supports CPUs, AMD and NV
 ## HTML reports
 <img src="https://gist.githubusercontent.com/fireice-uk/2da301131ac01695ff79539a27b81d68/raw/4c09cdeee86f94df2e9dd86b927e64aded6184f5/xmr-stak-cpu-hashrate.png" width="260"> <img src="https://gist.githubusercontent.com/fireice-uk/2da301131ac01695ff79539a27b81d68/raw/4c09cdeee86f94df2e9dd86b927e64aded6184f5/xmr-stak-cpu-results.png" width="260"> <img src="https://gist.githubusercontent.com/fireice-uk/2da301131ac01695ff79539a27b81d68/raw/4c09cdeee86f94df2e9dd86b927e64aded6184f5/xmr-stak-cpu-connection.png" width="260">
 
+## Video setup guide on Windows
+
+[<img src="https://gist.githubusercontent.com/fireice-uk/3621b179d56f57a8ead6303d8e415cf6/raw/3215c7a8078a038efb14b8dd8fc2ba0a7731605c/vidguidetmb.jpg">](https://www.youtube.com/watch?v=m9XFoQvLH8Y)
+###### Video by Crypto Sewer
+
 ## Overview
 * [Features](#features)
 * [Supported altcoins](#supported-altcoins)
@@ -21,15 +26,15 @@ XMR-Stak is a universal Stratum pool miner. This miner supports CPUs, AMD and NV
 ## Features
 
 - support all common backends (CPU/x86, AMD-GPU and NVIDIA-GPU)
-- support all common OS (Linux, Windows and MacOS)
+- support all common OS (Linux, Windows and macOS)
 - supports algorithm cryptonight for Monero (XMR) and cryptonight-light (AEON)
 - easy to use
   - guided start (no need to edit a config file for the first start)
   - auto configuration for each backend
 - open source software (GPLv3)
 - TLS support
-- HTML statistics
-- JSON API for monitoring
+- [HTML statistics](doc/usage.md#html-and-json-api-report-configuraton)
+- [JSON API for monitoring](doc/usage.md#html-and-json-api-report-configuraton)
 
 ## Supported altcoins
 
@@ -62,7 +67,7 @@ fireice-uk:
 
 psychocrypt:
 ```
-43NoJVEXo21hGZ6tDG6Z3g4qimiGdJPE6GRxAmiWwm26gwr62Lqo7zRiCJFSBmbkwTGNuuES9ES5TgaVHceuYc4Y75txCTU
+45tcqnJMgd3VqeTznNotiNj4G9PQoK67TGRiHyj6EYSZ31NUbAfs9XdiU5squmZb717iHJLxZv3KfEw8jCYGL5wa19yrVCn
 ```
 
 ## Release Checksums
