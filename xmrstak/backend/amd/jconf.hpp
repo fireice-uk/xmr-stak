@@ -26,7 +26,8 @@ public:
 		size_t intensity;
 		size_t w_size;
 		long long cpu_aff;
-		bool stridedIndex;
+		int stridedIndex;
+		int memChunk;
 	};
 
 	size_t GetThreadCount();

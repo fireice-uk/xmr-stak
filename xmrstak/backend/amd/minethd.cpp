@@ -97,6 +97,7 @@ bool minethd::init_gpus()
 		vGpuData[i].rawIntensity = cfg.intensity;
 		vGpuData[i].workSize = cfg.w_size;
 		vGpuData[i].stridedIndex = cfg.stridedIndex;
+		vGpuData[i].memChunk = cfg.memChunk;
 	}
 
 	return InitOpenCL(vGpuData.data(), n, jconf::inst()->GetPlatformIdx()) == ERR_SUCCESS;
