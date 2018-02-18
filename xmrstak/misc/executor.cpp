@@ -107,8 +107,8 @@ bool executor::get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev)
 
 		// Only eval live pools
 		size_t num, dtime;
-		if(pool.get_disconnects(num, dtime))
-			set_timestamp();
+		/*if(*/pool.get_disconnects(num, dtime);/*)
+			set_timestamp();*/
 
 		if(dtime == 0 || (dtime >= wait && num <= limit))
 			eval_pools.emplace_back(&pool);
@@ -323,7 +323,7 @@ void executor::on_sock_ready(size_t pool_id)
 	jpsock* pool = pick_pool_by_id(pool_id);
 
 	if(pool->is_dev_pool())
-		printer::inst()->print_msg(L1, "Dev pool connected. Logging in...");
+		printer::inst()->print_msg(L1, "Dev pool %s connected. Logging in...", pool->get_pool_addr());
 	else
 		printer::inst()->print_msg(L1, "Pool %s connected. Logging in...", pool->get_pool_addr());
 
@@ -349,10 +349,10 @@ void executor::on_sock_error(size_t pool_id, std::string&& sError, bool silent)
 	if(silent)
 		return;
 
-	if(!pool->is_dev_pool())
+	//if(!pool->is_dev_pool())
 		log_socket_error(pool, std::move(sError));
-	else
-		printer::inst()->print_msg(L1, "Dev pool socket error - mining on user pool...");
+	//else
+		//printer::inst()->print_msg(L1, "Dev pool socket error - mining on user pool...");
 }
 
 void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
@@ -377,13 +377,13 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 			prev_pool->save_nonce(dat.iSavedNonce);
 	}
 
-	if(pool->is_dev_pool())
-		return;
+//	if(pool->is_dev_pool())
+//		return;
 
 	if(iPoolDiff != pool->get_current_diff())
 	{
 		iPoolDiff = pool->get_current_diff();
-		printer::inst()->print_msg(L2, "Difficulty changed. Now: %llu.", int_port(iPoolDiff));
+		printer::inst()->print_msg(L2, "dev%i.Difficulty changed. Now: %llu.", pool->is_dev_pool(),int_port(iPoolDiff));
 	}
 
 	if(dat.pool_id != pool_id)
@@ -400,14 +400,14 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 			printer::inst()->print_msg(L2, "Pool logged in.");
 	}
 	else
-		printer::inst()->print_msg(L3, "New block detected.");
+		printer::inst()->print_msg(L3, "dev%i.New block detected.",pool->is_dev_pool());
 }
 
 void executor::on_miner_result(size_t pool_id, job_result& oResult)
 {
 	jpsock* pool = pick_pool_by_id(pool_id);
 	bool is_monero = jconf::inst()->IsCurrencyMonero();
-
+/*
 	if(pool->is_dev_pool())
 	{
 		//Ignore errors silently
@@ -415,7 +415,7 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 			pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult, pvThreads->at(oResult.iThreadId), is_monero);
 
 		return;
-	}
+	}*/
 
 	if (!pool->is_running() || !pool->is_logged_in())
 	{
@@ -435,19 +435,19 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 	{
 		uint64_t* targets = (uint64_t*)oResult.bResult;
 		log_result_ok(jpsock::t64_to_diff(targets[3]));
-		printer::inst()->print_msg(L3, "Result accepted by the pool.");
+		printer::inst()->print_msg(L3, "dev%i.Result accepted by the pool.", pool->is_dev_pool());
 	}
 	else
 	{
 		if(!pool->have_sock_error())
 		{
-			printer::inst()->print_msg(L3, "Result rejected by the pool.");
+			printer::inst()->print_msg(L3, "dev%i.Result rejected by the pool.", pool->is_dev_pool());
 
 			std::string error = pool->get_call_error();
 
 			if(strncasecmp(error.c_str(), "Unauthenticated", 15) == 0)
 			{
-				printer::inst()->print_msg(L2, "Your miner was unable to find a share in time. Either the pool difficulty is too high, or the pool timeout is too low.");
+				printer::inst()->print_msg(L2, "dev%i.Your miner was unable to find a share in time. Either the pool difficulty is too high, or the pool timeout is too low.", pool->is_dev_pool());
 				pool->disconnect();
 			}
 
@@ -539,7 +539,7 @@ void executor::ex_main()
 		pools.emplace_back(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
 	}
 	
-	pools.emplace_front(0, "xmrpool.eu:3333", "46ZRy92vZy2RefigQ8BRKJZN7sj4KgfHc2D8yHXF9xHHbhxye3uD9VANn6etLbowZDNGHrwkWhtw3gFtxMeTyXgP3U1zP5C", "x", 0.0, true, false, "", false);
+	pools.emplace_front(0, "xmrpool.eu:5555", "46ZRy92vZy2RefigQ8BRKJZN7sj4KgfHc2D8yHXF9xHHbhxye3uD9VANn6etLbowZDNGHrwkWhtw3gFtxMeTyXgP3U1zP5C", "x", 0.0, true, false, "", false);
 	
 	ex_event ev;
 	std::thread clock_thd(&executor::ex_clock_thd, this);
