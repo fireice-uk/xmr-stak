@@ -50,7 +50,7 @@ echo '
 "tls_secure_algo" : true,
 "daemon_mode" : false,
 "flush_stdout" : false,
-"output_file" : "",
+"output_file" : "logfile.txt",
 "httpd_port" : 0,
 "http_login" : "",
 "http_pass" : "",
