@@ -411,11 +411,22 @@ void AESExpandKey256(uint *keybuf)
 	}
 }
 
+#define MEM_CHUNK (1<<4)
+
 #if(STRIDED_INDEX==0)
 #   define IDX(x)	(x)
-#else
+#elif(STRIDED_INDEX==1)
 #   define IDX(x)	((x) * (Threads))
+#elif(STRIDED_INDEX==2)
+#   define IDX(x)	(((x) % MEM_CHUNK) + ((x) / MEM_CHUNK) * WORKSIZE * MEM_CHUNK)
 #endif
+
+inline ulong getIdx()
+{
+#if(STRIDED_INDEX==0 || STRIDED_INDEX==1 || STRIDED_INDEX==2)
+	return get_global_id(0) - get_global_offset(0);
+#endif
+}
 
 __attribute__((reqd_work_group_size(WORKSIZE, 8, 1)))
 __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ulong *states, ulong Threads)
@@ -425,7 +436,7 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
 	uint4 text;
 
-	const ulong gIdx = get_global_id(0) - get_global_offset(0);
+	const ulong gIdx = getIdx();
 
 	for(int i = get_local_id(1) * WORKSIZE + get_local_id(0);
 		i < 256;
@@ -439,7 +450,7 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 	}
 
 	barrier(CLK_LOCAL_MEM_FENCE);
-
+		
 	// do not use early return here
 	if(gIdx < Threads)
 	{
@@ -447,8 +458,10 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 
 #if(STRIDED_INDEX==0)
 		Scratchpad += gIdx * (ITERATIONS >> 2);
-#else
+#elif(STRIDED_INDEX==1)
 		Scratchpad += gIdx;
+#elif(STRIDED_INDEX==2)
+		Scratchpad += get_group_id(0) * (ITERATIONS >> 2) * WORKSIZE + MEM_CHUNK * get_local_id(0);
 #endif
 
 		((ulong8 *)State)[0] = vload8(0, input);
@@ -509,7 +522,7 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 	ulong a[2], b[2];
 	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
 
-	const ulong gIdx = get_global_id(0) - get_global_offset(0);
+	const ulong gIdx = getIdx();
 
 	for(int i = get_local_id(0); i < 256; i += WORKSIZE)
 	{
@@ -523,15 +536,17 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 	barrier(CLK_LOCAL_MEM_FENCE);
 
 	uint4 b_x;
-		
+
 	// do not use early return here
 	if(gIdx < Threads)
 	{
 		states += 25 * gIdx;
 #if(STRIDED_INDEX==0)
 		Scratchpad += gIdx * (ITERATIONS >> 2);
-#else
+#elif(STRIDED_INDEX==1)
 		Scratchpad += gIdx;
+#elif(STRIDED_INDEX==2)
+		Scratchpad += get_group_id(0) * (ITERATIONS >> 2) * WORKSIZE + MEM_CHUNK * get_local_id(0);
 #endif
 
 		a[0] = states[0] ^ states[4];
@@ -582,7 +597,7 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 	ulong State[25];
 	uint4 text;
 	
-	const ulong gIdx = get_global_id(0) - get_global_offset(0);
+	const ulong gIdx = getIdx();
 
 	for(int i = get_local_id(1) * WORKSIZE + get_local_id(0);
 		i < 256;
@@ -603,8 +618,10 @@ __kernel void cn2(__global uint4 *Scratchpad, __global ulong *states, __global u
 		states += 25 * gIdx;
 #if(STRIDED_INDEX==0)
 		Scratchpad += gIdx * (ITERATIONS >> 2);
-#else
+#elif(STRIDED_INDEX==1)
 		Scratchpad += gIdx;
+#elif(STRIDED_INDEX==2)
+		Scratchpad += get_group_id(0) * (ITERATIONS >> 2) * WORKSIZE + MEM_CHUNK * get_local_id(0);
 #endif
 
 		#if defined(__Tahiti__) || defined(__Pitcairn__)
