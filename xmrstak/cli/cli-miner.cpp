@@ -627,6 +627,9 @@ int main(int argc, char *argv[])
 	}
 #endif
 
+	if(strlen(jconf::inst()->GetOutputFile()) != 0)
+		printer::inst()->open_logfile(jconf::inst()->GetOutputFile());
+
 	if (!BackendConnector::self_test())
 	{
 		win_exit();
@@ -671,9 +674,6 @@ int main(int argc, char *argv[])
 		printer::inst()->print_msg(L0,"Start mining: MONERO");
 	else
 		printer::inst()->print_msg(L0,"Start mining: AEON");
-
-	if(strlen(jconf::inst()->GetOutputFile()) != 0)
-		printer::inst()->open_logfile(jconf::inst()->GetOutputFile());
 
 	executor::inst()->ex_start(jconf::inst()->DaemonMode());
 
