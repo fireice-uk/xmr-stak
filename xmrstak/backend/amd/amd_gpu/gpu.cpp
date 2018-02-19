@@ -84,6 +84,7 @@ const char* err_to_str(cl_int ret)
 		return "CL_MISALIGNED_SUB_BUFFER_OFFSET";
 	case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST:
 		return "CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST";
+#ifdef CL_VERSION_1_2
 	case CL_COMPILE_PROGRAM_FAILURE:
 		return "CL_COMPILE_PROGRAM_FAILURE";
 	case CL_LINKER_NOT_AVAILABLE:
@@ -94,6 +95,7 @@ const char* err_to_str(cl_int ret)
 		return "CL_DEVICE_PARTITION_FAILED";
 	case CL_KERNEL_ARG_INFO_NOT_AVAILABLE:
 		return "CL_KERNEL_ARG_INFO_NOT_AVAILABLE";
+#endif
 	case CL_INVALID_VALUE:
 		return "CL_INVALID_VALUE";
 	case CL_INVALID_DEVICE_TYPE:
@@ -164,6 +166,7 @@ const char* err_to_str(cl_int ret)
 		return "CL_INVALID_GLOBAL_WORK_SIZE";
 	case CL_INVALID_PROPERTY:
 		return "CL_INVALID_PROPERTY";
+#ifdef CL_VERSION_1_2
 	case CL_INVALID_IMAGE_DESCRIPTOR:
 		return "CL_INVALID_IMAGE_DESCRIPTOR";
 	case CL_INVALID_COMPILER_OPTIONS:
@@ -172,6 +175,7 @@ const char* err_to_str(cl_int ret)
 		return "CL_INVALID_LINKER_OPTIONS";
 	case CL_INVALID_DEVICE_PARTITION_COUNT:
 		return "CL_INVALID_DEVICE_PARTITION_COUNT";
+#endif
 #if defined(CL_VERSION_2_0) && !defined(CONF_ENFORCE_OpenCL_1_2)
 	case CL_INVALID_PIPE_SIZE:
 		return "CL_INVALID_PIPE_SIZE";
