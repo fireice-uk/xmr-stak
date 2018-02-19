@@ -17,7 +17,6 @@
 #define ERR_STUPID_PARAMS (1)
 
 
-
 struct GpuContext
 {
 	/*Input vars*/
@@ -32,6 +31,7 @@ struct GpuContext
 	cl_mem InputBuffer;
 	cl_mem OutputBuffer;
 	cl_mem ExtraBuffers[6];
+	cl_mem Scratch[2];
 	cl_program Program;
 	cl_kernel Kernels[7];
 	size_t freeMem;
