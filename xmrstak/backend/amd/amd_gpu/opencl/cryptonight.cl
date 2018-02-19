@@ -14,6 +14,11 @@ R"===(
   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
   */
 
+/* For Mesa clover support */
+#ifdef cl_clang_storage_class_specifiers
+#	pragma OPENCL EXTENSION cl_clang_storage_class_specifiers : enable
+#endif
+
 #ifdef cl_amd_media_ops
 #pragma OPENCL EXTENSION cl_amd_media_ops : enable
 #else
