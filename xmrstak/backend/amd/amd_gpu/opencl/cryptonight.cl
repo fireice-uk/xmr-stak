@@ -416,7 +416,7 @@ void AESExpandKey256(uint *keybuf)
 	}
 }
 
-#define MEM_CHUNK (1<<4)
+#define MEM_CHUNK (1<<MEM_CHUNK_EXPONENT)
 
 #if(STRIDED_INDEX==0)
 #   define IDX(x)	(x)

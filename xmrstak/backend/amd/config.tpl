@@ -19,7 +19,7 @@ R"===(
  *                 in this case set the intensity to a multiple of the worksize or activate comp_mode.
  * "gpu_threads_conf" :
  * [
- *	{ "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false, "strided_index" : true, "mem_chunk" : 4, "comp_mode" : true },
+ *	{ "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false, "strided_index" : true, "mem_chunk" : 2, "comp_mode" : true },
  * ],
  * If you do not wish to mine with your AMD GPU(s) then use:
  * "gpu_threads_conf" :
