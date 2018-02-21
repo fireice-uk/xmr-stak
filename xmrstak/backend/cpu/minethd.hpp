@@ -38,7 +38,7 @@ private:
 	void multiway_work_main(cn_hash_fun_multi hash_fun_multi);
 
 	template<size_t N>
-	void prep_multiway_work(uint8_t *bWorkBlob, uint32_t **piNonce);
+	void prep_multiway_work(uint8_t *bWorkBlob, uint32_t **piNonce, cryptonight_ctx **ctx);
 
 	void work_main();
 	void double_work_main();

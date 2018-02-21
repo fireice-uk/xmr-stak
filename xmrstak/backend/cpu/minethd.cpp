@@ -406,6 +406,7 @@ void minethd::work_main()
 
 	piHashVal = (uint64_t*)(result.bResult + 24);
 	piNonce = (uint32_t*)(oWork.bWorkBlob + 39);
+	ctx->variant = ((const uint8_t*)oWork.bWorkBlob)[0] >= 7 ? ((const uint8_t*)oWork.bWorkBlob)[0] - 6 : 0;
 	globalStates::inst().inst().iConsumeCnt++;
 	result.iThreadId = iThreadNo;
 
@@ -422,6 +423,7 @@ void minethd::work_main()
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
+			ctx->variant = ((const uint8_t*)oWork.bWorkBlob)[0] >= 7 ? ((const uint8_t*)oWork.bWorkBlob)[0] - 6 : 0;
 			continue;
 		}
 
@@ -460,6 +462,7 @@ void minethd::work_main()
 		}
 
 		consume_work();
+		ctx->variant = ((const uint8_t*)oWork.bWorkBlob)[0] >= 7 ? ((const uint8_t*)oWork.bWorkBlob)[0] - 6 : 0;
 	}
 
 	cryptonight_free_ctx(ctx);
@@ -555,13 +558,14 @@ void minethd::penta_work_main()
 }
 
 template<size_t N>
-void minethd::prep_multiway_work(uint8_t *bWorkBlob, uint32_t **piNonce)
+void minethd::prep_multiway_work(uint8_t *bWorkBlob, uint32_t **piNonce, cryptonight_ctx **ctx)
 {
 	for (size_t i = 0; i < N; i++)
 	{
 		memcpy(bWorkBlob + oWork.iWorkSize * i, oWork.bWorkBlob, oWork.iWorkSize);
 		if (i > 0)
 			piNonce[i] = (uint32_t*)(bWorkBlob + oWork.iWorkSize * i + 39);
+		ctx[i]->variant = (bWorkBlob + oWork.iWorkSize * i)[0] >= 7 ? (bWorkBlob + oWork.iWorkSize * i)[0] - 6 : 0;
 	}
 }
 
@@ -590,10 +594,11 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 		ctx[i] = minethd_alloc_ctx();
 		piHashVal[i] = (uint64_t*)(bHashOut + 32 * i + 24);
 		piNonce[i] = (i == 0) ? (uint32_t*)(bWorkBlob + 39) : nullptr;
+               ctx[i]->variant = ((const uint8_t*)bWorkBlob)[0] >= 7 ? ((const uint8_t*)bWorkBlob)[0] - 6 : 0;
 	}
 
 	if(!oWork.bStall)
-		prep_multiway_work<N>(bWorkBlob, piNonce);
+		prep_multiway_work<N>(bWorkBlob, piNonce, ctx);
 
 	globalStates::inst().iConsumeCnt++;
 
@@ -609,7 +614,7 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
-			prep_multiway_work<N>(bWorkBlob, piNonce);
+			prep_multiway_work<N>(bWorkBlob, piNonce, ctx);
 			continue;
 		}
 
@@ -654,7 +659,7 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 		}
 
 		consume_work();
-		prep_multiway_work<N>(bWorkBlob, piNonce);
+		prep_multiway_work<N>(bWorkBlob, piNonce, ctx);
 	}
 
 	for (int i = 0; i < N; i++)

@@ -6,6 +6,21 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
+#define VARIANT1_1(p) \
+  do if (variant > 0 && sub == 2) \
+  { \
+    uint32_t tmp32 = loadGlobal32<uint32_t>(p); \
+    uint8_t tmp = tmp32 >> 24; \
+    uint8_t tmp1 = (tmp>>4)&1, tmp2 = (tmp>>5)&1, tmp3 = tmp1^tmp2; \
+    uint8_t tmp0 = nonce_flag ? tmp3 : tmp1 + 1; \
+    tmp32 &= 0x00ffffff; tmp32 |= ((tmp & 0xef) | (tmp0<<4)) << 24; \
+    storeGlobal32<uint32_t>(p, tmp32); \
+  } while(0)
+
+#define VARIANT1_2(p) VARIANT1_1(p)
+#define VARIANT1_INIT() \
+  nonce_flag ^= (thread & 1)
+
 #ifdef _WIN32
 #include <windows.h>
 extern "C" void compat_usleep(uint64_t waitTime)
@@ -183,7 +198,7 @@ template<size_t ITERATIONS, uint32_t THREAD_SHIFT, uint32_t MASK>
 #ifdef XMR_STAK_THREADS
 __launch_bounds__( XMR_STAK_THREADS * 4 )
 #endif
-__global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b )
+__global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b,int variant, uint8_t nonce_flag )
 {
 	__shared__ uint32_t sharedMemory[1024];
 
@@ -203,6 +218,8 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 #endif
 	if ( thread >= threads )
 		return;
+
+	VARIANT1_INIT();
 
 	int i, k;
         uint32_t j;
@@ -240,6 +257,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 			t1[0] = shuffle(sPtr,sub, d[x], 0);
 			//long_state[j] = d[0] ^ d[1];
 			storeGlobal32( long_state + j, d[0] ^ d[1] );
+			VARIANT1_1( long_state + j );
 
 			//MUL_SUM_XOR_DST(c, a, &long_state[((uint32_t *)c)[0] & MASK]);
 			j = ( ( *t1 & MASK ) >> 2 ) + sub;
@@ -260,6 +278,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 			res = *( (uint64_t *) t2 )  >> ( sub & 1 ? 32 : 0 );
 
 			storeGlobal32( long_state + j, res );
+			VARIANT1_2( long_state + j );
 			a = ( sub & 1 ? yy[1] : yy[0] ) ^ res;
 		}
 	}
@@ -352,7 +371,8 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx)
 				i,
 				ctx->d_long_state,
 				ctx->d_ctx_a,
-				ctx->d_ctx_b
+				ctx->d_ctx_b,
+				ctx->variant, ctx->nonce_flag
 			)
 	    );
 
