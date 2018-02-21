@@ -549,6 +549,8 @@ int getAMDPlatformIdx()
 	clStatus = clGetPlatformIDs(numPlatforms, platforms, NULL);
 
 	int platformIndex = -1;
+	// Mesa OpenCL is the fallback if no AMD or Apple OpenCL is found
+	int mesaPlatform = -1;
 
 	if(clStatus == CL_SUCCESS)
 	{
@@ -559,12 +561,28 @@ int getAMDPlatformIdx()
 
 			clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, infoSize, platformNameVec.data(), NULL);
 			std::string platformName(platformNameVec.data());
-			if( platformName.find("Advanced Micro Devices") != std::string::npos || platformName.find("Apple") != std::string::npos)
+			if( platformName.find("Advanced Micro Devices") != std::string::npos ||
+				platformName.find("Apple") != std::string::npos ||
+				platformName.find("Mesa") != std::string::npos
+			)
 			{
-				platformIndex = i;
+
 				printer::inst()->print_msg(L0,"Found AMD platform index id = %i, name = %s",i , platformName.c_str());
-				break;
+				if(platformName.find("Mesa") != std::string::npos)
+					mesaPlatform = i;
+				else
+				{
+					// exit if AMD or Apple platform is found
+					platformIndex = i;
+					break;
+				}
 			}
+		}
+		// fall back to Mesa OpenCL
+		if(platformIndex == -1 && mesaPlatform != -1)
+		{
+			printer::inst()->print_msg(L0,"No AMD platform found select Mesa as OpenCL platform");
+			platformIndex = mesaPlatform;
 		}
 	}
 	else
