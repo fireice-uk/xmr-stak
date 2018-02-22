@@ -143,7 +143,7 @@ private:
 				// set 8 threads per block (this is a good value for the most gpus)
 				conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
 					"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
-					"    \"affine_to_cpu\" : false, \"strided_index\" : 1, \"mem_chunk\" : 4,\n"
+					"    \"affine_to_cpu\" : false, \"strided_index\" : 1, \"mem_chunk\" : 2,\n"
 					"    \"comp_mode\" : true\n" +
 					"  },\n";
 			}
