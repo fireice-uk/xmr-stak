@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <regex>
 #include <cassert>
+#include <thread>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -219,7 +220,7 @@ char* LoadTextFile(const char* filename)
 	return out;
 }
 
-size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_code)
+size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx)
 {
 	size_t MaximumWorkSize;
 	cl_int ret;
@@ -257,19 +258,13 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	}
 
 	size_t hashMemSize;
-	int threadMemMask;
-	int hasIterations;
 	if(::jconf::inst()->IsCurrencyMonero())
 	{
 		hashMemSize = MONERO_MEMORY;
-		threadMemMask = MONERO_MASK;
-		hasIterations = MONERO_ITER;
 	}
 	else
 	{
 		hashMemSize = AEON_MEMORY;
-		threadMemMask = AEON_MASK;
-		hasIterations = AEON_ITER;
 	}
 
 	size_t g_thd = ctx->rawIntensity;
@@ -327,6 +322,14 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
+	ctx->Nonce = 0;
+	return 0;
+}
+
+
+size_t CompileOpenCLSource(cl_context opencl_ctx, GpuContext* ctx, const char* source_code)
+{
+	cl_int ret;
 	ctx->Program = clCreateProgramWithSource(opencl_ctx, 1, (const char**)&source_code, NULL, &ret);
 	if(ret != CL_SUCCESS)
 	{
@@ -334,10 +337,23 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
+	int threadMemMask;
+	int hashIterations;
+	if(::jconf::inst()->IsCurrencyMonero())
+	{
+		threadMemMask = MONERO_MASK;
+		hashIterations = MONERO_ITER;
+	}
+	else
+	{
+		threadMemMask = AEON_MASK;
+		hashIterations = AEON_ITER;
+	}
+
 	char options[256];
 	snprintf(options, sizeof(options), 
 		"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d -DMEM_CHUNK_EXPONENT=%d  -DCOMP_MODE=%d",
-		hasIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex, int(1u<<ctx->memChunk), ctx->compMode ? 1 : 0);
+		hashIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex, int(1u<<ctx->memChunk), ctx->compMode ? 1 : 0);
 	ret = clBuildProgram(ctx->Program, 1, &ctx->DeviceID, options, NULL, NULL);
 	if(ret != CL_SUCCESS)
 	{
@@ -390,7 +406,6 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		}
 	}
 
-	ctx->Nonce = 0;
 	return 0;
 }
 
@@ -716,6 +731,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_BLAKE256"), blake256CL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_GROESTL256"), groestl256CL);
 
+	// initialize the memory foreach device
 	for(int i = 0; i < num_gpus; ++i)
 	{
 		if(ctx[i].stridedIndex == 2 && (ctx[i].rawIntensity % ctx[i].workSize) != 0)
@@ -725,10 +741,38 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 			printer::inst()->print_msg(L0, "WARNING AMD: gpu %d intensity is not a multiple of 'worksize', auto reduce intensity to %d", ctx[i].deviceIdx, int(reduced_intensity));
 		}
 
-		if((ret = InitOpenCLGpu(opencl_ctx, &ctx[i], source_code.c_str())) != ERR_SUCCESS)
+		if((ret = InitOpenCLGpu(opencl_ctx, &ctx[i])) != ERR_SUCCESS)
 		{
 			return ret;
 		}
+	}
+
+	std::vector<std::thread> compile_threads;
+	std::vector<cl_int> thread_result(num_gpus, 0);
+	// compile the source code foreach device in a independent thread
+	for(int i = 0; i < num_gpus; ++i)
+	{
+		compile_threads.push_back(
+			std::thread([i, &thread_result, &source_code, &opencl_ctx, &ctx]()
+			{
+				cl_int ret;
+				if((ret = CompileOpenCLSource(opencl_ctx, &ctx[i], source_code.c_str())) != ERR_SUCCESS)
+				{
+					thread_result[i] = ret;
+				}
+			}
+		));
+	}
+	// wait that all threads are finished
+	for(auto& thread : compile_threads)
+	{
+		thread.join();
+	}
+	// check result of the compile thread
+	for(const auto result : thread_result)
+	{
+		if(result != 0)
+			return result;
 	}
 
 	return ERR_SUCCESS;
