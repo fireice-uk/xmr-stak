@@ -84,6 +84,31 @@ XMRSTAK_INCLUDE_BLAKE256
 //#include "opencl/groestl256.cl"
 XMRSTAK_INCLUDE_GROESTL256
 
+#define VARIANT1_1(p) \
+	do if (variant > 6) \
+	{ \
+		uint table = 0x75310U; \
+		uint index = (((p).s2 >> 26) & 12) | (((p).s2 >> 23) & 2); \
+		(p).s2 ^= ((table >> index) & 0x30U) << 24; \
+	} while (0)
+
+#define VARIANT1_2(p) \
+	do if (variant > 6) \
+	{ \
+		((uint2 *)&(p))[0] ^= tweak1_2; \
+	} while (0)
+
+#define VARIANT1_INIT() \
+	uint2 tweak1_2; \
+	do if (variant > 6) \
+	{ \
+		tweak1_2 = as_uint2(input[4]); \
+		tweak1_2.s0 >>= 24; \
+		tweak1_2.s0 |= tweak1_2.s1 << 8; \
+		tweak1_2.s1 = get_global_id(0); \
+		tweak1_2 ^= as_uint2(states[24]); \
+	} while(0)
+
 static const __constant ulong keccakf_rndc[24] = 
 {
     0x0000000000000001, 0x0000000000008082, 0x800000000000808a,
@@ -504,7 +529,7 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 }
 
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
-__kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Threads)
+__kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Threads, uint variant, __global ulong *input)
 {
 	ulong a[2], b[2];
 	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
@@ -544,6 +569,8 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 
 	mem_fence(CLK_LOCAL_MEM_FENCE);
 
+	VARIANT1_INIT();
+
 	// do not use early return here
 	if(gIdx < Threads)
 	{
@@ -556,7 +583,10 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 			((uint4 *)c)[0] = AES_Round(AES0, AES1, AES2, AES3, ((uint4 *)c)[0], ((uint4 *)a)[0]);
 			//b_x ^= ((uint4 *)c)[0];
 
-			Scratchpad[IDX((a[0] & MASK) >> 4)] = b_x ^ ((uint4 *)c)[0];
+			b_x ^= ((uint4 *)c)[0];
+			VARIANT1_1(b_x);
+
+			Scratchpad[IDX((a[0] & MASK) >> 4)] = b_x;
 
 			uint4 tmp;
 			tmp = Scratchpad[IDX((c[0] & MASK) >> 4)];
@@ -564,7 +594,9 @@ __kernel void cn1(__global uint4 *Scratchpad, __global ulong *states, ulong Thre
 			a[1] += c[0] * as_ulong2(tmp).s0;
 			a[0] += mul_hi(c[0], as_ulong2(tmp).s0);
 
+			VARIANT1_2(a[1]);
 			Scratchpad[IDX((c[0] & MASK) >> 4)] = ((uint4 *)a)[0];
+			VARIANT1_2(a[1]);
 
 			((uint4 *)a)[0] ^= tmp;
 

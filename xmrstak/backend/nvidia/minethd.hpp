@@ -29,7 +29,7 @@ public:
 	static bool self_test();
 
 private:
-	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx*);
+	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx*, uint8_t);
 
 	minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg);
 

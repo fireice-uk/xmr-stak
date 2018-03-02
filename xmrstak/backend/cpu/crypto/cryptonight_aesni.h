@@ -38,6 +38,26 @@ static inline uint64_t _umul128(uint64_t a, uint64_t b, uint64_t* hi)
 
 #include "soft_aes.hpp"
 
+#define VARIANT1_1(p) \
+  do if (MONERO && version > 6) \
+  { \
+    const uint8_t tmp = reinterpret_cast<const uint8_t*>(p)[11]; \
+    static const uint32_t table = 0x75310; \
+    const uint8_t index = (((tmp >> 3) & 6) | (tmp & 1)) << 1; \
+    reinterpret_cast<uint8_t*>(p)[11] = tmp ^ ((table >> index) & 0x30); \
+  } while(0)
+
+#define VARIANT1_2(p, par) \
+  do if (MONERO && version > 6) \
+  { \
+    (p) ^= tweak1_2_##par; \
+  } while(0)
+
+// Length (at least 43 bytes) is checked prior to this
+#define VARIANT1_INIT(ctx, par) \
+  const uint64_t tweak1_2_##par = (MONERO && version > 6) ? \
+    *reinterpret_cast<const uint64_t*>(reinterpret_cast<const uint8_t*>(input) + par * len + 35) ^ *(reinterpret_cast<const uint64_t*>((ctx)->hash_state) + 24) : 0
+
 extern "C"
 {
 	void keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen);
@@ -287,10 +307,12 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 	_mm_store_si128(output + 11, xout7);
 }
 
-template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
-void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_ctx* ctx0)
+template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH, bool MONERO>
+void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_ctx* ctx0, uint8_t version)
 {
 	keccak((const uint8_t *)input, len, ctx0->hash_state, 200);
+
+	VARIANT1_INIT(ctx0, 0);
 
 	// Optim - 99% time boundary
 	cn_explode_scratchpad<MEM, SOFT_AES, PREFETCH>((__m128i*)ctx0->hash_state, (__m128i*)ctx0->long_state);
@@ -316,6 +338,7 @@ void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_c
 			cx = _mm_aesenc_si128(cx, _mm_set_epi64x(ah0, al0));
 
 		_mm_store_si128((__m128i *)&l0[idx0 & MASK], _mm_xor_si128(bx0, cx));
+		VARIANT1_1(&l0[idx0 & MASK]);
 		idx0 = _mm_cvtsi128_si64(cx);
 		bx0 = cx;
 
@@ -330,8 +353,10 @@ void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_c
 
 		al0 += hi;
 		ah0 += lo;
+		VARIANT1_2(ah0, 0);
 		((uint64_t*)&l0[idx0 & MASK])[0] = al0;
 		((uint64_t*)&l0[idx0 & MASK])[1] = ah0;
+		VARIANT1_2(ah0, 0);
 		ah0 ^= ch;
 		al0 ^= cl;
 		idx0 = al0;
@@ -352,11 +377,14 @@ void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_c
 // This lovely creation will do 2 cn hashes at a time. We have plenty of space on silicon
 // to fit temporary vars for two contexts. Function will read len*2 from input and write 64 bytes to output
 // We are still limited by L3 cache, so doubling will only work with CPUs where we have more than 2MB to core (Xeons)
-template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
-void cryptonight_double_hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH, bool MONERO>
+void cryptonight_double_hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, uint8_t version)
 {
 	keccak((const uint8_t *)input, len, ctx[0]->hash_state, 200);
 	keccak((const uint8_t *)input+len, len, ctx[1]->hash_state, 200);
+
+	VARIANT1_INIT(ctx[0], 0);
+	VARIANT1_INIT(ctx[1], 1);
 
 	// Optim - 99% time boundary
 	cn_explode_scratchpad<MEM, SOFT_AES, PREFETCH>((__m128i*)ctx[0]->hash_state, (__m128i*)ctx[0]->long_state);
@@ -389,6 +417,7 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 			cx = _mm_aesenc_si128(cx, _mm_set_epi64x(axh0, axl0));
 
 		_mm_store_si128((__m128i *)&l0[idx0 & MASK], _mm_xor_si128(bx0, cx));
+		VARIANT1_1(&l0[idx0 & MASK]);
 		idx0 = _mm_cvtsi128_si64(cx);
 		bx0 = cx;
 
@@ -403,6 +432,7 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 			cx = _mm_aesenc_si128(cx, _mm_set_epi64x(axh1, axl1));
 
 		_mm_store_si128((__m128i *)&l1[idx1 & MASK], _mm_xor_si128(bx1, cx));
+		VARIANT1_1(&l1[idx1 & MASK]);
 		idx1 = _mm_cvtsi128_si64(cx);
 		bx1 = cx;
 
@@ -417,8 +447,10 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 
 		axl0 += hi;
 		axh0 += lo;
+		VARIANT1_2(axh0, 0);
 		((uint64_t*)&l0[idx0 & MASK])[0] = axl0;
 		((uint64_t*)&l0[idx0 & MASK])[1] = axh0;
+                VARIANT1_2(axh0, 0);
 		axh0 ^= ch;
 		axl0 ^= cl;
 		idx0 = axl0;
@@ -433,8 +465,10 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 
 		axl1 += hi;
 		axh1 += lo;
+		VARIANT1_2(axh1, 1);
 		((uint64_t*)&l1[idx1 & MASK])[0] = axl1;
 		((uint64_t*)&l1[idx1 & MASK])[1] = axh1;
+		VARIANT1_2(axh1, 1);
 		axh1 ^= ch;
 		axl1 ^= cl;
 		idx1 = axl1;
@@ -469,7 +503,8 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 	else							\
 		c = _mm_aesenc_si128(c, a);			\
 	b = _mm_xor_si128(b, c);				\
-	_mm_store_si128(ptr, b)
+	_mm_store_si128(ptr, b);				\
+	VARIANT1_1(ptr)
 
 #define CN_STEP3(a, b, c, l, ptr, idx)				\
 	idx = _mm_cvtsi128_si64(c);				\
@@ -478,20 +513,24 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 		_mm_prefetch((const char*)ptr, _MM_HINT_T0);	\
 	b = _mm_load_si128(ptr)
 
-#define CN_STEP4(a, b, c, l, ptr, idx)				\
+#define CN_STEP4(a, b, c, l, ptr, idx, par)			\
 	lo = _umul128(idx, _mm_cvtsi128_si64(b), &hi);		\
 	a = _mm_add_epi64(a, _mm_set_epi64x(lo, hi));		\
-	_mm_store_si128(ptr, a)
+	_mm_store_si128(ptr, a);				\
+	VARIANT1_2(reinterpret_cast<uint64_t*>(ptr)[1], par)
 
 // This lovelier creation will do 3 cn hashes at a time.
-template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
-void cryptonight_triple_hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH, bool MONERO>
+void cryptonight_triple_hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, uint8_t version)
 {
 	for (size_t i = 0; i < 3; i++)
 	{
 		keccak((const uint8_t *)input + len * i, len, ctx[i]->hash_state, 200);
 		cn_explode_scratchpad<MEM, SOFT_AES, PREFETCH>((__m128i*)ctx[i]->hash_state, (__m128i*)ctx[i]->long_state);
 	}
+	VARIANT1_INIT(ctx[0], 0);
+	VARIANT1_INIT(ctx[1], 1);
+	VARIANT1_INIT(ctx[2], 2);
 
 	uint8_t* l0 = ctx[0]->long_state;
 	uint64_t* h0 = (uint64_t*)ctx[0]->hash_state;
@@ -528,11 +567,12 @@ void cryptonight_triple_hash(const void* input, size_t len, void* output, crypto
 		CN_STEP3(ax1, bx1, cx1, l1, ptr1, idx1);
 		CN_STEP3(ax2, bx2, cx2, l2, ptr2, idx2);
 
-		CN_STEP4(ax0, bx0, cx0, l0, ptr0, idx0);
-		CN_STEP4(ax1, bx1, cx1, l1, ptr1, idx1);
-		CN_STEP4(ax2, bx2, cx2, l2, ptr2, idx2);
+		CN_STEP4(ax0, bx0, cx0, l0, ptr0, idx0, 0);
+		CN_STEP4(ax1, bx1, cx1, l1, ptr1, idx1, 1);
+		CN_STEP4(ax2, bx2, cx2, l2, ptr2, idx2, 2);
 
 		// ODD ROUND
+
 		CN_STEP1(ax0, cx0, bx0, l0, ptr0, idx0);
 		CN_STEP1(ax1, cx1, bx1, l1, ptr1, idx1);
 		CN_STEP1(ax2, cx2, bx2, l2, ptr2, idx2);
@@ -545,9 +585,9 @@ void cryptonight_triple_hash(const void* input, size_t len, void* output, crypto
 		CN_STEP3(ax1, cx1, bx1, l1, ptr1, idx1);
 		CN_STEP3(ax2, cx2, bx2, l2, ptr2, idx2);
 
-		CN_STEP4(ax0, cx0, bx0, l0, ptr0, idx0);
-		CN_STEP4(ax1, cx1, bx1, l1, ptr1, idx1);
-		CN_STEP4(ax2, cx2, bx2, l2, ptr2, idx2);
+		CN_STEP4(ax0, cx0, bx0, l0, ptr0, idx0, 0);
+		CN_STEP4(ax1, cx1, bx1, l1, ptr1, idx1, 1);
+		CN_STEP4(ax2, cx2, bx2, l2, ptr2, idx2, 2);
 	}
 
 	for (size_t i = 0; i < 3; i++)
@@ -559,14 +599,19 @@ void cryptonight_triple_hash(const void* input, size_t len, void* output, crypto
 }
 
 // This even lovelier creation will do 4 cn hashes at a time.
-template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
-void cryptonight_quad_hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH, bool MONERO>
+void cryptonight_quad_hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, uint8_t version)
 {
 	for (size_t i = 0; i < 4; i++)
 	{
 		keccak((const uint8_t *)input + len * i, len, ctx[i]->hash_state, 200);
 		cn_explode_scratchpad<MEM, SOFT_AES, PREFETCH>((__m128i*)ctx[i]->hash_state, (__m128i*)ctx[i]->long_state);
 	}
+
+	VARIANT1_INIT(ctx[0], 0);
+	VARIANT1_INIT(ctx[1], 1);
+	VARIANT1_INIT(ctx[2], 2);
+	VARIANT1_INIT(ctx[3], 3);
 
 	uint8_t* l0 = ctx[0]->long_state;
 	uint64_t* h0 = (uint64_t*)ctx[0]->hash_state;
@@ -611,10 +656,10 @@ void cryptonight_quad_hash(const void* input, size_t len, void* output, cryptoni
 		CN_STEP3(ax2, bx2, cx2, l2, ptr2, idx2);
 		CN_STEP3(ax3, bx3, cx3, l3, ptr3, idx3);
 
-		CN_STEP4(ax0, bx0, cx0, l0, ptr0, idx0);
-		CN_STEP4(ax1, bx1, cx1, l1, ptr1, idx1);
-		CN_STEP4(ax2, bx2, cx2, l2, ptr2, idx2);
-		CN_STEP4(ax3, bx3, cx3, l3, ptr3, idx3);
+		CN_STEP4(ax0, bx0, cx0, l0, ptr0, idx0, 0);
+		CN_STEP4(ax1, bx1, cx1, l1, ptr1, idx1, 1);
+		CN_STEP4(ax2, bx2, cx2, l2, ptr2, idx2, 2);
+		CN_STEP4(ax3, bx3, cx3, l3, ptr3, idx3, 3);
 
 		// ODD ROUND
 		CN_STEP1(ax0, cx0, bx0, l0, ptr0, idx0);
@@ -632,10 +677,10 @@ void cryptonight_quad_hash(const void* input, size_t len, void* output, cryptoni
 		CN_STEP3(ax2, cx2, bx2, l2, ptr2, idx2);
 		CN_STEP3(ax3, cx3, bx3, l3, ptr3, idx3);
 
-		CN_STEP4(ax0, cx0, bx0, l0, ptr0, idx0);
-		CN_STEP4(ax1, cx1, bx1, l1, ptr1, idx1);
-		CN_STEP4(ax2, cx2, bx2, l2, ptr2, idx2);
-		CN_STEP4(ax3, cx3, bx3, l3, ptr3, idx3);
+		CN_STEP4(ax0, cx0, bx0, l0, ptr0, idx0, 0);
+		CN_STEP4(ax1, cx1, bx1, l1, ptr1, idx1, 1);
+		CN_STEP4(ax2, cx2, bx2, l2, ptr2, idx2, 2);
+		CN_STEP4(ax3, cx3, bx3, l3, ptr3, idx3, 3);
 	}
 
 	for (size_t i = 0; i < 4; i++)
@@ -647,14 +692,20 @@ void cryptonight_quad_hash(const void* input, size_t len, void* output, cryptoni
 }
 
 // This most lovely creation will do 5 cn hashes at a time.
-template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH>
-void cryptonight_penta_hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+template<size_t MASK, size_t ITERATIONS, size_t MEM, bool SOFT_AES, bool PREFETCH, bool MONERO>
+void cryptonight_penta_hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, uint8_t version)
 {
 	for (size_t i = 0; i < 5; i++)
 	{
 		keccak((const uint8_t *)input + len * i, len, ctx[i]->hash_state, 200);
 		cn_explode_scratchpad<MEM, SOFT_AES, PREFETCH>((__m128i*)ctx[i]->hash_state, (__m128i*)ctx[i]->long_state);
 	}
+
+	VARIANT1_INIT(ctx[0], 0);
+	VARIANT1_INIT(ctx[1], 1);
+	VARIANT1_INIT(ctx[2], 2);
+	VARIANT1_INIT(ctx[3], 3);
+	VARIANT1_INIT(ctx[4], 4);
 
 	uint8_t* l0 = ctx[0]->long_state;
 	uint64_t* h0 = (uint64_t*)ctx[0]->hash_state;
@@ -707,11 +758,11 @@ void cryptonight_penta_hash(const void* input, size_t len, void* output, crypton
 		CN_STEP3(ax3, bx3, cx3, l3, ptr3, idx3);
 		CN_STEP3(ax4, bx4, cx4, l4, ptr4, idx4);
 
-		CN_STEP4(ax0, bx0, cx0, l0, ptr0, idx0);
-		CN_STEP4(ax1, bx1, cx1, l1, ptr1, idx1);
-		CN_STEP4(ax2, bx2, cx2, l2, ptr2, idx2);
-		CN_STEP4(ax3, bx3, cx3, l3, ptr3, idx3);
-		CN_STEP4(ax4, bx4, cx4, l4, ptr4, idx4);
+		CN_STEP4(ax0, bx0, cx0, l0, ptr0, idx0, 0);
+		CN_STEP4(ax1, bx1, cx1, l1, ptr1, idx1, 1);
+		CN_STEP4(ax2, bx2, cx2, l2, ptr2, idx2, 2);
+		CN_STEP4(ax3, bx3, cx3, l3, ptr3, idx3, 3);
+		CN_STEP4(ax4, bx4, cx4, l4, ptr4, idx4, 4);
 
 		// ODD ROUND
 		CN_STEP1(ax0, cx0, bx0, l0, ptr0, idx0);
@@ -732,11 +783,11 @@ void cryptonight_penta_hash(const void* input, size_t len, void* output, crypton
 		CN_STEP3(ax3, cx3, bx3, l3, ptr3, idx3);
 		CN_STEP3(ax4, cx4, bx4, l4, ptr4, idx4);
 
-		CN_STEP4(ax0, cx0, bx0, l0, ptr0, idx0);
-		CN_STEP4(ax1, cx1, bx1, l1, ptr1, idx1);
-		CN_STEP4(ax2, cx2, bx2, l2, ptr2, idx2);
-		CN_STEP4(ax3, cx3, bx3, l3, ptr3, idx3);
-		CN_STEP4(ax4, cx4, bx4, l4, ptr4, idx4);
+		CN_STEP4(ax0, cx0, bx0, l0, ptr0, idx0, 0);
+		CN_STEP4(ax1, cx1, bx1, l1, ptr1, idx1, 1);
+		CN_STEP4(ax2, cx2, bx2, l2, ptr2, idx2, 2);
+		CN_STEP4(ax3, cx3, bx3, l3, ptr3, idx3, 3);
+		CN_STEP4(ax4, cx4, bx4, l4, ptr4, idx4, 4);
 	}
 
 	for (size_t i = 0; i < 5; i++)

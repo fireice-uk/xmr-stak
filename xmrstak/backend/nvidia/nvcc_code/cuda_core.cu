@@ -167,11 +167,19 @@ __forceinline__ __device__ uint32_t shuffle(volatile uint32_t* ptr,const uint32_
 #endif
 }
 
-template<size_t ITERATIONS, uint32_t THREAD_SHIFT, uint32_t MASK>
+__device__ __forceinline__ uint32_t variant1_1(const uint32_t src)
+{
+	const uint8_t tmp = src >> 24;
+	const uint32_t table = 0x75310;
+	const uint8_t index = (((tmp >> 3) & 6) | (tmp & 1)) << 1;
+	return (src & 0x00ffffff) | ((tmp ^ ((table >> index) & 0x30)) << 24);
+}
+
+template<size_t ITERATIONS, uint32_t THREAD_SHIFT, uint32_t MASK, bool MONERO>
 #ifdef XMR_STAK_THREADS
 __launch_bounds__( XMR_STAK_THREADS * 4 )
 #endif
-__global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b )
+__global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b, unsigned version, uint32_t const * d_ctx_tweak1_2 )
 {
 	__shared__ uint32_t sharedMemory[1024];
 
@@ -191,6 +199,13 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 #endif
 	if ( thread >= threads )
 		return;
+
+	uint32_t tweak1_2[2];
+	if (MONERO && version > 6)
+	{
+		tweak1_2[0] = d_ctx_tweak1_2[thread * 2];
+		tweak1_2[1] = d_ctx_tweak1_2[thread * 2 + 1];
+	}
 
 	int i, k;
         uint32_t j;
@@ -227,7 +242,8 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 			//XOR_BLOCKS_DST(c, b, &long_state[j]);
 			t1[0] = shuffle(sPtr,sub, d[x], 0);
 			//long_state[j] = d[0] ^ d[1];
-			storeGlobal32( long_state + j, d[0] ^ d[1] );
+			const uint32_t z = d[0] ^ d[1];
+			storeGlobal32( long_state + j, (MONERO && version > 6 && sub == 2) ? variant1_1(z) : z );
 
 			//MUL_SUM_XOR_DST(c, a, &long_state[((uint32_t *)c)[0] & MASK]);
 			j = ( ( *t1 & MASK ) >> 2 ) + sub;
@@ -247,7 +263,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 
 			res = *( (uint64_t *) t2 )  >> ( sub & 1 ? 32 : 0 );
 
-			storeGlobal32( long_state + j, res );
+			storeGlobal32( long_state + j, (MONERO && version > 6 && sub2) ? (tweak1_2[sub & 1] ^ res) : res );
 			a = ( sub & 1 ? yy[1] : yy[0] ) ^ res;
 		}
 	}
@@ -294,8 +310,8 @@ __global__ void cryptonight_core_gpu_phase3( int threads, int bfactor, int parti
 	MEMCPY8( d_ctx_state + thread * 50 + sub + 16, text, 2 );
 }
 
-template<size_t ITERATIONS, uint32_t MASK, uint32_t THREAD_SHIFT>
-void cryptonight_core_gpu_hash(nvid_ctx* ctx)
+template<size_t ITERATIONS, uint32_t MASK, uint32_t THREAD_SHIFT, bool MONERO>
+void cryptonight_core_gpu_hash(nvid_ctx* ctx, unsigned version)
 {
 	dim3 grid( ctx->device_blocks );
 	dim3 block( ctx->device_threads );
@@ -330,7 +346,7 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx)
         CUDA_CHECK_MSG_KERNEL(
 			ctx->device_id,
 			"\n**suggestion: Try to increase the value of the attribute 'bfactor' or \nreduce 'threads' in the NVIDIA config file.**",
-			cryptonight_core_gpu_phase2<ITERATIONS,THREAD_SHIFT,MASK><<<
+			cryptonight_core_gpu_phase2<ITERATIONS,THREAD_SHIFT,MASK,MONERO><<<
 				grid,
 				block4,
 				block4.x * sizeof(uint32_t) * static_cast< int >( ctx->device_arch[0] < 3 )
@@ -340,7 +356,9 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx)
 				i,
 				ctx->d_long_state,
 				ctx->d_ctx_a,
-				ctx->d_ctx_b
+				ctx->d_ctx_b,
+				version,
+				ctx->d_ctx_tweak1_2
 			)
 	    );
 
@@ -356,18 +374,18 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx)
 	}
 }
 
-void cryptonight_core_cpu_hash(nvid_ctx* ctx, bool mineMonero)
+void cryptonight_core_cpu_hash(nvid_ctx* ctx, bool mineMonero, unsigned version)
 {
 #ifndef CONF_NO_MONERO
 	if(mineMonero)
 	{
-		cryptonight_core_gpu_hash<MONERO_ITER, MONERO_MASK, 19u>(ctx);
+		cryptonight_core_gpu_hash<MONERO_ITER, MONERO_MASK, 19u, true>(ctx, version);
 	}
 #endif
 #ifndef CONF_NO_AEON
 	if(!mineMonero)
 	{
-		cryptonight_core_gpu_hash<AEON_ITER, AEON_MASK, 18u>(ctx);
+		cryptonight_core_gpu_hash<AEON_ITER, AEON_MASK, 18u, false>(ctx, version);
 	}
 #endif
 }

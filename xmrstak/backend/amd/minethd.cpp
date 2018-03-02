@@ -186,10 +186,12 @@ void minethd::work_main()
 	lck.release();
 	std::this_thread::yield();
 
+	const bool mineMonero = ::jconf::inst()->IsCurrencyMonero();
+
 	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
-	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, ::jconf::inst()->IsCurrencyMonero());
+	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, mineMonero);
 	globalStates::inst().iConsumeCnt++;
 
 	while (bQuit == 0)
@@ -212,8 +214,9 @@ void minethd::work_main()
 		size_t round_ctr = 0;
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
+		const uint8_t version = mineMonero ? oWork.getVersion() : 0;
 		uint64_t target = oWork.iTarget;
-		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target);
+		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, version);
 
 		if(oWork.bNiceHash)
 			pGpuCtx->Nonce = *(uint32_t*)(oWork.bWorkBlob + 39);
@@ -241,7 +244,7 @@ void minethd::work_main()
 
 				*(uint32_t*)(bWorkBlob + 39) = results[i];
 
-				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, cpu_ctx);
+				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, cpu_ctx, version);
 				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
 					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, results[i], bResult, iThreadNo), oWork.iPoolId));
 				else

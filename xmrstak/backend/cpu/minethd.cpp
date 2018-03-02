@@ -228,38 +228,38 @@ bool minethd::self_test()
 		cn_hash_fun_multi hashf_multi;
 
 		hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, mineMonero);
-		hashf("This is a test", 14, out, ctx[0]);
+		hashf("This is a test", 14, out, ctx[0], 0);
 		bResult = memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
 		hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, mineMonero);
-		hashf("This is a test", 14, out, ctx[0]);
+		hashf("This is a test", 14, out, ctx[0], 0);
 		bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
 		hashf_multi = func_multi_selector(2, ::jconf::inst()->HaveHardwareAes(), false, mineMonero);
-		hashf_multi("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx);
+		hashf_multi("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx, 0);
 		bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
 				"\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
 
 		hashf_multi = func_multi_selector(2, ::jconf::inst()->HaveHardwareAes(), true, mineMonero);
-		hashf_multi("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx);
+		hashf_multi("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx, 0);
 		bResult &= memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
 				"\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
 
 		hashf_multi = func_multi_selector(3, ::jconf::inst()->HaveHardwareAes(), false, mineMonero);
-		hashf_multi("This is a testThis is a testThis is a test", 14, out, ctx);
+		hashf_multi("This is a testThis is a testThis is a test", 14, out, ctx, 0);
 		bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 96) == 0;
 
 		hashf_multi = func_multi_selector(4, ::jconf::inst()->HaveHardwareAes(), false, mineMonero);
-		hashf_multi("This is a testThis is a testThis is a testThis is a test", 14, out, ctx);
+		hashf_multi("This is a testThis is a testThis is a testThis is a test", 14, out, ctx, 0);
 		bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 128) == 0;
 
 		hashf_multi = func_multi_selector(5, ::jconf::inst()->HaveHardwareAes(), false, mineMonero);
-		hashf_multi("This is a testThis is a testThis is a testThis is a testThis is a test", 14, out, ctx);
+		hashf_multi("This is a testThis is a testThis is a testThis is a testThis is a test", 14, out, ctx, 0);
 		bResult &= memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
@@ -341,20 +341,20 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, boo
 		 * is not defined. If one is defined there will be 4 entries.
 		 */
 #ifndef CONF_NO_MONERO
-		cryptonight_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
-		cryptonight_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
-		cryptonight_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
-		cryptonight_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>
+		cryptonight_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false, true>,
+		cryptonight_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true, true>,
+		cryptonight_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false, true>,
+		cryptonight_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true, true>
 #endif
 #if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_MONERO))
 		// comma will be added only if Monero and Aeon is build
 		,
 #endif
 #ifndef CONF_NO_AEON
-		cryptonight_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false>,
-		cryptonight_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true>,
-		cryptonight_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false>,
-		cryptonight_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true>
+		cryptonight_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false, false>,
+		cryptonight_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true, false>,
+		cryptonight_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false, false>,
+		cryptonight_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true, false>
 #endif
 	};
 
@@ -414,6 +414,8 @@ void minethd::work_main()
 			continue;
 		}
 
+		const uint8_t version = oWork.getVersion();
+
 		size_t nonce_ctr = 0;
 		constexpr size_t nonce_chunk = 4096; // Needs to be a power of 2
 
@@ -439,7 +441,7 @@ void minethd::work_main()
 
 			*piNonce = ++result.iNonce;
 
-			hash_fun(oWork.bWorkBlob, oWork.iWorkSize, result.bResult, ctx);
+			hash_fun(oWork.bWorkBlob, oWork.iWorkSize, result.bResult, ctx, version);
 
 			if (*piHashVal < oWork.iTarget)
 				executor::inst()->push_event(ex_event(result, oWork.iPoolId));
@@ -465,44 +467,44 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		 * is not defined. If one is defined there will be 4*(MAX_N-1) entries.
 		 */
 #ifndef CONF_NO_MONERO
-		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
-		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
-		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
-		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>,
-		cryptonight_triple_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
-		cryptonight_triple_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
-		cryptonight_triple_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
-		cryptonight_triple_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>,
-		cryptonight_quad_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
-		cryptonight_quad_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
-		cryptonight_quad_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
-		cryptonight_quad_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>,
-		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false>,
-		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true>,
-		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false>,
-		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true>
+		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false, true>,
+		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true, true>,
+		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false, true>,
+		cryptonight_double_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true, true>,
+		cryptonight_triple_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false, true>,
+		cryptonight_triple_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true, true>,
+		cryptonight_triple_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false, true>,
+		cryptonight_triple_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true, true>,
+		cryptonight_quad_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false, true>,
+		cryptonight_quad_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true, true>,
+		cryptonight_quad_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false, true>,
+		cryptonight_quad_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true, true>,
+		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, false, true>,
+		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, false, true, true>,
+		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, false, true>,
+		cryptonight_penta_hash<MONERO_MASK, MONERO_ITER, MONERO_MEMORY, true, true, true>
 #endif
 #if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_MONERO))
 		// comma will be added only if Monero and Aeon is build
 		,
 #endif
 #ifndef CONF_NO_AEON
-		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false>,
-		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true>,
-		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false>,
-		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true>,
-		cryptonight_triple_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false>,
-		cryptonight_triple_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true>,
-		cryptonight_triple_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false>,
-		cryptonight_triple_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true>,
-		cryptonight_quad_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false>,
-		cryptonight_quad_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true>,
-		cryptonight_quad_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false>,
-		cryptonight_quad_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true>,
-		cryptonight_penta_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false>,
-		cryptonight_penta_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true>,
-		cryptonight_penta_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false>,
-		cryptonight_penta_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true>
+		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false, false>,
+		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true, false>,
+		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false, false>,
+		cryptonight_double_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true, false>,
+		cryptonight_triple_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false, false>,
+		cryptonight_triple_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true, false>,
+		cryptonight_triple_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false, false>,
+		cryptonight_triple_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true, false>,
+		cryptonight_quad_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false, false>,
+		cryptonight_quad_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true, false>,
+		cryptonight_quad_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false, false>,
+		cryptonight_quad_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true, false>,
+		cryptonight_penta_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, false, false>,
+		cryptonight_penta_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, false, true, false>,
+		cryptonight_penta_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, false, false>,
+		cryptonight_penta_hash<AEON_MASK, AEON_ITER, AEON_MEMORY, true, true, false>
 #endif
 	};
 
@@ -581,7 +583,7 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 	}
 
 	if(!oWork.bStall)
-		prep_multiway_work<N>(bWorkBlob, piNonce);
+               prep_multiway_work<N>(bWorkBlob, piNonce);
 
 	globalStates::inst().iConsumeCnt++;
 
@@ -600,6 +602,8 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 			prep_multiway_work<N>(bWorkBlob, piNonce);
 			continue;
 		}
+
+		const uint8_t version = oWork.getVersion();
 
 		constexpr uint32_t nonce_chunk = 4096;
 		int64_t nonce_ctr = 0;
@@ -628,7 +632,7 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 			for (size_t i = 0; i < N; i++)
 				*piNonce[i] = ++iNonce;
 
-			hash_fun_multi(bWorkBlob, oWork.iWorkSize, bHashOut, ctx);
+			hash_fun_multi(bWorkBlob, oWork.iWorkSize, bHashOut, ctx, version);
 
 			for (size_t i = 0; i < N; i++)
 			{

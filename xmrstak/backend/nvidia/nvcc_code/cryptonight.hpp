@@ -25,6 +25,7 @@ typedef struct {
 	uint32_t *d_ctx_key1;
 	uint32_t *d_ctx_key2;
 	uint32_t *d_ctx_text;
+	uint32_t *d_ctx_tweak1_2;
 	std::string name;
 	size_t free_device_memory;
 	size_t total_device_memory;
@@ -41,8 +42,8 @@ int cuda_get_devicecount( int* deviceCount);
 int cuda_get_deviceinfo(nvid_ctx *ctx);
 int cryptonight_extra_cpu_init(nvid_ctx *ctx);
 void cryptonight_extra_cpu_set_data( nvid_ctx* ctx, const void *data, uint32_t len);
-void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce);
+void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, unsigned version);
 void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce);
 }
 
-void cryptonight_core_cpu_hash(nvid_ctx* ctx, bool mineMonero);
+void cryptonight_core_cpu_hash(nvid_ctx* ctx, bool mineMonero, unsigned version);
