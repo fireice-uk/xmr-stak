@@ -255,6 +255,7 @@ void minethd::work_main()
 		if(oWork.bNiceHash)
 			iNonce = *(uint32_t*)(oWork.bWorkBlob + 39);
 
+		const uint8_t version = mineMonero ? oWork.getVersion() : 0;
 		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			//Allocate a new nonce every 16 rounds
@@ -266,9 +267,9 @@ void minethd::work_main()
 			uint32_t foundNonce[10];
 			uint32_t foundCount;
 
-			cryptonight_extra_cpu_prepare(&ctx, iNonce);
+			cryptonight_extra_cpu_prepare(&ctx, iNonce, version);
 
-			cryptonight_core_cpu_hash(&ctx, mineMonero);
+			cryptonight_core_cpu_hash(&ctx, mineMonero, version);
 
 			cryptonight_extra_cpu_final(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce);
 
@@ -283,7 +284,7 @@ void minethd::work_main()
 
 				*(uint32_t*)(bWorkBlob + 39) = foundNonce[i];
 
-				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, cpu_ctx);
+				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, cpu_ctx, version);
 				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
 					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, foundNonce[i], bResult, iThreadNo), oWork.iPoolId));
 				else
