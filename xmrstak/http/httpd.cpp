@@ -134,6 +134,13 @@ int httpd::req_handler(void * cls,
 		rsp = MHD_create_response_from_buffer(str.size(), (void*)str.c_str(), MHD_RESPMEM_MUST_COPY);
 		MHD_add_response_header(rsp, "Content-Type", "text/html; charset=utf-8");
 	}
+	else if(strcasecmp(url, "/metrics") == 0)
+	{
+		executor::inst()->get_http_report(EV_METRICS, str);
+
+		rsp = MHD_create_response_from_buffer(str.size(), (void*)str.c_str(), MHD_RESPMEM_MUST_COPY);
+		MHD_add_response_header(rsp, "Content-Type", "text/plain; charset=utf-8");
+	}
 	else
 	{
 		//Do a 302 redirect to /h
