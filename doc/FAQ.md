@@ -1,7 +1,7 @@
 # FAQ
 
 ## Content Overview
-* [SeLockMemoryPrivilege failed](#selockmemoryprivilege-failed)
+* ["Obtaining SeLockMemoryPrivilege failed."](#obtaining-selockmemoryprivilege-failed)
 * [VirtualAlloc failed](#virtualalloc-failed)
 * [Error msvcp140.dll and vcruntime140.dll not available](#error-msvcp140dll-and-vcruntime140dll-not-available)
 * [Error: MEMORY ALLOC FAILED: mmap failed](#error-memory-alloc-failed-mmap-failed)
@@ -9,23 +9,24 @@
 * [Virus Protection Alert](#virus-protection-alert)
 * [Change Currency to Mine](#change-currency-to-mine)
 
-## SeLockMemoryPrivilege failed
+## "Obtaining SeLockMemoryPrivilege failed."
 
-Please see [config.txt](config.txt) under section **LARGE PAGE SUPPORT**
+For professional versions of Windows see [this article](https://msdn.microsoft.com/en-gb/library/ms190730.aspx).
+Make sure to reboot afterwards!
 
-For Windows 7 pro, or Windows 8 and above see [this article](https://msdn.microsoft.com/en-gb/library/ms190730.aspx)  (make sure to reboot afterwards!).
+For Windows 7/10 Home:
 
-For Windows 7 Home :
+1) Download and install [Windows Server 2003 Resource Kit Tools](https://www.microsoft.com/en-us/download/details.aspx?id=17657). Ignore any incompatibility warning during installation.
 
-1) Download and install [Windows Server 2003 Resource Kit Tools](https://www.microsoft.com/en-us/download/details.aspx?id=17657).  Ignore incompatiablity warning during installation.
+2) Open cmd or PowerShell as an administrator.
 
-2) In cmd or power shell: `ntrights -u %USERNAME% +r SeLockMemoryPrivilege`  (where %USERNAME% is the user that will be running the program.  This command needs to be run as admin)
+3) Use `ntrights -u %USERNAME% +r SeLockMemoryPrivilege` where %USERNAME% is the user that will be running the program.
 
-3) Reboot.
+4) Reboot.
 
 Reference: http://rybkaforum.net/cgi-bin/rybkaforum/topic_show.pl?pid=259791#pid259791
 
-*Warning: do not download ntrights.exe from any other site other then the offical Microsoft download page.*
+*Warning: Do not download ntrights.exe from any other site other than the offical Microsoft download page.*
 
 ## VirtualAlloc failed
 
@@ -40,13 +41,18 @@ Download and install this [runtime package](https://go.microsoft.com/fwlink/?Lin
 
 ## Error: MEMORY ALLOC FAILED: mmap failed
 
-On Linux you will need to configure large page support `sudo sysctl -w vm.nr_hugepages=128` and increase your
-ulimit -l. To do this you need to add following lines to /etc/security/limits.conf:
+On Linux you will need to configure large page support and increase your ulimit -l. 
+
+To set large page support, add the following lines to /etc/sysctl.conf:
+    
+    vm.nr_hugepages=128
+
+To increase the ulimit, add following lines to /etc/security/limits.conf:
 
     * soft memlock 262144
     * hard memlock 262144
 
-Save file.  You WILL need to log out and log back in for these settings to take affect on your user (no need to reboot, just relogin in your session).
+You WILL need to log out and log back in for these settings to take affect on your user (no need to reboot, just relogin in your session).
 
 You can also do it Windows-style and simply run-as-root, but this is NOT recommended for security reasons.
 

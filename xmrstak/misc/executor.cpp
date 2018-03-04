@@ -518,13 +518,14 @@ void executor::ex_main()
 			already_have_cli_pool = true;
 			
 			const char* wallet = params.poolUsername.empty() ? cfg.sWalletAddr : params.poolUsername.c_str();
+			const char* rigid = params.userSetRigid ? params.poolRigid.c_str() : cfg.sRigId;
 			const char* pwd = params.userSetPwd ? params.poolPasswd.c_str() : cfg.sPasswd;
 			bool nicehash = cfg.nicehash || params.nicehashMode;
 			
-			pools.emplace_back(i+1, cfg.sPoolAddr, wallet, pwd, 9.9, false, params.poolUseTls, cfg.tls_fingerprint, nicehash);
+			pools.emplace_back(i+1, cfg.sPoolAddr, wallet, rigid, pwd, 9.9, false, params.poolUseTls, cfg.tls_fingerprint, nicehash);
 		}
 		else
-			pools.emplace_back(i+1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
+			pools.emplace_back(i+1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sRigId, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
 	}
 
 	if(!xmrstak::params::inst().poolURL.empty() && !already_have_cli_pool)
@@ -536,22 +537,22 @@ void executor::ex_main()
 			win_exit();
 		}
 		
-		pools.emplace_back(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
+		pools.emplace_back(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolRigid.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
 	}
 
 	if(jconf::inst()->IsCurrencyMonero())
 	{
 		if(dev_tls)
-			pools.emplace_front(0, "donate.xmr-stak.net:6666", "", "", 0.0, true, true, "", false);
+			pools.emplace_front(0, "donate.xmr-stak.net:6666", "", "", "", 0.0, true, true, "", false);
 		else
-			pools.emplace_front(0, "donate.xmr-stak.net:3333", "", "", 0.0, true, false, "", false);
+			pools.emplace_front(0, "donate.xmr-stak.net:3333", "", "", "", 0.0, true, false, "", false);
 	}
 	else
 	{
 		if(dev_tls)
-			pools.emplace_front(0, "donate.xmr-stak.net:7777", "", "", 0.0, true, true, "", true);
+			pools.emplace_front(0, "donate.xmr-stak.net:7777", "", "", "", 0.0, true, true, "", true);
 		else
-			pools.emplace_front(0, "donate.xmr-stak.net:4444", "", "", 0.0, true, false, "", true);
+			pools.emplace_front(0, "donate.xmr-stak.net:4444", "", "", "", 0.0, true, false, "", true);
 	}
 
 	ex_event ev;
@@ -594,7 +595,7 @@ void executor::ex_main()
 			break;
 
 		case EV_GPU_RES_ERROR:
-			log_result_error(std::string(ev.oGpuError.error_str));
+			log_result_error(std::string(ev.oGpuError.error_str + std::string(" GPU ID ") + std::to_string(ev.oGpuError.idx)));
 			break;
 
 		case EV_PERF_TICK:
@@ -761,6 +762,7 @@ void executor::hashrate_report(std::string& out)
 			else
 				out.append(1, '\n');
 
+			double fTotalCur[3] = { 0.0, 0.0, 0.0};
 			for (i = 0; i < nthd; i++)
 			{
 				double fHps[3];
@@ -775,10 +777,14 @@ void executor::hashrate_report(std::string& out)
 				out.append(hps_format(fHps[0], num, sizeof(num))).append(" |");
 				out.append(hps_format(fHps[1], num, sizeof(num))).append(" |");
 				out.append(hps_format(fHps[2], num, sizeof(num))).append(1, ' ');
-
-				fTotal[0] += fHps[0];
-				fTotal[1] += fHps[1];
-				fTotal[2] += fHps[2];
+				
+				fTotal[0] += (std::isnormal(fHps[0])) ? fHps[0] : 0.0;
+				fTotal[1] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
+				fTotal[2] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
+				
+				fTotalCur[0] += (std::isnormal(fHps[0])) ? fHps[0] : 0.0;
+				fTotalCur[1] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
+				fTotalCur[2] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
 
 				if((i & 0x1) == 1) //Odd i's
 					out.append("|\n");
@@ -786,21 +792,25 @@ void executor::hashrate_report(std::string& out)
 
 			if((i & 0x1) == 1) //We had odd number of threads
 				out.append("|\n");
-
-			if(nthd != 1)
-				out.append("-----------------------------------------------------\n");
-			else
-				out.append("---------------------------\n");
+			
+			out.append("Totals (").append(name).append("): ");
+			out.append(hps_format(fTotalCur[0], num, sizeof(num)));
+			out.append(hps_format(fTotalCur[1], num, sizeof(num)));
+			out.append(hps_format(fTotalCur[2], num, sizeof(num)));
+			out.append(" H/s\n");
+			
+			out.append("-----------------------------------------------------------------\n");
 		}
 	}
 
-	out.append("Totals:  ");
+	out.append("Totals (ALL):  ");
 	out.append(hps_format(fTotal[0], num, sizeof(num)));
 	out.append(hps_format(fTotal[1], num, sizeof(num)));
 	out.append(hps_format(fTotal[2], num, sizeof(num)));
 	out.append(" H/s\nHighest: ");
 	out.append(hps_format(fHighestHps, num, sizeof(num)));
 	out.append(" H/s\n");
+	out.append("-----------------------------------------------------------------\n");
 }
 
 char* time_format(char* buf, size_t len, std::chrono::system_clock::time_point time)

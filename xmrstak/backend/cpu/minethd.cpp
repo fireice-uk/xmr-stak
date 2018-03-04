@@ -73,7 +73,16 @@ namespace cpu
 bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 {
 #if defined(_WIN32)
-	return SetThreadAffinityMask(h, 1ULL << cpu_id) != 0;
+	// we can only pin up to 64 threads
+	if(cpu_id < 64)
+	{
+		return SetThreadAffinityMask(h, 1ULL << cpu_id) != 0;
+	}
+	else
+	{
+		printer::inst()->print_msg(L0, "WARNING: Windows supports only affinity up to 63.");
+		return false;
+	}
 #elif defined(__APPLE__)
 	thread_port_t mach_thread;
 	thread_affinity_policy_data_t policy = { static_cast<integer_t>(cpu_id) };
@@ -84,6 +93,8 @@ bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 	CPU_ZERO(&mn);
 	CPU_SET(cpu_id, &mn);
 	return pthread_setaffinity_np(h, sizeof(cpuset_t), &mn) == 0;
+#elif defined(__OpenBSD__)
+        printer::inst()->print_msg(L0,"WARNING: thread pinning is not supported under OPENBSD.");
 #else
 	cpu_set_t mn;
 	CPU_ZERO(&mn);
@@ -307,7 +318,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		if(cfg.iCpuAff >= 0)
 		{
 #if defined(__APPLE__)
-			printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory.");
+			printer::inst()->print_msg(L1, "WARNING on macOS thread affinity is only advisory.");
 #endif
 
 			printer::inst()->print_msg(L1, "Starting %dx thread, affinity: %d.", cfg.iMultiway, (int)cfg.iCpuAff);
@@ -437,12 +448,13 @@ void minethd::work_main()
 				globalStates::inst().calc_start_nonce(result.iNonce, oWork.bNiceHash, nonce_chunk);
 			}
 
-			*piNonce = ++result.iNonce;
+			*piNonce = result.iNonce;
 
 			hash_fun(oWork.bWorkBlob, oWork.iWorkSize, result.bResult, ctx);
 
 			if (*piHashVal < oWork.iTarget)
 				executor::inst()->push_event(ex_event(result, oWork.iPoolId));
+			result.iNonce++;
 
 			std::this_thread::yield();
 		}
@@ -626,7 +638,7 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 			}
 
 			for (size_t i = 0; i < N; i++)
-				*piNonce[i] = ++iNonce;
+				*piNonce[i] = iNonce++;
 
 			hash_fun_multi(bWorkBlob, oWork.iWorkSize, bHashOut, ctx);
 
@@ -634,7 +646,7 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 			{
 				if (*piHashVal[i] < oWork.iTarget)
 				{
-					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce - N + 1 + i, bHashOut + 32 * i, iThreadNo), oWork.iPoolId));
+					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce - N + i, bHashOut + 32 * i, iThreadNo), oWork.iPoolId));
 				}
 			}
 

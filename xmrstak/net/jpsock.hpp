@@ -27,7 +27,7 @@ class base_socket;
 class jpsock
 {
 public:
-	jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sPassword, double pool_weight, bool dev_pool, bool tls, const char* tls_fp, bool nicehash);
+	jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sRigId, const char* sPassword, double pool_weight, bool dev_pool, bool tls, const char* tls_fp, bool nicehash);
 	~jpsock();
 
 	bool connect(std::string& sConnectError);
@@ -82,6 +82,7 @@ public:
 private:
 	std::string net_addr;
 	std::string usr_login;
+	std::string usr_rigid;
 	std::string usr_pass;
 	std::string tls_fp;
 

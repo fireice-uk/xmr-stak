@@ -204,7 +204,13 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 		break;
 
 	};
-	CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
+	const int gpuArch = ctx->device_arch[0] * 10 + ctx->device_arch[1];
+
+	/* Disable L1 cache for GPUs before Volta.
+	 * L1 speed is increased and latency reduced with Volta.
+	 */
+	if(gpuArch < 70)
+		CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
 
 	size_t hashMemSize;
 	if(::jconf::inst()->IsCurrencyMonero())
@@ -438,6 +444,12 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		if(props.major == 2)
 		{
 			// limit memory usage for sm 20 GPUs
+			maxMemUsage = size_t(1024u) * byteToMiB;
+		}
+
+		if(props.multiProcessorCount <= 6)
+		{
+			// limit memory usage for low end devices to reduce the number of threads
 			maxMemUsage = size_t(1024u) * byteToMiB;
 		}
 

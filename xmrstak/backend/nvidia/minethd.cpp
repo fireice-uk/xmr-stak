@@ -80,14 +80,22 @@ minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 	ctx.syncMode = cfg.syncMode;
 	this->affinity = cfg.cpu_aff;
 
-	std::unique_lock<std::mutex> lck(thd_aff_set);
-	std::future<void> order_guard = order_fix.get_future();
+	std::future<void> numa_guard = numa_promise.get_future();
+	thread_work_guard = thread_work_promise.get_future();
 
 	oWorkThd = std::thread(&minethd::work_main, this);
 
-	order_guard.wait();
+	/* Wait until the gpu memory is initialized and numa cpu memory is pinned.
+	 * The startup time is reduced if the memory is initialized in sequential order
+	 * without concurrent threads (CUDA driver is less occupied).
+	 */
+	numa_guard.wait();
+}
 
-	if(affinity >= 0) //-1 means no affinity
+void minethd::start_mining()
+{
+	thread_work_promise.set_value();
+	if(this->affinity >= 0) //-1 means no affinity
 		if(!cpu::minethd::thd_setaffinity(oWorkThd.native_handle(), affinity))
 			printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
 }
@@ -166,7 +174,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 		if(cfg.cpu_aff >= 0)
 		{
 #if defined(__APPLE__)
-			printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory.");
+			printer::inst()->print_msg(L1, "WARNING on macOS thread affinity is only advisory.");
 #endif
 
 			printer::inst()->print_msg(L1, "Starting NVIDIA GPU thread %d, affinity: %d.", i, (int)cfg.cpu_aff);
@@ -177,6 +185,11 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 		minethd* thd = new minethd(pWork, i + threadOffset, cfg);
 		pvThreads->push_back(thd);
 
+	}
+
+	for (i = 0; i < n; i++)
+	{
+		static_cast<minethd*>((*pvThreads)[i])->start_mining();
 	}
 
 	return pvThreads;
@@ -208,10 +221,18 @@ void minethd::work_main()
 	if(affinity >= 0) //-1 means no affinity
 		bindMemoryToNUMANode(affinity);
 
-	order_fix.set_value();
-	std::unique_lock<std::mutex> lck(thd_aff_set);
-	lck.release();
+	if(cuda_get_deviceinfo(&ctx) != 0 || cryptonight_extra_cpu_init(&ctx) != 1)
+	{
+		printer::inst()->print_msg(L0, "Setup failed for GPU %d. Exitting.\n", (int)iThreadNo);
+		std::exit(0);
+	}
+
+	// numa memory bind and gpu memory is initialized
+	numa_promise.set_value();
+
 	std::this_thread::yield();
+	// wait until all NVIDIA devices are initialized
+	thread_work_guard.wait();
 
 	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
@@ -220,12 +241,6 @@ void minethd::work_main()
 	uint32_t iNonce;
 
 	globalStates::inst().iConsumeCnt++;
-
-	if(cuda_get_deviceinfo(&ctx) != 0 || cryptonight_extra_cpu_init(&ctx) != 1)
-	{
-		printer::inst()->print_msg(L0, "Setup failed for GPU %d. Exitting.\n", (int)iThreadNo);
-		std::exit(0);
-	}
 
 	bool mineMonero = strcmp_i(::jconf::inst()->GetCurrency(), "monero");
 
@@ -287,7 +302,7 @@ void minethd::work_main()
 				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
 					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, foundNonce[i], bResult, iThreadNo), oWork.iPoolId));
 				else
-					executor::inst()->push_event(ex_event("NVIDIA Invalid Result", oWork.iPoolId));
+					executor::inst()->push_event(ex_event("NVIDIA Invalid Result", ctx.device_id, oWork.iPoolId));
 			}
 
 			iCount += h_per_round;

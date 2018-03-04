@@ -74,24 +74,36 @@ __device__ __forceinline__ uint64_t cuda_mul128( uint64_t multiplier, uint64_t m
 template< typename T >
 __device__ __forceinline__ T loadGlobal64( T * const addr )
 {
+#if (__CUDA_ARCH__ < 700)
 	T x;
 	asm volatile( "ld.global.cg.u64 %0, [%1];" : "=l"( x ) : "l"( addr ) );
 	return x;
+#else
+	return *addr;
+#endif
 }
 
 template< typename T >
 __device__ __forceinline__ T loadGlobal32( T * const addr )
 {
+#if (__CUDA_ARCH__ < 700)
 	T x;
 	asm volatile( "ld.global.cg.u32 %0, [%1];" : "=r"( x ) : "l"( addr ) );
 	return x;
+#else
+	return *addr;
+#endif
 }
 
 
 template< typename T >
 __device__ __forceinline__ void storeGlobal32( T* addr, T const & val )
 {
+#if (__CUDA_ARCH__ < 700)
 	asm volatile( "st.global.cg.u32 [%0], %1;" : : "l"( addr ), "r"( val ) );
+#else
+	*addr = val;
+#endif
 }
 
 template<size_t ITERATIONS, uint32_t THREAD_SHIFT>

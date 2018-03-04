@@ -25,6 +25,8 @@ struct GpuContext
 	size_t rawIntensity;
 	size_t workSize;
 	int stridedIndex;
+	int memChunk;
+	int compMode;
 
 	/*Output vars*/
 	cl_device_id DeviceID;
