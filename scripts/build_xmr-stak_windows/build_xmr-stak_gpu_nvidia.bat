@@ -3,17 +3,13 @@
 :: Dependencies:
 :: - PowerShell (bundled with OS starting from Windows 7): minor dependency
 :: - cmake (https://cmake.org/download/): installed and visible via PATH
-:: - Visual Studio 2017: MSBuild, VC++ 2017 v141 toolset or VC++ 2017 version v14.11 toolset (https://www.visualstudio.com/downloads/). The latter is required for CUDA 9.1 compatibility.
-:: - AMD APP SDK (https://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)
+:: - Visual Studio 2017: MSBuild, VC++ 2017 v141 toolset (https://www.visualstudio.com/downloads/)
 :: - CUDA Toolkit (https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64)
 :: - OpenSSL, hwloc, libmicrohttpd (https://github.com/fireice-uk/xmr-stak-dep/releases/download/v2/xmr-stak-dep.zip): official binary build of corresponding xmr-stak dependencies. Unzip to the root folder of the xmr-stak repository.
 
 echo Build started: & powershell get-date -format "{dd-MMM-yyyy HH:mm:ss}"
 
 cd ..\..
-
-:: Fix for compiling CUDA with Visual Studio 2017 versions >= 15.5 (_MSC_VER = 1912)
-powershell -Command "(gc ($env:CUDA_PATH + '\include\crt\host_config.h')) -replace '_MSC_VER > 1911', '_MSC_VER > 1912' | sc ($env:CUDA_PATH + '\include\crt\host_config.h')"
 
 pushd .
 :: Setting CUDA 9.1 compatible toolset
@@ -45,11 +41,11 @@ cmake .. -DXMR-STAK_CURRENCY=all
 cmake .. -DXMR-STAK_COMPILE=native
 
 :: CPU
-cmake .. -DCPU_ENABLE=ON
+cmake .. -DCPU_ENABLE=OFF
 cmake .. -DHWLOC_ENABLE=ON
 
 :: AMD GPU
-cmake .. -DOpenCL_ENABLE=ON
+cmake .. -DOpenCL_ENABLE=OFF
 
 :: NVIDIA GPU
 cmake .. -DCUDA_ENABLE=ON
@@ -73,8 +69,7 @@ cmake --build . --config Release --target install
 echo Build finished: & powershell get-date -format "{dd-MMM-yyyy HH:mm:ss}"
 
 copy ..\xmr-stak-dep\openssl\bin\*.dll .\bin\Release
-
-start bin\Release
+cd bin\Release & ren xmr-stak.exe xmr-stak-gpu-nvidia.exe & start .
 
 echo.
 pause
