@@ -1053,7 +1053,7 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 	if(ctx->compMode)
 	{
 		// round up to next multiple of w_size
-		size_t g_thd = ((g_intensity + w_size - 1u) / w_size) * w_size;
+		g_thd = ((g_intensity + w_size - 1u) / w_size) * w_size;
 		// number of global threads must be a multiple of the work group size (w_size)
 		assert(g_thd%w_size == 0);
 	}
