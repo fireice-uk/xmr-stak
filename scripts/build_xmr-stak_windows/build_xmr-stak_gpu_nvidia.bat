@@ -49,14 +49,18 @@ cmake .. -DOpenCL_ENABLE=OFF
 
 :: NVIDIA GPU
 cmake .. -DCUDA_ENABLE=ON
+:: cmake .. -DCUDA_ARCH=60;61;62
+:: Build option for specific CUDA compute architectures.
+:: By default all available backends are built, they depend on the version of CUDA Toolkit installed.
+:: Provide a value or semicolon separated list to specify desired architecture(s). Commented sample line above is for NVIDIA Pascal GPUs.
 :: Lists with CUDA compute architectures: https://developer.nvidia.com/cuda-gpus and https://en.wikipedia.org/wiki/CUDA#GPUs_supported
 :: Quick reference
 :: Architecture: GPUs - corresponding values
 :: Kepler: 	GTX 6xx, 7xx 	- 30;35;37
-:: Maxwell: GTX 9xx			- 50;52
-:: Pascal: 	GTX 10xx		- 60;61;62
+:: Maxwell: GTX 9xx			  - 50;52
+:: Pascal: 	GTX 10xx		  - 60;61;62
 :: Volta: 	GTX Titan V		- 70
-cmake .. -DCUDA_ARCH=30;35;37;50;52;60;61;62;70
+::
 :: set CC=clang
 :: set CXX=clang++
 :: set .. -DCUDA_COMPILER=clang
