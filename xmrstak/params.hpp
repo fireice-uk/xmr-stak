@@ -48,6 +48,8 @@ struct params
 	std::string minerArg0;
 	std::string minerArgs;
 
+	bool doBenchmarkOnly = false;
+
 	params() :
 		binaryName("xmr-stak"),
 		executablePrefix(""),

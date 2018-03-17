@@ -98,6 +98,7 @@ void help()
 	cout<<"  -r, --rigid RIGID     rig identifier for pool-side statistics (needs pool support)"<<endl;
 	cout<<"  -p, --pass PASSWD     pool password, in the most cases x or empty \"\""<<endl;
 	cout<<"  --use-nicehash        the pool should run in nicehash mode"<<endl;
+	cout<<"  --do-benchmark        ONLY do a 60-second benchmark and exit"<<endl;
 	cout<<" \n"<<endl;
 #ifdef _WIN32
 	cout<<"Environment variables:\n"<<endl;
@@ -600,6 +601,10 @@ int main(int argc, char *argv[])
 		{
 			params::inst().allowUAC = false;
 		}
+		else if(opName.compare("--do-benchmark") == 0)
+		{
+			params::inst().doBenchmarkOnly = true;
+		}
 		else
 		{
 			printer::inst()->print_msg(L0, "Parameter unknown '%s'",argv[i]);
@@ -675,6 +680,13 @@ int main(int argc, char *argv[])
 	else
 		printer::inst()->print_msg(L0,"Start mining: AEON");
 
+	if(params::inst().doBenchmarkOnly)
+	{
+		printer::inst()->print_str("!!!! Doing only a benchmark and exiting. To mine, remove the --do-benchmark option. !!!!\n");
+		do_benchmark();
+		return 0;
+	}
+	
 	executor::inst()->ex_start(jconf::inst()->DaemonMode());
 
 	uint64_t lastTime = get_timestamp_ms();
