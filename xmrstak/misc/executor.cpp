@@ -45,6 +45,11 @@
 #include <assert.h>
 #include <time.h>
 
+#ifndef CONF_NO_PROMETHEUS
+#include <prometheus/registry.h>
+#include <prometheus/serializer.h>
+#include <prometheus/text_serializer.h>
+#endif // CONF_NO_PROMETHEUS
 
 #ifdef _WIN32
 #define strncasecmp _strnicmp
@@ -384,6 +389,9 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 	{
 		iPoolDiff = pool->get_current_diff();
 		printer::inst()->print_msg(L2, "Difficulty changed. Now: %llu.", int_port(iPoolDiff));
+#ifndef CONF_NO_PROMETHEUS
+		sMetric.gDifficulty->Set(iPoolDiff);
+#endif
 	}
 
 	if(dat.pool_id != pool_id)
@@ -433,12 +441,18 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 
 	if(bResult)
 	{
+#ifndef CONF_NO_PROMETHEUS
+		sMetric.cSubmittedResultsAccepted->Increment();
+#endif
 		uint64_t* targets = (uint64_t*)oResult.bResult;
 		log_result_ok(jpsock::t64_to_diff(targets[3]));
 		printer::inst()->print_msg(L3, "Result accepted by the pool.");
 	}
 	else
 	{
+#ifndef CONF_NO_PROMETHEUS
+		sMetric.cSubmittedResultsRejected->Increment();
+#endif
 		if(!pool->have_sock_error())
 		{
 			printer::inst()->print_msg(L3, "Result rejected by the pool.");
@@ -491,6 +505,9 @@ void executor::ex_main()
 		printer::inst()->print_msg(L1, "ERROR: No miner backend enabled.");
 		win_exit();
 	}
+#ifndef CONF_NO_PROMETHEUS
+	init_metrics();
+#endif
 
 	telem = new xmrstak::telemetry(pvThreads->size());
 
@@ -638,6 +655,7 @@ void executor::ex_main()
 		case EV_HTML_RESULTS:
 		case EV_HTML_CONNSTAT:
 		case EV_HTML_JSON:
+		case EV_HTML_PROMETHEUS:
 			http_report(ev.iName);
 			break;
 
@@ -1241,6 +1259,111 @@ void executor::http_json_report(std::string& out)
 	out = std::string(bigbuf.get(), bigbuf.get() + bb_len);
 }
 
+void executor::http_prometheus_report(std::string& out)
+{
+#ifndef CONF_NO_PROMETHEUS
+	// Set Hash rates
+	double fTotal[3] = { 0.0, 0.0, 0.0};
+	size_t nthd = pvThreads->size();
+
+	for(size_t i=0; i < nthd; i++) {
+		double fHps[3];
+
+		fHps[0] = telem->calc_telemetry_data(10000, i);
+		fHps[1] = telem->calc_telemetry_data(60000, i);
+		fHps[2] = telem->calc_telemetry_data(900000, i);
+
+		sMetric.vgHashRates[i * 3]->Set(fHps[0]);
+		sMetric.vgHashRates[i * 3 + 1]->Set(fHps[1]);
+		sMetric.vgHashRates[i * 3 + 2]->Set(fHps[2]);
+
+		fTotal[0] += fHps[0];
+		fTotal[1] += fHps[1];
+		fTotal[2] += fHps[2];
+	}
+	sMetric.agHashRateTotal[0]->Set(fTotal[0]);
+	sMetric.agHashRateTotal[1]->Set(fTotal[1]);
+	sMetric.agHashRateTotal[2]->Set(fTotal[2]);
+
+	sMetric.gPoolPing->Set(42);
+
+	auto& registry = xmrstak::environment::inst().pRegistry;
+
+	// Serialize for output.
+	auto serializer = std::unique_ptr<prometheus::Serializer>{};
+	serializer.reset(new prometheus::TextSerializer());
+
+	out = serializer->Serialize(registry->get()->Collect());
+#else
+	out = std::string("This build has not enabled Prometheus metrics.\nPlease rebuild with -DPROMETHEUS_ENABLE=ON option.");
+#endif
+}
+
+#ifndef CONF_NO_PROMETHEUS
+void executor::init_metrics() {
+	auto& env = xmrstak::environment::inst();
+
+	using namespace prometheus;
+	auto& counter_family_results = BuildCounter()
+		.Name("xmrstak_submitted_results_total")
+		.Register(**env.pRegistry);
+	sMetric.cSubmittedResultsAccepted = &counter_family_results.Add(
+		{{"type", "accepted"}}
+	);
+	sMetric.cSubmittedResultsRejected = &counter_family_results.Add(
+		{{"type", "rejected"}}
+	);
+
+	auto& gauge_family_diff = BuildGauge()
+		.Name("xmrstak_difficulty_bucket")
+		.Register(**env.pRegistry);
+	sMetric.gDifficulty = &gauge_family_diff.Add({});
+
+	auto& gauge_family_pool_ping = BuildGauge()
+		.Name("xmrstak_pool_connection_ping_seconds")
+		.Register(**env.pRegistry);
+    // TODO: Implement fetching pool address.
+	sMetric.gPoolPing = &gauge_family_pool_ping.Add({{"address", "xxx:3333"}});
+
+	auto& gauge_family_hr_total = BuildGauge()
+		.Name("xmrstak_hash_rate_bytes_total")
+		.Register(**env.pRegistry);
+	sMetric.agHashRateTotal[0] = &gauge_family_hr_total.Add({{"le", "10"}});
+	sMetric.agHashRateTotal[1] = &gauge_family_hr_total.Add({{"le", "60"}});
+	sMetric.agHashRateTotal[2] = &gauge_family_hr_total.Add({{"le", "900"}});
+
+	auto& gauge_family_hr = BuildGauge()
+		.Name("xmrstak_hash_rate_bytes")
+		.Register(**env.pRegistry);
+
+	size_t nthd = pvThreads->size();
+	sMetric.vgHashRates = std::vector<Gauge*>(nthd * 3);
+
+	xmrstak::iBackend::BackendType bType;
+
+	for(size_t i=0; i < nthd; i++) {
+		bType = pvThreads->at(i)->backendType;
+		std::string backendName(xmrstak::iBackend::getName(bType));
+
+		sMetric.vgHashRates[i * 3] = &gauge_family_hr.Add({
+			{"le", "10"},
+			{"device", backendName},
+			{"thread_id", std::to_string(i)}
+        });
+		sMetric.vgHashRates[i * 3 + 1] = &gauge_family_hr.Add({
+			{"le", "60"},
+			{"device", backendName},
+			{"thread_id", std::to_string(i)}
+		});
+		sMetric.vgHashRates[i * 3 + 2] = &gauge_family_hr.Add({
+			{"le", "900"},
+			{"device", backendName},
+			{"thread_id", std::to_string(i)}
+		});
+	}
+}
+#endif
+
 void executor::http_report(ex_event_name ev)
 {
 	assert(pHttpString != nullptr);
@@ -1263,6 +1386,10 @@ void executor::http_report(ex_event_name ev)
 		http_json_report(*pHttpString);
 		break;
 
+	case EV_HTML_PROMETHEUS:
+		http_prometheus_report(*pHttpString);
+		break;
+
 	default:
 		assert(false);
 		break;
@@ -1277,7 +1404,8 @@ void executor::get_http_report(ex_event_name ev_id, std::string& data)
 
 	assert(pHttpString == nullptr);
 	assert(ev_id == EV_HTML_HASHRATE || ev_id == EV_HTML_RESULTS
-		|| ev_id == EV_HTML_CONNSTAT || ev_id == EV_HTML_JSON);
+		|| ev_id == EV_HTML_CONNSTAT || ev_id == EV_HTML_JSON
+		|| ev_id == EV_HTML_PROMETHEUS);
 
 	pHttpString = &data;
 	httpReady = std::promise<void>();

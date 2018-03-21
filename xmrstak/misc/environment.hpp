@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef  CONF_NO_PROMETHEUS
+#include <prometheus/registry.h>
+#endif
+
 class printer;
 class jconf;
 class executor;
@@ -36,6 +40,9 @@ struct environment
 	jconf* pJconfConfig = nullptr;
 	executor* pExecutor = nullptr;
 	params* pParams = nullptr;
+#ifndef CONF_NO_PROMETHEUS
+	std::shared_ptr<prometheus::Registry>* pRegistry = nullptr;
+#endif
 };
 
 } // namepsace xmrstak
