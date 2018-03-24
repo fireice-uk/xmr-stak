@@ -13,6 +13,8 @@
 - during the install chose the components
   - `Desktop development with C++` (left side)
   - `VC++ 2015.3 v140 toolset for desktop` (right side)
+  - `VC++ 2017  v141 toolset (x86,x64)` (right side)
+  - 'Windows 8.1 SDK and UCRT SDK'
 
 ### CMake for Win64
 
