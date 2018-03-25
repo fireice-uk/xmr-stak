@@ -40,6 +40,7 @@ struct params
 	std::string currency;
 
 	std::string configFile;
+	std::string configFilePools;
 	std::string configFileAMD;
 	std::string configFileNVIDIA;
 	std::string configFileCPU;
@@ -48,6 +49,9 @@ struct params
 	std::string minerArg0;
 	std::string minerArgs;
 
+	// block_version >= 0 enable benchmark
+	int benchmark_block_version = -1;
+
 	params() :
 		binaryName("xmr-stak"),
 		executablePrefix(""),
@@ -55,6 +59,7 @@ struct params
 		useNVIDIA(true),
 		useCPU(true),
 		configFile("config.txt"),
+		configFilePools("pools.txt"),
 		configFileAMD("amd.txt"),
 		configFileCPU("cpu.txt"),
 		configFileNVIDIA("nvidia.txt")

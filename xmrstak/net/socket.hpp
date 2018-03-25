@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include "socks.hpp"
 
 class jpsock;
@@ -12,6 +13,9 @@ public:
 	virtual int recv(char* buf, unsigned int len) = 0;
 	virtual bool send(const char* buf) = 0;
 	virtual void close(bool free) = 0;
+
+protected:
+	std::atomic<bool> sock_closed;
 };
 
 class plain_socket : public base_socket
