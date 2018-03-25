@@ -299,7 +299,7 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_text, 32 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_a, 4 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_b, ctx_b_size));
-	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_input, 21 * sizeof (uint32_t ) ));
+	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_input, 28 * sizeof (uint32_t ) ));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_count, sizeof (uint32_t ) ));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_nonce, 10 * sizeof (uint32_t ) ));
 	CUDA_CHECK_MSG(
