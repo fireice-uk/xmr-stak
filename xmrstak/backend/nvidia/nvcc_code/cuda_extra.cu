@@ -127,7 +127,7 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
 	uint32_t ctx_b[4];
 	uint32_t ctx_key1[40];
 	uint32_t ctx_key2[40];
-	uint32_t input[21];
+	uint32_t input[28];
 
 	memcpy( input, d_input, len );
 	//*((uint32_t *)(((char *)input) + 39)) = startNonce + thread;
