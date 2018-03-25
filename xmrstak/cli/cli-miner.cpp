@@ -72,7 +72,6 @@ void help()
 #ifdef _WIN32
 	cout<<"  --noUAC                    disable the UAC dialog"<<endl;
 #endif
-	cout<<"  --currency NAME            currency to mine:"<<endl;
 	cout<<"  --benchmark BLOCKVERSION   ONLY do a 60-second benchmark and exit"<<endl;
 #ifndef CONF_NO_CPU
 	cout<<"  --noCPU                    disable the CPU miner backend"<<endl;
@@ -98,6 +97,7 @@ void help()
 	cout<<"  -r, --rigid RIGID          rig identifier for pool-side statistics (needs pool support)"<<endl;
 	cout<<"  -p, --pass PASSWD          pool password, in the most cases x or empty \"\""<<endl;
 	cout<<"  --use-nicehash             the pool should run in nicehash mode"<<endl;
+	cout<<"  --currency NAME            currency to mine"<<endl;
 	cout<< endl;
 #ifdef _WIN32
 	cout<<"Environment variables:\n"<<endl;
