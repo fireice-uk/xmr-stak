@@ -395,7 +395,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	std::ifstream clBinFile(cache_file, std::ofstream::in | std::ofstream::binary);
 	if(!clBinFile.good())
 	{
-		printer::inst()->print_msg(L1,"WARNING: OpenCL device %u - OpenCL binary %s not found.",ctx->deviceIdx, cache_file.c_str());
+		printer::inst()->print_msg(L1,"OpenCL device %u - Precompiled code %s not found. Compiling ...",ctx->deviceIdx, cache_file.c_str());
 		ctx->Program = clCreateProgramWithSource(opencl_ctx, 1, (const char**)&source_code, NULL, &ret);
 		if(ret != CL_SUCCESS)
 		{
@@ -489,11 +489,11 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		file_stream.open(cache_file, std::ofstream::out | std::ofstream::binary);
 		file_stream.write(all_programs[dev_id], binary_sizes[dev_id]);
 		file_stream.close();
-		printer::inst()->print_msg(L1, "OpenCL device %u - OpenCL binary file stored in file %s.",ctx->deviceIdx, cache_file.c_str());
+		printer::inst()->print_msg(L1, "OpenCL device %u - Precompiled code stored in file %s",ctx->deviceIdx, cache_file.c_str());
 	}
 	else
 	{
-		printer::inst()->print_msg(L1, "OpenCL device %u - Load OpenCL binary file %s",ctx->deviceIdx, cache_file.c_str());
+		printer::inst()->print_msg(L1, "OpenCL device %u - Load precompiled cod from file %s",ctx->deviceIdx, cache_file.c_str());
 		std::ostringstream ss;
 		ss << clBinFile.rdbuf();
 		std::string s = ss.str();
