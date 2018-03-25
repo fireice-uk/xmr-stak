@@ -15,6 +15,7 @@
 
 #include "xmrstak/backend/cryptonight.hpp"
 #include "xmrstak/jconf.hpp"
+#include "xmrstak/picosha2/picosha2.hpp"
 
 #include <stdio.h>
 #include <string.h>
@@ -25,8 +26,41 @@
 #include <regex>
 #include <cassert>
 
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <iostream>
+
+#if defined _MSC_VER
+#include <direct.h>
+#elif defined __GNUC__
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
+
+
+
 #ifdef _WIN32
 #include <windows.h>
+#include <Shlobj.h>
+
+static inline void create_directory(std::string dirname)
+{
+    _mkdir(dirname.data());
+}
+
+static inline std::string get_home()
+{
+	char path[MAX_PATH + 1];
+	// get folder "appdata\local"
+	if (SHGetSpecialFolderPathA(HWND_DESKTOP, path, CSIDL_LOCAL_APPDATA, FALSE))
+	{
+		return path;
+	}
+	else
+		return ".";
+}
 
 static inline void port_sleep(size_t sec)
 {
@@ -34,6 +68,22 @@ static inline void port_sleep(size_t sec)
 }
 #else
 #include <unistd.h>
+#include <pwd.h>
+
+static inline void create_directory(std::string dirname)
+{
+	mkdir(dirname.data(), 0744);
+}
+
+static inline std::string get_home()
+{
+	const char *home = ".";
+
+	if ((home = getenv("HOME")) == nullptr)
+		home = getpwuid(getuid())->pw_dir;
+
+	return home;
+}
 
 static inline void port_sleep(size_t sec)
 {
@@ -84,6 +134,7 @@ const char* err_to_str(cl_int ret)
 		return "CL_MISALIGNED_SUB_BUFFER_OFFSET";
 	case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST:
 		return "CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST";
+#ifdef CL_VERSION_1_2
 	case CL_COMPILE_PROGRAM_FAILURE:
 		return "CL_COMPILE_PROGRAM_FAILURE";
 	case CL_LINKER_NOT_AVAILABLE:
@@ -94,6 +145,7 @@ const char* err_to_str(cl_int ret)
 		return "CL_DEVICE_PARTITION_FAILED";
 	case CL_KERNEL_ARG_INFO_NOT_AVAILABLE:
 		return "CL_KERNEL_ARG_INFO_NOT_AVAILABLE";
+#endif
 	case CL_INVALID_VALUE:
 		return "CL_INVALID_VALUE";
 	case CL_INVALID_DEVICE_TYPE:
@@ -164,6 +216,7 @@ const char* err_to_str(cl_int ret)
 		return "CL_INVALID_GLOBAL_WORK_SIZE";
 	case CL_INVALID_PROPERTY:
 		return "CL_INVALID_PROPERTY";
+#ifdef CL_VERSION_1_2
 	case CL_INVALID_IMAGE_DESCRIPTOR:
 		return "CL_INVALID_IMAGE_DESCRIPTOR";
 	case CL_INVALID_COMPILER_OPTIONS:
@@ -172,6 +225,7 @@ const char* err_to_str(cl_int ret)
 		return "CL_INVALID_LINKER_OPTIONS";
 	case CL_INVALID_DEVICE_PARTITION_COUNT:
 		return "CL_INVALID_DEVICE_PARTITION_COUNT";
+#endif
 #if defined(CL_VERSION_2_0) && !defined(CONF_ENFORCE_OpenCL_1_2)
 	case CL_INVALID_PIPE_SIZE:
 		return "CL_INVALID_PIPE_SIZE";
@@ -252,21 +306,9 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	size_t hashMemSize;
-	int threadMemMask;
-	int hasIterations;
-	if(::jconf::inst()->IsCurrencyMonero())
-	{
-		hashMemSize = MONERO_MEMORY;
-		threadMemMask = MONERO_MASK;
-		hasIterations = MONERO_ITER;
-	}
-	else
-	{
-		hashMemSize = AEON_MEMORY;
-		threadMemMask = AEON_MASK;
-		hasIterations = AEON_ITER;
-	}
+	size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
+	int threadMemMask = cn_select_mask(::jconf::inst()->GetMiningAlgo());
+	int hashIterations = cn_select_iter(::jconf::inst()->GetMiningAlgo());
 
 	size_t g_thd = ctx->rawIntensity;
 	ctx->ExtraBuffers[0] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, hashMemSize * g_thd, NULL, &ret);
@@ -323,60 +365,162 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	ctx->Program = clCreateProgramWithSource(opencl_ctx, 1, (const char**)&source_code, NULL, &ret);
-	if(ret != CL_SUCCESS)
+	std::vector<char> devNameVec(1024);
+	if((ret = clGetDeviceInfo(ctx->DeviceID, CL_DEVICE_NAME, devNameVec.size(), devNameVec.data(), NULL)) != CL_SUCCESS)
 	{
-		printer::inst()->print_msg(L1,"Error %s when calling clCreateProgramWithSource on the contents of cryptonight.cl", err_to_str(ret));
+		printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DEVICE_NAME for device %u.", err_to_str(ret),ctx->deviceIdx );
 		return ERR_OCL_API;
 	}
 
-	char options[256];
-	snprintf(options, sizeof(options), 
-		"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d", 
-		hasIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex ? 1 : 0);
-	ret = clBuildProgram(ctx->Program, 1, &ctx->DeviceID, options, NULL, NULL);
-	if(ret != CL_SUCCESS)
-	{
-		size_t len;
-		printer::inst()->print_msg(L1,"Error %s when calling clBuildProgram.", err_to_str(ret));
+	auto miner_algo = ::jconf::inst()->GetMiningAlgo();
 
-		if((ret = clGetProgramBuildInfo(ctx->Program, ctx->DeviceID, CL_PROGRAM_BUILD_LOG, 0, NULL, &len)) != CL_SUCCESS)
+	char options[512];
+	snprintf(options, sizeof(options),
+		"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d -DMEM_CHUNK_EXPONENT=%d  -DCOMP_MODE=%d -DMEMORY=%llu -DALGO=%d",
+		hashIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex, int(1u<<ctx->memChunk), ctx->compMode ? 1 : 0, 
+		int_port(hashMemSize), int(miner_algo));
+	/* create a hash for the compile time cache
+	 * used data:
+	 *   - source code
+	 *   - device name
+	 *   - compile paramater
+	 */
+	std::string src_str(source_code);
+	src_str += options;
+	src_str += devNameVec.data();
+	std::string hash_hex_str;
+	picosha2::hash256_hex_string(src_str, hash_hex_str);
+
+	std::string cache_file = get_home() + "/.openclcache/" + hash_hex_str + ".openclbin";
+	std::ifstream clBinFile(cache_file, std::ofstream::in | std::ofstream::binary);
+	if(!clBinFile.good())
+	{
+		printer::inst()->print_msg(L1,"OpenCL device %u - Precompiled code %s not found. Compiling ...",ctx->deviceIdx, cache_file.c_str());
+		ctx->Program = clCreateProgramWithSource(opencl_ctx, 1, (const char**)&source_code, NULL, &ret);
+		if(ret != CL_SUCCESS)
 		{
-			printer::inst()->print_msg(L1,"Error %s when calling clGetProgramBuildInfo for length of build log output.", err_to_str(ret));
+			printer::inst()->print_msg(L1,"Error %s when calling clCreateProgramWithSource on the OpenCL miner code", err_to_str(ret));
 			return ERR_OCL_API;
 		}
 
-		char* BuildLog = (char*)malloc(len + 1);
-		BuildLog[0] = '\0';
-
-		if((ret = clGetProgramBuildInfo(ctx->Program, ctx->DeviceID, CL_PROGRAM_BUILD_LOG, len, BuildLog, NULL)) != CL_SUCCESS)
+		ret = clBuildProgram(ctx->Program, 1, &ctx->DeviceID, options, NULL, NULL);
+		if(ret != CL_SUCCESS)
 		{
+			size_t len;
+			printer::inst()->print_msg(L1,"Error %s when calling clBuildProgram.", err_to_str(ret));
+
+			if((ret = clGetProgramBuildInfo(ctx->Program, ctx->DeviceID, CL_PROGRAM_BUILD_LOG, 0, NULL, &len)) != CL_SUCCESS)
+			{
+				printer::inst()->print_msg(L1,"Error %s when calling clGetProgramBuildInfo for length of build log output.", err_to_str(ret));
+				return ERR_OCL_API;
+			}
+
+			char* BuildLog = (char*)malloc(len + 1);
+			BuildLog[0] = '\0';
+
+			if((ret = clGetProgramBuildInfo(ctx->Program, ctx->DeviceID, CL_PROGRAM_BUILD_LOG, len, BuildLog, NULL)) != CL_SUCCESS)
+			{
+				free(BuildLog);
+				printer::inst()->print_msg(L1,"Error %s when calling clGetProgramBuildInfo for build log.", err_to_str(ret));
+				return ERR_OCL_API;
+			}
+
+			printer::inst()->print_str("Build log:\n");
+			std::cerr<<BuildLog<<std::endl;
+
 			free(BuildLog);
-			printer::inst()->print_msg(L1,"Error %s when calling clGetProgramBuildInfo for build log.", err_to_str(ret));
 			return ERR_OCL_API;
 		}
-		
-		printer::inst()->print_str("Build log:\n");
-		std::cerr<<BuildLog<<std::endl;
 
-		free(BuildLog);
-		return ERR_OCL_API;
-	}
+		cl_uint num_devices;
+		clGetProgramInfo(ctx->Program, CL_PROGRAM_NUM_DEVICES, sizeof(cl_uint), &num_devices,NULL);
 
-	cl_build_status status;
-	do
-	{
-		if((ret = clGetProgramBuildInfo(ctx->Program, ctx->DeviceID, CL_PROGRAM_BUILD_STATUS, sizeof(cl_build_status), &status, NULL)) != CL_SUCCESS)
+
+		std::vector<cl_device_id> devices_ids(num_devices);
+		clGetProgramInfo(ctx->Program, CL_PROGRAM_DEVICES, sizeof(cl_device_id)* devices_ids.size(), devices_ids.data(),NULL);
+		int dev_id = 0;
+		/* Search for the gpu within the program context.
+		 * The id can be different to  ctx->DeviceID.
+		 */
+		for(auto & ocl_device : devices_ids)
 		{
-			printer::inst()->print_msg(L1,"Error %s when calling clGetProgramBuildInfo for status of build.", err_to_str(ret));
+			if(ocl_device == ctx->DeviceID)
+				break;
+			dev_id++;
+		}
+
+		cl_build_status status;
+		do
+		{
+			if((ret = clGetProgramBuildInfo(ctx->Program, ctx->DeviceID, CL_PROGRAM_BUILD_STATUS, sizeof(cl_build_status), &status, NULL)) != CL_SUCCESS)
+			{
+				printer::inst()->print_msg(L1,"Error %s when calling clGetProgramBuildInfo for status of build.", err_to_str(ret));
+				return ERR_OCL_API;
+			}
+			port_sleep(1);
+		}
+		while(status == CL_BUILD_IN_PROGRESS);
+
+		std::vector<size_t> binary_sizes(num_devices);
+		clGetProgramInfo (ctx->Program, CL_PROGRAM_BINARY_SIZES, sizeof(size_t) * binary_sizes.size(), binary_sizes.data(), NULL);
+
+		std::vector<char*> all_programs(num_devices);
+		std::vector<std::vector<char>> program_storage;
+
+		int p_id = 0;
+		size_t mem_size = 0;
+		// create memory  structure to query all OpenCL program binaries
+		for(auto & p : all_programs)
+		{
+			program_storage.emplace_back(std::vector<char>(binary_sizes[p_id]));
+			all_programs[p_id] = program_storage[p_id].data();
+			mem_size += binary_sizes[p_id];
+			p_id++;
+		}
+
+		if( ret = clGetProgramInfo(ctx->Program, CL_PROGRAM_BINARIES, num_devices * sizeof(char*), all_programs.data(),NULL) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1,"Error %s when calling clGetProgramInfo.", err_to_str(ret));
 			return ERR_OCL_API;
 		}
-		port_sleep(1);
-	}
-	while(status == CL_BUILD_IN_PROGRESS);
 
-	const char *KernelNames[] = { "cn0", "cn1", "cn2", "Blake", "Groestl", "JH", "Skein" };
-	for(int i = 0; i < 7; ++i)
+		std::ofstream file_stream;
+		std::cout<<get_home() + "/.openclcache/" + hash_hex_str + ".openclbin"<<std::endl;
+		file_stream.open(cache_file, std::ofstream::out | std::ofstream::binary);
+		file_stream.write(all_programs[dev_id], binary_sizes[dev_id]);
+		file_stream.close();
+		printer::inst()->print_msg(L1, "OpenCL device %u - Precompiled code stored in file %s",ctx->deviceIdx, cache_file.c_str());
+	}
+	else
+	{
+		printer::inst()->print_msg(L1, "OpenCL device %u - Load precompiled cod from file %s",ctx->deviceIdx, cache_file.c_str());
+		std::ostringstream ss;
+		ss << clBinFile.rdbuf();
+		std::string s = ss.str();
+
+		size_t bin_size = s.size();
+		auto data_ptr = s.data();
+
+		cl_int clStatus;
+		ctx->Program = clCreateProgramWithBinary(
+			opencl_ctx, 1, &ctx->DeviceID, &bin_size,
+			(const unsigned char **)&data_ptr, &clStatus, &ret
+		);
+		if(ret != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1,"Error %s when calling clCreateProgramWithBinary. Try to delete file %s", err_to_str(ret), cache_file.c_str());
+			return ERR_OCL_API;
+		}
+		ret = clBuildProgram(ctx->Program, 1, &ctx->DeviceID, NULL, NULL, NULL);
+		if(ret != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1,"Error %s when calling clBuildProgram. Try to delete file %s", err_to_str(ret), cache_file.c_str());
+			return ERR_OCL_API;
+		}
+	}
+
+	const char *KernelNames[] = { "cn0", "cn1", "cn2", "Blake", "Groestl", "JH", "Skein", "cn1_monero" };
+	for(int i = 0; i < 8; ++i)
 	{
 		ctx->Kernels[i] = clCreateKernel(ctx->Program, KernelNames[i], &ret);
 		if(ret != CL_SUCCESS)
@@ -487,7 +631,7 @@ std::vector<GpuContext> getAMDDevices(int index)
 			printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get the device vendor name for device %u.", err_to_str(clStatus), k);
 			continue;
 		}
-		
+
 		std::string devVendor(devVendorVec.data());
 		if( devVendor.find("Advanced Micro Devices") != std::string::npos || devVendor.find("AMD") != std::string::npos)
 		{
@@ -518,13 +662,13 @@ std::vector<GpuContext> getAMDDevices(int index)
 				printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DEVICE_NAME for device %u.", err_to_str(clStatus), k);
 				continue;
 			}
-			printer::inst()->print_msg(L0,"Found OpenCL GPU %s.",ctx.name.c_str());
 
 			// if environment variable GPU_SINGLE_ALLOC_PERCENT is not set we can not allocate the full memory
 			ctx.deviceIdx = k;
 			ctx.freeMem = std::min(ctx.freeMem, maxMem);
 			ctx.name = std::string(devNameVec.data());
 			ctx.DeviceID = device_list[k];
+			printer::inst()->print_msg(L0,"Found OpenCL GPU %s.",ctx.name.c_str());
 			ctxVec.push_back(ctx);
 		}
 	}
@@ -549,6 +693,8 @@ int getAMDPlatformIdx()
 	clStatus = clGetPlatformIDs(numPlatforms, platforms, NULL);
 
 	int platformIndex = -1;
+	// Mesa OpenCL is the fallback if no AMD or Apple OpenCL is found
+	int mesaPlatform = -1;
 
 	if(clStatus == CL_SUCCESS)
 	{
@@ -559,12 +705,28 @@ int getAMDPlatformIdx()
 
 			clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, infoSize, platformNameVec.data(), NULL);
 			std::string platformName(platformNameVec.data());
-			if( platformName.find("Advanced Micro Devices") != std::string::npos || platformName.find("Apple") != std::string::npos)
+			if( platformName.find("Advanced Micro Devices") != std::string::npos ||
+				platformName.find("Apple") != std::string::npos ||
+				platformName.find("Mesa") != std::string::npos
+			)
 			{
-				platformIndex = i;
+
 				printer::inst()->print_msg(L0,"Found AMD platform index id = %i, name = %s",i , platformName.c_str());
-				break;
+				if(platformName.find("Mesa") != std::string::npos)
+					mesaPlatform = i;
+				else
+				{
+					// exit if AMD or Apple platform is found
+					platformIndex = i;
+					break;
+				}
 			}
+		}
+		// fall back to Mesa OpenCL
+		if(platformIndex == -1 && mesaPlatform != -1)
+		{
+			printer::inst()->print_msg(L0,"No AMD platform found select Mesa as OpenCL platform");
+			platformIndex = mesaPlatform;
 		}
 	}
 	else
@@ -694,8 +856,18 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_BLAKE256"), blake256CL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_GROESTL256"), groestl256CL);
 
+	// create a directory  for the OpenCL compile cache
+	create_directory(get_home() + "/.openclcache");
+
 	for(int i = 0; i < num_gpus; ++i)
 	{
+		if(ctx[i].stridedIndex == 2 && (ctx[i].rawIntensity % ctx[i].workSize) != 0)
+		{
+			size_t reduced_intensity = (ctx[i].rawIntensity / ctx[i].workSize) * ctx[i].workSize;
+			ctx[i].rawIntensity = reduced_intensity;
+			printer::inst()->print_msg(L0, "WARNING AMD: gpu %d intensity is not a multiple of 'worksize', auto reduce intensity to %d", ctx[i].deviceIdx, int(reduced_intensity));
+		}
+
 		if((ret = InitOpenCLGpu(opencl_ctx, &ctx[i], source_code.c_str())) != ERR_SUCCESS)
 		{
 			return ret;
@@ -705,7 +877,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	return ERR_SUCCESS;
 }
 
-size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target)
+size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target, xmrstak_algo miner_algo, uint32_t version)
 {
 	cl_int ret;
 
@@ -750,27 +922,63 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 		return(ERR_OCL_API);
 	}
 
-	// CN2 Kernel
+	if(miner_algo == cryptonight_heavy)
+	{
+		// version
+		if ((ret = clSetKernelArg(ctx->Kernels[0], 4, sizeof(cl_uint), &version)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 0, argument 4.", err_to_str(ret));
+			return ERR_OCL_API;
+		}
+	}
+
+	// CN1 Kernel
+
+	/// @todo only activate if currency is monero
+	int cn_kernel_offset = 0;
+	if(miner_algo == cryptonight_monero && version >= 7)
+	{
+		cn_kernel_offset = 6;
+	}
 
 	// Scratchpads
-	if((ret = clSetKernelArg(ctx->Kernels[1], 0, sizeof(cl_mem), ctx->ExtraBuffers + 0)) != CL_SUCCESS)
+	if((ret = clSetKernelArg(ctx->Kernels[1 + cn_kernel_offset], 0, sizeof(cl_mem), ctx->ExtraBuffers + 0)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 1, argument 0.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
 
 	// States
-	if((ret = clSetKernelArg(ctx->Kernels[1], 1, sizeof(cl_mem), ctx->ExtraBuffers + 1)) != CL_SUCCESS)
+	if((ret = clSetKernelArg(ctx->Kernels[1 + cn_kernel_offset], 1, sizeof(cl_mem), ctx->ExtraBuffers + 1)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 1, argument 1.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
 
 	// Threads
-	if((ret = clSetKernelArg(ctx->Kernels[1], 2, sizeof(cl_ulong), &numThreads)) != CL_SUCCESS)
+	if((ret = clSetKernelArg(ctx->Kernels[1 + cn_kernel_offset], 2, sizeof(cl_ulong), &numThreads)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 1, argument 2.", err_to_str(ret));
 		return(ERR_OCL_API);
+	}
+
+	if(miner_algo == cryptonight_monero && version >= 7)
+	{
+		// Input
+		if ((ret = clSetKernelArg(ctx->Kernels[1 + cn_kernel_offset], 3, sizeof(cl_mem), &ctx->InputBuffer)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 1, arugment 4(input buffer).", err_to_str(ret));
+			return ERR_OCL_API;
+		}
+	}
+	else if(miner_algo == cryptonight_heavy)
+	{
+		// version
+		if ((ret = clSetKernelArg(ctx->Kernels[1], 3, sizeof(cl_uint), &version)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 1, argument 3 (version).", err_to_str(ret));
+			return ERR_OCL_API;
+		}
 	}
 
 	// CN3 Kernel
@@ -823,6 +1031,16 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 		return(ERR_OCL_API);
 	}
 
+	if(miner_algo == cryptonight_heavy)
+	{
+		// version
+		if ((ret = clSetKernelArg(ctx->Kernels[2], 7, sizeof(cl_uint), &version)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 2, argument 7.", err_to_str(ret));
+			return ERR_OCL_API;
+		}
+	}
+
 	for(int i = 0; i < 4; ++i)
 	{
 		// States
@@ -857,7 +1075,7 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 	return ERR_SUCCESS;
 }
 
-size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
+size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo, uint32_t version)
 {
 	cl_int ret;
 	cl_uint zero = 0;
@@ -866,10 +1084,15 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 
 	size_t g_intensity = ctx->rawIntensity;
 	size_t w_size = ctx->workSize;
-	// round up to next multiple of w_size
-	size_t g_thd = ((g_intensity + w_size - 1u) / w_size) * w_size;
-	// number of global threads must be a multiple of the work group size (w_size)
-	assert(g_thd%w_size == 0);
+	size_t g_thd = g_intensity;
+
+	if(ctx->compMode)
+	{
+		// round up to next multiple of w_size
+		g_thd = ((g_intensity + w_size - 1u) / w_size) * w_size;
+		// number of global threads must be a multiple of the work group size (w_size)
+		assert(g_thd%w_size == 0);
+	}
 
 	for(int i = 2; i < 6; ++i)
 	{
@@ -905,7 +1128,13 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 	}*/
 
 	size_t tmpNonce = ctx->Nonce;
-	if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, ctx->Kernels[1], 1, &tmpNonce, &g_thd, &w_size, 0, NULL, NULL)) != CL_SUCCESS)
+	/// @todo only activate if currency is monero
+	int cn_kernel_offset = 0;
+	if(miner_algo == cryptonight_monero && version >= 7)
+	{
+		cn_kernel_offset = 6;
+	}
+	if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, ctx->Kernels[1 + cn_kernel_offset], 1, &tmpNonce, &g_thd, &w_size, 0, NULL, NULL)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueNDRangeKernel for kernel %d.", err_to_str(ret), 1);
 		return ERR_OCL_API;

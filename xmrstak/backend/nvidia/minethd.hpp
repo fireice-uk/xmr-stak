@@ -32,7 +32,8 @@ private:
 	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx*);
 
 	minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg);
-
+	void start_mining();
+	
 	void work_main();
 	void consume_work();
 
@@ -44,8 +45,11 @@ private:
 	static miner_work oGlobalWork;
 	miner_work oWork;
 
-	std::promise<void> order_fix;
-	std::mutex thd_aff_set;
+	std::promise<void> numa_promise;
+	std::promise<void> thread_work_promise;
+
+	// block thread until all NVIDIA GPUs are initialized
+	std::future<void> thread_work_guard;
 
 	std::thread oWorkThd;
 	int64_t affinity;
