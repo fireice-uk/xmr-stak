@@ -306,21 +306,9 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	size_t hashMemSize;
-	int threadMemMask;
-	int hasIterations;
-	if(::jconf::inst()->IsCurrencyMonero())
-	{
-		hashMemSize = MONERO_MEMORY;
-		threadMemMask = MONERO_MASK;
-		hasIterations = MONERO_ITER;
-	}
-	else
-	{
-		hashMemSize = AEON_MEMORY;
-		threadMemMask = AEON_MASK;
-		hasIterations = AEON_ITER;
-	}
+	size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
+	int threadMemMask = cn_select_mask(::jconf::inst()->GetMiningAlgo());
+	int hashIterations = cn_select_iter(::jconf::inst()->GetMiningAlgo());
 
 	size_t g_thd = ctx->rawIntensity;
 	ctx->ExtraBuffers[0] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, hashMemSize * g_thd, NULL, &ret);
@@ -384,11 +372,13 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	char options[256];
-	snprintf(options, sizeof(options),
-		"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d -DMEM_CHUNK_EXPONENT=%d  -DCOMP_MODE=%d",
-		hasIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex, int(1u<<ctx->memChunk), ctx->compMode ? 1 : 0);
+	auto miner_algo = ::jconf::inst()->GetMiningAlgo();
 
+	char options[512];
+	snprintf(options, sizeof(options),
+		"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d -DMEM_CHUNK_EXPONENT=%d  -DCOMP_MODE=%d -DMEMORY=%llu -DALGO=%d",
+		hashIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex, int(1u<<ctx->memChunk), ctx->compMode ? 1 : 0, 
+		int_port(hashMemSize), int(miner_algo));
 	/* create a hash for the compile time cache
 	 * used data:
 	 *   - source code
@@ -529,8 +519,8 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		}
 	}
 
-	const char *KernelNames[] = { "cn0", "cn1", "cn2", "Blake", "Groestl", "JH", "Skein" };
-	for(int i = 0; i < 7; ++i)
+	const char *KernelNames[] = { "cn0", "cn1", "cn2", "Blake", "Groestl", "JH", "Skein", "cn1_monero" };
+	for(int i = 0; i < 8; ++i)
 	{
 		ctx->Kernels[i] = clCreateKernel(ctx->Program, KernelNames[i], &ret);
 		if(ret != CL_SUCCESS)
@@ -887,7 +877,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	return ERR_SUCCESS;
 }
 
-size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target)
+size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target, xmrstak_algo miner_algo, uint32_t version)
 {
 	cl_int ret;
 
@@ -932,27 +922,63 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 		return(ERR_OCL_API);
 	}
 
-	// CN2 Kernel
+	if(miner_algo == cryptonight_heavy)
+	{
+		// version
+		if ((ret = clSetKernelArg(ctx->Kernels[0], 4, sizeof(cl_uint), &version)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 0, argument 4.", err_to_str(ret));
+			return ERR_OCL_API;
+		}
+	}
+
+	// CN1 Kernel
+
+	/// @todo only activate if currency is monero
+	int cn_kernel_offset = 0;
+	if(miner_algo == cryptonight_monero && version >= 7)
+	{
+		cn_kernel_offset = 6;
+	}
 
 	// Scratchpads
-	if((ret = clSetKernelArg(ctx->Kernels[1], 0, sizeof(cl_mem), ctx->ExtraBuffers + 0)) != CL_SUCCESS)
+	if((ret = clSetKernelArg(ctx->Kernels[1 + cn_kernel_offset], 0, sizeof(cl_mem), ctx->ExtraBuffers + 0)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 1, argument 0.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
 
 	// States
-	if((ret = clSetKernelArg(ctx->Kernels[1], 1, sizeof(cl_mem), ctx->ExtraBuffers + 1)) != CL_SUCCESS)
+	if((ret = clSetKernelArg(ctx->Kernels[1 + cn_kernel_offset], 1, sizeof(cl_mem), ctx->ExtraBuffers + 1)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 1, argument 1.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
 
 	// Threads
-	if((ret = clSetKernelArg(ctx->Kernels[1], 2, sizeof(cl_ulong), &numThreads)) != CL_SUCCESS)
+	if((ret = clSetKernelArg(ctx->Kernels[1 + cn_kernel_offset], 2, sizeof(cl_ulong), &numThreads)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 1, argument 2.", err_to_str(ret));
 		return(ERR_OCL_API);
+	}
+
+	if(miner_algo == cryptonight_monero && version >= 7)
+	{
+		// Input
+		if ((ret = clSetKernelArg(ctx->Kernels[1 + cn_kernel_offset], 3, sizeof(cl_mem), &ctx->InputBuffer)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 1, arugment 4(input buffer).", err_to_str(ret));
+			return ERR_OCL_API;
+		}
+	}
+	else if(miner_algo == cryptonight_heavy)
+	{
+		// version
+		if ((ret = clSetKernelArg(ctx->Kernels[1], 3, sizeof(cl_uint), &version)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 1, argument 3 (version).", err_to_str(ret));
+			return ERR_OCL_API;
+		}
 	}
 
 	// CN3 Kernel
@@ -1005,6 +1031,16 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 		return(ERR_OCL_API);
 	}
 
+	if(miner_algo == cryptonight_heavy)
+	{
+		// version
+		if ((ret = clSetKernelArg(ctx->Kernels[2], 7, sizeof(cl_uint), &version)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 2, argument 7.", err_to_str(ret));
+			return ERR_OCL_API;
+		}
+	}
+
 	for(int i = 0; i < 4; ++i)
 	{
 		// States
@@ -1039,7 +1075,7 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 	return ERR_SUCCESS;
 }
 
-size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
+size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo, uint32_t version)
 {
 	cl_int ret;
 	cl_uint zero = 0;
@@ -1092,7 +1128,13 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 	}*/
 
 	size_t tmpNonce = ctx->Nonce;
-	if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, ctx->Kernels[1], 1, &tmpNonce, &g_thd, &w_size, 0, NULL, NULL)) != CL_SUCCESS)
+	/// @todo only activate if currency is monero
+	int cn_kernel_offset = 0;
+	if(miner_algo == cryptonight_monero && version >= 7)
+	{
+		cn_kernel_offset = 6;
+	}
+	if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, ctx->Kernels[1 + cn_kernel_offset], 1, &tmpNonce, &g_thd, &w_size, 0, NULL, NULL)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueNDRangeKernel for kernel %d.", err_to_str(ret), 1);
 		return ERR_OCL_API;

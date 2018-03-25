@@ -28,9 +28,9 @@ extern "C"
 #include "c_jh.h"
 #include "c_skein.h"
 }
+#include "xmrstak/backend/cryptonight.hpp"
 #include "cryptonight.h"
 #include "cryptonight_aesni.h"
-#include "xmrstak/backend/cryptonight.hpp"
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/jconf.hpp"
 #include <stdio.h>
@@ -202,15 +202,8 @@ size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 
 cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 {
-	size_t hashMemSize;
-	if(::jconf::inst()->IsCurrencyMonero())
-	{
-		hashMemSize = MONERO_MEMORY;
-	}
-	else
-	{
-		hashMemSize = AEON_MEMORY;
-	}
+	size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
+
 	cryptonight_ctx* ptr = (cryptonight_ctx*)_mm_malloc(sizeof(cryptonight_ctx), 4096);
 
 	if(use_fast_mem == 0)
@@ -285,15 +278,8 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 
 void cryptonight_free_ctx(cryptonight_ctx* ctx)
 {
-	size_t hashMemSize;
-	if(::jconf::inst()->IsCurrencyMonero())
-	{
-		hashMemSize = MONERO_MEMORY;
-	}
-	else
-	{
-		hashMemSize = AEON_MEMORY;
-	}
+	size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
+
 	if(ctx->ctx_info[0] != 0)
 	{
 #ifdef _WIN32

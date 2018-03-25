@@ -38,14 +38,20 @@ XMR-Stak is a universal Stratum pool miner. This miner supports CPUs, AMD and NV
 
 ## Supported altcoins
 
-Besides Monero, following coins can be mined using this miner:
+Besides [Monero](https://getmonero.org), following coins can be mined using this miner:
 
-- [Aeon](http://www.aeon.cash/)
+- [Aeon](http://www.aeon.cash)
+- [Edollar](https://edollar.cash)
 - [Electroneum](https://electroneum.com)
+- [Graft](https://www.graft.network)
 - [Intense](https://intensecoin.com)
+- [Karbo](https://karbo.io)
 - [Sumokoin](https://www.sumokoin.org)
 
-For all coins, except Aeon, you can use Monero settings.
+If your prefered coin is not listed, you can chose one of the following algorithms:
+
+- Cryptonight - 2 MiB scratchpad memory
+- Cryptonight-light - 1 MiB scratchpad memory
 
 Please note, this list is not complete, and is not an endorsement.
 

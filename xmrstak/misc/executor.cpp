@@ -329,11 +329,14 @@ void executor::on_sock_ready(size_t pool_id)
 
 	if(!pool->cmd_login())
 	{
-		if(!pool->have_sock_error())
+		if(pool->have_call_error() && !pool->is_dev_pool())
 		{
-			log_socket_error(pool, pool->get_call_error());
-			pool->disconnect();
+			std::string str = "Login error: " +  pool->get_call_error();
+			log_socket_error(pool, std::move(str));
 		}
+		
+		if(!pool->have_sock_error())
+			pool->disconnect();
 	}
 }
 
@@ -406,14 +409,19 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 void executor::on_miner_result(size_t pool_id, job_result& oResult)
 {
 	jpsock* pool = pick_pool_by_id(pool_id);
-	bool is_monero = jconf::inst()->IsCurrencyMonero();
+
+	const char* backend_name = xmrstak::iBackend::getName(pvThreads->at(oResult.iThreadId)->backendType);
+	uint64_t backend_hashcount, total_hashcount = 0;
+
+	backend_hashcount = pvThreads->at(oResult.iThreadId)->iHashCount.load(std::memory_order_relaxed);
+	for(size_t i = 0; i < pvThreads->size(); i++)
+		total_hashcount += pvThreads->at(i)->iHashCount.load(std::memory_order_relaxed);
 
 	if(pool->is_dev_pool())
 	{
 		//Ignore errors silently
 		if(pool->is_running() && pool->is_logged_in())
-			pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult, pvThreads->at(oResult.iThreadId), is_monero);
-
+			pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult, backend_name, backend_hashcount, total_hashcount, jconf::inst()->GetMiningAlgo());
 		return;
 	}
 
@@ -424,7 +432,7 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 	}
 
 	size_t t_start = get_timestamp_ms();
-	bool bResult = pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult, pvThreads->at(oResult.iThreadId), is_monero);
+	bool bResult = pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult, backend_name, backend_hashcount, total_hashcount, jconf::inst()->GetMiningAlgo());
 	size_t t_len = get_timestamp_ms() - t_start;
 
 	if(t_len > 0xFFFF)
@@ -540,19 +548,38 @@ void executor::ex_main()
 		pools.emplace_back(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolRigid.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
 	}
 
-	if(jconf::inst()->IsCurrencyMonero())
+	switch(jconf::inst()->GetMiningAlgo())
 	{
+	case cryptonight_heavy:
 		if(dev_tls)
-			pools.emplace_front(0, "donate.xmr-stak.net:6666", "", "", "", 0.0, true, true, "", false);
+			pools.emplace_front(0, "donate.xmr-stak.net:8888", "", "", "", 0.0, true, true, "", true);
 		else
-			pools.emplace_front(0, "donate.xmr-stak.net:3333", "", "", "", 0.0, true, false, "", false);
-	}
-	else
-	{
+			pools.emplace_front(0, "donate.xmr-stak.net:5555", "", "", "", 0.0, true, false, "", true);
+		break;
+	
+	case cryptonight_monero:
+		if(dev_tls)
+			pools.emplace_front(0, "donate.xmr-stak.net:8800", "", "", "", 0.0, true, true, "", false);
+		else
+			pools.emplace_front(0, "donate.xmr-stak.net:5500", "", "", "", 0.0, true, false, "", false);
+		break;
+	
+	case cryptonight_lite:
 		if(dev_tls)
 			pools.emplace_front(0, "donate.xmr-stak.net:7777", "", "", "", 0.0, true, true, "", true);
 		else
 			pools.emplace_front(0, "donate.xmr-stak.net:4444", "", "", "", 0.0, true, false, "", true);
+		break;
+
+	case cryptonight:
+		if(dev_tls)
+			pools.emplace_front(0, "donate.xmr-stak.net:6666", "", "", "", 0.0, true, true, "", false);
+		else
+			pools.emplace_front(0, "donate.xmr-stak.net:3333", "", "", "", 0.0, true, false, "", false);
+		break;
+
+	default:
+		break;
 	}
 
 	ex_event ev;
