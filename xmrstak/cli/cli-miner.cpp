@@ -783,7 +783,10 @@ int do_benchmark(int block_version)
 	printer::inst()->print_msg(L0, "Wait 30 sec until all backends are initialized");
 	std::this_thread::sleep_for(std::chrono::seconds(30));
 
-	xmrstak::miner_work benchWork = xmrstak::miner_work("", work, sizeof(work), 0, false, 0);
+	/* AMD and NVIDIA is currently only supporting work sizes up to 84byte
+	 * \todo fix this issue
+	 */
+	xmrstak::miner_work benchWork = xmrstak::miner_work("", work, 84, 0, false, 0);
 	printer::inst()->print_msg(L0, "Start a 60 second benchmark...");
 	xmrstak::globalStates::inst().switch_work(benchWork, dat);
 	uint64_t iStartStamp = get_timestamp_ms();
