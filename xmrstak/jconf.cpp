@@ -102,7 +102,7 @@ xmrstak_coin_algo coin_algos[] = {
 	{ "graft", cryptonight, nullptr },
 	{ "intense", cryptonight, nullptr },
 	{ "karbo", cryptonight, nullptr },
-	{ "monero2", cryptonight_monero, "pool.usxmrpool.com:3333" },
+	{ "monero7", cryptonight_monero, "pool.usxmrpool.com:3333" },
 	{ "sumokoin", cryptonight_heavy, nullptr }
 };
 
@@ -322,7 +322,7 @@ bool jconf::IsOnAlgoList(std::string& needle)
 	if(needle == "monero")
 	{
 		printer::inst()->print_msg(L0, "You entered Monero as coin name. Monero will hard-fork the PoW.\nThis means it will stop being compatible with other cryptonight coins.\n"
-			"Please use monero2 if you want to mine Monero, or name the coin that you want to mine.");
+			"Please use 'monero7' (support auto switch to new POW) if you want to mine Monero, \nor name the coin that you want to mine.");
 		return false;
 	}
 
@@ -623,7 +623,7 @@ bool jconf::parse_config(const char* sFilename, const char* sFilenamePools)
 		if(ctmp == "monero")
 		{
 			printer::inst()->print_msg(L0, "You entered Monero as coin name. Monero will hard-fork the PoW.\nThis means it will stop being compatible with other cryptonight coins.\n"
-				"Please use monero2 if you want to mine Monero, or name the coin that you want to mine.");
+				"Please use monero7 (support auto switch to new POW) if you want to mine Monero, or name the coin that you want to mine.");
 			return false;
 		}
 

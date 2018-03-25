@@ -9,7 +9,7 @@
 * [Virus Protection Alert](#virus-protection-alert)
 * [Change Currency to Mine](#change-currency-to-mine)
 * [How can I mine Monero](#how-can-i-mine-monero)
-* [Why is Monero named monero2](why-is-monero-named-monero2)
+* [Why is Monero named monero7](why-is-monero-named-monero7)
 * [Which currency must be chosen if my fork coin is not listed](#which-currency-must-be-chosen-if-my-fork-coin-is-not-listed)
 
 ## "Obtaining SeLockMemoryPrivilege failed."
@@ -72,15 +72,16 @@ If your antivirus software flags **xmr-stak**, it will likely move it to its qua
 
 If the miner is compiled for Monero and Aeon than you can change
  - the value `currency` in the config *or*
- - start the miner with the [command line option](usage.md) `--currency monero` or `--currency aeon`
+ - start the miner with the [command line option](usage.md) `--currency monero7` or `--currency aeon`
+ - run `xmr-stak --help` to see all supported currencies and algorithms
 
 ## How can I mine Monero
 
-Set the value `currency` in `pools.txt` to `monero2`.
+Set the value `currency` in `pools.txt` to `monero7`.
 
-## Why is Monero named monero2
+## Why is Monero named monero7
 
-To avoid configuration conflicts after the hard fork of Monero to the new POW with our old naming schema where all cryptonight currencies was selected by choosing `monero` as currency we decided to switch to the name `monero2`.
+To avoid configuration conflicts after the hard fork of Monero to the new POW with our old naming schema where all cryptonight currencies was selected by choosing `monero` as currency we decided to switch to the name `monero7`.
 
 ## Which currency must be chosen if my fork coin is not listed
 

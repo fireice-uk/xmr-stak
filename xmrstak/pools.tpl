@@ -28,7 +28,7 @@ POOLCONF],
  *    graft
  *    intense
  *    karbo
- *    monero2 (use this for Monero's new PoW)
+ *    monero7 (use this for Monero's new PoW)
  *    sumokoin
  *
  */
