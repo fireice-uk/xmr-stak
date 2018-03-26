@@ -329,6 +329,8 @@ int main(int argc, char *argv[])
 	std::string seperator("/");
 	auto pos = pathWithName.rfind(seperator);
 
+	bool benchmark_mode = false;
+
 	if(pos == std::string::npos)
 	{
 		// try windows "\"
@@ -508,6 +510,10 @@ int main(int argc, char *argv[])
 		{
 			uacDialog = false;
 		}
+		else if(opName.compare("--benchmark") == 0)
+		{
+			benchmark_mode = true;
+		}
 		else
 		{
 			printer::inst()->print_msg(L0, "Parameter unknown '%s'",argv[i]);
@@ -544,6 +550,15 @@ int main(int argc, char *argv[])
 	{
 		win_exit();
 		return 1;
+	}
+
+	
+	if(benchmark_mode)
+	{
+		printer::inst()->print_str("BENCHO\n");
+		do_benchmark();
+		win_exit();
+		return 0;
 	}
 
 #ifndef CONF_NO_HTTPD
@@ -623,7 +638,7 @@ void do_benchmark()
 	using namespace std::chrono;
 	std::vector<xmrstak::iBackend*>* pvThreads;
 
-	printer::inst()->print_msg(L0, "Running a 60 second benchmark...");
+	printer::inst()->print_msg(L0, "Running a 20 second benchmark...");
 
 	uint8_t work[76] = {0};
 	xmrstak::miner_work oWork = xmrstak::miner_work("", work, sizeof(work), 0, false, 0);
@@ -631,7 +646,7 @@ void do_benchmark()
 
 	uint64_t iStartStamp = get_timestamp_ms();
 
-	std::this_thread::sleep_for(std::chrono::seconds(60));
+	std::this_thread::sleep_for(std::chrono::seconds(20));
 
 	oWork = xmrstak::miner_work();
 	xmrstak::pool_data dat;
