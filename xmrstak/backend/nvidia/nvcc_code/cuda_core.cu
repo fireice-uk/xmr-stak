@@ -6,6 +6,8 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
+#include "xmrstak/jconf.hpp"
+
 #ifdef _WIN32
 #include <windows.h>
 extern "C" void compat_usleep(uint64_t waitTime)
@@ -74,28 +76,50 @@ __device__ __forceinline__ uint64_t cuda_mul128( uint64_t multiplier, uint64_t m
 template< typename T >
 __device__ __forceinline__ T loadGlobal64( T * const addr )
 {
+#if (__CUDA_ARCH__ < 700)
 	T x;
 	asm volatile( "ld.global.cg.u64 %0, [%1];" : "=l"( x ) : "l"( addr ) );
 	return x;
+#else
+	return *addr;
+#endif
 }
 
 template< typename T >
 __device__ __forceinline__ T loadGlobal32( T * const addr )
 {
+#if (__CUDA_ARCH__ < 700)
 	T x;
 	asm volatile( "ld.global.cg.u32 %0, [%1];" : "=r"( x ) : "l"( addr ) );
 	return x;
+#else
+	return *addr;
+#endif
 }
 
 
 template< typename T >
 __device__ __forceinline__ void storeGlobal32( T* addr, T const & val )
 {
+#if (__CUDA_ARCH__ < 700)
 	asm volatile( "st.global.cg.u32 [%0], %1;" : : "l"( addr ), "r"( val ) );
+#else
+	*addr = val;
+#endif
 }
 
-template<size_t ITERATIONS, uint32_t THREAD_SHIFT>
-__global__ void cryptonight_core_gpu_phase1( int threads, int bfactor, int partidx, uint32_t * __restrict__ long_state, uint32_t * __restrict__ ctx_state, uint32_t * __restrict__ ctx_key1 )
+template< typename T >
+__device__ __forceinline__ void storeGlobal64( T* addr, T const & val )
+{
+#if (__CUDA_ARCH__ < 700)
+	asm volatile( "st.global.cg.u64 [%0], %1;" : : "l"( addr ), "l"( val ) );
+#else
+	*addr = val;
+#endif
+}
+
+template<size_t ITERATIONS, uint32_t MEMORY>
+__global__ void cryptonight_core_gpu_phase1( int threads, int bfactor, int partidx, uint32_t * __restrict__ long_state, uint32_t * __restrict__ ctx_state2, uint32_t * __restrict__ ctx_key1 )
 {
 	__shared__ uint32_t sharedMemory[1024];
 
@@ -105,7 +129,7 @@ __global__ void cryptonight_core_gpu_phase1( int threads, int bfactor, int parti
 	const int thread = ( blockDim.x * blockIdx.x + threadIdx.x ) >> 3;
 	const int sub = ( threadIdx.x & 7 ) << 2;
 
-	const int batchsize = ITERATIONS >> bfactor;
+	const int batchsize = MEMORY >> bfactor;
 	const int start = partidx * batchsize;
 	const int end = start + batchsize;
 
@@ -119,18 +143,18 @@ __global__ void cryptonight_core_gpu_phase1( int threads, int bfactor, int parti
 	if( partidx == 0 )
 	{
 		// first round
-		MEMCPY8( text, ctx_state + thread * 50 + sub + 16, 2 );
+		MEMCPY8( text, ctx_state2 + thread * 50 + sub + 16, 2 );
 	}
 	else
 	{
 		// load previous text data
-		MEMCPY8( text, &long_state[( (uint64_t) thread << THREAD_SHIFT ) + sub + start - 32], 2 );
+		MEMCPY8( text, &long_state[( (uint64_t) thread * MEMORY ) + sub + start - 32], 2 );
 	}
 	__syncthreads( );
 	for ( int i = start; i < end; i += 32 )
 	{
 		cn_aes_pseudo_round_mut( sharedMemory, text, key );
-		MEMCPY8(&long_state[((uint64_t) thread << THREAD_SHIFT) + (sub + i)], text, 2);
+		MEMCPY8(&long_state[((uint64_t) thread * MEMORY) + (sub + i)], text, 2);
 	}
 }
 
@@ -145,33 +169,37 @@ __forceinline__ __device__ void unusedVar( const T& )
  * - this method can be used with all compute architectures
  * - for <sm_30 shared memory is needed
  *
+ * group_n - must be a power of 2!
+ * 
  * @param ptr pointer to shared memory, size must be `threadIdx.x * sizeof(uint32_t)`
  *            value can be NULL for compute architecture >=sm_30
- * @param sub thread number within the group, range [0;4)
+ * @param sub thread number within the group, range [0:group_n]
  * @param value value to share with other threads within the group
- * @param src thread number within the group from where the data is read, range [0;4)
+ * @param src thread number within the group from where the data is read, range [0:group_n]
  */
+template<size_t group_n>
 __forceinline__ __device__ uint32_t shuffle(volatile uint32_t* ptr,const uint32_t sub,const int val,const uint32_t src)
 {
 #if( __CUDA_ARCH__ < 300 )
     ptr[sub] = val;
-    return ptr[src&3];
+    return ptr[src & (group_n-1)];
 #else
     unusedVar( ptr );
     unusedVar( sub );
 #   if(__CUDACC_VER_MAJOR__ >= 9)
-    return __shfl_sync(0xFFFFFFFF, val, src, 4 );
+    return __shfl_sync(0xFFFFFFFF, val, src, group_n );
 #	else
-	return __shfl( val, src, 4 );
+	return __shfl( val, src, group_n );
 #	endif
 #endif
 }
 
-template<size_t ITERATIONS, uint32_t THREAD_SHIFT, uint32_t MASK>
+template<size_t ITERATIONS, uint32_t MEMORY, uint32_t MASK, xmrstak_algo ALGO>
 #ifdef XMR_STAK_THREADS
 __launch_bounds__( XMR_STAK_THREADS * 4 )
 #endif
-__global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b )
+__global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b, uint32_t * d_ctx_state,
+		uint32_t startNonce, uint32_t * __restrict__ d_input )
 {
 	__shared__ uint32_t sharedMemory[1024];
 
@@ -180,6 +208,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 	__syncthreads( );
 
 	const int thread = ( blockDim.x * blockIdx.x + threadIdx.x ) >> 2;
+	const uint32_t nonce = startNonce + thread;
 	const int sub = threadIdx.x & 3;
 	const int sub2 = sub & 2;
 
@@ -193,30 +222,48 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 		return;
 
 	int i, k;
-        uint32_t j;
+	uint32_t j;
 	const int batchsize = (ITERATIONS * 2) >> ( 2 + bfactor );
 	const int start = partidx * batchsize;
 	const int end = start + batchsize;
-	uint32_t * long_state = &d_long_state[(IndexType) thread << THREAD_SHIFT];
-	uint32_t * ctx_a = d_ctx_a + thread * 4;
-	uint32_t * ctx_b = d_ctx_b + thread * 4;
-	uint32_t a, d[2];
+	uint32_t * long_state = &d_long_state[(IndexType) thread * MEMORY];
+	uint32_t a, d[2], idx0;
 	uint32_t t1[2], t2[2], res;
 
-	a = ctx_a[sub];
-	d[1] = ctx_b[sub];
+	uint32_t tweak1_2[2];
+	if (ALGO == cryptonight_monero)
+	{
+		uint32_t * state = d_ctx_state + thread * 50;
+		tweak1_2[0] = (d_input[8] >> 24) | (d_input[9] << 8);
+		tweak1_2[0] ^= state[48];
+		tweak1_2[1] = nonce;
+		tweak1_2[1] ^= state[49];
+	}
+
+	a = (d_ctx_a + thread * 4)[sub];
+	idx0 = shuffle<4>(sPtr,sub, a, 0);
+	if(ALGO == cryptonight_heavy)
+	{
+		if(partidx != 0)
+		{
+			// state is stored after all ctx_b states
+			idx0 = *(d_ctx_b + threads * 4 + thread);
+		}
+	}
+	d[1] = (d_ctx_b + thread * 4)[sub];
+
 	#pragma unroll 2
 	for ( i = start; i < end; ++i )
 	{
 		#pragma unroll 2
 		for ( int x = 0; x < 2; ++x )
 		{
-			j = ( ( shuffle(sPtr,sub, a, 0) & MASK ) >> 2 ) + sub;
+			j = ( ( idx0 & MASK ) >> 2 ) + sub;
 
 			const uint32_t x_0 = loadGlobal32<uint32_t>( long_state + j );
-			const uint32_t x_1 = shuffle(sPtr,sub, x_0, sub + 1);
-			const uint32_t x_2 = shuffle(sPtr,sub, x_0, sub + 2);
-			const uint32_t x_3 = shuffle(sPtr,sub, x_0, sub + 3);
+			const uint32_t x_1 = shuffle<4>(sPtr,sub, x_0, sub + 1);
+			const uint32_t x_2 = shuffle<4>(sPtr,sub, x_0, sub + 2);
+			const uint32_t x_3 = shuffle<4>(sPtr,sub, x_0, sub + 3);
 			d[x] = a ^
 				t_fn0( x_0 & 0xff ) ^
 				t_fn1( (x_1 >> 8) & 0xff ) ^
@@ -225,41 +272,74 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 
 
 			//XOR_BLOCKS_DST(c, b, &long_state[j]);
-			t1[0] = shuffle(sPtr,sub, d[x], 0);
-			//long_state[j] = d[0] ^ d[1];
-			storeGlobal32( long_state + j, d[0] ^ d[1] );
+			t1[0] = shuffle<4>(sPtr,sub, d[x], 0);
 
+			const uint32_t z = d[0] ^ d[1];
+			if(ALGO == cryptonight_monero)
+			{
+				const uint32_t table = 0x75310U;
+				const uint32_t index = ((z >> 26) & 12) | ((z >> 23) & 2);
+				const uint32_t fork_7 = z ^ ((table >> index) & 0x30U) << 24;
+				storeGlobal32( long_state + j, sub == 2 ? fork_7 : z );
+			}
+			else
+				storeGlobal32( long_state + j, z );
+			
 			//MUL_SUM_XOR_DST(c, a, &long_state[((uint32_t *)c)[0] & MASK]);
 			j = ( ( *t1 & MASK ) >> 2 ) + sub;
 
 			uint32_t yy[2];
 			*( (uint64_t*) yy ) = loadGlobal64<uint64_t>( ( (uint64_t *) long_state )+( j >> 1 ) );
 			uint32_t zz[2];
-			zz[0] = shuffle(sPtr,sub, yy[0], 0);
-			zz[1] = shuffle(sPtr,sub, yy[1], 0);
+			zz[0] = shuffle<4>(sPtr,sub, yy[0], 0);
+			zz[1] = shuffle<4>(sPtr,sub, yy[1], 0);
 
-			t1[1] = shuffle(sPtr,sub, d[x], 1);
+			t1[1] = shuffle<4>(sPtr,sub, d[x], 1);
 			#pragma unroll
 			for ( k = 0; k < 2; k++ )
-				t2[k] = shuffle(sPtr,sub, a, k + sub2);
+				t2[k] = shuffle<4>(sPtr,sub, a, k + sub2);
 
             *( (uint64_t *) t2 ) += sub2 ? ( *( (uint64_t *) t1 ) * *( (uint64_t*) zz ) ) : __umul64hi( *( (uint64_t *) t1 ), *( (uint64_t*) zz ) );
 
 			res = *( (uint64_t *) t2 )  >> ( sub & 1 ? 32 : 0 );
 
-			storeGlobal32( long_state + j, res );
+			
+			if(ALGO == cryptonight_monero)
+			{
+				const uint32_t tweaked_res = tweak1_2[sub & 1] ^ res;
+				const uint32_t long_state_update = sub2 ? tweaked_res : res;
+				storeGlobal32( long_state + j, long_state_update );
+			}
+			else
+				storeGlobal32( long_state + j, res );
+			
 			a = ( sub & 1 ? yy[1] : yy[0] ) ^ res;
+			idx0 = shuffle<4>(sPtr,sub, a, 0);
+			if(ALGO == cryptonight_heavy)
+			{
+				int64_t n = loadGlobal64<uint64_t>( ( (uint64_t *) long_state ) + (( idx0 & MASK ) >> 3));
+				int32_t d = loadGlobal32<uint32_t>( (uint32_t*)(( (uint64_t *) long_state ) + (( idx0 & MASK) >> 3) + 1u ));
+				int64_t q = n / (d | 0x5);
+
+				if(sub&1)
+					storeGlobal64<uint64_t>( ( (uint64_t *) long_state ) + (( idx0 & MASK ) >> 3), n ^ q );
+
+				idx0 = d ^ q;
+			}
 		}
 	}
 
 	if ( bfactor > 0 )
 	{
-		ctx_a[sub] = a;
-		ctx_b[sub] = d[1];
+		(d_ctx_a + thread * 4)[sub] = a;
+		(d_ctx_b + thread * 4)[sub] = d[1];
+		if(ALGO == cryptonight_heavy)
+			if(sub&1)
+				*(d_ctx_b + threads * 4 + thread) = idx0;
 	}
 }
 
-template<size_t ITERATIONS, uint32_t THREAD_SHIFT>
+template<size_t ITERATIONS, uint32_t MEMORY, xmrstak_algo ALGO>
 __global__ void cryptonight_core_gpu_phase3( int threads, int bfactor, int partidx, const uint32_t * __restrict__ long_state, uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_key2 )
 {
 	__shared__ uint32_t sharedMemory[1024];
@@ -268,9 +348,10 @@ __global__ void cryptonight_core_gpu_phase3( int threads, int bfactor, int parti
 	__syncthreads( );
 
 	int thread = ( blockDim.x * blockIdx.x + threadIdx.x ) >> 3;
-	int sub = ( threadIdx.x & 7 ) << 2;
+	int subv = ( threadIdx.x & 7 );
+	int sub = subv << 2;
 
-	const int batchsize = ITERATIONS >> bfactor;
+	const int batchsize = MEMORY >> bfactor;
 	const int start = partidx * batchsize;
 	const int end = start + batchsize;
 
@@ -282,20 +363,53 @@ __global__ void cryptonight_core_gpu_phase3( int threads, int bfactor, int parti
 	MEMCPY8( text, d_ctx_state + thread * 50 + sub + 16, 2 );
 
 	__syncthreads( );
+	
+#if( __CUDA_ARCH__ < 300 )
+        extern __shared__ uint32_t shuffleMem[];
+        volatile uint32_t* sPtr = (volatile uint32_t*)(shuffleMem + (threadIdx.x& 0xFFFFFFFC));
+#else
+        volatile uint32_t* sPtr = NULL;
+#endif
+
 	for ( int i = start; i < end; i += 32 )
 	{
 #pragma unroll
 		for ( int j = 0; j < 4; ++j )
-			text[j] ^= long_state[((IndexType) thread << THREAD_SHIFT) + (sub + i + j)];
+			text[j] ^= long_state[((IndexType) thread * MEMORY) + ( sub + i + j)];
 
 		cn_aes_pseudo_round_mut( sharedMemory, text, key );
+		
+		if(ALGO == cryptonight_heavy)
+		{
+#pragma unroll
+			for ( int j = 0; j < 4; ++j )
+				text[j] ^= shuffle<8>(sPtr, subv, text[j], (subv+1)&7);
+		}
+	}
+
+	if(ALGO == cryptonight_heavy)
+	{
+		__syncthreads( );
+		
+		for ( int i = start; i < end; i += 32 )
+		{
+#pragma unroll
+			for ( int j = 0; j < 4; ++j )
+				text[j] ^= long_state[((IndexType) thread * MEMORY) + ( sub + i + j)];
+
+			cn_aes_pseudo_round_mut( sharedMemory, text, key );
+
+#pragma unroll
+			for ( int j = 0; j < 4; ++j )
+				text[j] ^= shuffle<8>(sPtr, subv, text[j], (subv+1)&7);
+		}
 	}
 
 	MEMCPY8( d_ctx_state + thread * 50 + sub + 16, text, 2 );
 }
 
-template<size_t ITERATIONS, uint32_t MASK, uint32_t THREAD_SHIFT>
-void cryptonight_core_gpu_hash(nvid_ctx* ctx)
+template<size_t ITERATIONS, uint32_t MASK, uint32_t MEMORY, xmrstak_algo ALGO>
+void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 {
 	dim3 grid( ctx->device_blocks );
 	dim3 block( ctx->device_threads );
@@ -317,9 +431,11 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx)
 
 	for ( int i = 0; i < partcountOneThree; i++ )
 	{
-		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase1<ITERATIONS,THREAD_SHIFT><<< grid, block8 >>>( ctx->device_blocks*ctx->device_threads,
+		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase1<ITERATIONS,MEMORY><<< grid, block8 >>>( ctx->device_blocks*ctx->device_threads,
 			bfactorOneThree, i,
-			ctx->d_long_state, ctx->d_ctx_state, ctx->d_ctx_key1 ));
+			ctx->d_long_state, 
+			(ALGO == cryptonight_heavy ? ctx->d_ctx_state2 : ctx->d_ctx_state),
+			ctx->d_ctx_key1 ));
 
 		if ( partcount > 1 && ctx->device_bsleep > 0) compat_usleep( ctx->device_bsleep );
 	}
@@ -330,7 +446,7 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx)
         CUDA_CHECK_MSG_KERNEL(
 			ctx->device_id,
 			"\n**suggestion: Try to increase the value of the attribute 'bfactor' or \nreduce 'threads' in the NVIDIA config file.**",
-			cryptonight_core_gpu_phase2<ITERATIONS,THREAD_SHIFT,MASK><<<
+			cryptonight_core_gpu_phase2<ITERATIONS,MEMORY,MASK,ALGO><<<
 				grid,
 				block4,
 				block4.x * sizeof(uint32_t) * static_cast< int >( ctx->device_arch[0] < 3 )
@@ -340,7 +456,10 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx)
 				i,
 				ctx->d_long_state,
 				ctx->d_ctx_a,
-				ctx->d_ctx_b
+				ctx->d_ctx_b,
+				ctx->d_ctx_state,
+				nonce,
+				ctx->d_input
 			)
 	    );
 
@@ -349,25 +468,39 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx)
 
 	for ( int i = 0; i < partcountOneThree; i++ )
 	{
-		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase3<ITERATIONS,THREAD_SHIFT><<< grid, block8 >>>( ctx->device_blocks*ctx->device_threads,
+		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase3<ITERATIONS,MEMORY, ALGO><<< grid, block8 >>>( ctx->device_blocks*ctx->device_threads,
 			bfactorOneThree, i,
 			ctx->d_long_state,
 			ctx->d_ctx_state, ctx->d_ctx_key2 ));
 	}
 }
 
-void cryptonight_core_cpu_hash(nvid_ctx* ctx, bool mineMonero)
+void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t startNonce, uint8_t version)
 {
-#ifndef CONF_NO_MONERO
-	if(mineMonero)
+
+	if(miner_algo == cryptonight_monero)
 	{
-		cryptonight_core_gpu_hash<MONERO_ITER, MONERO_MASK, 19u>(ctx);
+		if(version >= 7)
+			cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero>(ctx, startNonce);
+		else
+			cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight>(ctx, startNonce);
 	}
-#endif
-#ifndef CONF_NO_AEON
-	if(!mineMonero)
+	else if(miner_algo == cryptonight_heavy)
 	{
-		cryptonight_core_gpu_hash<AEON_ITER, AEON_MASK, 18u>(ctx);
+		if(version >= 3)
+			cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_heavy>(ctx, startNonce);
+		else
+		{
+			cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight>(ctx, startNonce);
+		}
 	}
-#endif
+	else if(miner_algo == cryptonight)
+	{
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight>(ctx, startNonce);
+	}
+	else if(miner_algo == cryptonight_lite)
+	{
+		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_lite>(ctx, startNonce);
+	}
+
 }

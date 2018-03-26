@@ -97,6 +97,8 @@ bool minethd::init_gpus()
 		vGpuData[i].rawIntensity = cfg.intensity;
 		vGpuData[i].workSize = cfg.w_size;
 		vGpuData[i].stridedIndex = cfg.stridedIndex;
+		vGpuData[i].memChunk = cfg.memChunk;
+		vGpuData[i].compMode = cfg.compMode;
 	}
 
 	return InitOpenCL(vGpuData.data(), n, jconf::inst()->GetPlatformIdx()) == ERR_SUCCESS;
@@ -139,7 +141,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 		if(cfg.cpu_aff >= 0)
 		{
 #if defined(__APPLE__)
-			printer::inst()->print_msg(L1, "WARNING on MacOS thread affinity is only advisory.");
+			printer::inst()->print_msg(L1, "WARNING on macOS thread affinity is only advisory.");
 #endif
 
 			printer::inst()->print_msg(L1, "Starting AMD GPU thread %d, affinity: %d.", i, (int)cfg.cpu_aff);
@@ -189,8 +191,19 @@ void minethd::work_main()
 	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
-	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, ::jconf::inst()->IsCurrencyMonero());
+	auto miner_algo = ::jconf::inst()->GetMiningAlgo();
+	cn_hash_fun hash_fun;
+	if(miner_algo == cryptonight_monero || miner_algo == cryptonight_heavy)
+	{
+		// start with cryptonight and switch later if fork version is reached
+		hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, cryptonight);
+	}
+	else
+		hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
+
 	globalStates::inst().iConsumeCnt++;
+
+	uint8_t version = 0;
 
 	while (bQuit == 0)
 	{
@@ -205,6 +218,16 @@ void minethd::work_main()
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
+			uint8_t new_version = oWork.getVersion();
+			if(miner_algo == cryptonight_monero && version < 7 && new_version >= 7)
+			{
+				hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, cryptonight_monero);
+			}
+			else if(miner_algo == cryptonight_heavy && version < 3 && new_version >= 3)
+			{
+				hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, cryptonight_heavy);
+			}
+			version = new_version;
 			continue;
 		}
 
@@ -213,7 +236,8 @@ void minethd::work_main()
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		uint64_t target = oWork.iTarget;
-		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target);
+		/// \todo add monero hard for version
+		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo, version);
 
 		if(oWork.bNiceHash)
 			pGpuCtx->Nonce = *(uint32_t*)(oWork.bWorkBlob + 39);
@@ -229,7 +253,7 @@ void minethd::work_main()
 			cl_uint results[0x100];
 			memset(results,0,sizeof(cl_uint)*(0x100));
 
-			XMRRunJob(pGpuCtx, results);
+			XMRRunJob(pGpuCtx, results, miner_algo, version);
 
 			for(size_t i = 0; i < results[0xFF]; i++)
 			{
@@ -245,7 +269,7 @@ void minethd::work_main()
 				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
 					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, results[i], bResult, iThreadNo), oWork.iPoolId));
 				else
-					executor::inst()->push_event(ex_event("AMD Invalid Result", oWork.iPoolId));
+					executor::inst()->push_event(ex_event("AMD Invalid Result", pGpuCtx->deviceIdx, oWork.iPoolId));
 			}
 
 			iCount += pGpuCtx->rawIntensity;
@@ -256,6 +280,16 @@ void minethd::work_main()
 		}
 
 		consume_work();
+		uint8_t new_version = oWork.getVersion();
+		if(miner_algo == cryptonight_monero && version < 7 && new_version >= 7)
+		{
+			hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, cryptonight_monero);
+		}
+		else if(miner_algo == cryptonight_heavy && version < 3 && new_version >= 3)
+		{
+			hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, cryptonight_heavy);
+		}
+		version = new_version;
 	}
 }
 

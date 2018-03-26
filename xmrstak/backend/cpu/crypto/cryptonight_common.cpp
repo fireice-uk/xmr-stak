@@ -28,9 +28,10 @@ extern "C"
 #include "c_jh.h"
 #include "c_skein.h"
 }
+#include "xmrstak/backend/cryptonight.hpp"
 #include "cryptonight.h"
 #include "cryptonight_aesni.h"
-#include "xmrstak/backend/cryptonight.hpp"
+#include "xmrstak/misc/console.hpp"
 #include "xmrstak/jconf.hpp"
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,6 +74,8 @@ void do_skein_hash(const void* input, size_t len, char* output) {
 void (* const extra_hashes[4])(const void *, size_t, char *) = {do_blake_hash, do_groestl_hash, do_jh_hash, do_skein_hash};
 
 #ifdef _WIN32
+#include "xmrstak/misc/uac.hpp"
+
 BOOL bRebootDesirable = FALSE; //If VirtualAlloc fails, suggest a reboot
 
 BOOL AddPrivilege(TCHAR* pszPrivilege)
@@ -176,13 +179,16 @@ size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 
 	if(AddPrivilege(TEXT("SeLockMemoryPrivilege")) == 0)
 	{
+		printer::inst()->print_msg(L0, "Elevating because we need to set up fast memory privileges.");
+		RequestElevation();
+
 		if(AddLargePageRights())
 		{
 			msg->warning = "Added SeLockMemoryPrivilege to the current account. You need to reboot for it to work";
 			bRebootDesirable = TRUE;
 		}
 		else
-			msg->warning = "Obtaning SeLockMemoryPrivilege failed.";
+			msg->warning = "Obtaining SeLockMemoryPrivilege failed.";
 
 		return 0;
 	}
@@ -196,15 +202,8 @@ size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 
 cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 {
-	size_t hashMemSize;
-	if(::jconf::inst()->IsCurrencyMonero())
-	{
-		hashMemSize = MONERO_MEMORY;
-	}
-	else
-	{
-		hashMemSize = AEON_MEMORY;
-	}
+	size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
+
 	cryptonight_ctx* ptr = (cryptonight_ctx*)_mm_malloc(sizeof(cryptonight_ctx), 4096);
 
 	if(use_fast_mem == 0)
@@ -247,6 +246,9 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 #elif defined(__FreeBSD__)
 	ptr->long_state = (uint8_t*)mmap(0, hashMemSize, PROT_READ | PROT_WRITE,
 		MAP_PRIVATE | MAP_ANONYMOUS | MAP_ALIGNED_SUPER | MAP_PREFAULT_READ, -1, 0);
+#elif defined(__OpenBSD__)
+	ptr->long_state = (uint8_t*)mmap(0, hashMemSize, PROT_READ | PROT_WRITE,
+		MAP_PRIVATE | MAP_ANON, -1, 0);
 #else
 	ptr->long_state = (uint8_t*)mmap(0, hashMemSize, PROT_READ | PROT_WRITE,
 		MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, 0, 0);
@@ -276,15 +278,8 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 
 void cryptonight_free_ctx(cryptonight_ctx* ctx)
 {
-	size_t hashMemSize;
-	if(::jconf::inst()->IsCurrencyMonero())
-	{
-		hashMemSize = MONERO_MEMORY;
-	}
-	else
-	{
-		hashMemSize = AEON_MEMORY;
-	}
+	size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
+
 	if(ctx->ctx_info[0] != 0)
 	{
 #ifdef _WIN32

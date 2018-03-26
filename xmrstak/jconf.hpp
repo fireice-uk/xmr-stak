@@ -1,11 +1,11 @@
 #pragma once
 
+#include "xmrstak/backend/cryptonight.hpp"
 #include "xmrstak/misc/environment.hpp"
 #include "params.hpp"
 
 #include <stdlib.h>
 #include <string>
-
 
 class jconf
 {
@@ -18,11 +18,12 @@ public:
 		return env.pJconfConfig;
 	};
 
-	bool parse_config(const char* sFilename = xmrstak::params::inst().configFile.c_str());
+	bool parse_config(const char* sFilename, const char* sFilenamePools);
 
 	struct pool_cfg {
 		const char* sPoolAddr;
 		const char* sWalletAddr;
+		const char* sRigId;
 		const char* sPasswd;
 		bool nicehash;
 		bool tls;
@@ -47,8 +48,13 @@ public:
 
 	bool TlsSecureAlgos();
 
-	const std::string GetCurrency();
-	bool IsCurrencyMonero();
+	inline xmrstak_algo GetMiningAlgo() { return mining_algo; }
+	
+	std::string GetMiningCoin();
+
+	static void GetAlgoList(std::string& list);
+	static bool IsOnAlgoList(std::string& needle);
+	static const char* GetDefaultPool(const char* needle);
 
 	uint64_t GetVerboseLevel();
 	bool PrintMotd();
@@ -77,9 +83,12 @@ public:
 private:
 	jconf();
 
+	bool parse_file(const char* sFilename, bool main_conf);
+
 	bool check_cpu_features();
 	struct opaque_private;
 	opaque_private* prv;
 
 	bool bHaveAes;
+	xmrstak_algo mining_algo;
 };
