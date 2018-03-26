@@ -83,15 +83,7 @@ private:
 
 		constexpr size_t byteToMiB = 1024u * 1024u;
 
-		size_t hashMemSize;
-		if(::jconf::inst()->IsCurrencyMonero())
-		{
-			hashMemSize = MONERO_MEMORY;
-		}
-		else
-		{
-			hashMemSize = AEON_MEMORY;
-		}
+		size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
 
 		std::string conf;
 		for(auto& ctx : devVec)
@@ -118,7 +110,7 @@ private:
 				maxThreads = 2024u;
 			}
 			// increase all intensity limits by two for aeon
-			if(!::jconf::inst()->IsCurrencyMonero())
+			if(::jconf::inst()->GetMiningAlgo() == cryptonight_lite)
 				maxThreads *= 2u;
 
 			// keep 128MiB memory free (value is randomly chosen)
@@ -143,7 +135,8 @@ private:
 				// set 8 threads per block (this is a good value for the most gpus)
 				conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
 					"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
-					"    \"affine_to_cpu\" : false, \"strided_index\" : true\n"
+					"    \"affine_to_cpu\" : false, \"strided_index\" : 1, \"mem_chunk\" : 2,\n"
+					"    \"comp_mode\" : true\n" +
 					"  },\n";
 			}
 			else

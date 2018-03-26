@@ -2,6 +2,7 @@
 
 #include "xmrstak/backend/iBackend.hpp"
 #include "msgstruct.hpp"
+#include "xmrstak/jconf.hpp"
 
 #include <mutex>
 #include <atomic>
@@ -34,7 +35,7 @@ public:
 	void disconnect(bool quiet = false);
 
 	bool cmd_login();
-	bool cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult, xmrstak::iBackend* bend, bool algo_full_cn);
+	bool cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult, const char* backend_name, uint64_t backend_hashcount, uint64_t total_hashcount, xmrstak_algo algo);
 
 	static bool hex2bin(const char* in, unsigned int len, unsigned char* out);
 	static void bin2hex(const unsigned char* in, unsigned int len, char* out);
@@ -62,6 +63,7 @@ public:
 	bool get_pool_motd(std::string& strin);
 
 	std::string&& get_call_error();
+	bool have_call_error() { return call_error; }
 	bool have_sock_error() { return bHaveSocketError; }
 
 	inline static uint64_t t32_to_t64(uint32_t t) { return 0xFFFFFFFFFFFFFFFFULL / (0xFFFFFFFFULL / ((uint64_t)t)); }
@@ -106,6 +108,7 @@ private:
 	std::atomic<bool> bRunning;
 	std::atomic<bool> bLoggedIn;
 	std::atomic<bool> quiet_close;
+	std::atomic<bool> call_error;
 
 	uint8_t* bJsonRecvMem;
 	uint8_t* bJsonParseMem;

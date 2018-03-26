@@ -55,7 +55,7 @@
 #	include "xmrstak/misc/uac.hpp"
 #endif // _WIN32
 
-void do_benchmark();
+int do_benchmark(int block_version);
 
 void help()
 {
@@ -64,47 +64,50 @@ void help()
 
 	cout<<"Usage: "<<params::inst().binaryName<<" [OPTION]..."<<endl;
 	cout<<" "<<endl;
-	cout<<"  -h, --help            show this help"<<endl;
-	cout<<"  -v, --version         show version number"<<endl;
-	cout<<"  -V, --version-long    show long version number"<<endl;
-	cout<<"  -c, --config FILE     common miner configuration file"<<endl;
+	cout<<"  -h, --help                 show this help"<<endl;
+	cout<<"  -v, --version              show version number"<<endl;
+	cout<<"  -V, --version-long         show long version number"<<endl;
+	cout<<"  -c, --config FILE          common miner configuration file"<<endl;
+	cout<<"  -C, --poolconf FILE        pool configuration file"<<endl;
 #ifdef _WIN32
-	cout<<"  --noUAC               disable the UAC dialog"<<endl;
+	cout<<"  --noUAC                    disable the UAC dialog"<<endl;
 #endif
-#if (!defined(CONF_NO_AEON)) && (!defined(CONF_NO_MONERO))
-	cout<<"  --currency NAME       currency to mine: monero or aeon"<<endl;
-#endif
+	cout<<"  --benchmark BLOCKVERSION   ONLY do a 60-second benchmark and exit"<<endl;
 #ifndef CONF_NO_CPU
-	cout<<"  --noCPU               disable the CPU miner backend"<<endl;
-	cout<<"  --cpu FILE            CPU backend miner config file"<<endl;
+	cout<<"  --noCPU                    disable the CPU miner backend"<<endl;
+	cout<<"  --cpu FILE                 CPU backend miner config file"<<endl;
 #endif
 #ifndef CONF_NO_OPENCL
-	cout<<"  --noAMD               disable the AMD miner backend"<<endl;
-	cout<<"  --amd FILE            AMD backend miner config file"<<endl;
+	cout<<"  --noAMD                    disable the AMD miner backend"<<endl;
+	cout<<"  --amd FILE                 AMD backend miner config file"<<endl;
 #endif
 #ifndef CONF_NO_CUDA
-	cout<<"  --noNVIDIA            disable the NVIDIA miner backend"<<endl;
-	cout<<"  --nvidia FILE         NVIDIA backend miner config file"<<endl;
+	cout<<"  --noNVIDIA                 disable the NVIDIA miner backend"<<endl;
+	cout<<"  --nvidia FILE              NVIDIA backend miner config file"<<endl;
 #endif
 #ifndef CONF_NO_HTTPD
-	cout<<"  -i --httpd HTTP_PORT  HTTP interface port"<<endl;
+	cout<<"  -i --httpd HTTP_PORT       HTTP interface port"<<endl;
 #endif
 	cout<<" "<<endl;
 	cout<<"The following options can be used for automatic start without a guided config,"<<endl;
 	cout<<"If config exists then this pool will be top priority."<<endl;
-	cout<<"  -o, --url URL         pool url and port, e.g. pool.usxmrpool.com:3333"<<endl;
-	cout<<"  -O, --tls-url URL     TLS pool url and port, e.g. pool.usxmrpool.com:10443"<<endl;
-	cout<<"  -u, --user USERNAME   pool user name or wallet address"<<endl;
-	cout<<"  -r, --rigid RIGID     rig identifier for pool-side statistics (needs pool support)"<<endl;
-	cout<<"  -p, --pass PASSWD     pool password, in the most cases x or empty \"\""<<endl;
-	cout<<"  --use-nicehash        the pool should run in nicehash mode"<<endl;
-	cout<<" \n"<<endl;
+	cout<<"  -o, --url URL              pool url and port, e.g. pool.usxmrpool.com:3333"<<endl;
+	cout<<"  -O, --tls-url URL          TLS pool url and port, e.g. pool.usxmrpool.com:10443"<<endl;
+	cout<<"  -u, --user USERNAME        pool user name or wallet address"<<endl;
+	cout<<"  -r, --rigid RIGID          rig identifier for pool-side statistics (needs pool support)"<<endl;
+	cout<<"  -p, --pass PASSWD          pool password, in the most cases x or empty \"\""<<endl;
+	cout<<"  --use-nicehash             the pool should run in nicehash mode"<<endl;
+	cout<<"  --currency NAME            currency to mine"<<endl;
+	cout<< endl;
 #ifdef _WIN32
 	cout<<"Environment variables:\n"<<endl;
-	cout<<"  XMRSTAK_NOWAIT        disable the dialog `Press any key to exit."<<std::endl;
-	cout<<"                	       for non UAC execution"<<endl;
-	cout<<" \n"<<endl;
+	cout<<"  XMRSTAK_NOWAIT             disable the dialog `Press any key to exit."<<std::endl;
+	cout<<"                	            for non UAC execution"<<endl;
+	cout<< endl;
 #endif
+	std::string algos;
+	jconf::GetAlgoList(algos);
+	cout<< "Supported coin opitons: " << endl << algos << endl; 
 	cout<< "Version: " << get_version_str_short() << endl;
 	cout<<"Brought to by fireice_uk and psychocrypt under GPLv3."<<endl;
 }
@@ -133,10 +136,7 @@ std::string get_multipool_entry(bool& final)
 	std::cout<<std::endl<<"- Next Pool:"<<std::endl<<std::endl;
 
 	std::string pool;
-	if(xmrstak::params::inst().currency == "monero")
-		std::cout<<"- Pool address: e.g. pool.usxmrpool.com:3333"<<std::endl;
-	else
-		std::cout<<"- Pool address: e.g. mine.aeon-pool.com:5555"<<std::endl;
+	std::cout<<"- Pool address: e.g. " << jconf::GetDefaultPool(xmrstak::params::inst().currency.c_str()) << std::endl;
 	std::cin >> pool;
 
 	std::string userName;
@@ -149,7 +149,6 @@ std::string get_multipool_entry(bool& final)
 	getline(std::cin, passwd);
 	
 	std::string rigid;
-	std::cin.clear(); std::cin.ignore(INT_MAX,'\n');
 	std::cout<<"- Rig identifier for pool-side statistics (needs pool support). Can be empty:"<<std::endl;
 	getline(std::cin, rigid);
 
@@ -185,59 +184,34 @@ inline void prompt_once(bool& prompted)
 	}
 }
 
-void do_guided_config()
+void do_guided_pool_config()
 {
 	using namespace xmrstak;
 
 	// load the template of the backend config into a char variable
 	const char *tpl =
-		#include "../config.tpl"
+		#include "../pools.tpl"
 	;
 
 	configEditor configTpl{};
 	configTpl.set(std::string(tpl));
 	bool prompted = false;
-	
+
 	auto& currency = params::inst().currency;
-	if(currency.empty())
+	if(currency.empty() || !jconf::IsOnAlgoList(currency))
 	{
 		prompt_once(prompted);
 
 		std::string tmp;
-#if defined(CONF_NO_AEON)
-		tmp = "monero";
-#elif defined(CONF_NO_MONERO)
-		tmp = "aeon";
-#endif
-		while(tmp != "monero" && tmp != "aeon")
+		while(tmp.empty() || !jconf::IsOnAlgoList(tmp))
 		{
-			std::cout<<"- Currency: 'monero' or 'aeon'"<<std::endl;
+			std::string list;
+			jconf::GetAlgoList(list);
+			std::cout << "- Please enter the currency that you want to mine: "<<std::endl;
+			std::cout << list << std::endl;
 			std::cin >> tmp;
-			std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
 		} 
 		currency = tmp;
-	}
-
-	auto& http_port = params::inst().httpd_port;
-	if(http_port == params::httpd_port_unset)
-	{
-#if defined(CONF_NO_HTTPD)
-		http_port = params::httpd_port_disabled;
-#else
-		std::cout<<"- Do you want to use the HTTP interface?" <<std::endl;
-		std::cout<<"Unlike the screen display, browser interface is not affected by the GPU lag." <<std::endl;
-		std::cout<<"If you don't want to use it, please enter 0, otherwise enter port number that the miner should listen on" <<std::endl;
-
-		int32_t port;
-		while(!(std::cin >> port) || port < 0 || port > 65535)
-		{
-			std::cin.clear();
-			std::cin.ignore(INT_MAX, '\n');
-			std::cout << "Invalid port number. Please enter a number between 0 and 65535." << std::endl;
-		}
-
-		http_port = port;
-#endif
 	}
 
 	auto& pool = params::inst().poolURL;
@@ -247,10 +221,7 @@ void do_guided_config()
 		prompt_once(prompted);
 
 		userSetPool = false;
-		if(currency == "monero")
-			std::cout<<"- Pool address: e.g. pool.usxmrpool.com:3333"<<std::endl;
-		else
-			std::cout<<"- Pool address: e.g. mine.aeon-pool.com:5555"<<std::endl;
+		std::cout<<"- Pool address: e.g. " << jconf::GetDefaultPool(xmrstak::params::inst().currency.c_str()) << std::endl;
 		std::cin >> pool;
 	}
 
@@ -263,6 +234,7 @@ void do_guided_config()
 		std::cin >> userName;
 	}
 
+	bool stdin_flushed = false;
 	auto& passwd = params::inst().poolPasswd;
 	if(passwd.empty() && !params::inst().userSetPwd)
 	{
@@ -270,6 +242,8 @@ void do_guided_config()
 
 		// clear everything from stdin to allow an empty password
 		std::cin.clear(); std::cin.ignore(INT_MAX,'\n');
+		stdin_flushed = true;
+
 		std::cout<<"- Password (mostly empty or x):"<<std::endl;
 		getline(std::cin, passwd);
 	}
@@ -279,8 +253,12 @@ void do_guided_config()
 	{
 		prompt_once(prompted);
 
-		// clear everything from stdin to allow an empty rigid
-		std::cin.clear(); std::cin.ignore(INT_MAX,'\n');
+		if(!stdin_flushed)
+		{
+			// clear everything from stdin to allow an empty rigid
+			std::cin.clear(); std::cin.ignore(INT_MAX,'\n');
+		}
+
 		std::cout<<"- Rig identifier for pool-side statistics (needs pool support). Can be empty:"<<std::endl;
 		getline(std::cin, rigid);
 	}
@@ -346,8 +324,49 @@ void do_guided_config()
 		while(!final);
 	}
 
-	configTpl.replace("POOLCONF", pool_table);
 	configTpl.replace("CURRENCY", currency);
+	configTpl.replace("POOLCONF", pool_table);
+	configTpl.write(params::inst().configFilePools);
+	std::cout<<"Pool configuration stored in file '"<<params::inst().configFilePools<<"'"<<std::endl;
+}
+
+void do_guided_config()
+{
+	using namespace xmrstak;
+
+	// load the template of the backend config into a char variable
+	const char *tpl =
+		#include "../config.tpl"
+	;
+
+	configEditor configTpl{};
+	configTpl.set(std::string(tpl));
+	bool prompted = false;
+
+	auto& http_port = params::inst().httpd_port;
+	if(http_port == params::httpd_port_unset)
+	{
+#if defined(CONF_NO_HTTPD)
+		http_port = params::httpd_port_disabled;
+#else
+		prompt_once(prompted);
+
+		std::cout<<"- Do you want to use the HTTP interface?" <<std::endl;
+		std::cout<<"Unlike the screen display, browser interface is not affected by the GPU lag." <<std::endl;
+		std::cout<<"If you don't want to use it, please enter 0, otherwise enter port number that the miner should listen on" <<std::endl;
+
+		int32_t port;
+		while(!(std::cin >> port) || port < 0 || port > 65535)
+		{
+			std::cin.clear();
+			std::cin.ignore(INT_MAX, '\n');
+			std::cout << "Invalid port number. Please enter a number between 0 and 65535." << std::endl;
+		}
+
+		http_port = port;
+#endif
+	}
+
 	configTpl.replace("HTTP_PORT", std::to_string(http_port));
 	configTpl.write(params::inst().configFile);
 	std::cout<<"Configuration stored in file '"<<params::inst().configFile<<"'"<<std::endl;
@@ -574,6 +593,17 @@ int main(int argc, char *argv[])
 			}
 			params::inst().configFile = argv[i];
 		}
+		else if(opName.compare("-C") == 0 || opName.compare("--poolconf") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '-C/--poolconf' given");
+				win_exit();
+				return 1;
+			}
+			params::inst().configFilePools = argv[i];
+		}
 		else if(opName.compare("-i") == 0 || opName.compare("--httpd") == 0)
 		{
 			++i;
@@ -600,6 +630,25 @@ int main(int argc, char *argv[])
 		{
 			params::inst().allowUAC = false;
 		}
+		else if(opName.compare("--benchmark") == 0)
+		{
+			++i;
+			if( i >= argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--benchmark' given");
+				win_exit();
+				return 1;
+			}
+			char* block_version = nullptr;
+			long int bversion = strtol(argv[i], &block_version, 10);
+
+			if(bversion < 0 || bversion >= 256)
+			{
+				printer::inst()->print_msg(L0, "Benchmark block version must be in the range [0,255]");
+				return 1;
+			}
+			params::inst().benchmark_block_version = bversion;
+		}
 		else
 		{
 			printer::inst()->print_msg(L0, "Parameter unknown '%s'",argv[i]);
@@ -612,7 +661,10 @@ int main(int argc, char *argv[])
 	if(!configEditor::file_exist(params::inst().configFile))
 		do_guided_config();
 
-	if(!jconf::inst()->parse_config(params::inst().configFile.c_str()))
+	if(!configEditor::file_exist(params::inst().configFilePools))
+		do_guided_pool_config();
+
+	if(!jconf::inst()->parse_config(params::inst().configFile.c_str(), params::inst().configFilePools.c_str()))
 	{
 		win_exit();
 		return 1;
@@ -626,6 +678,9 @@ int main(int argc, char *argv[])
 		RequestElevation();
 	}
 #endif
+
+	if(strlen(jconf::inst()->GetOutputFile()) != 0)
+		printer::inst()->open_logfile(jconf::inst()->GetOutputFile());
 
 	if (!BackendConnector::self_test())
 	{
@@ -672,14 +727,14 @@ int main(int argc, char *argv[])
   printer::inst()->print_str("88 88 Y88  8I  dY 88''   88''    8I  dY     88YbdP88 88 88 Y88 88''   88'Yb  o.`Y8b\n");
   printer::inst()->print_str("88 88  Y8 8888Y'  888888 888888 8888Y'      88 YY 88 88 88  Y8 888888 88  Yb 8bodP'\n");
 	printer::inst()->print_str("\n");
-	if(::jconf::inst()->IsCurrencyMonero())
-		printer::inst()->print_msg(L0,"Start mining: MONERO");
-	else
-		printer::inst()->print_msg(L0,"Start mining: AEON");
+	printer::inst()->print_msg(L0, "Mining coin: %s", jconf::inst()->GetMiningCoin().c_str());
 
-	if(strlen(jconf::inst()->GetOutputFile()) != 0)
-		printer::inst()->open_logfile(jconf::inst()->GetOutputFile());
-
+	if(params::inst().benchmark_block_version >= 0)
+	{
+		printer::inst()->print_str("!!!! Doing only a benchmark and exiting. To mine, remove the '--benchmark' option. !!!!\n");
+		return do_benchmark(params::inst().benchmark_block_version);
+	}
+	
 	executor::inst()->ex_start(jconf::inst()->DaemonMode());
 
 	uint64_t lastTime = get_timestamp_ms();
@@ -714,23 +769,34 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-void do_benchmark()
+int do_benchmark(int block_version)
 {
 	using namespace std::chrono;
 	std::vector<xmrstak::iBackend*>* pvThreads;
 
-	printer::inst()->print_msg(L0, "Running a 60 second benchmark...");
+	printer::inst()->print_msg(L0, "Prepare benchmark for block version %d", block_version);
 
-	uint8_t work[76] = {0};
-	xmrstak::miner_work oWork = xmrstak::miner_work("", work, sizeof(work), 0, false, 0);
+	uint8_t work[112];
+	memset(work,0,112);
+	work[0] = static_cast<uint8_t>(block_version);
+
+	xmrstak::pool_data dat;
+
+	xmrstak::miner_work oWork = xmrstak::miner_work();
 	pvThreads = xmrstak::BackendConnector::thread_starter(oWork);
 
+	printer::inst()->print_msg(L0, "Wait 30 sec until all backends are initialized");
+	std::this_thread::sleep_for(std::chrono::seconds(30));
+
+	/* AMD and NVIDIA is currently only supporting work sizes up to 84byte
+	 * \todo fix this issue
+	 */
+	xmrstak::miner_work benchWork = xmrstak::miner_work("", work, 84, 0, false, 0);
+	printer::inst()->print_msg(L0, "Start a 60 second benchmark...");
+	xmrstak::globalStates::inst().switch_work(benchWork, dat);
 	uint64_t iStartStamp = get_timestamp_ms();
 
 	std::this_thread::sleep_for(std::chrono::seconds(60));
-
-	oWork = xmrstak::miner_work();
-	xmrstak::pool_data dat;
 	xmrstak::globalStates::inst().switch_work(oWork, dat);
 
 	double fTotalHps = 0.0;
@@ -739,9 +805,13 @@ void do_benchmark()
 		double fHps = pvThreads->at(i)->iHashCount;
 		fHps /= (pvThreads->at(i)->iTimestamp - iStartStamp) / 1000.0;
 
-		printer::inst()->print_msg(L0, "Thread %u: %.1f H/S", i, fHps);
+		auto bType = static_cast<xmrstak::iBackend::BackendType>(pvThreads->at(i)->backendType);
+		std::string name(xmrstak::iBackend::getName(bType));
+
+		printer::inst()->print_msg(L0, "Benchmark Thread %u %s: %.1f H/S", i,name.c_str(), fHps);
 		fTotalHps += fHps;
 	}
 
-	printer::inst()->print_msg(L0, "Total: %.1f H/S", fTotalHps);
+	printer::inst()->print_msg(L0, "Benchmark Total: %.1f H/S", fTotalHps);
+	return 0;
 }

@@ -3,7 +3,7 @@
 //! git will put "#define GIT_ARCHIVE 1" on the next line inside archives. 
 #define GIT_ARCHIVE 1
 #if defined(GIT_ARCHIVE) && !defined(GIT_COMMIT_HASH)
-#define GIT_COMMIT_HASH 29bac549
+#define GIT_COMMIT_HASH 09a5dcce
 #endif
 
 #ifndef GIT_COMMIT_HASH
@@ -19,7 +19,7 @@
 #endif
 
 #define XMR_STAK_NAME "xmr-stak"
-#define XMR_STAK_VERSION "2.2.1"
+#define XMR_STAK_VERSION "2.3.0"
 
 #if defined(_WIN32)
 #define OS_TYPE "win"
@@ -33,13 +33,7 @@
 #define OS_TYPE "unk"
 #endif
 
-#if defined(CONF_NO_AEON)
-#define COIN_TYPE "monero"
-#elif defined(CONF_NO_MONERO)
-#define COIN_TYPE "aeon"
-#else
-#define COIN_TYPE "aeon-monero"
-#endif
+#define COIN_TYPE "aeon-cryptonight-monero"
 
 #define XMRSTAK_PP_TOSTRING1(str) #str
 #define XMRSTAK_PP_TOSTRING(str) XMRSTAK_PP_TOSTRING1(str)
