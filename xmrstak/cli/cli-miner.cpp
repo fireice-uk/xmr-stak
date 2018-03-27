@@ -56,6 +56,8 @@
 #endif // _WIN32
 
 int do_benchmark(int block_version);
+// expose it
+bool benchmark_mode = false;
 
 void help()
 {
@@ -391,8 +393,6 @@ int main(int argc, char *argv[])
 	std::string seperator("/");
 	auto pos = pathWithName.rfind(seperator);
 
-	bool benchmark_mode = false;
-
 	if(pos == std::string::npos)
 	{
 		// try windows "\"
@@ -650,6 +650,7 @@ int main(int argc, char *argv[])
 				return 1;
 			}
 			params::inst().benchmark_block_version = bversion;
+			benchmark_mode = true;
 		}
 		else
 		{
@@ -782,8 +783,9 @@ int do_benchmark(int block_version)
 	xmrstak::miner_work oWork = xmrstak::miner_work();
 	pvThreads = xmrstak::BackendConnector::thread_starter(oWork);
 
-	printer::inst()->print_msg(L0, "Wait 30 sec until all backends are initialized");
-	std::this_thread::sleep_for(std::chrono::seconds(30));
+	// we don't need to wait for CPU only initialization
+	// printer::inst()->print_msg(L0, "Wait 30 sec until all backends are initialized");
+	// std::this_thread::sleep_for(std::chrono::seconds(30));
 
 	/* AMD and NVIDIA is currently only supporting work sizes up to 84byte
 	 * \todo fix this issue
