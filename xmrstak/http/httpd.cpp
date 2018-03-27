@@ -159,6 +159,8 @@ int httpd::req_handler(void * cls,
 
 bool httpd::start_daemon()
 {
+#ifdef _WIN32
+	// On Windows we don't want to prompt the firewall notice no need
 	struct sockaddr_in daemon_ip_addr;
 #if HAVE_INET6
 	struct sockaddr_in6 daemon_ip_addr6;
@@ -184,6 +186,12 @@ bool httpd::start_daemon()
 		&httpd::req_handler,
 		NULL, MHD_OPTION_SOCK_ADDR,
 		&daemon_ip_addr, MHD_OPTION_END);
+#else
+	d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION,
+			jconf::inst()->GetHttpdPort(), NULL, NULL,
+			&httpd::req_handler,
+	NULL, MHD_OPTION_END);
+#endif
 
 	if(d == nullptr)
 	{
