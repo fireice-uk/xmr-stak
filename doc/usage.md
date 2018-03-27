@@ -20,7 +20,7 @@ The number of files depends on the available backends.
 ## Usage on Windows
 1) Double click the `xmr-stak.exe` file
 2) Fill in the pool url settings, currency, username and password
-
+If you want to use worker name for Nicehash you have to add it to address in the form "YouNicehashBTCAddress.YourWorkerName"
 `set XMRSTAK_NOWAIT=1` disable the dialog `Press any key to exit.` for non UAC execution.
 
 
