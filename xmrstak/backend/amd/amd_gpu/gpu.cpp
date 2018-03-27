@@ -478,7 +478,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 			p_id++;
 		}
 
-		if( ret = clGetProgramInfo(ctx->Program, CL_PROGRAM_BINARIES, num_devices * sizeof(char*), all_programs.data(),NULL) != CL_SUCCESS)
+		if((ret = clGetProgramInfo(ctx->Program, CL_PROGRAM_BINARIES, num_devices * sizeof(char*), all_programs.data(),NULL)) != CL_SUCCESS)
 		{
 			printer::inst()->print_msg(L1,"Error %s when calling clGetProgramInfo.", err_to_str(ret));
 			return ERR_OCL_API;
@@ -493,7 +493,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	}
 	else
 	{
-		printer::inst()->print_msg(L1, "OpenCL device %u - Load precompiled cod from file %s",ctx->deviceIdx, cache_file.c_str());
+		printer::inst()->print_msg(L1, "OpenCL device %u - Load precompiled code from file %s",ctx->deviceIdx, cache_file.c_str());
 		std::ostringstream ss;
 		ss << clBinFile.rdbuf();
 		std::string s = ss.str();
