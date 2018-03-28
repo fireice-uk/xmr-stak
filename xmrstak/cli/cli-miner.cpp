@@ -79,6 +79,7 @@ void help()
 #endif
 #ifndef CONF_NO_OPENCL
 	cout<<"  --noAMD                    disable the AMD miner backend"<<endl;
+	cout<<"  --noAMDCache               disable the AMD(OpenCL) cache for precompiled binaries"<<endl;
 	cout<<"  --amd FILE                 AMD backend miner config file"<<endl;
 #endif
 #ifndef CONF_NO_CUDA
@@ -448,6 +449,10 @@ int main(int argc, char *argv[])
 		else if(opName.compare("--noAMD") == 0)
 		{
 			params::inst().useAMD = false;
+		}
+		else if(opName.compare("--noAMDCache") == 0)
+		{
+			params::inst().AMDCache = false;
 		}
 		else if(opName.compare("--noNVIDIA") == 0)
 		{
