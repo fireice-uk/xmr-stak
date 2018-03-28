@@ -366,6 +366,9 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, xmr
 	case cryptonight_heavy:
 		algv = 3;
 		break;
+	case cryptonight_lite_aeon:
+		algv = 4;
+		break;
 	default:
 		algv = 2;
 		break;
@@ -387,7 +390,11 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, xmr
 		cryptonight_hash<cryptonight_heavy, false, false>,
 		cryptonight_hash<cryptonight_heavy, true, false>,
 		cryptonight_hash<cryptonight_heavy, false, true>,
-		cryptonight_hash<cryptonight_heavy, true, true>
+		cryptonight_hash<cryptonight_heavy, true, true>,
+		cryptonight_hash<cryptonight_lite_aeon, false, false>,
+		cryptonight_hash<cryptonight_lite_aeon, true, false>,
+		cryptonight_hash<cryptonight_lite_aeon, false, true>,
+		cryptonight_hash<cryptonight_lite_aeon, true, true>
 	};
 
 	std::bitset<2> digit;
@@ -463,6 +470,14 @@ void minethd::work_main()
 				hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, cryptonight);
 		}
 
+		if(::jconf::inst()->GetMiningAlgo() == cryptonight_lite_aeon)
+		{
+			if(oWork.bWorkBlob[0] >= 7)
+				hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, cryptonight_lite_aeon);
+			else
+				hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, cryptonight_lite);
+		}
+
 		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			if ((iCount++ & 0xF) == 0) //Store stats every 16 hashes
@@ -511,6 +526,9 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		break;
 	case cryptonight_monero:
 		algv = 0;
+		break;
+	case cryptonight_lite_aeon:
+		algv = 3;
 		break;
 	default:
 		algv = 2;
@@ -565,7 +583,23 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		cryptonight_penta_hash<cryptonight, false, false>,
 		cryptonight_penta_hash<cryptonight, true, false>,
 		cryptonight_penta_hash<cryptonight, false, true>,
-		cryptonight_penta_hash<cryptonight, true, true>
+		cryptonight_penta_hash<cryptonight, true, true>,
+		cryptonight_double_hash<cryptonight_lite_aeon, false, false>,
+		cryptonight_double_hash<cryptonight_lite_aeon, true, false>,
+		cryptonight_double_hash<cryptonight_lite_aeon, false, true>,
+		cryptonight_double_hash<cryptonight_lite_aeon, true, true>,
+		cryptonight_triple_hash<cryptonight_lite_aeon, false, false>,
+		cryptonight_triple_hash<cryptonight_lite_aeon, true, false>,
+		cryptonight_triple_hash<cryptonight_lite_aeon, false, true>,
+		cryptonight_triple_hash<cryptonight_lite_aeon, true, true>,
+		cryptonight_quad_hash<cryptonight_lite_aeon, false, false>,
+		cryptonight_quad_hash<cryptonight_lite_aeon, true, false>,
+		cryptonight_quad_hash<cryptonight_lite_aeon, false, true>,
+		cryptonight_quad_hash<cryptonight_lite_aeon, true, true>,
+		cryptonight_penta_hash<cryptonight_lite_aeon, false, false>,
+		cryptonight_penta_hash<cryptonight_lite_aeon, true, false>,
+		cryptonight_penta_hash<cryptonight_lite_aeon, false, true>,
+		cryptonight_penta_hash<cryptonight_lite_aeon, true, true>
 	};
 
 	std::bitset<2> digit;
@@ -676,6 +710,14 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 				hash_fun_multi = func_multi_selector(N, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, cryptonight_heavy);
 			else
 				hash_fun_multi = func_multi_selector(N, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, cryptonight);
+		}
+
+		if(::jconf::inst()->GetMiningAlgo() == cryptonight_lite_aeon)
+		{
+			if(oWork.bWorkBlob[0] >= 7)
+				hash_fun_multi = func_multi_selector(N, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, cryptonight_lite_aeon);
+			else
+				hash_fun_multi = func_multi_selector(N, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, cryptonight_lite);
 		}
 
 		while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
