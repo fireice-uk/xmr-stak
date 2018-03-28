@@ -94,7 +94,7 @@ struct xmrstak_coin_algo
 };
 
 xmrstak_coin_algo coin_algos[] = { 
-	{ "aeon", cryptonight_lite, "mine.aeon-pool.com:5555" },
+	{ "aeon7", cryptonight_lite_aeon, "mine.aeon-pool.com:5555" },
 	{ "cryptonight", cryptonight, nullptr },
 	{ "cryptonight_lite", cryptonight_lite, nullptr },
 	{ "edollar", cryptonight, nullptr },
