@@ -563,15 +563,8 @@ void executor::ex_main()
 		else
 			pools.emplace_front(0, "donate.xmr-stak.net:5500", "", "", "", 0.0, true, false, "", false);
 		break;
-	
-	case cryptonight_lite:
-		if(dev_tls)
-			pools.emplace_front(0, "donate.xmr-stak.net:7777", "", "", "", 0.0, true, true, "", true);
-		else
-			pools.emplace_front(0, "donate.xmr-stak.net:4444", "", "", "", 0.0, true, false, "", true);
-		break;
-
 	case cryptonight_aeon:
+	case cryptonight_lite:
 		if(dev_tls)
 			pools.emplace_front(0, "donate.xmr-stak.net:7777", "", "", "", 0.0, true, true, "", true);
 		else

@@ -49,16 +49,14 @@ inline size_t cn_select_memory(xmrstak_algo algo)
 {
 	switch(algo)
 	{
+	case cryptonight_monero:
 	case cryptonight:
-		return CRYPTONIGHT_MEMORY;
+		return CRYPTONIGHT_MEMORY;	
+	case cryptonight_aeon:
 	case cryptonight_lite:
 		return CRYPTONIGHT_LITE_MEMORY;
-	case cryptonight_monero:
-		return CRYPTONIGHT_MEMORY;
 	case cryptonight_heavy:
 		return CRYPTONIGHT_HEAVY_MEMORY;
-	case cryptonight_aeon:
-		return CRYPTONIGHT_LITE_MEMORY;
 	default:
 		return 0;
 	}
@@ -86,16 +84,14 @@ inline size_t cn_select_mask(xmrstak_algo algo)
 {
 	switch(algo)
 	{
+	case cryptonight_monero:
 	case cryptonight:
 		return CRYPTONIGHT_MASK;
+	case cryptonight_aeon:
 	case cryptonight_lite:
 		return CRYPTONIGHT_LITE_MASK;
-	case cryptonight_monero:
-		return CRYPTONIGHT_MASK;
 	case cryptonight_heavy:
 		return CRYPTONIGHT_HEAVY_MASK;
-	case cryptonight_aeon:
-		return CRYPTONIGHT_LITE_MASK;
 	default:
 		return 0;
 	}
@@ -123,16 +119,14 @@ inline size_t cn_select_iter(xmrstak_algo algo)
 {
 	switch(algo)
 	{
+	case cryptonight_monero:
 	case cryptonight:
 		return CRYPTONIGHT_ITER;
+	case cryptonight_aeon:
 	case cryptonight_lite:
 		return CRYPTONIGHT_LITE_ITER;
-	case cryptonight_monero:
-		return CRYPTONIGHT_ITER;
 	case cryptonight_heavy:
 		return CRYPTONIGHT_HEAVY_ITER;
-	case cryptonight_aeon:
-		return CRYPTONIGHT_LITE_ITER;
 	default:
 		return 0;
 	}
