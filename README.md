@@ -17,7 +17,6 @@ XMR-Stak is a universal Stratum pool miner. This miner supports CPUs, AMD and NV
 * [Features](#features)
 * [Supported altcoins](#supported-altcoins)
 * [Download](#download)
-* [Linux Portable Binary](doc/Linux_deployment.md)
 * [Usage](doc/usage.md)
 * [HowTo Compile](doc/compile.md)
 * [FAQ](doc/FAQ.md)
@@ -59,7 +58,6 @@ Please note, this list is not complete, and is not an endorsement.
 ## Download
 
 You can find the latest releases and precompiled binaries on GitHub under [Releases](https://github.com/fireice-uk/xmr-stak/releases).
-If you are running on Linux (especially Linux VMs), checkout [Linux Portable Binary](doc/Linux_deployment.md).
 
 ## Default Developer Donation
 
