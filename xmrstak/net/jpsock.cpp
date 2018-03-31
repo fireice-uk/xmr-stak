@@ -306,6 +306,12 @@ bool jpsock::process_line(char* line, size_t len)
 		if(!mt->IsString())
 			return set_socket_error("PARSE error: Protocol error 1");
 
+		if(strcmp(mt->GetString(), "mining.set_extranonce") == 0)
+		{
+			printer::inst()->print_msg(L0, "Detected buggy NiceHash pool code. Workaround engaged.");
+			return true;
+		}
+
 		if(strcmp(mt->GetString(), "job") != 0)
 			return set_socket_error("PARSE error: Unsupported server method ", mt->GetString());
 
