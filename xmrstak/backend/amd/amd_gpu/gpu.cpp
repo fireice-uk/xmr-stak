@@ -940,7 +940,7 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 
 	/// @todo only activate if currency is monero
 	int cn_kernel_offset = 0;
-	if((miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon ) && version >= 7)
+	if(miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon)
 	{
 		cn_kernel_offset = 6;
 	}
@@ -966,7 +966,7 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 		return(ERR_OCL_API);
 	}
 
-	if((miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon ) && version >= 7)
+	if(miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon )
 	{
 		// Input
 		if ((ret = clSetKernelArg(ctx->Kernels[1 + cn_kernel_offset], 3, sizeof(cl_mem), &ctx->InputBuffer)) != CL_SUCCESS)
@@ -1134,7 +1134,7 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo, 
 	size_t tmpNonce = ctx->Nonce;
 	/// @todo only activate if currency is monero
 	int cn_kernel_offset = 0;
-	if((miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon) && version >= 7)
+	if(miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon)
 	{
 		cn_kernel_offset = 6;
 	}

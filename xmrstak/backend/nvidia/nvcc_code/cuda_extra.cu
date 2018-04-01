@@ -310,7 +310,7 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	return 1;
 }
 
-extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, xmrstak_algo miner_algo, uint8_t version)
+extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, xmrstak_algo miner_algo)
 {
 	int threadsperblock = 128;
 	uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -318,7 +318,7 @@ extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce
 	dim3 grid( ( wsize + threadsperblock - 1 ) / threadsperblock );
 	dim3 block( threadsperblock );
 
-	if(miner_algo == cryptonight_heavy && version >= 3)
+	if(miner_algo == cryptonight_heavy)
 	{
 		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<cryptonight_heavy><<<grid, block >>>( wsize, ctx->d_input, ctx->inputlen, startNonce,
 			ctx->d_ctx_state,ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2 ));
@@ -333,7 +333,7 @@ extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce
 	}
 }
 
-extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce,xmrstak_algo miner_algo, uint8_t version)
+extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce,xmrstak_algo miner_algo)
 {
 	int threadsperblock = 128;
 	uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -344,7 +344,7 @@ extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, 
 	CUDA_CHECK(ctx->device_id, cudaMemset( ctx->d_result_nonce, 0xFF, 10 * sizeof (uint32_t ) ));
 	CUDA_CHECK(ctx->device_id, cudaMemset( ctx->d_result_count, 0, sizeof (uint32_t ) ));
 
-	if(miner_algo == cryptonight_heavy && version >= 3)
+	if(miner_algo == cryptonight_heavy)
 	{
 		CUDA_CHECK_MSG_KERNEL(
 			ctx->device_id,

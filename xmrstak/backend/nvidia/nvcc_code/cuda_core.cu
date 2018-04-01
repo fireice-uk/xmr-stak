@@ -475,24 +475,16 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 	}
 }
 
-void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t startNonce, uint8_t version)
+void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t startNonce)
 {
 
 	if(miner_algo == cryptonight_monero)
 	{
-		if(version >= 7)
-			cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero>(ctx, startNonce);
-		else
-			cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight>(ctx, startNonce);
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero>(ctx, startNonce);
 	}
 	else if(miner_algo == cryptonight_heavy)
 	{
-		if(version >= 3)
-			cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_heavy>(ctx, startNonce);
-		else
-		{
-			cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight>(ctx, startNonce);
-		}
+		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_heavy>(ctx, startNonce);
 	}
 	else if(miner_algo == cryptonight)
 	{
@@ -504,10 +496,7 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t 
 	}
 	else if(miner_algo == cryptonight_aeon)
 	{
-		if(version >= 7)
-			cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_aeon>(ctx, startNonce);
-		else
-			cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_lite>(ctx, startNonce);
+		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_aeon>(ctx, startNonce);
 	}
 
 }
