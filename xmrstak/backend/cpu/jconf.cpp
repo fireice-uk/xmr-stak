@@ -211,14 +211,14 @@ bool jconf::parse_config(const char* sFilename)
 
 	if(prv->jsonDoc.HasParseError())
 	{
-		printer::inst()->print_msg(L0, "JSON config parse error(offset %llu): %s",
-			int_port(prv->jsonDoc.GetErrorOffset()), GetParseError_En(prv->jsonDoc.GetParseError()));
+		printer::inst()->print_msg(L0, "JSON config parse error in '%s' (offset %llu): %s",
+			sFilename, int_port(prv->jsonDoc.GetErrorOffset()), GetParseError_En(prv->jsonDoc.GetParseError()));
 		return false;
 	}
 
 	if(!prv->jsonDoc.IsObject())
 	{ //This should never happen as we created the root ourselves
-		printer::inst()->print_msg(L0, "Invalid config file. No root?\n");
+		printer::inst()->print_msg(L0, "Invalid config file '%s'. No root?", sFilename);
 		return false;
 	}
 
@@ -234,13 +234,13 @@ bool jconf::parse_config(const char* sFilename)
 
 		if(prv->configValues[i] == nullptr)
 		{
-			printer::inst()->print_msg(L0, "Invalid config file. Missing value \"%s\".", oConfigValues[i].sName);
+			printer::inst()->print_msg(L0, "Invalid config file '%s'. Missing value \"%s\".", sFilename, oConfigValues[i].sName);
 			return false;
 		}
 
 		if(!checkType(prv->configValues[i]->GetType(), oConfigValues[i].iType))
 		{
-			printer::inst()->print_msg(L0, "Invalid config file. Value \"%s\" has unexpected type.", oConfigValues[i].sName);
+			printer::inst()->print_msg(L0, "Invalid config file '%s'. Value \"%s\" has unexpected type.", sFilename, oConfigValues[i].sName);
 			return false;
 		}
 	}

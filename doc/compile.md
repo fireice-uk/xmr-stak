@@ -35,8 +35,8 @@ After the configuration you need to compile the miner, follow the guide for your
 
 ## Generic Build Options
 - `CMAKE_INSTALL_PREFIX` install miner to the home folder
-  - `cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/xmr-stak-cpu`
-  - you can find the binary and the `config.txt` file after `make install` in `$HOME/xmr-stak-cpu/bin`
+  - `cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/xmr-stak`
+  - you can find the binary and the `config.txt` file after `make install` in `$HOME/xmr-stak/bin`
 - `CMAKE_LINK_STATIC` link libgcc and libstdc++ libraries static (default OFF)
   - disable with `cmake .. -DCMAKE_LINK_STATIC=ON`
   - if you use static compile to run the miner on another system set `-DXMR-STAK_COMPILE=generic`
@@ -55,7 +55,7 @@ After the configuration you need to compile the miner, follow the guide for your
 
 - `CPU_ENABLE` allow to disable/enable the CPU backend of the miner
 - `HWLOC_ENABLE` allow to disable/enable the dependency *hwloc*
-  - the config suggestion is not optimal if option is disabled: `cmake . -DHWLOC_ENABLE=OFF`
+  - the config suggestion is not optimal if option is disabled: `cmake .. -DHWLOC_ENABLE=OFF`
   - disabling can be reduce the miner performance
 
 ## AMD Build Options

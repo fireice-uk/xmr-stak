@@ -433,10 +433,7 @@ inline ulong getIdx()
 #endif
 }
 
-inline uint4 mix_and_propagate(__local uint4 xin[8][WORKSIZE])
-{
-	return xin[(get_local_id(1)) % 8][get_local_id(0)] ^ xin[(get_local_id(1) + 1) % 8][get_local_id(0)];
-}
+#define  mix_and_propagate(xin) (xin)[(get_local_id(1)) % 8][get_local_id(0)] ^ (xin)[(get_local_id(1) + 1) % 8][get_local_id(0)]
 
 __attribute__((reqd_work_group_size(WORKSIZE, 8, 1)))
 __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ulong *states, ulong Threads

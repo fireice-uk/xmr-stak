@@ -21,6 +21,7 @@ struct params
 	std::string executablePrefix;
 	std::string binaryName;
 	bool useAMD;
+	bool AMDCache;
 	bool useNVIDIA;
 	bool useCPU;
 
@@ -56,6 +57,7 @@ struct params
 		binaryName("xmr-stak"),
 		executablePrefix(""),
 		useAMD(true),
+		AMDCache(true),
 		useNVIDIA(true),
 		useCPU(true),
 		configFile("config.txt"),

@@ -1,6 +1,8 @@
 ###### fireice-uk's and psychocrypt's
 # XMR-Stak - Monero/Aeon All-in-One Mining Software
 
+**XMR-Stak is ready for the POW change of Monero-v7, Aeon-v7 and Sumukoin-v3**
+
 XMR-Stak is a universal Stratum pool miner. This miner supports CPUs, AMD and NVIDIA gpus and can be used to mine the crypto currency Monero and Aeon.
 
 ## HTML reports
@@ -8,14 +10,13 @@ XMR-Stak is a universal Stratum pool miner. This miner supports CPUs, AMD and NV
 
 ## Video setup guide on Windows
 
-[<img src="https://gist.githubusercontent.com/fireice-uk/3621b179d56f57a8ead6303d8e415cf6/raw/4f2863d4072b78fdff649805e733203c9802daef/vidguidetmb.jpg">](https://www.youtube.com/watch?v=-8paGFwxyMU)
+[<img src="https://gist.githubusercontent.com/fireice-uk/3621b179d56f57a8ead6303d8e415cf6/raw/f572faba67cc9418116f3c1dfd7783baf52182ce/vidguidetmb.jpg">](https://youtu.be/YNMa8NplWus)
 ###### Video by Crypto Sewer
 
 ## Overview
 * [Features](#features)
 * [Supported altcoins](#supported-altcoins)
 * [Download](#download)
-* [Linux Portable Binary](doc/Linux_deployment.md)
 * [Usage](doc/usage.md)
 * [HowTo Compile](doc/compile.md)
 * [FAQ](doc/FAQ.md)
@@ -57,7 +58,6 @@ Please note, this list is not complete, and is not an endorsement.
 ## Download
 
 You can find the latest releases and precompiled binaries on GitHub under [Releases](https://github.com/fireice-uk/xmr-stak/releases).
-If you are running on Linux (especially Linux VMs), checkout [Linux Portable Binary](doc/Linux_deployment.md).
 
 ## Default Developer Donation
 
