@@ -38,21 +38,4 @@ fi
 
 echo '	
 ],
-"currency" : "monero",
-"call_timeout" : 10,
-"retry_time" : 30,
-"giveup_limit" : 0,
-"verbose_level" : 4,
-"print_motd" : true,
-"h_print_time" : 300,
-"aes_override" : null,
-"use_slow_memory" : "warn",
-"tls_secure_algo" : true,
-"daemon_mode" : false,
-"flush_stdout" : false,
-"output_file" : "logfile.txt",
-"httpd_port" : 0,
-"http_login" : "",
-"http_pass" : "",
-"prefer_ipv4" : true,
-'
+"currency" : "monero7",
