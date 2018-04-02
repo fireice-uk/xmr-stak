@@ -1,6 +1,7 @@
 # Tuning Guide
 
 ## Content Overview
+* [Benchmark](#benchmark)
 * [Windows](#windows)
 * [NVIDIA Backend](#nvidia-backend)
   * [Choose Value for `threads` and `blocks`](#choose-value-for-threads-and-blocks)
@@ -8,10 +9,17 @@
 * [AMD Backend](#amd-backend)
   * [Choose `intensity` and `worksize`](#choose-intensity-and-worksize)
   * [Add more GPUs](#add-more-gpus)
+  * [disable comp_mode](#disable-comp_mode)
+  * [change the scratchpad memory pattern](change-the-scratchpad-memory-pattern)
   * [Increase Memory Pool](#increase-memory-pool)
   * [Scratchpad Indexing](#scratchpad-indexing)
 * [CPU Backend](#cpu-backend)
   * [Choose Value for `low_power_mode`](#choose-value-for-low_power_mode)
+
+## Benchmark
+To benchmark the miner speed there are two ways.
+  - Mine against a pool end press the key `h` after 30 sec to see the hash report.
+  - Start the miner with the cli option `--benchmark BLOCKVERSION`. The miner will not connect to any pool and performs a 60sec performance benchmark with all enabled back-ends.
 
 ## Windows
 "Run As Administrator" prompt (UAC) confirmation is needed to use large pages on Windows 7.
@@ -46,8 +54,12 @@ To add a new GPU you need to add a new config set to `gpu_threads_conf`.
 ```
 "gpu_threads_conf" :
 [
-    { "index" : 0, "threads" : 17, "blocks" : 60, "bfactor" : 0, "bsleep" :  0, "affine_to_cpu" : false},
-    { "index" : 1, "threads" : 17, "blocks" : 60, "bfactor" : 0, "bsleep" :  0, "affine_to_cpu" : false},
+    { "index" : 0, "threads" : 17, "blocks" : 60, "bfactor" : 0, "bsleep" :  0,
+      "affine_to_cpu" : false, "sync_mode" : 3,
+    },
+    { "index" : 1, "threads" : 17, "blocks" : 60, "bfactor" : 0, "bsleep" :  0,
+      "affine_to_cpu" : false, "sync_mode" : 3,
+    },
 ],
 ```
 
@@ -70,12 +82,25 @@ If you are unsure of either GPU or platform index value, you can use `clinfo` to
 ```
 "gpu_threads_conf" :
 [
-    { "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false },
-    { "index" : 1, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false },
+    { "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false, 
+      "strided_index" : true, "mem_chunk" : 2, "comp_mode" : true
+    },
+    { "index" : 1, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false, 
+      "strided_index" : true, "mem_chunk" : 2, "comp_mode" : true
+    },
 ],
 
 "platform_index" : 0,
 ```
+
+### disable comp_mode
+
+`comp_mode` means compatibility mode and removes some checks in compute kernel those takes care that the miner can be used on a wide range of AMD/OpenCL GPU devices.
+To avoid miner crashes the `intensity` should be a multiple of `worksize` if `comp_mode` is `false`.
+
+### change the scratchpad memory pattern
+
+By changing `strided_index` to `2` the number of contiguous elements (a 16 byte) for one miner thread can be fine tuned with the option `mem_chunk`.
 
 ### Increase Memory Pool
 
@@ -84,9 +109,9 @@ This variables must be set each time before the miner is started else it could b
 
 ```
 export GPU_FORCE_64BIT_PTR=1
-export GPU_MAX_HEAP_SIZE=99
-export GPU_MAX_ALLOC_PERCENT=99
-export GPU_SINGLE_ALLOC_PERCENT=99
+export GPU_MAX_HEAP_SIZE=100
+export GPU_MAX_ALLOC_PERCENT=100
+export GPU_SINGLE_ALLOC_PERCENT=100
 ```
 
 *Note:* Windows user must use `set` instead of `export` to define an environment variable.

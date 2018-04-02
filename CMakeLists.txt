@@ -1,6 +1,6 @@
 project(xmr-stak)
 
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.4.0)
 
 # enforce C++11
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -36,10 +36,6 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "${BUILD_TYPE}")
 
-set(XMR-STAK_CURRENCY "all" CACHE STRING "select miner currency")
-set_property(CACHE XMR-STAK_CURRENCY PROPERTY STRINGS "all;monero;aeon")
-
-
 set(XMR-STAK_COMPILE "native" CACHE STRING "select CPU compute architecture")
 set_property(CACHE XMR-STAK_COMPILE PROPERTY STRINGS "native;generic")
 if(XMR-STAK_COMPILE STREQUAL "native")
@@ -51,16 +47,6 @@ elseif(XMR-STAK_COMPILE STREQUAL "generic")
     add_definitions("-DCONF_ENFORCE_OpenCL_1_2=1")
 else()
     message(FATAL_ERROR "XMR-STAK_COMPILE is set to an unknown value '${XMR-STAK_COMPILE}'")
-endif()
-
-if(XMR-STAK_CURRENCY STREQUAL "all")
-    message(STATUS "Set miner currency to 'monero' and 'aeon'")
-elseif(XMR-STAK_CURRENCY STREQUAL "aeon")
-    message(STATUS "Set miner currency to 'aeon'")
-    add_definitions("-DCONF_NO_MONERO=1")
-elseif(XMR-STAK_CURRENCY STREQUAL "monero")
-    message(STATUS "Set miner currency to 'monero'")
-    add_definitions("-DCONF_NO_AEON=1")
 endif()
 
 # option to add static libgcc and libstdc++
@@ -438,6 +424,14 @@ else()
 
 endif()
 
+# add -Wall for debug builds with gcc
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+    endif()
+endif()
+
 # activate static libgcc and libstdc++ linking
 if(CMAKE_LINK_STATIC)
     set(BUILD_SHARED_LIBRARIES OFF)
@@ -522,9 +516,11 @@ endif()
 file(GLOB SRCFILES_CPP "xmrstak/cli/*.cpp")
 set_source_files_properties(${SRCFILES_CPP} PROPERTIES LANGUAGE CXX)
 
-add_executable(xmr-stak
-    ${SRCFILES_CPP}
-)
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    add_executable(xmr-stak ${SRCFILES_CPP} xmrstak/cli/xmr-stak.manifest)
+else()
+    add_executable(xmr-stak ${SRCFILES_CPP})
+endif()
 
 set(EXECUTABLE_OUTPUT_PATH "bin")
 set(LIBRARY_OUTPUT_PATH "bin")

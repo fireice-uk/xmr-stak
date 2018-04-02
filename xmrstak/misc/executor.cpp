@@ -107,8 +107,8 @@ bool executor::get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev)
 
 		// Only eval live pools
 		size_t num, dtime;
-		/*if(*/pool.get_disconnects(num, dtime);/*)
-			set_timestamp();*/
+		if(pool.get_disconnects(num, dtime))
+			set_timestamp();
 
 		if(dtime == 0 || (dtime >= wait && num <= limit))
 			eval_pools.emplace_back(&pool);
@@ -323,17 +323,20 @@ void executor::on_sock_ready(size_t pool_id)
 	jpsock* pool = pick_pool_by_id(pool_id);
 
 	if(pool->is_dev_pool())
-		printer::inst()->print_msg(L1, "Dev pool %s connected. Logging in...", pool->get_pool_addr());
+		printer::inst()->print_msg(L1, "Dev pool connected. Logging in...");
 	else
 		printer::inst()->print_msg(L1, "Pool %s connected. Logging in...", pool->get_pool_addr());
 
 	if(!pool->cmd_login())
 	{
-		if(!pool->have_sock_error())
+		if(pool->have_call_error() && !pool->is_dev_pool())
 		{
-			log_socket_error(pool, pool->get_call_error());
-			pool->disconnect();
+			std::string str = "Login error: " +  pool->get_call_error();
+			log_socket_error(pool, std::move(str));
 		}
+		
+		if(!pool->have_sock_error())
+			pool->disconnect();
 	}
 }
 
@@ -349,10 +352,10 @@ void executor::on_sock_error(size_t pool_id, std::string&& sError, bool silent)
 	if(silent)
 		return;
 
-	//if(!pool->is_dev_pool())
+	if(!pool->is_dev_pool())
 		log_socket_error(pool, std::move(sError));
-	//else
-		//printer::inst()->print_msg(L1, "Dev pool socket error - mining on user pool...");
+	else
+		printer::inst()->print_msg(L1, "Dev pool socket error - mining on user pool...");
 }
 
 void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
@@ -377,13 +380,13 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 			prev_pool->save_nonce(dat.iSavedNonce);
 	}
 
-//	if(pool->is_dev_pool())
-//		return;
+	if(pool->is_dev_pool())
+		return;
 
 	if(iPoolDiff != pool->get_current_diff())
 	{
 		iPoolDiff = pool->get_current_diff();
-		printer::inst()->print_msg(L2, "dev%i.Difficulty changed. Now: %llu.", pool->is_dev_pool(),int_port(iPoolDiff));
+		printer::inst()->print_msg(L2, "Difficulty changed. Now: %llu.", int_port(iPoolDiff));
 	}
 
 	if(dat.pool_id != pool_id)
@@ -400,22 +403,27 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 			printer::inst()->print_msg(L2, "Pool logged in.");
 	}
 	else
-		printer::inst()->print_msg(L3, "dev%i.New block detected.",pool->is_dev_pool());
+		printer::inst()->print_msg(L3, "New block detected.");
 }
 
 void executor::on_miner_result(size_t pool_id, job_result& oResult)
 {
 	jpsock* pool = pick_pool_by_id(pool_id);
-	bool is_monero = jconf::inst()->IsCurrencyMonero();
-/*
+
+	const char* backend_name = xmrstak::iBackend::getName(pvThreads->at(oResult.iThreadId)->backendType);
+	uint64_t backend_hashcount, total_hashcount = 0;
+
+	backend_hashcount = pvThreads->at(oResult.iThreadId)->iHashCount.load(std::memory_order_relaxed);
+	for(size_t i = 0; i < pvThreads->size(); i++)
+		total_hashcount += pvThreads->at(i)->iHashCount.load(std::memory_order_relaxed);
+
 	if(pool->is_dev_pool())
 	{
 		//Ignore errors silently
 		if(pool->is_running() && pool->is_logged_in())
-			pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult, pvThreads->at(oResult.iThreadId), is_monero);
-
+			pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult, backend_name, backend_hashcount, total_hashcount, jconf::inst()->GetMiningAlgo());
 		return;
-	}*/
+	}
 
 	if (!pool->is_running() || !pool->is_logged_in())
 	{
@@ -424,7 +432,7 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 	}
 
 	size_t t_start = get_timestamp_ms();
-	bool bResult = pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult, pvThreads->at(oResult.iThreadId), is_monero);
+	bool bResult = pool->cmd_submit(oResult.sJobID, oResult.iNonce, oResult.bResult, backend_name, backend_hashcount, total_hashcount, jconf::inst()->GetMiningAlgo());
 	size_t t_len = get_timestamp_ms() - t_start;
 
 	if(t_len > 0xFFFF)
@@ -435,19 +443,19 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 	{
 		uint64_t* targets = (uint64_t*)oResult.bResult;
 		log_result_ok(jpsock::t64_to_diff(targets[3]));
-		printer::inst()->print_msg(L3, "dev%i.Result accepted by the pool.", pool->is_dev_pool());
+		printer::inst()->print_msg(L3, "Result accepted by the pool.");
 	}
 	else
 	{
 		if(!pool->have_sock_error())
 		{
-			printer::inst()->print_msg(L3, "dev%i.Result rejected by the pool.", pool->is_dev_pool());
+			printer::inst()->print_msg(L3, "Result rejected by the pool.");
 
 			std::string error = pool->get_call_error();
 
 			if(strncasecmp(error.c_str(), "Unauthenticated", 15) == 0)
 			{
-				printer::inst()->print_msg(L2, "dev%i.Your miner was unable to find a share in time. Either the pool difficulty is too high, or the pool timeout is too low.", pool->is_dev_pool());
+				printer::inst()->print_msg(L2, "Your miner was unable to find a share in time. Either the pool difficulty is too high, or the pool timeout is too low.");
 				pool->disconnect();
 			}
 
@@ -518,13 +526,14 @@ void executor::ex_main()
 			already_have_cli_pool = true;
 			
 			const char* wallet = params.poolUsername.empty() ? cfg.sWalletAddr : params.poolUsername.c_str();
+			const char* rigid = params.userSetRigid ? params.poolRigid.c_str() : cfg.sRigId;
 			const char* pwd = params.userSetPwd ? params.poolPasswd.c_str() : cfg.sPasswd;
 			bool nicehash = cfg.nicehash || params.nicehashMode;
 			
-			pools.emplace_back(i+1, cfg.sPoolAddr, wallet, pwd, 9.9, false, params.poolUseTls, cfg.tls_fingerprint, nicehash);
+			pools.emplace_back(i+1, cfg.sPoolAddr, wallet, rigid, pwd, 9.9, false, params.poolUseTls, cfg.tls_fingerprint, nicehash);
 		}
 		else
-			pools.emplace_back(i+1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
+			pools.emplace_back(i+1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sRigId, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
 	}
 
 	if(!xmrstak::params::inst().poolURL.empty() && !already_have_cli_pool)
@@ -536,11 +545,43 @@ void executor::ex_main()
 			win_exit();
 		}
 		
-		pools.emplace_back(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
+		pools.emplace_back(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolRigid.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
 	}
+
+	switch(jconf::inst()->GetMiningAlgo())
+	{
+	case cryptonight_heavy:
+		if(dev_tls)
+			pools.emplace_front(0, "donate.xmr-stak.net:8888", "", "", "", 0.0, true, true, "", true);
+		else
+			pools.emplace_front(0, "donate.xmr-stak.net:5555", "", "", "", 0.0, true, false, "", true);
+		break;
 	
-	pools.emplace_front(0, "xmrpool.eu:5555", "46ZRy92vZy2RefigQ8BRKJZN7sj4KgfHc2D8yHXF9xHHbhxye3uD9VANn6etLbowZDNGHrwkWhtw3gFtxMeTyXgP3U1zP5C", "x", 0.0, true, false, "", false);
+	case cryptonight_monero:
+		if(dev_tls)
+			pools.emplace_front(0, "donate.xmr-stak.net:8800", "", "", "", 0.0, true, true, "", false);
+		else
+			pools.emplace_front(0, "donate.xmr-stak.net:5500", "", "", "", 0.0, true, false, "", false);
+		break;
 	
+	case cryptonight_lite:
+		if(dev_tls)
+			pools.emplace_front(0, "donate.xmr-stak.net:7777", "", "", "", 0.0, true, true, "", true);
+		else
+			pools.emplace_front(0, "donate.xmr-stak.net:4444", "", "", "", 0.0, true, false, "", true);
+		break;
+
+	case cryptonight:
+		if(dev_tls)
+			pools.emplace_front(0, "donate.xmr-stak.net:6666", "", "", "", 0.0, true, true, "", false);
+		else
+			pools.emplace_front(0, "donate.xmr-stak.net:3333", "", "", "", 0.0, true, false, "", false);
+		break;
+
+	default:
+		break;
+	}
+
 	ex_event ev;
 	std::thread clock_thd(&executor::ex_clock_thd, this);
 
@@ -581,7 +622,7 @@ void executor::ex_main()
 			break;
 
 		case EV_GPU_RES_ERROR:
-			log_result_error(std::string(ev.oGpuError.error_str));
+			log_result_error(std::string(ev.oGpuError.error_str + std::string(" GPU ID ") + std::to_string(ev.oGpuError.idx)));
 			break;
 
 		case EV_PERF_TICK:
@@ -748,6 +789,7 @@ void executor::hashrate_report(std::string& out)
 			else
 				out.append(1, '\n');
 
+			double fTotalCur[3] = { 0.0, 0.0, 0.0};
 			for (i = 0; i < nthd; i++)
 			{
 				double fHps[3];
@@ -762,10 +804,14 @@ void executor::hashrate_report(std::string& out)
 				out.append(hps_format(fHps[0], num, sizeof(num))).append(" |");
 				out.append(hps_format(fHps[1], num, sizeof(num))).append(" |");
 				out.append(hps_format(fHps[2], num, sizeof(num))).append(1, ' ');
-
-				fTotal[0] += fHps[0];
-				fTotal[1] += fHps[1];
-				fTotal[2] += fHps[2];
+				
+				fTotal[0] += (std::isnormal(fHps[0])) ? fHps[0] : 0.0;
+				fTotal[1] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
+				fTotal[2] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
+				
+				fTotalCur[0] += (std::isnormal(fHps[0])) ? fHps[0] : 0.0;
+				fTotalCur[1] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
+				fTotalCur[2] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
 
 				if((i & 0x1) == 1) //Odd i's
 					out.append("|\n");
@@ -773,21 +819,25 @@ void executor::hashrate_report(std::string& out)
 
 			if((i & 0x1) == 1) //We had odd number of threads
 				out.append("|\n");
-
-			if(nthd != 1)
-				out.append("-----------------------------------------------------\n");
-			else
-				out.append("---------------------------\n");
+			
+			out.append("Totals (").append(name).append("): ");
+			out.append(hps_format(fTotalCur[0], num, sizeof(num)));
+			out.append(hps_format(fTotalCur[1], num, sizeof(num)));
+			out.append(hps_format(fTotalCur[2], num, sizeof(num)));
+			out.append(" H/s\n");
+			
+			out.append("-----------------------------------------------------------------\n");
 		}
 	}
 
-	out.append("Totals:  ");
+	out.append("Totals (ALL):  ");
 	out.append(hps_format(fTotal[0], num, sizeof(num)));
 	out.append(hps_format(fTotal[1], num, sizeof(num)));
 	out.append(hps_format(fTotal[2], num, sizeof(num)));
 	out.append(" H/s\nHighest: ");
 	out.append(hps_format(fHighestHps, num, sizeof(num)));
 	out.append(" H/s\n");
+	out.append("-----------------------------------------------------------------\n");
 }
 
 char* time_format(char* buf, size_t len, std::chrono::system_clock::time_point time)

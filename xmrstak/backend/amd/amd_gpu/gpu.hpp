@@ -1,6 +1,7 @@
 #pragma once
 
 #include "xmrstak/misc/console.hpp"
+#include "xmrstak/jconf.hpp"
 
 #if defined(__APPLE__)
 #include <OpenCL/cl.h>
@@ -25,6 +26,8 @@ struct GpuContext
 	size_t rawIntensity;
 	size_t workSize;
 	int stridedIndex;
+	int memChunk;
+	int compMode;
 
 	/*Output vars*/
 	cl_device_id DeviceID;
@@ -33,7 +36,7 @@ struct GpuContext
 	cl_mem OutputBuffer;
 	cl_mem ExtraBuffers[6];
 	cl_program Program;
-	cl_kernel Kernels[7];
+	cl_kernel Kernels[8];
 	size_t freeMem;
 	int computeUnits;
 	std::string name;
@@ -47,7 +50,7 @@ int getAMDPlatformIdx();
 std::vector<GpuContext> getAMDDevices(int index);
 
 size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx);
-size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target);
-size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput);
+size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target, xmrstak_algo miner_algo, uint32_t version);
+size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo, uint32_t version);
 
 

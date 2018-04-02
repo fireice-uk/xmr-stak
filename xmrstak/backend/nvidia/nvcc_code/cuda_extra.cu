@@ -28,6 +28,7 @@ uint64_t keccakf_rndc[24] ={
 typedef unsigned char BitSequence;
 typedef unsigned long long DataLength;
 
+#include "xmrstak/backend/cryptonight.hpp"
 #include "cryptonight.hpp"
 #include "cuda_extra.hpp"
 #include "cuda_keccak.hpp"
@@ -36,6 +37,7 @@ typedef unsigned long long DataLength;
 #include "cuda_jh.hpp"
 #include "cuda_skein.hpp"
 #include "cuda_device.hpp"
+#include "cuda_aes.hpp"
 
 __constant__ uint8_t d_sub_byte[16][16] ={
 	{0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76 },
@@ -90,10 +92,33 @@ __device__ __forceinline__ void cryptonight_aes_set_key( uint32_t * __restrict__
 	}
 }
 
-__global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restrict__ d_input, uint32_t len, uint32_t startNonce, uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_a, uint32_t * __restrict__ d_ctx_b, uint32_t * __restrict__ d_ctx_key1, uint32_t * __restrict__ d_ctx_key2 )
+__device__ __forceinline__ void mix_and_propagate( uint32_t* state )
+{
+	uint32_t tmp0[4];
+	for(size_t x = 0; x < 4; ++x)
+		tmp0[x] = (state)[x];
+
+	// set destination [0,6]
+	for(size_t t = 0; t < 7; ++t)
+		for(size_t x = 0; x < 4; ++x)
+			(state + 4 * t)[x] = (state + 4 * t)[x] ^ (state + 4 * (t + 1))[x];
+
+	// set destination 7
+	for(size_t x = 0; x < 4; ++x)
+		(state + 4 * 7)[x] = (state + 4 * 7)[x] ^ tmp0[x];
+}
+
+template<xmrstak_algo ALGO>
+__global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restrict__ d_input, uint32_t len, uint32_t startNonce, uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_state2, uint32_t * __restrict__ d_ctx_a, uint32_t * __restrict__ d_ctx_b, uint32_t * __restrict__ d_ctx_key1, uint32_t * __restrict__ d_ctx_key2 )
 {
 	int thread = ( blockDim.x * blockIdx.x + threadIdx.x );
+	__shared__ uint32_t sharedMemory[1024];
 
+	if(ALGO == cryptonight_heavy)
+	{
+		cn_aes_gpu_init( sharedMemory );
+		__syncthreads( );
+	}
 	if ( thread >= threads )
 		return;
 
@@ -113,20 +138,45 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
 	cn_keccak( (uint8_t *) input, len, (uint8_t *) ctx_state );
 	cryptonight_aes_set_key( ctx_key1, ctx_state );
 	cryptonight_aes_set_key( ctx_key2, ctx_state + 8 );
+
 	XOR_BLOCKS_DST( ctx_state, ctx_state + 8, ctx_a );
 	XOR_BLOCKS_DST( ctx_state + 4, ctx_state + 12, ctx_b );
-
-	memcpy( d_ctx_state + thread * 50, ctx_state, 50 * 4 );
 	memcpy( d_ctx_a + thread * 4, ctx_a, 4 * 4 );
 	memcpy( d_ctx_b + thread * 4, ctx_b, 4 * 4 );
+
 	memcpy( d_ctx_key1 + thread * 40, ctx_key1, 40 * 4 );
 	memcpy( d_ctx_key2 + thread * 40, ctx_key2, 40 * 4 );
+	memcpy( d_ctx_state + thread * 50, ctx_state, 50 * 4 );
+
+	if(ALGO == cryptonight_heavy)
+	{
+
+		for(int i=0; i < 16; i++)
+		{
+			for(size_t t = 4; t < 12; ++t)
+			{
+				cn_aes_pseudo_round_mut( sharedMemory, ctx_state + 4u * t, ctx_key1 );
+			}
+			// scipt first 4 * 128bit blocks = 4 * 4 uint32_t values
+			mix_and_propagate(ctx_state + 4 * 4);
+		}
+		// double buffer to move manipulated state into phase1
+		memcpy( d_ctx_state2 + thread * 50, ctx_state, 50 * 4 );
+	}
 }
 
-__global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint32_t * __restrict__ d_res_nonce, uint32_t * __restrict__ d_ctx_state )
+template<xmrstak_algo ALGO>
+__global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint32_t * __restrict__ d_res_nonce, uint32_t * __restrict__ d_ctx_state,uint32_t * __restrict__ d_ctx_key2 )
 {
 	const int thread = blockDim.x * blockIdx.x + threadIdx.x;
 
+	__shared__ uint32_t sharedMemory[1024];
+
+	if(ALGO == cryptonight_heavy)
+	{
+		cn_aes_gpu_init( sharedMemory );
+		__syncthreads( );
+	}
 	if ( thread >= threads )
 		return;
 
@@ -134,11 +184,28 @@ __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint3
 	uint32_t * __restrict__ ctx_state = d_ctx_state + thread * 50;
 	uint64_t hash[4];
 	uint32_t state[50];
-
-#pragma unroll
+	
+	#pragma unroll
 	for ( i = 0; i < 50; i++ )
 		state[i] = ctx_state[i];
 
+	if(ALGO == cryptonight_heavy)
+	{
+		uint32_t key[40];
+
+		// load keys
+		MEMCPY8( key, d_ctx_key2 + thread * 40, 20 );
+
+		for(int i=0; i < 16; i++)
+		{
+			for(size_t t = 4; t < 12; ++t)
+			{
+				cn_aes_pseudo_round_mut( sharedMemory, state + 4u * t, key );
+			}
+			// scipt first 4 * 128bit blocks = 4 * 4 uint32_t values
+			mix_and_propagate(state + 4 * 4);
+		}
+	}
 	cn_keccakf2( (uint64_t *) state );
 
 	switch ( ( (uint8_t *) state )[0] & 0x03 )
@@ -204,25 +271,35 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 		break;
 
 	};
-	CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
+	const int gpuArch = ctx->device_arch[0] * 10 + ctx->device_arch[1];
 
-	size_t hashMemSize;
-	if(::jconf::inst()->IsCurrencyMonero())
-	{
-		hashMemSize = MONERO_MEMORY;
-	}
-	else
-	{
-		hashMemSize = AEON_MEMORY;
-	}
+	/* Disable L1 cache for GPUs before Volta.
+	 * L1 speed is increased and latency reduced with Volta.
+	 */
+	if(gpuArch < 70)
+		CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
+
+	size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
 
 	size_t wsize = ctx->device_blocks * ctx->device_threads;
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state, 50 * sizeof(uint32_t) * wsize));
+	size_t ctx_b_size = 4 * sizeof(uint32_t) * wsize;
+	if(cryptonight_heavy == ::jconf::inst()->GetMiningAlgo())
+	{
+		// extent ctx_b to hold the state of idx0
+		ctx_b_size += sizeof(uint32_t) * wsize;
+		// create a double buffer for the state to exchange the mixed state to phase1
+		CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state2, 50 * sizeof(uint32_t) * wsize));
+	}
+	else
+		ctx->d_ctx_state2 = ctx->d_ctx_state;
+	
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key1, 40 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key2, 40 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_text, 32 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_a, 4 * sizeof(uint32_t) * wsize));
-	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_b, 4 * sizeof(uint32_t) * wsize));
+	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_b, ctx_b_size));
+	// POW block format http://monero.wikia.com/wiki/PoW_Block_Header_Format
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_input, 21 * sizeof (uint32_t ) ));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_count, sizeof (uint32_t ) ));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_nonce, 10 * sizeof (uint32_t ) ));
@@ -233,7 +310,7 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	return 1;
 }
 
-extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce)
+extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, xmrstak_algo miner_algo, uint8_t version)
 {
 	int threadsperblock = 128;
 	uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -241,11 +318,22 @@ extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce
 	dim3 grid( ( wsize + threadsperblock - 1 ) / threadsperblock );
 	dim3 block( threadsperblock );
 
-	CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<<<grid, block >>>( wsize, ctx->d_input, ctx->inputlen, startNonce,
-		ctx->d_ctx_state, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2 ));
+	if(miner_algo == cryptonight_heavy && version >= 3)
+	{
+		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<cryptonight_heavy><<<grid, block >>>( wsize, ctx->d_input, ctx->inputlen, startNonce,
+			ctx->d_ctx_state,ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2 ));
+	}
+	else
+	{
+		/* pass two times d_ctx_state because the second state is used later in phase1,
+		 * the first is used than in phase3
+		 */
+		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<invalid_algo><<<grid, block >>>( wsize, ctx->d_input, ctx->inputlen, startNonce,
+			ctx->d_ctx_state, ctx->d_ctx_state, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2 ));
+	}
 }
 
-extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce)
+extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce,xmrstak_algo miner_algo, uint8_t version)
 {
 	int threadsperblock = 128;
 	uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -256,11 +344,23 @@ extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, 
 	CUDA_CHECK(ctx->device_id, cudaMemset( ctx->d_result_nonce, 0xFF, 10 * sizeof (uint32_t ) ));
 	CUDA_CHECK(ctx->device_id, cudaMemset( ctx->d_result_count, 0, sizeof (uint32_t ) ));
 
-	CUDA_CHECK_MSG_KERNEL(
-		ctx->device_id,
-		"\n**suggestion: Try to increase the value of the attribute 'bfactor' in the NVIDIA config file.**",
-		cryptonight_extra_gpu_final<<<grid, block >>>( wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state )
-	);
+	if(miner_algo == cryptonight_heavy && version >= 3)
+	{
+		CUDA_CHECK_MSG_KERNEL(
+			ctx->device_id,
+			"\n**suggestion: Try to increase the value of the attribute 'bfactor' in the NVIDIA config file.**",
+			cryptonight_extra_gpu_final<cryptonight_heavy><<<grid, block >>>( wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state,ctx->d_ctx_key2 )
+		);
+	}
+	else
+	{
+		// fallback for all other algorithms
+		CUDA_CHECK_MSG_KERNEL(
+			ctx->device_id,
+			"\n**suggestion: Try to increase the value of the attribute 'bfactor' in the NVIDIA config file.**",
+			cryptonight_extra_gpu_final<invalid_algo><<<grid, block >>>( wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state,ctx->d_ctx_key2 )
+		);
+	}
 
 	CUDA_CHECK(ctx->device_id, cudaMemcpy( rescount, ctx->d_result_count, sizeof (uint32_t ), cudaMemcpyDeviceToHost ));
 	CUDA_CHECK(ctx->device_id, cudaMemcpy( resnonce, ctx->d_result_nonce, 10 * sizeof (uint32_t ), cudaMemcpyDeviceToHost ));
@@ -441,6 +541,12 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			maxMemUsage = size_t(1024u) * byteToMiB;
 		}
 
+		if(props.multiProcessorCount <= 6)
+		{
+			// limit memory usage for low end devices to reduce the number of threads
+			maxMemUsage = size_t(1024u) * byteToMiB;
+		}
+
 		int* tmp;
 		cudaError_t err;
 		// a device must be selected to get the right memory usage later on
@@ -470,15 +576,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		ctx->total_device_memory = totalMemory;
 		ctx->free_device_memory = freeMemory;
 
-		size_t hashMemSize;
-		if(::jconf::inst()->IsCurrencyMonero())
-		{
-			hashMemSize = MONERO_MEMORY;
-		}
-		else
-		{
-			hashMemSize = AEON_MEMORY;
-		}
+		size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
 
 #ifdef WIN32
 		/* We use in windows bfactor (split slow kernel into smaller parts) to avoid
@@ -508,6 +606,9 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		// up to 16kibyte extra memory is used per thread for some kernel (lmem/local memory)
 		// 680bytes are extra meta data memory per hash
 		size_t perThread = hashMemSize + 16192u + 680u;
+		if(cryptonight_heavy == ::jconf::inst()->GetMiningAlgo())
+			perThread += 50 * 4; // state double buffer
+		
 		size_t max_intensity = limitedMemory / perThread;
 		ctx->device_threads = max_intensity / ctx->device_blocks;
 		// use only odd number of threads

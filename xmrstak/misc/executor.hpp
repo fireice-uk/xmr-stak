@@ -177,7 +177,6 @@ private:
 		iPoolCallTimes.clear();
 		tPoolConnTime = std::chrono::system_clock::now();
 		iPoolHashes = 0;
-		iPoolDiff = 0;
 	}
 
 	double fHighestHps = 0.0;
