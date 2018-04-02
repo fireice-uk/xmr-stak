@@ -463,7 +463,7 @@ void minethd::work_main()
 		uint8_t new_version = oWork.getVersion();
 		if(new_version != version)
 		{
-			if(new_version >= ::jconf::inst()->GetMiningForkHeight())
+			if(new_version >= ::jconf::inst()->GetMiningForkVersion())
 			{
 				miner_algo = ::jconf::inst()->GetMiningAlgo();
 				hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
@@ -720,7 +720,7 @@ void minethd::multiway_work_main()
 		uint8_t new_version = oWork.getVersion();
 		if(new_version != version)
 		{
-			if(new_version >= ::jconf::inst()->GetMiningForkHeight())
+			if(new_version >= ::jconf::inst()->GetMiningForkVersion())
 			{
 				miner_algo = ::jconf::inst()->GetMiningAlgo();
 				hash_fun_multi = func_multi_selector(N, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);

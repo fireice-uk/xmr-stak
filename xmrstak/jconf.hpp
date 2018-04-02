@@ -52,7 +52,7 @@ public:
 
 	inline xmrstak_algo GetMiningAlgoRoot() const { return mining_algo_root; }
 
-	inline uint8_t GetMiningForkHeight() const { return mining_fork_height; }
+	inline uint8_t GetMiningForkVersion() const { return mining_fork_version; }
 	
 	std::string GetMiningCoin();
 
@@ -96,5 +96,5 @@ private:
 	bool bHaveAes;
 	xmrstak_algo mining_algo;
 	xmrstak_algo mining_algo_root;
-	uint8_t mining_fork_height;
+	uint8_t mining_fork_version;
 };

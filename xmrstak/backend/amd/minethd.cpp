@@ -219,7 +219,7 @@ void minethd::work_main()
 		uint8_t new_version = oWork.getVersion();
 		if(new_version != version)
 		{
-			if(new_version >= ::jconf::inst()->GetMiningForkHeight())
+			if(new_version >= ::jconf::inst()->GetMiningForkVersion())
 			{
 				miner_algo = ::jconf::inst()->GetMiningAlgo();
 				hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);

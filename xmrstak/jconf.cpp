@@ -91,7 +91,7 @@ struct xmrstak_coin_algo
 	const char* coin_name;
 	xmrstak_algo algo;
 	xmrstak_algo algo_root;
-	uint8_t fork_height;
+	uint8_t fork_version;
 	const char* default_pool;
 };
 
@@ -634,7 +634,7 @@ bool jconf::parse_config(const char* sFilename, const char* sFilenamePools)
 		{
 			mining_algo = coin_algos[i].algo;
 			mining_algo_root = coin_algos[i].algo_root;
-			mining_fork_height = coin_algos[i].fork_height;
+			mining_fork_version = coin_algos[i].fork_version;
 			break;
 		}
 	}
