@@ -79,6 +79,7 @@ void help()
 #endif
 #ifndef CONF_NO_OPENCL
 	cout<<"  --noAMD                    disable the AMD miner backend"<<endl;
+	cout<<"  --noAMDCache               disable the AMD(OpenCL) cache for precompiled binaries"<<endl;
 	cout<<"  --amd FILE                 AMD backend miner config file"<<endl;
 #endif
 #ifndef CONF_NO_CUDA
@@ -449,6 +450,10 @@ int main(int argc, char *argv[])
 		{
 			params::inst().useAMD = false;
 		}
+		else if(opName.compare("--noAMDCache") == 0)
+		{
+			params::inst().AMDCache = false;
+		}
 		else if(opName.compare("--noNVIDIA") == 0)
 		{
 			params::inst().useNVIDIA = false;
@@ -726,7 +731,7 @@ int main(int argc, char *argv[])
   printer::inst()->print_str("88 88Yb88  8I  Yb 88__   88__    8I  Yb     88b  d88 88 88Yb88 88__   88__dP `Ybo.'\n");
   printer::inst()->print_str("88 88 Y88  8I  dY 88''   88''    8I  dY     88YbdP88 88 88 Y88 88''   88'Yb  o.`Y8b\n");
   printer::inst()->print_str("88 88  Y8 8888Y'  888888 888888 8888Y'      88 YY 88 88 88  Y8 888888 88  Yb 8bodP'\n");
-	printer::inst()->print_str("\n");
+	printer::inst()->print_str("-----------------------------------------------------------------------------------\n");
 	printer::inst()->print_msg(L0, "Mining coin: %s", jconf::inst()->GetMiningCoin().c_str());
 
 	if(params::inst().benchmark_block_version >= 0)

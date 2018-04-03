@@ -48,7 +48,11 @@ public:
 
 	bool TlsSecureAlgos();
 
-	inline xmrstak_algo GetMiningAlgo() { return mining_algo; }
+	inline xmrstak_algo GetMiningAlgo() const { return mining_algo; }
+
+	inline xmrstak_algo GetMiningAlgoRoot() const { return mining_algo_root; }
+
+	inline uint8_t GetMiningForkVersion() const { return mining_fork_version; }
 	
 	std::string GetMiningCoin();
 
@@ -91,4 +95,6 @@ private:
 
 	bool bHaveAes;
 	xmrstak_algo mining_algo;
+	xmrstak_algo mining_algo_root;
+	uint8_t mining_fork_version;
 };
