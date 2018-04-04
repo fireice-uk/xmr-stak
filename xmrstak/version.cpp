@@ -18,7 +18,7 @@
 #endif
 
 #define XMR_STAK_NAME "xmr-stak"
-#define XMR_STAK_VERSION "2.4.1"
+#define XMR_STAK_VERSION "2.4.2"
 
 #if defined(_WIN32)
 #define OS_TYPE "win"
