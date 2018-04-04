@@ -483,7 +483,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		 *   with a sm_20 only compiled binary
 		 */
 		for(int i = 0; i < arch.size(); ++i)
-			if(minSupportedArch == 0 || (arch[i] >= 30 && arch[i] < minSupportedArch))
+			if(arch[i] >= 30  && (minSupportedArch == 0 || arch[i] < minSupportedArch))
 				minSupportedArch = arch[i];
 		if(minSupportedArch < 30 || gpuArch < minSupportedArch)
 		{
