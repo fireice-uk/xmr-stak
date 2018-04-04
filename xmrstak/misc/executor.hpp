@@ -195,5 +195,6 @@ private:
 	void eval_pool_choice();
 
 	inline size_t sec_to_ticks(size_t sec) { return sec * (1000 / iTickTime); }
+	inline uint64_t get_hash_count(void){return telem->calc_total_hashes()};
 };
 

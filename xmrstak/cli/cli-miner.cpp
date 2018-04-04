@@ -322,6 +322,7 @@ int main(int argc, char *argv[])
 #endif
 
 	srand(time(0));
+	uint64_t numHashes= 0xffffffff;
 
 	using namespace xmrstak;
 
@@ -508,6 +509,17 @@ int main(int argc, char *argv[])
 		{
 			uacDialog = false;
 		}
+		else if(opName.compare("--hash-count") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--hash-count' given");
+				win_exit();
+				return 1;
+			}
+			sscanf(argv[i], "%ld", &numHashes);
+		}
 		else
 		{
 			printer::inst()->print_msg(L0, "Parameter unknown '%s'",argv[i]);
@@ -605,6 +617,11 @@ int main(int argc, char *argv[])
 			break;
 		default:
 			break;
+		}
+		if(0xffffffff == numHashes){
+			if(executor::inst()->get_hash_count() > numHashes){
+				return 0;
+			}
 		}
 
 		uint64_t currentTime = get_timestamp_ms();
