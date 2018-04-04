@@ -618,9 +618,9 @@ int main(int argc, char *argv[])
 		default:
 			break;
 		}
-		if(0xffffffff == numHashes){
+		if(0xffffffff != numHashes){
 			if(executor::inst()->get_hash_count() > numHashes){
-				return 0;
+				exit(0);
 			}
 		}
 
