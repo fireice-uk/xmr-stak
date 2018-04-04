@@ -102,6 +102,7 @@ xmrstak_coin_algo coin_algos[] = {
 	{ "edollar", cryptonight, cryptonight, 0u, nullptr },
 	{ "electroneum", cryptonight, cryptonight, 0u, nullptr },
 	{ "graft", cryptonight, cryptonight, 0u, nullptr },
+	{ "haven", cryptonight_heavy, cryptonight, 2u, nullptr },
 	{ "intense", cryptonight, cryptonight, 0u, nullptr },
 	{ "karbo", cryptonight, cryptonight, 0u, nullptr },
 	{ "monero7", cryptonight_monero, cryptonight, 7u, "pool.usxmrpool.com:3333" },

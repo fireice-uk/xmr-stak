@@ -26,6 +26,7 @@ POOLCONF],
  *    edollar
  *    electroneum
  *    graft
+ *    haven
  *    intense
  *    karbo
  *    monero7 (use this for Monero's new PoW)
