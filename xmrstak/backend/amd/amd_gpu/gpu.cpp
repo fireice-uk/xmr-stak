@@ -16,6 +16,7 @@
 #include "xmrstak/backend/cryptonight.hpp"
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/picosha2/picosha2.hpp"
+#include "xmrstak/params.hpp"
 
 #include <stdio.h>
 #include <string.h>
@@ -306,21 +307,9 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	size_t hashMemSize;
-	int threadMemMask;
-	int hasIterations;
-	if(::jconf::inst()->IsCurrencyMonero())
-	{
-		hashMemSize = MONERO_MEMORY;
-		threadMemMask = MONERO_MASK;
-		hasIterations = MONERO_ITER;
-	}
-	else
-	{
-		hashMemSize = AEON_MEMORY;
-		threadMemMask = AEON_MASK;
-		hasIterations = AEON_ITER;
-	}
+	size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
+	int threadMemMask = cn_select_mask(::jconf::inst()->GetMiningAlgo());
+	int hashIterations = cn_select_iter(::jconf::inst()->GetMiningAlgo());
 
 	size_t g_thd = ctx->rawIntensity;
 	ctx->ExtraBuffers[0] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, hashMemSize * g_thd, NULL, &ret);
@@ -384,11 +373,13 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	char options[256];
-	snprintf(options, sizeof(options),
-		"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d -DMEM_CHUNK_EXPONENT=%d  -DCOMP_MODE=%d",
-		hasIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex, int(1u<<ctx->memChunk), ctx->compMode ? 1 : 0);
+	auto miner_algo = ::jconf::inst()->GetMiningAlgo();
 
+	char options[512];
+	snprintf(options, sizeof(options),
+		"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d -DMEM_CHUNK_EXPONENT=%d  -DCOMP_MODE=%d -DMEMORY=%llu -DALGO=%d",
+		hashIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex, int(1u<<ctx->memChunk), ctx->compMode ? 1 : 0, 
+		int_port(hashMemSize), int(miner_algo));
 	/* create a hash for the compile time cache
 	 * used data:
 	 *   - source code
@@ -403,9 +394,10 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 
 	std::string cache_file = get_home() + "/.openclcache/" + hash_hex_str + ".openclbin";
 	std::ifstream clBinFile(cache_file, std::ofstream::in | std::ofstream::binary);
-	if(!clBinFile.good())
+	if(xmrstak::params::inst().AMDCache == false || !clBinFile.good())
 	{
-		printer::inst()->print_msg(L1,"WARNING: OpenCL device %u - OpenCL binary %s not found.",ctx->deviceIdx, cache_file.c_str());
+		if(xmrstak::params::inst().AMDCache)
+			printer::inst()->print_msg(L1,"OpenCL device %u - Precompiled code %s not found. Compiling ...",ctx->deviceIdx, cache_file.c_str());
 		ctx->Program = clCreateProgramWithSource(opencl_ctx, 1, (const char**)&source_code, NULL, &ret);
 		if(ret != CL_SUCCESS)
 		{
@@ -477,33 +469,35 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		std::vector<char*> all_programs(num_devices);
 		std::vector<std::vector<char>> program_storage;
 
-		int p_id = 0;
-		size_t mem_size = 0;
-		// create memory  structure to query all OpenCL program binaries
-		for(auto & p : all_programs)
+		if(xmrstak::params::inst().AMDCache)
 		{
-			program_storage.emplace_back(std::vector<char>(binary_sizes[p_id]));
-			all_programs[p_id] = program_storage[p_id].data();
-			mem_size += binary_sizes[p_id];
-			p_id++;
-		}
+			int p_id = 0;
+			size_t mem_size = 0;
+			// create memory  structure to query all OpenCL program binaries
+			for(auto & p : all_programs)
+			{
+				program_storage.emplace_back(std::vector<char>(binary_sizes[p_id]));
+				all_programs[p_id] = program_storage[p_id].data();
+				mem_size += binary_sizes[p_id];
+				p_id++;
+			}
 
-		if( ret = clGetProgramInfo(ctx->Program, CL_PROGRAM_BINARIES, num_devices * sizeof(char*), all_programs.data(),NULL) != CL_SUCCESS)
-		{
-			printer::inst()->print_msg(L1,"Error %s when calling clGetProgramInfo.", err_to_str(ret));
-			return ERR_OCL_API;
-		}
+		if((ret = clGetProgramInfo(ctx->Program, CL_PROGRAM_BINARIES, num_devices * sizeof(char*), all_programs.data(),NULL)) != CL_SUCCESS)
+			{
+				printer::inst()->print_msg(L1,"Error %s when calling clGetProgramInfo.", err_to_str(ret));
+				return ERR_OCL_API;
+			}
 
-		std::ofstream file_stream;
-		std::cout<<get_home() + "/.openclcache/" + hash_hex_str + ".openclbin"<<std::endl;
-		file_stream.open(cache_file, std::ofstream::out | std::ofstream::binary);
-		file_stream.write(all_programs[dev_id], binary_sizes[dev_id]);
-		file_stream.close();
-		printer::inst()->print_msg(L1, "OpenCL device %u - OpenCL binary file stored in file %s.",ctx->deviceIdx, cache_file.c_str());
+			std::ofstream file_stream;
+			file_stream.open(cache_file, std::ofstream::out | std::ofstream::binary);
+			file_stream.write(all_programs[dev_id], binary_sizes[dev_id]);
+			file_stream.close();
+			printer::inst()->print_msg(L1, "OpenCL device %u - Precompiled code stored in file %s",ctx->deviceIdx, cache_file.c_str());
+		}
 	}
 	else
 	{
-		printer::inst()->print_msg(L1, "OpenCL device %u - Load OpenCL binary file %s",ctx->deviceIdx, cache_file.c_str());
+		printer::inst()->print_msg(L1, "OpenCL device %u - Load precompiled cod from file %s",ctx->deviceIdx, cache_file.c_str());
 		std::ostringstream ss;
 		ss << clBinFile.rdbuf();
 		std::string s = ss.str();
@@ -529,8 +523,8 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		}
 	}
 
-	const char *KernelNames[] = { "cn0", "cn1", "cn2", "Blake", "Groestl", "JH", "Skein" };
-	for(int i = 0; i < 7; ++i)
+	const char *KernelNames[] = { "cn0", "cn1", "cn2", "Blake", "Groestl", "JH", "Skein", "cn1_monero" };
+	for(int i = 0; i < 8; ++i)
 	{
 		ctx->Kernels[i] = clCreateKernel(ctx->Program, KernelNames[i], &ret);
 		if(ret != CL_SUCCESS)
@@ -887,7 +881,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	return ERR_SUCCESS;
 }
 
-size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target)
+size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target, xmrstak_algo miner_algo, uint32_t version)
 {
 	cl_int ret;
 
@@ -932,27 +926,69 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 		return(ERR_OCL_API);
 	}
 
-	// CN2 Kernel
+	/* ATTENTION: if we miner cryptonight_heavy the kernel needs an additional parameter version.
+	 * Do NOT use the variable `miner_algo` because this variable is changed dynamicly
+	 */
+	if(::jconf::inst()->GetMiningAlgo() == cryptonight_heavy)
+	{
+		// version
+		if ((ret = clSetKernelArg(ctx->Kernels[0], 4, sizeof(cl_uint), &version)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 0, argument 4.", err_to_str(ret));
+			return ERR_OCL_API;
+		}
+	}
+
+	// CN1 Kernel
+
+	/// @todo only activate if currency is monero
+	int cn_kernel_offset = 0;
+	if(miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon)
+	{
+		cn_kernel_offset = 6;
+	}
 
 	// Scratchpads
-	if((ret = clSetKernelArg(ctx->Kernels[1], 0, sizeof(cl_mem), ctx->ExtraBuffers + 0)) != CL_SUCCESS)
+	if((ret = clSetKernelArg(ctx->Kernels[1 + cn_kernel_offset], 0, sizeof(cl_mem), ctx->ExtraBuffers + 0)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 1, argument 0.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
 
 	// States
-	if((ret = clSetKernelArg(ctx->Kernels[1], 1, sizeof(cl_mem), ctx->ExtraBuffers + 1)) != CL_SUCCESS)
+	if((ret = clSetKernelArg(ctx->Kernels[1 + cn_kernel_offset], 1, sizeof(cl_mem), ctx->ExtraBuffers + 1)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 1, argument 1.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
 
 	// Threads
-	if((ret = clSetKernelArg(ctx->Kernels[1], 2, sizeof(cl_ulong), &numThreads)) != CL_SUCCESS)
+	if((ret = clSetKernelArg(ctx->Kernels[1 + cn_kernel_offset], 2, sizeof(cl_ulong), &numThreads)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 1, argument 2.", err_to_str(ret));
 		return(ERR_OCL_API);
+	}
+
+	if(miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon )
+	{
+		// Input
+		if ((ret = clSetKernelArg(ctx->Kernels[1 + cn_kernel_offset], 3, sizeof(cl_mem), &ctx->InputBuffer)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 1, arugment 4(input buffer).", err_to_str(ret));
+			return ERR_OCL_API;
+		}
+	}
+	/* ATTENTION: if we miner cryptonight_heavy the kernel needs an additional parameter version.
+	 * Do NOT use the variable `miner_algo` because this variable is changed dynamicly
+	 */
+	else if(::jconf::inst()->GetMiningAlgo() == cryptonight_heavy)
+	{
+		// version
+		if ((ret = clSetKernelArg(ctx->Kernels[1], 3, sizeof(cl_uint), &version)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 1, argument 3 (version).", err_to_str(ret));
+			return ERR_OCL_API;
+		}
 	}
 
 	// CN3 Kernel
@@ -1005,6 +1041,19 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 		return(ERR_OCL_API);
 	}
 
+    /* ATTENTION: if we miner cryptonight_heavy the kernel needs an additional parameter version.
+	 * Do NOT use the variable `miner_algo` because this variable is changed dynamicly
+	 */
+	if(::jconf::inst()->GetMiningAlgo() == cryptonight_heavy)
+	{
+		// version
+		if ((ret = clSetKernelArg(ctx->Kernels[2], 7, sizeof(cl_uint), &version)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 2, argument 7.", err_to_str(ret));
+			return ERR_OCL_API;
+		}
+	}
+
 	for(int i = 0; i < 4; ++i)
 	{
 		// States
@@ -1039,7 +1088,7 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 	return ERR_SUCCESS;
 }
 
-size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
+size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo, uint32_t version)
 {
 	cl_int ret;
 	cl_uint zero = 0;
@@ -1053,7 +1102,7 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 	if(ctx->compMode)
 	{
 		// round up to next multiple of w_size
-		size_t g_thd = ((g_intensity + w_size - 1u) / w_size) * w_size;
+		g_thd = ((g_intensity + w_size - 1u) / w_size) * w_size;
 		// number of global threads must be a multiple of the work group size (w_size)
 		assert(g_thd%w_size == 0);
 	}
@@ -1092,7 +1141,13 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput)
 	}*/
 
 	size_t tmpNonce = ctx->Nonce;
-	if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, ctx->Kernels[1], 1, &tmpNonce, &g_thd, &w_size, 0, NULL, NULL)) != CL_SUCCESS)
+	/// @todo only activate if currency is monero
+	int cn_kernel_offset = 0;
+	if(miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon)
+	{
+		cn_kernel_offset = 6;
+	}
+	if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, ctx->Kernels[1 + cn_kernel_offset], 1, &tmpNonce, &g_thd, &w_size, 0, NULL, NULL)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueNDRangeKernel for kernel %d.", err_to_str(ret), 1);
 		return ERR_OCL_API;

@@ -18,7 +18,7 @@
 #endif
 
 #define XMR_STAK_NAME "xmr-stak"
-#define XMR_STAK_VERSION "2.2.0"
+#define XMR_STAK_VERSION "2.4.2"
 
 #if defined(_WIN32)
 #define OS_TYPE "win"
@@ -32,13 +32,7 @@
 #define OS_TYPE "unk"
 #endif
 
-#if defined(CONF_NO_AEON)
-#define COIN_TYPE "monero"
-#elif defined(CONF_NO_MONERO)
-#define COIN_TYPE "aeon"
-#else
-#define COIN_TYPE "aeon-monero"
-#endif
+#define COIN_TYPE "aeon-cryptonight-monero"
 
 #define XMRSTAK_PP_TOSTRING1(str) #str
 #define XMRSTAK_PP_TOSTRING(str) XMRSTAK_PP_TOSTRING1(str)

@@ -62,9 +62,8 @@ inline const char* sock_gai_strerror(int err, char* buf, size_t len)
 #include <unistd.h> /* Needed for close() */
 #include <errno.h>
 #include <string.h>
-#if defined(__FreeBSD__)
 #include <netinet/in.h> /* Needed for IPPROTO_TCP */
-#endif
+#include <netinet/tcp.h>
 
 inline void sock_init() {}
 typedef int SOCKET;

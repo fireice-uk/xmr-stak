@@ -51,7 +51,7 @@ using namespace rapidjson;
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
 enum configEnum {
-	aPoolList, bTlsSecureAlgo, sCurrency, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, bPrintMotd, iAutohashTime, 
+	aPoolList, sCurrency, bTlsSecureAlgo, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, bPrintMotd, iAutohashTime, 
 	bFlushStdout, bDaemonMode, sOutputFile, iHttpdPort, sHttpLogin, sHttpPass, bPreferIpv4, bAesOverride, sUseSlowMem 
 };
 
@@ -65,8 +65,8 @@ struct configVal {
 // kNullType means any type
 configVal oConfigValues[] = {
 	{ aPoolList, "pool_list", kArrayType },
-	{ bTlsSecureAlgo, "tls_secure_algo", kTrueType },
 	{ sCurrency, "currency", kStringType },
+	{ bTlsSecureAlgo, "tls_secure_algo", kTrueType },
 	{ iCallTimeout, "call_timeout", kNumberType },
 	{ iNetRetry, "retry_time", kNumberType },
 	{ iGiveUpLimit, "giveup_limit", kNumberType },
@@ -86,6 +86,31 @@ configVal oConfigValues[] = {
 
 constexpr size_t iConfigCnt = (sizeof(oConfigValues)/sizeof(oConfigValues[0]));
 
+struct xmrstak_coin_algo
+{
+	const char* coin_name;
+	xmrstak_algo algo;
+	xmrstak_algo algo_root;
+	uint8_t fork_version;
+	const char* default_pool;
+};
+
+xmrstak_coin_algo coin_algos[] = { 
+	{ "aeon7", cryptonight_aeon, cryptonight_lite, 7u, "mine.aeon-pool.com:5555" },
+	{ "cryptonight", cryptonight, cryptonight, 0u, nullptr },
+	{ "cryptonight_lite", cryptonight_lite, cryptonight_lite, 0u, nullptr },
+	{ "edollar", cryptonight, cryptonight, 0u, nullptr },
+	{ "electroneum", cryptonight, cryptonight, 0u, nullptr },
+	{ "graft", cryptonight, cryptonight, 0u, nullptr },
+	{ "intense", cryptonight, cryptonight, 0u, nullptr },
+	{ "karbo", cryptonight, cryptonight, 0u, nullptr },
+	{ "monero7", cryptonight_monero, cryptonight, 7u, "pool.usxmrpool.com:3333" },
+	{ "stellite", cryptonight_monero, cryptonight, 3u, nullptr },
+	{ "sumokoin", cryptonight_heavy, cryptonight, 3u, nullptr }
+};
+
+constexpr size_t coin_alogo_size = (sizeof(coin_algos)/sizeof(coin_algos[0]));
+
 inline bool checkType(Type have, Type want)
 {
 	if(want == have)
@@ -103,6 +128,7 @@ inline bool checkType(Type have, Type want)
 struct jconf::opaque_private
 {
 	Document jsonDoc;
+	Document jsonDocPools;
 	const Value* configValues[iConfigCnt]; //Compile time constant
 
 	opaque_private()
@@ -166,45 +192,6 @@ bool jconf::GetPoolConfig(size_t id, pool_cfg& cfg)
 bool jconf::TlsSecureAlgos()
 {
 	return prv->configValues[bTlsSecureAlgo]->GetBool();
-}
-
-const std::string jconf::GetCurrency()
-{
-	auto& currency = xmrstak::params::inst().currency;
-	if(currency.empty())
-		currency = prv->configValues[sCurrency]->GetString();
-	if(
-#ifndef CONF_NO_MONERO
-			// if monero is disabled at compile time, enable error message if selected currency is `monero`
-			!xmrstak::strcmp_i(currency, "monero")
-#else
-			true
-#endif
-			&&
-#ifndef CONF_NO_AEON
-			// if aeon is disabled at compile time, enable error message if selected currency is `aeon`
-			!xmrstak::strcmp_i(currency, "aeon")
-#else
-			true
-#endif
-	)
-	{
-		printer::inst()->print_msg(L0, "ERROR: Wrong currency selected - '%s'.", currency.c_str());
-		win_exit();
-	}
-	return currency;
-}
-
-bool jconf::IsCurrencyMonero()
-{
-	if(xmrstak::strcmp_i(GetCurrency(), "monero"))
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
 }
 
 bool jconf::PreferIpv4()
@@ -312,17 +299,67 @@ jconf::slow_mem_cfg jconf::GetSlowMemSetting()
 		return unknown_value;
 }
 
-bool jconf::parse_config(const char* sFilename)
+std::string jconf::GetMiningCoin()
+{
+	if(xmrstak::params::inst().currency.length() > 0)
+		return xmrstak::params::inst().currency;
+	else
+		return prv->configValues[sCurrency]->GetString();
+}
+
+void jconf::GetAlgoList(std::string& list)
+{
+	list.reserve(256);
+	for(size_t i=0; i < coin_alogo_size; i++)
+	{
+		list += "\t- ";
+		list += coin_algos[i].coin_name;
+		list += "\n";
+	}
+}
+
+bool jconf::IsOnAlgoList(std::string& needle)
+{
+	std::transform(needle.begin(), needle.end(), needle.begin(), ::tolower);
+	
+	if(needle == "monero")
+	{
+		printer::inst()->print_msg(L0, "You entered Monero as coin name. Monero will hard-fork the PoW.\nThis means it will stop being compatible with other cryptonight coins.\n"
+			"Please use 'monero7' (support auto switch to new POW) if you want to mine Monero, \nor name the coin that you want to mine.");
+		return false;
+	}
+
+	for(size_t i=0; i < coin_alogo_size; i++)
+	{
+		if(needle == coin_algos[i].coin_name)
+			return true;
+	}
+	return false;
+}
+
+const char* jconf::GetDefaultPool(const char* needle)
+{
+	const char* default_example = "pool.example.com:3333";
+	
+	for(size_t i=0; i < coin_alogo_size; i++)
+	{
+		if(strcmp(needle, coin_algos[i].coin_name) == 0)
+		{
+			if(coin_algos[i].default_pool != nullptr)
+				return coin_algos[i].default_pool;
+			else
+				return default_example;
+		}
+	}
+
+	return default_example;
+}
+
+bool jconf::parse_file(const char* sFilename, bool main_conf)
 {
 	FILE * pFile;
 	char * buffer;
 	size_t flen;
-
-	if(!check_cpu_features())
-	{
-		printer::inst()->print_msg(L0, "CPU support of SSE2 is required.");
-		return false;
-	}
 
 	pFile = fopen(sFilename, "rb");
 	if (pFile == NULL)
@@ -372,45 +409,91 @@ bool jconf::parse_config(const char* sFilename)
 	buffer[flen] = '}';
 	buffer[flen + 1] = '\0';
 
-	prv->jsonDoc.Parse<kParseCommentsFlag|kParseTrailingCommasFlag>(buffer, flen+2);
+	Document& root = main_conf ? prv->jsonDoc : prv->jsonDocPools;
+
+	root.Parse<kParseCommentsFlag|kParseTrailingCommasFlag>(buffer, flen+2);
 	free(buffer);
 
-	if(prv->jsonDoc.HasParseError())
+	if(root.HasParseError())
 	{
-		printer::inst()->print_msg(L0, "JSON config parse error(offset %llu): %s",
-			int_port(prv->jsonDoc.GetErrorOffset()), GetParseError_En(prv->jsonDoc.GetParseError()));
+		printer::inst()->print_msg(L0, "JSON config parse error in '%s' (offset %llu): %s",
+			sFilename, int_port(root.GetErrorOffset()), GetParseError_En(root.GetParseError()));
 		return false;
 	}
 
-
-	if(!prv->jsonDoc.IsObject())
+	if(!root.IsObject())
 	{ //This should never happen as we created the root ourselves
-		printer::inst()->print_msg(L0, "Invalid config file. No root?\n");
+		printer::inst()->print_msg(L0, "Invalid config file '%s'. No root?", sFilename);
 		return false;
 	}
 
-	for(size_t i = 0; i < iConfigCnt; i++)
+	if(main_conf)
 	{
-		if(oConfigValues[i].iName != i)
+		for(size_t i = 2; i < iConfigCnt; i++)
 		{
-			printer::inst()->print_msg(L0, "Code error. oConfigValues are not in order.");
-			return false;
-		}
+			if(oConfigValues[i].iName != i)
+			{
+				printer::inst()->print_msg(L0, "Code error. oConfigValues are not in order.");
+				return false;
+			}
 
-		prv->configValues[i] = GetObjectMember(prv->jsonDoc, oConfigValues[i].sName);
+			prv->configValues[i] = GetObjectMember(root, oConfigValues[i].sName);
 
-		if(prv->configValues[i] == nullptr)
-		{
-			printer::inst()->print_msg(L0, "Invalid config file. Missing value \"%s\".", oConfigValues[i].sName);
-			return false;
-		}
+			if(prv->configValues[i] == nullptr)
+			{
+				printer::inst()->print_msg(L0, "Invalid config file '%s'. Missing value \"%s\".", sFilename, oConfigValues[i].sName);
+				return false;
+			}
 
-		if(!checkType(prv->configValues[i]->GetType(), oConfigValues[i].iType))
-		{
-			printer::inst()->print_msg(L0, "Invalid config file. Value \"%s\" has unexpected type.", oConfigValues[i].sName);
-			return false;
+			if(!checkType(prv->configValues[i]->GetType(), oConfigValues[i].iType))
+			{
+				printer::inst()->print_msg(L0, "Invalid config file '%s'. Value \"%s\" has unexpected type.", sFilename, oConfigValues[i].sName);
+				return false;
+			}
 		}
 	}
+	else
+	{
+		for(size_t i = 0; i < 2; i++)
+		{
+			if(oConfigValues[i].iName != i)
+			{
+				printer::inst()->print_msg(L0, "Code error. oConfigValues are not in order.");
+				return false;
+			}
+
+			prv->configValues[i] = GetObjectMember(root, oConfigValues[i].sName);
+
+			if(prv->configValues[i] == nullptr)
+			{
+				printer::inst()->print_msg(L0, "Invalid config file '%s'. Missing value \"%s\".", sFilename, oConfigValues[i].sName);
+				return false;
+			}
+
+			if(!checkType(prv->configValues[i]->GetType(), oConfigValues[i].iType))
+			{
+				printer::inst()->print_msg(L0, "Invalid config file '%s'. Value \"%s\" has unexpected type.", sFilename, oConfigValues[i].sName);
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+bool jconf::parse_config(const char* sFilename, const char* sFilenamePools)
+{
+	if(!check_cpu_features())
+	{
+		printer::inst()->print_msg(L0, "CPU support of SSE2 is required.");
+		return false;
+	}
+
+	if(!parse_file(sFilename, true))
+		return false;
+
+	if(!parse_file(sFilenamePools, false))
+		return false;
 
 	size_t pool_cnt = prv->configValues[aPoolList]->Size();
 	if(pool_cnt == 0)
@@ -527,6 +610,41 @@ bool jconf::parse_config(const char* sFilename)
 		{
 			printer::inst()->print_msg(L0, "Flush stdout forced.");
 		}
+	}
+
+	std::string ctmp = GetMiningCoin();
+	std::transform(ctmp.begin(), ctmp.end(), ctmp.begin(), ::tolower);
+
+	if(ctmp.length() == 0)
+	{
+		printer::inst()->print_msg(L0, "You need to specify the coin that you want to mine.");
+		return false;
+	}
+
+	for(size_t i=0; i < coin_alogo_size; i++)
+	{
+		if(ctmp == "monero")
+		{
+			printer::inst()->print_msg(L0, "You entered Monero as coin name. Monero will hard-fork the PoW.\nThis means it will stop being compatible with other cryptonight coins.\n"
+				"Please use monero7 (support auto switch to new POW) if you want to mine Monero, or name the coin that you want to mine.");
+			return false;
+		}
+
+		if(ctmp == coin_algos[i].coin_name)
+		{
+			mining_algo = coin_algos[i].algo;
+			mining_algo_root = coin_algos[i].algo_root;
+			mining_fork_version = coin_algos[i].fork_version;
+			break;
+		}
+	}
+
+	if(mining_algo == invalid_algo)
+	{
+		std::string cl;
+		GetAlgoList(cl);
+		printer::inst()->print_msg(L0, "Unrecognised coin '%s', your options are:\n%s", ctmp.c_str(), cl.c_str());
+		return false;
 	}
 
 	return true;

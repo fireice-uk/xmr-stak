@@ -152,7 +152,7 @@ extern const char sHtmlMotdEntry[] = "<div class='motd-head'>Message from %s</di
 extern const char sHtmlMotdBoxEnd[] = "</div>";
 
 extern const char sHtmlHashrateBodyHigh [] =
-	"<div class=data>"
+	"<div class='data'>"
 	"<table>"
 		"<tr><th>Thread ID</th><th>10s</th><th>60s</th><th>15m</th><th rowspan='%u'>H/s</td></tr>";
 
@@ -166,7 +166,7 @@ extern const char sHtmlHashrateBodyLow [] =
 	"</div></div></body></html>";
 
 extern const char sHtmlConnectionBodyHigh [] =
-	"<div class=data>"
+	"<div class='data'>"
 	"<table>"
 		"<tr><th>Pool address</th><td>%s</td></tr>"
 		"<tr><th>Connected since</th><td>%s</td></tr>"
@@ -183,7 +183,7 @@ extern const char sHtmlConnectionBodyLow [] =
 	"</table></div></div></body></html>";
 
 extern const char sHtmlResultBodyHigh [] =
-	"<div class=data>"
+	"<div class='data'>"
 	"<table>"
 		"<tr><th>Difficulty</th><td>%u</td></tr>"
 		"<tr><th>Good results</th><td>%u / %u (%.1f %%)</td></tr>"
