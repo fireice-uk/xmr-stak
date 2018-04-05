@@ -9,7 +9,7 @@ namespace xmrstak
 class telemetry
 {
 public:
-	telemetry(size_t iThd);
+	telemetry(size_t iThd, int64_t hashCount);
 	void push_perf_value(size_t iThd, uint64_t iHashCount, uint64_t iTimestamp);
 	double calc_telemetry_data(size_t iLastMilisec, size_t iThread);
 	uint64_t calc_total_hashes(void);
@@ -22,6 +22,7 @@ private:
 	uint64_t** ppTimestamps;
 	uint64_t* threadHashCount;
 	size_t numThreads;
+	int64_t hashCount;
 };
 
 } // namepsace xmrstak

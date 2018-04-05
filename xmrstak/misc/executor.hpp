@@ -36,7 +36,7 @@ public:
 		return env.pExecutor;
 	};
 
-	void ex_start(bool daemon) { daemon ? ex_main() : std::thread(&executor::ex_main, this).detach(); }
+	void ex_start(bool daemon, int64_t hashCount) { daemon ? ex_main(hashCount) : std::thread(&executor::ex_main, this, hashCount).detach(); }
 
 	void get_http_report(ex_event_name ev_id, std::string& data);
 
@@ -90,7 +90,7 @@ private:
 
 	executor();
 
-	void ex_main();
+	void ex_main(int64_t hashCount);
 
 	void ex_clock_thd();
 	void pool_connect(jpsock* pool);

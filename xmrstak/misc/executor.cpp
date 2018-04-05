@@ -475,7 +475,7 @@ void disable_sigpipe()
 inline void disable_sigpipe() {}
 #endif
 
-void executor::ex_main()
+void executor::ex_main(int64_t hashCount)
 {
 	disable_sigpipe();
 
@@ -492,7 +492,7 @@ void executor::ex_main()
 		win_exit();
 	}
 
-	telem = new xmrstak::telemetry(pvThreads->size());
+	telem = new xmrstak::telemetry(pvThreads->size(), hashCount);
 
 	set_timestamp();
 	size_t pc = jconf::inst()->GetPoolCount();

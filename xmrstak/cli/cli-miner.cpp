@@ -596,7 +596,7 @@ int main(int argc, char *argv[])
 	if(strlen(jconf::inst()->GetOutputFile()) != 0)
 		printer::inst()->open_logfile(jconf::inst()->GetOutputFile());
 
-	executor::inst()->ex_start(jconf::inst()->DaemonMode());
+	executor::inst()->ex_start(jconf::inst()->DaemonMode(), numHashes);
 
 	uint64_t lastTime = get_timestamp_ms();
 	int key;
@@ -617,11 +617,6 @@ int main(int argc, char *argv[])
 			break;
 		default:
 			break;
-		}
-		if(0xffffffff != numHashes){
-			if(executor::inst()->get_hash_count() > numHashes){
-				exit(0);
-			}
 		}
 
 		uint64_t currentTime = get_timestamp_ms();
