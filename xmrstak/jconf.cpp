@@ -97,16 +97,19 @@ struct xmrstak_coin_algo
 
 xmrstak_coin_algo coin_algos[] = { 
 	{ "aeon7", cryptonight_aeon, cryptonight_lite, 7u, "mine.aeon-pool.com:5555" },
+  { "croat", cryptonight, cryptonight, 0u, nullptr },
 	{ "cryptonight", cryptonight, cryptonight, 0u, nullptr },
 	{ "cryptonight_lite", cryptonight_lite, cryptonight_lite, 0u, nullptr },
 	{ "edollar", cryptonight, cryptonight, 0u, nullptr },
 	{ "electroneum", cryptonight, cryptonight, 0u, nullptr },
 	{ "graft", cryptonight, cryptonight, 0u, nullptr },
+  { "haven", cryptonight_heavy, cryptonight, 2u, nullptr },
 	{ "intense", cryptonight, cryptonight, 0u, nullptr },
 	{ "karbo", cryptonight, cryptonight, 0u, nullptr },
 	{ "monero7", cryptonight_monero, cryptonight, 7u, "pool.usxmrpool.com:3333" },
 	{ "stellite", cryptonight_monero, cryptonight, 3u, nullptr },
 	{ "sumokoin", cryptonight_heavy, cryptonight, 3u, nullptr }
+  
 };
 
 constexpr size_t coin_alogo_size = (sizeof(coin_algos)/sizeof(coin_algos[0]));

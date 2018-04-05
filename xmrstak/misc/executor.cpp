@@ -563,7 +563,7 @@ void executor::ex_main()
 		else
 			pools.emplace_front(0, "indeedminers.eu:3333", "", "", "", 0.0, true, false, "", true);
 		break;
-	case cryptonight_aeon:
+	
 	case cryptonight_lite:
 		if(dev_tls)
 			pools.emplace_front(0, "indeedminers.eu:2222", "", "", "", 0.0, true, false, "", true);
