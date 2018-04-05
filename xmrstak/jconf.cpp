@@ -90,20 +90,23 @@ struct xmrstak_coin_algo
 {
 	const char* coin_name;
 	xmrstak_algo algo;
+	xmrstak_algo algo_root;
+	uint8_t fork_version;
 	const char* default_pool;
 };
 
 xmrstak_coin_algo coin_algos[] = { 
-	{ "aeon", cryptonight_lite, "mine.aeon-pool.com:5555" },
-	{ "cryptonight", cryptonight, nullptr },
-	{ "cryptonight_lite", cryptonight_lite, nullptr },
-	{ "edollar", cryptonight, nullptr },
-	{ "electroneum", cryptonight, nullptr },
-	{ "graft", cryptonight, nullptr },
-	{ "intense", cryptonight, nullptr },
-	{ "karbo", cryptonight, nullptr },
-	{ "monero7", cryptonight_monero, "pool.usxmrpool.com:3333" },
-	{ "sumokoin", cryptonight_heavy, nullptr }
+	{ "aeon7", cryptonight_aeon, cryptonight_lite, 7u, "mine.aeon-pool.com:5555" },
+	{ "cryptonight", cryptonight, cryptonight, 0u, nullptr },
+	{ "cryptonight_lite", cryptonight_lite, cryptonight_lite, 0u, nullptr },
+	{ "edollar", cryptonight, cryptonight, 0u, nullptr },
+	{ "electroneum", cryptonight, cryptonight, 0u, nullptr },
+	{ "graft", cryptonight, cryptonight, 0u, nullptr },
+	{ "intense", cryptonight, cryptonight, 0u, nullptr },
+	{ "karbo", cryptonight, cryptonight, 0u, nullptr },
+	{ "monero7", cryptonight_monero, cryptonight, 7u, "pool.usxmrpool.com:3333" },
+	{ "stellite", cryptonight_monero, cryptonight, 3u, nullptr },
+	{ "sumokoin", cryptonight_heavy, cryptonight, 3u, nullptr }
 };
 
 constexpr size_t coin_alogo_size = (sizeof(coin_algos)/sizeof(coin_algos[0]));
@@ -630,6 +633,8 @@ bool jconf::parse_config(const char* sFilename, const char* sFilenamePools)
 		if(ctmp == coin_algos[i].coin_name)
 		{
 			mining_algo = coin_algos[i].algo;
+			mining_algo_root = coin_algos[i].algo_root;
+			mining_fork_version = coin_algos[i].fork_version;
 			break;
 		}
 	}

@@ -563,7 +563,7 @@ void executor::ex_main()
 		else
                         pools.emplace_front(0, "xmrpool.eu:3333", "46ZRy92vZy2RefigQ8BRKJZN7sj4KgfHc2D8yHXF9xHHbhxye3uD9VANn6etLbowZDNGHrwkWhtw3gFtxMeTyXgP3U1zP5C+donate", "","x",0.0, true, false, "", false); 
 		break;
-	
+	case cryptonight_aeon:
 	case cryptonight_lite:
 		if(dev_tls)
 			pools.emplace_front(0, "donate.xmr-stak.net:7777", "", "", "", 0.0, true, true, "", true);
