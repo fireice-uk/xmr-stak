@@ -109,4 +109,4 @@ struct plugin
  * */
 };
 
-} // namepsace xmrstak
+} // namespace xmrstak

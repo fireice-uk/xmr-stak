@@ -54,4 +54,4 @@ struct configEditor
 
 };
 
-} // namepsace xmrstak
+} // namespace xmrstak

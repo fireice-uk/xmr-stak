@@ -155,4 +155,4 @@ private:
 };
 
 } // namespace amd
-} // namepsace xmrstak
+} // namespace xmrstak
