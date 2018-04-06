@@ -378,7 +378,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	char options[512];
 	snprintf(options, sizeof(options),
 		"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d -DMEM_CHUNK_EXPONENT=%d  -DCOMP_MODE=%d -DMEMORY=%llu -DALGO=%d",
-		hashIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex, int(1u<<ctx->memChunk), ctx->compMode ? 1 : 0, 
+		hashIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex, int(1u<<ctx->memChunk), ctx->compMode ? 1 : 0,
 		int_port(hashMemSize), int(miner_algo));
 	/* create a hash for the compile time cache
 	 * used data:
@@ -497,7 +497,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	}
 	else
 	{
-		printer::inst()->print_msg(L1, "OpenCL device %u - Load precompiled cod from file %s",ctx->deviceIdx, cache_file.c_str());
+		printer::inst()->print_msg(L1, "OpenCL device %u - Load precompiled code from file %s",ctx->deviceIdx, cache_file.c_str());
 		std::ostringstream ss;
 		ss << clBinFile.rdbuf();
 		std::string s = ss.str();
