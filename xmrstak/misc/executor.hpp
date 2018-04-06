@@ -23,7 +23,7 @@ namespace cpu
 class minethd;
 
 } // namespace cpu
-} // namepsace xmrstak
+} // namespace xmrstak
 
 class executor
 {
