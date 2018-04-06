@@ -522,8 +522,8 @@ else()
     add_executable(xmr-stak ${SRCFILES_CPP})
 endif()
 
-set(EXECUTABLE_OUTPUT_PATH "bin")
-set(LIBRARY_OUTPUT_PATH "bin")
+set(EXECUTABLE_OUTPUT_PATH "bin" CACHE STRING "Path to place executables relative to ${CMAKE_INSTALL_PREFIX}")
+set(LIBRARY_OUTPUT_PATH "bin" CACHE STRING "Path to place libraries relative to ${CMAKE_INSTALL_PREFIX}")
 
 target_link_libraries(xmr-stak ${LIBS} xmr-stak-c xmr-stak-backend)
 
