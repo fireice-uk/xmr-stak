@@ -44,6 +44,7 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 - [Edollar](https://edollar.cash)
 - [Electroneum](https://electroneum.com)
 - [Graft](https://www.graft.network)
+- [Haven](https://havenprotocol.com)
 - [Intense](https://intensecoin.com)
 - [Karbo](https://karbo.io)
 - [Sumokoin](https://www.sumokoin.org)
