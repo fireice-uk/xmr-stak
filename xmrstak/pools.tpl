@@ -21,6 +21,7 @@ POOLCONF],
  * Currency to mine. Supported values:
  *
  *    aeon7 (use this for Aeon's new PoW)
+ *    croat
  *    cryptonight (try this if your coin is not listed)
  *    cryptonight_lite
  *    edollar
