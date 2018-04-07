@@ -18,4 +18,4 @@ namespace xmrstak
 		static bool self_test();
 	};
 
-} // namepsace xmrstak
+} // namespace xmrstak

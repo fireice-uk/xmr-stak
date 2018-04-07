@@ -23,7 +23,7 @@ namespace cpu
 class minethd;
 
 } // namespace cpu
-} // namepsace xmrstak
+} // namespace xmrstak
 
 class executor
 {
@@ -54,7 +54,7 @@ private:
 
 	inline void set_timestamp() { dev_timestamp = get_timestamp(); };
 
-	// In miliseconds, has to divide a second (1000ms) into an integer number
+	// In milliseconds, has to divide a second (1000ms) into an integer number
 	constexpr static size_t iTickTime = 500;
 
 	// Dev donation time period in seconds. 100 minutes by default.

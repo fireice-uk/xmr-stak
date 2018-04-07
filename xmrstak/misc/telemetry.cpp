@@ -105,4 +105,4 @@ void telemetry::push_perf_value(size_t iThd, uint64_t iHashCount, uint64_t iTime
 	iBucketTop[iThd] = (iTop + 1) & iBucketMask;
 }
 
-} // namepsace xmrstak
+} // namespace xmrstak
