@@ -308,9 +308,10 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	size_t scratchPadSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
-	int threadMemMask = cn_select_mask(::jconf::inst()->GetMiningAlgo());
-	int hashIterations = cn_select_iter(::jconf::inst()->GetMiningAlgo());
+	size_t scratchPadSize = std::max(
+		cn_select_memory(::jconf::inst()->GetMiningAlgo()),
+		cn_select_memory(::jconf::inst()->GetMiningAlgoRoot())
+	);
 
 	size_t g_thd = ctx->rawIntensity;
 	ctx->ExtraBuffers[0] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, scratchPadSize * g_thd, NULL, &ret);
@@ -382,6 +383,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 
 	for(int ii = 0; ii < num_algos; ++ii)
 	{
+		// scratchpad size for the selected mining algorithm
 		size_t hashMemSize = cn_select_memory(miner_algo[ii]);
 		int threadMemMask = cn_select_mask(miner_algo[ii]);
 		int hashIterations = cn_select_iter(miner_algo[ii]);
@@ -493,7 +495,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 					p_id++;
 				}
 
-			if((ret = clGetProgramInfo(ctx->Program[ii], CL_PROGRAM_BINARIES, num_devices * sizeof(char*), all_programs.data(),NULL)) != CL_SUCCESS)
+				if((ret = clGetProgramInfo(ctx->Program[ii], CL_PROGRAM_BINARIES, num_devices * sizeof(char*), all_programs.data(),NULL)) != CL_SUCCESS)
 				{
 					printer::inst()->print_msg(L1,"Error %s when calling clGetProgramInfo.", err_to_str(ret));
 					return ERR_OCL_API;
