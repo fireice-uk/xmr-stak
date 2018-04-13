@@ -27,7 +27,7 @@ namespace xmrstak
 struct plugin
 {
 
-	plugin(const std::string backendName, const std::string libName) : fn_starterBackend(nullptr), m_backendName(backendName)
+	plugin(const std::string backendName, const std::string libName) : m_backendName(backendName)
 	{
 #ifdef WIN32
 		libBackend = LoadLibrary(TEXT((libName + ".dll").c_str()));
@@ -61,18 +61,23 @@ struct plugin
 #ifdef WIN32
 		fn_starterBackend = (starterBackend_t) GetProcAddress(libBackend, "xmrstak_start_backend");
 		if (!fn_starterBackend)
-		{
 			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'xmrstak_start_backend': " <<GetLastError()<< std::endl;
-		}
+		fn_versionBackend = (versionBackend_t) GetProcAddress(libBackend, "xmrstak_version_backend");
+		if (!fn_versionBackend)
+			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'xmrstak_version_backend': " <<GetLastError()<< std::endl;
 #else
 		// reset last error
 		dlerror();
 		fn_starterBackend = (starterBackend_t) dlsym(libBackend, "xmrstak_start_backend");
 		const char* dlsym_error = dlerror();
 		if(dlsym_error)
-		{
 			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'xmrstak_start_backend': " << dlsym_error << std::endl;
-		}
+		dlerror();
+		fn_versionBackend = (versionBackend_t) dlsym(libBackend, "xmrstak_version_backend");
+		dlsym_error = dlerror();
+		if(dlsym_error)
+			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'xmrstak_version_backend': " << dlsym_error << std::endl;
+		
 #endif
 	}
 
@@ -88,11 +93,24 @@ struct plugin
 		return fn_starterBackend(threadOffset, pWork, env);
 	}
 
+	std::string getVersion()
+	{
+		if(fn_starterBackend == nullptr)
+		{
+			printer::inst()->print_msg(L1, "WARNING: extension %s has no version number, please update all miner files.", m_backendName.c_str());
+			return std::string("unknown plugin version");
+		}
+
+		return fn_versionBackend();
+	}
+
 	std::string m_backendName;
 
 	typedef std::vector<iBackend*>* (*starterBackend_t)(uint32_t threadOffset, miner_work& pWork, environment& env);
+	typedef std::string (*versionBackend_t)();
 
-	starterBackend_t fn_starterBackend;
+	starterBackend_t fn_starterBackend = nullptr;
+	versionBackend_t fn_versionBackend = nullptr;
 
 #ifdef WIN32
 	HINSTANCE libBackend;

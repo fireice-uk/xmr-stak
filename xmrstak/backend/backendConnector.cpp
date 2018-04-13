@@ -29,6 +29,7 @@
 #include "xmrstak/misc/environment.hpp"
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/params.hpp"
+#include "xmrstak/version.hpp"
 
 #include "cpu/minethd.hpp"
 #ifndef CONF_NO_CUDA
@@ -67,10 +68,21 @@ std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 	if(params::inst().useNVIDIA)
 	{
 		plugin nvidiaplugin("NVIDIA", "xmrstak_cuda_backend");
-		std::vector<iBackend*>* nvidiaThreads = nvidiaplugin.startBackend(static_cast<uint32_t>(pvThreads->size()), pWork, environment::inst());
-		pvThreads->insert(std::end(*pvThreads), std::begin(*nvidiaThreads), std::end(*nvidiaThreads));
-		if(nvidiaThreads->size() == 0)
-			printer::inst()->print_msg(L0, "WARNING: backend NVIDIA disabled.");
+		if(nvidiaplugin.getVersion() == XMR_STAK_VERSION)
+		{
+			std::vector<iBackend*>* nvidiaThreads = nvidiaplugin.startBackend(static_cast<uint32_t>(pvThreads->size()), pWork, environment::inst());
+			pvThreads->insert(std::end(*pvThreads), std::begin(*nvidiaThreads), std::end(*nvidiaThreads));
+			if(nvidiaThreads->size() == 0)
+				printer::inst()->print_msg(L0, "WARNING: backend NVIDIA disabled.");
+		}
+		else
+		{
+			printer::inst()->print_msg(L0,
+				"WARNING: backend NVIDIA disabled. Version conflict, miner version is '%s' and backend is '%s'",
+				XMR_STAK_VERSION,
+				nvidiaplugin.getVersion().c_str()
+			);
+		}
 	}
 #endif
 
@@ -78,10 +90,21 @@ std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 	if(params::inst().useAMD)
 	{
 		plugin amdplugin("AMD", "xmrstak_opencl_backend");
-		std::vector<iBackend*>* amdThreads = amdplugin.startBackend(static_cast<uint32_t>(pvThreads->size()), pWork, environment::inst());
-		pvThreads->insert(std::end(*pvThreads), std::begin(*amdThreads), std::end(*amdThreads));
-		if(amdThreads->size() == 0)
-			printer::inst()->print_msg(L0, "WARNING: backend AMD disabled.");
+		if(amdplugin.getVersion() == XMR_STAK_VERSION)
+		{
+			std::vector<iBackend*>* amdThreads = amdplugin.startBackend(static_cast<uint32_t>(pvThreads->size()), pWork, environment::inst());
+			pvThreads->insert(std::end(*pvThreads), std::begin(*amdThreads), std::end(*amdThreads));
+			if(amdThreads->size() == 0)
+				printer::inst()->print_msg(L0, "WARNING: backend AMD disabled.");
+		}
+		else
+		{
+			printer::inst()->print_msg(L0, 
+				"WARNING: backend AMD disabled. Version conflict, miner version is '%s' and backend is '%s'",
+				XMR_STAK_VERSION,
+				amdplugin.getVersion().c_str()
+			);
+		}
 	}
 #endif
 
