@@ -137,6 +137,8 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 	for (i = 0; i < n; i++)
 	{
 		jconf::inst()->GetThreadConfig(i, cfg);
+
+		const std::string backendName = xmrstak::params::inst().openCLVendor;
 		
 		if(cfg.cpu_aff >= 0)
 		{
@@ -144,10 +146,10 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 			printer::inst()->print_msg(L1, "WARNING on macOS thread affinity is only advisory.");
 #endif
 
-			printer::inst()->print_msg(L1, "Starting AMD GPU thread %d, affinity: %d.", i, (int)cfg.cpu_aff);
+			printer::inst()->print_msg(L1, "Starting %s GPU (OpenCL) thread %d, affinity: %d.", backendName.c_str(), i, (int)cfg.cpu_aff);
 		}
 		else
-			printer::inst()->print_msg(L1, "Starting AMD GPU thread %d, no affinity.", i);
+			printer::inst()->print_msg(L1, "Starting %s GPU (OpenCL) thread %d, no affinity.", backendName.c_str(), i);
 
 		minethd* thd = new minethd(pWork, i + threadOffset, &vGpuData[i], cfg);
 		pvThreads->push_back(thd);
