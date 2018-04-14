@@ -627,22 +627,22 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 
 void minethd::double_work_main()
 {
-	multiway_work_main<2>();
+	multiway_work_main<2u>();
 }
 
 void minethd::triple_work_main()
 {
-	multiway_work_main<3>();
+	multiway_work_main<3u>();
 }
 
 void minethd::quad_work_main()
 {
-	multiway_work_main<4>();
+	multiway_work_main<4u>();
 }
 
 void minethd::penta_work_main()
 {
-	multiway_work_main<5>();
+	multiway_work_main<5u>();
 }
 
 template<size_t N>
@@ -656,7 +656,7 @@ void minethd::prep_multiway_work(uint8_t *bWorkBlob, uint32_t **piNonce)
 	}
 }
 
-template<size_t N>
+template<uint32_t N>
 void minethd::multiway_work_main()
 {
 	if(affinity >= 0) //-1 means no affinity
