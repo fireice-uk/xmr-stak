@@ -102,7 +102,7 @@ xmrstak_coin_algo coin_algos[] = {
 	{ "cryptonight_lite", cryptonight_lite, cryptonight_lite, 0u, nullptr },
 	{ "edollar", cryptonight, cryptonight, 0u, nullptr },
 	{ "electroneum", cryptonight, cryptonight, 0u, nullptr },
-	{ "graft", cryptonight, cryptonight, 0u, nullptr },
+	{ "graft", cryptonight_monero, cryptonight, 8u, nullptr },
 	{ "haven", cryptonight_heavy, cryptonight, 2u, nullptr },
 	{ "intense", cryptonight, cryptonight, 0u, nullptr },
 	{ "karbo", cryptonight, cryptonight, 0u, nullptr },
