@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 typedef unsigned char BitSequence;
-typedef unsigned long long DataLength;
+typedef uint32_t DataLength;
 typedef enum {SUCCESS = 0, FAIL = 1, BAD_HASHLEN = 2} HashReturn;

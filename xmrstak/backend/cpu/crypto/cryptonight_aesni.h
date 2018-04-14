@@ -43,7 +43,7 @@ extern "C"
 {
 	void keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen);
 	void keccakf(uint64_t st[25], int rounds);
-	extern void(*const extra_hashes[4])(const void *, size_t, char *);
+	extern void(*const extra_hashes[4])(const void *, uint32_t, char *);
 }
 
 // This will shift and xor tmp1 into itself as 4 32-bit vals such as
