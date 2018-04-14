@@ -35,6 +35,7 @@
 #include "xmrstak/misc/environment.hpp"
 #include "xmrstak/params.hpp"
 #include "xmrstak/backend/cpu/hwlocMemory.hpp"
+#include "xmrstak/version.hpp"
 
 #include <assert.h>
 #include <cmath>
@@ -79,6 +80,14 @@ std::vector<iBackend*>* xmrstak_start_backend(uint32_t threadOffset, miner_work&
 {
 	environment::inst(&env);
 	return amd::minethd::thread_starter(threadOffset, pWork);
+}
+
+#ifdef WIN32
+__declspec(dllexport)
+#endif
+std::string xmrstak_version_backend()
+{
+	return XMR_STAK_VERSION;
 }
 } // extern "C"
 
