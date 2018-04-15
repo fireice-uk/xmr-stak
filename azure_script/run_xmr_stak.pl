@@ -91,6 +91,7 @@ do
 {
 
     $Threads=`nproc`;
+    $Intensity=$Threads;
 
     my $OldHash=0;
     my $CurHash=0;
