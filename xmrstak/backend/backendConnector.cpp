@@ -99,4 +99,4 @@ std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 	return pvThreads;
 }
 
-} // namepsace xmrstak
+} // namespace xmrstak

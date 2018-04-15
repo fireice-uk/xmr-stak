@@ -28,7 +28,10 @@ public:
 
 	autoAdjust()
 	{
-		hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
+		hashMemSize = std::max(
+			cn_select_memory(::jconf::inst()->GetMiningAlgo()),
+			cn_select_memory(::jconf::inst()->GetMiningAlgoRoot())
+		);
 		halfHashMemSize = hashMemSize / 2u;
 	}
 
@@ -214,4 +217,4 @@ private:
 };
 
 } // namespace cpu
-} // namepsace xmrstak
+} // namespace xmrstak
