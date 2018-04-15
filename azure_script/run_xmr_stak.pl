@@ -4,7 +4,9 @@ use warnings;
 
 my $repetitions= shift;
 
-my $loopruntime=60*60*24*2;
+#my $loopruntime=60*60*24*2;
+
+my $loopruntime=70;
 
 my $Intensity=0;
 my $Threads=1;
