@@ -55,4 +55,4 @@ private:
 	}
 };
 
-} // namepsace xmrstak
+} // namespace xmrstak

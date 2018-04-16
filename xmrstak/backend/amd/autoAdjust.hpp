@@ -83,7 +83,10 @@ private:
 
 		constexpr size_t byteToMiB = 1024u * 1024u;
 
-		size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
+		size_t hashMemSize = std::max(
+			cn_select_memory(::jconf::inst()->GetMiningAlgo()),
+			cn_select_memory(::jconf::inst()->GetMiningAlgoRoot())
+		);
 
 		std::string conf;
 		for(auto& ctx : devVec)
@@ -155,4 +158,4 @@ private:
 };
 
 } // namespace amd
-} // namepsace xmrstak
+} // namespace xmrstak

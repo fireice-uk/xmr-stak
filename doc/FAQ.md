@@ -9,7 +9,7 @@
 * [Virus Protection Alert](#virus-protection-alert)
 * [Change Currency to Mine](#change-currency-to-mine)
 * [How can I mine Monero](#how-can-i-mine-monero)
-* [Why is Monero named monero7](why-is-monero-named-monero7)
+* [Why is Monero named monero7](#why-is-monero-named-monero7)
 * [Which currency must be chosen if my fork coin is not listed](#which-currency-must-be-chosen-if-my-fork-coin-is-not-listed)
 
 ## "Obtaining SeLockMemoryPrivilege failed."
