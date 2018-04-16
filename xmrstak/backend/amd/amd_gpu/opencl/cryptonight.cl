@@ -521,7 +521,7 @@ __kernel void cn0(__global ulong *input, __global uint4 *Scratchpad, __global ul
 	{
 		__local uint4 xin[8][WORKSIZE];
 
-		/* Also left over threads performe this loop.
+		/* Also left over threads perform this loop.
 		 * The left over thread results will be ignored
 		 */
 		for(size_t i=0; i < 16; i++)

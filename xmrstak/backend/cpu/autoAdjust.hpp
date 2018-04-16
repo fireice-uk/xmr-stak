@@ -124,7 +124,7 @@ private:
 
 			if(get_masked(cpu_info[0], 7, 5) != 3)
 			{
-				printer::inst()->print_msg(L0, "Autoconf failed: Couln't find L3 cache page.");
+				printer::inst()->print_msg(L0, "Autoconf failed: Couldn't find L3 cache page.");
 				return false;
 			}
 

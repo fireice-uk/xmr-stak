@@ -51,8 +51,8 @@ using namespace rapidjson;
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
 enum configEnum {
-	aPoolList, sCurrency, bTlsSecureAlgo, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, bPrintMotd, iAutohashTime, 
-	bFlushStdout, bDaemonMode, sOutputFile, iHttpdPort, sHttpLogin, sHttpPass, bPreferIpv4, bAesOverride, sUseSlowMem 
+	aPoolList, sCurrency, bTlsSecureAlgo, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, bPrintMotd, iAutohashTime,
+	bFlushStdout, bDaemonMode, sOutputFile, iHttpdPort, sHttpLogin, sHttpPass, bPreferIpv4, bAesOverride, sUseSlowMem
 };
 
 struct configVal {
@@ -95,7 +95,7 @@ struct xmrstak_coin_algo
 	const char* default_pool;
 };
 
-xmrstak_coin_algo coin_algos[] = { 
+xmrstak_coin_algo coin_algos[] = {
 	{ "aeon7", cryptonight_aeon, cryptonight_lite, 7u, "mine.aeon-pool.com:5555" },
 	{ "cryptonight", cryptonight, cryptonight, 0u, nullptr },
 	{ "cryptonight_lite", cryptonight_lite, cryptonight_lite, 0u, nullptr },
@@ -180,7 +180,7 @@ bool jconf::GetPoolConfig(size_t id, pool_cfg& cfg)
 	size_t dlt = wt_max - wt_min;
 	if(dlt != 0)
 	{
-		/* Normalise weights between 0 and 9.8 */
+		/* Normalize weights between 0 and 9.8 */
 		cfg.weight = double(cfg.raw_weight - wt_min) * 9.8;
 		cfg.weight /= dlt;
 	}

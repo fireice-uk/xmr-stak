@@ -100,7 +100,7 @@ struct plugin
 	void *libBackend;
 #endif
 
-/* \todo add unload to destructor and change usage of plugin that libs keeped open until the miner endss
+/* \todo add unload to destructor and change usage of plugin that libs kept open until the miner ends
 #ifdef WIN32
 	FreeLibrary(libBackend);
 #else

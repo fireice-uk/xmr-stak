@@ -384,7 +384,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	 * used data:
 	 *   - source code
 	 *   - device name
-	 *   - compile paramater
+	 *   - compile parameter
 	 */
 	std::string src_str(source_code);
 	src_str += options;

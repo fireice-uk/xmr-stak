@@ -132,7 +132,7 @@ bool executor::get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev)
 
 			if(over_limit == pool_count)
 			{
-				printer::inst()->print_msg(L0, "All pools are over give up limit. Exitting.");
+				printer::inst()->print_msg(L0, "All pools are over give up limit. Exiting.");
 				exit(0);
 			}
 
@@ -232,7 +232,7 @@ void executor::eval_pool_choice()
 	else
 	{
 		/* All is good - but check if we can do better */
-		std::sort(eval_pools.begin(), eval_pools.end(), [](jpsock* a, jpsock* b) { return b->get_pool_weight(false) < a->get_pool_weight(false); }); 
+		std::sort(eval_pools.begin(), eval_pools.end(), [](jpsock* a, jpsock* b) { return b->get_pool_weight(false) < a->get_pool_weight(false); });
 		jpsock* goal2 = eval_pools[0];
 
 		if(goal->get_pool_id() != goal2->get_pool_id())
