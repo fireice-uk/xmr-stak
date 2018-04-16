@@ -29,8 +29,8 @@ public:
 	autoAdjust()
 	{
 		hashMemSize = std::max(
-			cn_select_memory(::jconf::inst()->GetMiningAlgo()),
-			cn_select_memory(::jconf::inst()->GetMiningAlgoRoot())
+			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
+			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
 		);
 		halfHashMemSize = hashMemSize / 2u;
 	}

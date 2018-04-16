@@ -231,7 +231,7 @@ bool minethd::self_test()
 
 	bool bResult = true;
 
-	if(::jconf::inst()->GetMiningAlgo() == cryptonight)
+	if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight)
 	{
 		unsigned char out[32 * MAX_N];
 		cn_hash_fun hashf;
@@ -276,13 +276,13 @@ bool minethd::self_test()
 				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 				"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 160) == 0;
 	}
-	else if(::jconf::inst()->GetMiningAlgo() == cryptonight_lite)
+	else if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_lite)
 	{
 	}
-	else if(::jconf::inst()->GetMiningAlgo() == cryptonight_monero)
+	else if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_monero)
 	{
 	}
-	else if(::jconf::inst()->GetMiningAlgo() == cryptonight_aeon)
+	else if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_aeon)
 	{
 	}
 
@@ -424,7 +424,7 @@ void minethd::work_main()
 	job_result result;
 
 	// start with root algorithm and switch later if fork version is reached
-	auto miner_algo = ::jconf::inst()->GetMiningAlgoRoot();
+	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
 	cn_hash_fun hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
 	ctx = minethd_alloc_ctx();
 
@@ -464,14 +464,15 @@ void minethd::work_main()
 		uint8_t new_version = oWork.getVersion();
 		if(new_version != version || oWork.iPoolId != lastPoolId)
 		{
-			if(new_version >= ::jconf::inst()->GetMiningForkVersion() || oWork.iPoolId == 0)
+			coinDescription coinDesc = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(oWork.iPoolId);
+			if(new_version >= coinDesc.GetMiningForkVersion())
 			{
-				miner_algo = ::jconf::inst()->GetMiningAlgo();
+				miner_algo = coinDesc.GetMiningAlgo();
 				hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
 			}
 			else
 			{
-				miner_algo = ::jconf::inst()->GetMiningAlgoRoot();
+				miner_algo = coinDesc.GetMiningAlgoRoot();
 				hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
 			}
 			lastPoolId = oWork.iPoolId;
@@ -696,7 +697,7 @@ void minethd::multiway_work_main()
 	globalStates::inst().iConsumeCnt++;
 
 	// start with root algorithm and switch later if fork version is reached
-	auto miner_algo = ::jconf::inst()->GetMiningAlgoRoot();
+	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
 	cn_hash_fun_multi hash_fun_multi = func_multi_selector(N, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
 	uint8_t version = 0;
 	size_t lastPoolId = 0;
@@ -728,14 +729,15 @@ void minethd::multiway_work_main()
 		uint8_t new_version = oWork.getVersion();
 		if(new_version != version || oWork.iPoolId != lastPoolId)
 		{
-			if(new_version >= ::jconf::inst()->GetMiningForkVersion() || oWork.iPoolId == 0)
+			coinDescription coinDesc = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(oWork.iPoolId);
+			if(new_version >= coinDesc.GetMiningForkVersion())
 			{
-				miner_algo = ::jconf::inst()->GetMiningAlgo();
+				miner_algo = coinDesc.GetMiningAlgo();
 				hash_fun_multi = func_multi_selector(N, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
 			}
 			else
 			{
-				miner_algo = ::jconf::inst()->GetMiningAlgoRoot();
+				miner_algo = coinDesc.GetMiningAlgoRoot();
 				hash_fun_multi = func_multi_selector(N, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
 			}
 			lastPoolId = oWork.iPoolId;
