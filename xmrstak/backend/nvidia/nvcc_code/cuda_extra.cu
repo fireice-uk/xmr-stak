@@ -279,7 +279,10 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	if(gpuArch < 70)
 		CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
 
-	size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
+	size_t hashMemSize = std::max(
+		cn_select_memory(::jconf::inst()->GetMiningAlgo()),
+		cn_select_memory(::jconf::inst()->GetMiningAlgoRoot())
+	);
 
 	size_t wsize = ctx->device_blocks * ctx->device_threads;
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state, 50 * sizeof(uint32_t) * wsize));
@@ -576,7 +579,10 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		ctx->total_device_memory = totalMemory;
 		ctx->free_device_memory = freeMemory;
 
-		size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
+		size_t hashMemSize = std::max(
+			cn_select_memory(::jconf::inst()->GetMiningAlgo()),
+			cn_select_memory(::jconf::inst()->GetMiningAlgoRoot())
+		);
 
 #ifdef WIN32
 		/* We use in windows bfactor (split slow kernel into smaller parts) to avoid

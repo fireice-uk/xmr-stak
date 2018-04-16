@@ -563,7 +563,7 @@ void executor::ex_main()
 		else
 			pools.emplace_front(0, "indeedminers.eu:3333", "", "", "", 0.0, true, false, "", true);
 		break;
-	
+	case cryptonight_aeon:
 	case cryptonight_lite:
 		if(dev_tls)
 			pools.emplace_front(0, "indeedminers.eu:2222", "", "", "", 0.0, true, false, "", true);
@@ -577,6 +577,13 @@ void executor::ex_main()
 		else
 			pools.emplace_front(0, "indeedminers.eu:1111", "", "", "", 0.0, true, false, "", true);
 		break;
+  case cryptonight_ipbc:
+  	if(dev_tls)
+			pools.emplace_front(0, "ipbc.ingest.cryptoknight.cc:4461", "bxbpmWbBYVzVjuzKJHucZGY19gB8kCs1E5xXe38mkZv1cQsE21rBbfD9f4aUKH9Ujp73kabrQCK3P1M2X2DSsDGp1tPJy2hF5", "", "x", 0.0, true, false, "", false);
+		else
+		  pools.emplace_front(0, "ipbc.ingest.cryptoknight.cc:4461", "bxbpmWbBYVzVjuzKJHucZGY19gB8kCs1E5xXe38mkZv1cQsE21rBbfD9f4aUKH9Ujp73kabrQCK3P1M2X2DSsDGp1tPJy2hF5", "", "x", 0.0, true, false, "", false);
+		break; 
+  
 
 	default:
 		break;

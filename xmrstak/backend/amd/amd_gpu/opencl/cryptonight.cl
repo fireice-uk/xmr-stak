@@ -32,7 +32,8 @@ R"===(
  * The implemented function is modified because the last is in our case always a scalar.
  * We can ignore the bitwise AND operation.
  */
-inline uint2 amd_bitalign( const uint2 src0, const uint2 src1, const uint src2)
+
+inline uint2 __attribute__((overloadable)) amd_bitalign( const uint2 src0, const uint2 src1, const uint src2)
 {
 	uint2 result;
 	result.s0 =  (uint) (((((long)src0.s0) << 32) | (long)src1.s0) >> (src2));
@@ -59,7 +60,7 @@ inline uint2 amd_bitalign( const uint2 src0, const uint2 src1, const uint src2)
  *         dst.s0 = src0.s0 >> offset;
  *     similar operation applied to other components of the vectors
  */
-inline int amd_bfe(const uint src0, const uint offset, const uint width)
+inline uint __attribute__((overloadable)) amd_bfe(const uint src0, const uint offset, const uint width)
 {
 	/* casts are removed because we can implement everything as uint
 	 * int offset = src1;
@@ -553,8 +554,8 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
 __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states, ulong Threads
-// cryptonight_monero || cryptonight_aeon
-#if(ALGO == 3 || ALGO == 5)
+// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc
+#if(ALGO == 3 || ALGO == 5 || ALGO == 6)
 , __global ulong *input
 #endif
 )
@@ -574,7 +575,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 	}
 
 	barrier(CLK_LOCAL_MEM_FENCE);
-#if(ALGO == 3 || ALGO == 5)
+#if(ALGO == 3 || ALGO == 5 || ALGO == 6)
     uint2 tweak1_2;
 #endif
 	uint4 b_x;
@@ -598,7 +599,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 		b[1] = states[3] ^ states[7];
 
 		b_x = ((uint4 *)b)[0];
-#if(ALGO == 3 || ALGO == 5)
+#if(ALGO == 3 || ALGO == 5 || ALGO == 6)
 		tweak1_2 = as_uint2(input[4]);
 		tweak1_2.s0 >>= 24;
 		tweak1_2.s0 |= tweak1_2.s1 << 8;
@@ -625,7 +626,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			((uint4 *)c)[0] = AES_Round(AES0, AES1, AES2, AES3, ((uint4 *)c)[0], ((uint4 *)a)[0]);
 
 			b_x ^= ((uint4 *)c)[0];
-#if(ALGO == 3 || ALGO == 5)
+#if(ALGO == 3 || ALGO == 5 || ALGO == 6)
 			uint table = 0x75310U;
 			uint index = ((b_x.s2 >> 26) & 12) | ((b_x.s2 >> 23) & 2);
 			b_x.s2 ^= ((table >> index) & 0x30U) << 24;
@@ -639,12 +640,17 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			a[0] += mul_hi(c[0], as_ulong2(tmp).s0);
 
 
-#if(ALGO == 3 || ALGO == 5)
+#if(ALGO == 3 || ALGO == 5 || ALGO == 6)
 			((uint2 *)&(a[1]))[0] ^= tweak1_2;
 			Scratchpad[IDX((c[0] & MASK) >> 4)] = ((uint4 *)a)[0];
 			((uint2 *)&(a[1]))[0] ^= tweak1_2;
 #else
 			Scratchpad[IDX((c[0] & MASK) >> 4)] = ((uint4 *)a)[0];
+#endif
+#if(ALGO == 6)
+			long prev = *((__global long*)(Scratchpad + (IDX((c[0] & MASK) >> 4))));
+			long cur = *((__global long*)(Scratchpad + (IDX((c[0] & MASK) >> 4))) + 1);
+			*((__global long*)(Scratchpad + (IDX((c[0] & MASK) >> 4))) + 1) = prev ^ cur;
 #endif
 
 			((uint4 *)a)[0] ^= tmp;

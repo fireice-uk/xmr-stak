@@ -217,6 +217,7 @@ void minethd::work_main()
 		}
 
 		uint8_t new_version = oWork.getVersion();
+		if (::jconf::inst()->GetMiningAlgo() == cryptonight_ipbc) new_version = oWork.bWorkBlob[1];
 		if(new_version != version)
 		{
 			if(new_version >= ::jconf::inst()->GetMiningForkVersion())

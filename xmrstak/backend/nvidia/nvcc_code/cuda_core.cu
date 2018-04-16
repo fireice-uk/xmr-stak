@@ -231,7 +231,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 	uint32_t t1[2], t2[2], res;
 
 	uint32_t tweak1_2[2];
-	if (ALGO == cryptonight_monero || ALGO == cryptonight_aeon)
+	if (ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc)
 	{
 		uint32_t * state = d_ctx_state + thread * 50;
 		tweak1_2[0] = (d_input[8] >> 24) | (d_input[9] << 8);
@@ -275,7 +275,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 			t1[0] = shuffle<4>(sPtr,sub, d[x], 0);
 
 			const uint32_t z = d[0] ^ d[1];
-			if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon)
+			if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc)
 			{
 				const uint32_t table = 0x75310U;
 				const uint32_t index = ((z >> 26) & 12) | ((z >> 23) & 2);
@@ -304,14 +304,22 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 			res = *( (uint64_t *) t2 )  >> ( sub & 1 ? 32 : 0 );
 
 			
-			if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon)
+			if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc)
 			{
-				const uint32_t tweaked_res = tweak1_2[sub & 1] ^ res;
+        const uint32_t tweaked_res = tweak1_2[sub & 1] ^ res;
+
 				const uint32_t long_state_update = sub2 ? tweaked_res : res;
 				storeGlobal32( long_state + j, long_state_update );
 			}
 			else
 				storeGlobal32( long_state + j, res );
+
+			if (ALGO == cryptonight_ipbc && sub == 2) {
+				uint64_t* dst = ((uint64_t*)(long_state + j));
+				uint64_t cur  = loadGlobal64<uint64_t>(dst);
+				uint64_t prev = loadGlobal64<uint64_t>(dst - 1);
+				storeGlobal64<uint64_t>(dst, cur ^ prev);
+			}
 			
 			a = ( sub & 1 ? yy[1] : yy[0] ) ^ res;
 			idx0 = shuffle<4>(sPtr,sub, a, 0);
@@ -492,5 +500,8 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t 
 	{
 		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_aeon>(ctx, startNonce);
 	}
-
+	else if (miner_algo == cryptonight_ipbc)
+	{
+		cryptonight_core_gpu_hash<CRYPTONIGHT_IPBC_ITER, CRYPTONIGHT_IPBC_MASK, CRYPTONIGHT_IPBC_MEMORY/4, cryptonight_ipbc>(ctx, startNonce);
+	}
 }
