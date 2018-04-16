@@ -434,6 +434,7 @@ void minethd::work_main()
 	result.iThreadId = iThreadNo;
 
 	uint8_t version = 0;
+	size_t lastPoolId = 0;
 
 	while (bQuit == 0)
 	{
@@ -461,13 +462,19 @@ void minethd::work_main()
 			result.iNonce = *piNonce;
 
 		uint8_t new_version = oWork.getVersion();
-		if(new_version != version)
+		if(new_version != version || oWork.iPoolId != lastPoolId)
 		{
-			if(new_version >= ::jconf::inst()->GetMiningForkVersion())
+			if(new_version >= ::jconf::inst()->GetMiningForkVersion() || oWork.iPoolId == 0)
 			{
 				miner_algo = ::jconf::inst()->GetMiningAlgo();
 				hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
 			}
+			else
+			{
+				miner_algo = ::jconf::inst()->GetMiningAlgoRoot();
+				hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
+			}
+			lastPoolId = oWork.iPoolId;
 			version = new_version;
 		}
 
@@ -692,6 +699,7 @@ void minethd::multiway_work_main()
 	auto miner_algo = ::jconf::inst()->GetMiningAlgoRoot();
 	cn_hash_fun_multi hash_fun_multi = func_multi_selector(N, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
 	uint8_t version = 0;
+	size_t lastPoolId = 0;
 
 	while (bQuit == 0)
 	{
@@ -718,13 +726,19 @@ void minethd::multiway_work_main()
 			iNonce = *piNonce[0];
 
 		uint8_t new_version = oWork.getVersion();
-		if(new_version != version)
+		if(new_version != version || oWork.iPoolId != lastPoolId)
 		{
-			if(new_version >= ::jconf::inst()->GetMiningForkVersion())
+			if(new_version >= ::jconf::inst()->GetMiningForkVersion() || oWork.iPoolId == 0)
 			{
 				miner_algo = ::jconf::inst()->GetMiningAlgo();
 				hash_fun_multi = func_multi_selector(N, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
 			}
+			else
+			{
+				miner_algo = ::jconf::inst()->GetMiningAlgoRoot();
+				hash_fun_multi = func_multi_selector(N, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
+			}
+			lastPoolId = oWork.iPoolId;
 			version = new_version;
 		}
 

@@ -201,6 +201,7 @@ void minethd::work_main()
 	globalStates::inst().iConsumeCnt++;
 
 	uint8_t version = 0;
+	size_t lastPoolId = 0;
 
 	while (bQuit == 0)
 	{
@@ -219,13 +220,19 @@ void minethd::work_main()
 		}
 
 		uint8_t new_version = oWork.getVersion();
-		if(new_version != version)
+		if(new_version != version || oWork.iPoolId != lastPoolId)
 		{
-			if(new_version >= ::jconf::inst()->GetMiningForkVersion())
+			if(new_version >= ::jconf::inst()->GetMiningForkVersion() || oWork.iPoolId == 0)
 			{
 				miner_algo = ::jconf::inst()->GetMiningAlgo();
 				hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
 			}
+			else
+			{
+				miner_algo = ::jconf::inst()->GetMiningAlgoRoot();
+				hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
+			}
+			lastPoolId = oWork.iPoolId;
 			version = new_version;
 		}
 
