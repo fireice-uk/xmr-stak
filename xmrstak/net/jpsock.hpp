@@ -15,7 +15,7 @@
 	- Parsing or connection error
 	Those are fatal errors (we drop the connection if we encounter them).
 	After they are constructed from const char* strings from various places.
-	(can be from read-only mem), we passs them in an exectutor message
+	(can be from read-only mem), we pass them in an executor message
 	once the recv thread expires.
 	- Call error
 	This error happens when the "server says no". Usually because the job was

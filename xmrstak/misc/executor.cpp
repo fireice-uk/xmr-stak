@@ -132,7 +132,7 @@ bool executor::get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev)
 
 			if(over_limit == pool_count)
 			{
-				printer::inst()->print_msg(L0, "All pools are over give up limit. Exitting.");
+				printer::inst()->print_msg(L0, "All pools are over give up limit. Exiting.");
 				exit(0);
 			}
 

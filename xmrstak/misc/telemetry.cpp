@@ -47,7 +47,7 @@ telemetry::telemetry(size_t iThd)
 	}
 }
 
-double telemetry::calc_telemetry_data(size_t iLastMilisec, size_t iThread)
+double telemetry::calc_telemetry_data(size_t iLastMillisec, size_t iThread)
 {
 	uint64_t iTimeNow = get_timestamp_ms();
 
@@ -71,7 +71,7 @@ double telemetry::calc_telemetry_data(size_t iLastMilisec, size_t iThread)
 			iLastestHashCnt = ppHashCounts[iThread][idx];
 		}
 
-		if (iTimeNow - ppTimestamps[iThread][idx] > iLastMilisec)
+		if (iTimeNow - ppTimestamps[iThread][idx] > iLastMillisec)
 		{
 			bHaveFullSet = true;
 			break; //We are out of the requested time period

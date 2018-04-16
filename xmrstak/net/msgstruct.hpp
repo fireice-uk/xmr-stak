@@ -80,7 +80,7 @@ enum ex_event_name { EV_INVALID_VAL, EV_SOCK_READY, EV_SOCK_ERROR, EV_GPU_RES_ER
    This is how I learned to stop worrying and love c++11 =).
    Ghosts of endless heap allocations have finally been exorcised. Thanks
    to the nifty magic of move semantics, string will only be allocated
-   once on the heap. Considering that it makes a jorney across stack,
+   once on the heap. Considering that it makes a journey across stack,
    heap alloced queue, to another stack before being finally processed
    I think it is kind of nifty, don't you?
    Also note that for non-arg events we only copy two qwords

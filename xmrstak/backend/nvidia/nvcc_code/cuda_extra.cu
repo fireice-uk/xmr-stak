@@ -472,7 +472,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		std::vector<int>::iterator it = std::find(arch.begin(), arch.end(), 20);
 		if(it == arch.end())
 		{
-			printf("WARNING: NVIDIA GPU %d: miner not compiled for the gpu architecture %d.\n", ctx->device_id, gpuArch);
+			printf("WARNING: NVIDIA GPU %d: miner not compiled for CUDA architecture %d.\n", ctx->device_id, gpuArch);
 			return 5;
 		}
 	}
@@ -490,7 +490,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 				minSupportedArch = arch[i];
 		if(minSupportedArch < 30 || gpuArch < minSupportedArch)
 		{
-			printf("WARNING: NVIDIA GPU %d: miner not compiled for the gpu architecture %d.\n", ctx->device_id, gpuArch);
+			printf("WARNING: NVIDIA GPU %d: miner not compiled for CUDA architecture %d.\n", ctx->device_id, gpuArch);
 			return 5;
 		}
 	}
