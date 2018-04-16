@@ -55,7 +55,7 @@ To increase the ulimit, add following lines to /etc/security/limits.conf:
     * soft memlock 262144
     * hard memlock 262144
 
-You WILL need to log out and log back in for these settings to take affect on your user (no need to reboot, just relogin in your session).
+You WILL need to log out and log back in for these settings to take effect on your user (no need to reboot, just relogin in your session).
 
 You can also do it Windows-style and simply run-as-root, but this is NOT recommended for security reasons.
 
