@@ -21,6 +21,7 @@ struct params
 	std::string executablePrefix;
 	std::string binaryName;
 	bool useAMD;
+	bool AMDCache;
 	bool useNVIDIA;
 	bool useCPU;
 

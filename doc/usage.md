@@ -16,6 +16,7 @@ The number of files depends on the available backends.
 `pools.txt` contains the selected mining pools and currency to mine.
 `amd.txt`, `cpu.txt` and `nvidia.txt` contains miner backend specific settings and can be used for further tuning ([Tuning Guide](tuning.md)).
 
+Note: If the pool is ignoring the option `rig_id` in `pools.txt` to name your worker please check the pool documentation how a worker name can be set.
 
 ## Usage on Windows
 1) Double click the `xmr-stak.exe` file
