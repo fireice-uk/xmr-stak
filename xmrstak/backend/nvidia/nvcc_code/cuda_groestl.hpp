@@ -167,7 +167,7 @@ __device__ void cn_groestl_F512(uint32_t * __restrict__ h, const uint32_t * __re
 	uint32_t y[2*GROESTL_COLS512];
 	uint32_t z[2*GROESTL_COLS512];
 
-	for (i = 0; i < 2*GROESTL_COLS512; i++) 
+	for (i = 0; i < 2*GROESTL_COLS512; i++)
 	{
 		z[i] = m[i];
 		Ptmp[i] = h[i]^m[i];
@@ -227,23 +227,23 @@ __device__ void cn_groestl_outputtransformation(groestlHashState *ctx)
 __device__ void cn_groestl_transform(groestlHashState * __restrict__ ctx,
 	const uint8_t * __restrict__ input, int msglen)
 {
-	for (; msglen >= GROESTL_SIZE512; msglen -= GROESTL_SIZE512, input += GROESTL_SIZE512) 
+	for (; msglen >= GROESTL_SIZE512; msglen -= GROESTL_SIZE512, input += GROESTL_SIZE512)
 	{
 		cn_groestl_F512(ctx->chaining,(uint32_t*)input);
 		ctx->block_counter1++;
 
-		if (ctx->block_counter1 == 0) 
+		if (ctx->block_counter1 == 0)
 			ctx->block_counter2++;
 	}
 }
 
-__device__ void cn_groestl_final(groestlHashState*  __restrict__ ctx, 
+__device__ void cn_groestl_final(groestlHashState*  __restrict__ ctx,
 	BitSequence* __restrict__  output)
 {
 	int i, j = 0, hashbytelen = GROESTL_HASH_BIT_LEN/8;
 	uint8_t *s = (BitSequence*)ctx->chaining;
 
-	if (ctx->bits_in_last_byte) 
+	if (ctx->bits_in_last_byte)
 	{
 		ctx->buffer[(int)ctx->buf_ptr-1] &= ((1<<ctx->bits_in_last_byte)-1)<<(8-ctx->bits_in_last_byte);
 		ctx->buffer[(int)ctx->buf_ptr-1] ^= 0x1<<(7-ctx->bits_in_last_byte);
@@ -254,9 +254,9 @@ __device__ void cn_groestl_final(groestlHashState*  __restrict__ ctx,
 		ctx->buffer[(int)ctx->buf_ptr++] = 0x80;
 	}
 
-	if (ctx->buf_ptr > GROESTL_SIZE512-GROESTL_LENGTHFIELDLEN) 
+	if (ctx->buf_ptr > GROESTL_SIZE512-GROESTL_LENGTHFIELDLEN)
 	{
-		while (ctx->buf_ptr < GROESTL_SIZE512) 
+		while (ctx->buf_ptr < GROESTL_SIZE512)
 			ctx->buffer[(int)ctx->buf_ptr++] = 0;
 
 		cn_groestl_transform(ctx, ctx->buffer, GROESTL_SIZE512);
@@ -300,14 +300,14 @@ __device__ void cn_groestl_update(groestlHashState* __restrict__ ctx,
 	int msglen = (int)(databitlen/8);
 	int rem = (int)(databitlen%8);
 
-	if (ctx->buf_ptr) 
+	if (ctx->buf_ptr)
 	{
 		while (ctx->buf_ptr < GROESTL_SIZE512 && index < msglen)
 			ctx->buffer[(int)ctx->buf_ptr++] = input[index++];
 
-		if (ctx->buf_ptr < GROESTL_SIZE512) 
+		if (ctx->buf_ptr < GROESTL_SIZE512)
 		{
-			if (rem) 
+			if (rem)
 			{
 				ctx->bits_in_last_byte = rem;
 				ctx->buffer[(int)ctx->buf_ptr++] = input[index];

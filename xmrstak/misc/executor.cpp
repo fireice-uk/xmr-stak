@@ -232,7 +232,7 @@ void executor::eval_pool_choice()
 	else
 	{
 		/* All is good - but check if we can do better */
-		std::sort(eval_pools.begin(), eval_pools.end(), [](jpsock* a, jpsock* b) { return b->get_pool_weight(false) < a->get_pool_weight(false); }); 
+		std::sort(eval_pools.begin(), eval_pools.end(), [](jpsock* a, jpsock* b) { return b->get_pool_weight(false) < a->get_pool_weight(false); });
 		jpsock* goal2 = eval_pools[0];
 
 		if(goal->get_pool_id() != goal2->get_pool_id())
@@ -334,7 +334,7 @@ void executor::on_sock_ready(size_t pool_id)
 			std::string str = "Login error: " +  pool->get_call_error();
 			log_socket_error(pool, std::move(str));
 		}
-		
+
 		if(!pool->have_sock_error())
 			pool->disconnect();
 	}
@@ -524,12 +524,12 @@ void executor::ex_main()
 		{
 			auto& params = xmrstak::params::inst();
 			already_have_cli_pool = true;
-			
+
 			const char* wallet = params.poolUsername.empty() ? cfg.sWalletAddr : params.poolUsername.c_str();
 			const char* rigid = params.userSetRigid ? params.poolRigid.c_str() : cfg.sRigId;
 			const char* pwd = params.userSetPwd ? params.poolPasswd.c_str() : cfg.sPasswd;
 			bool nicehash = cfg.nicehash || params.nicehashMode;
-			
+
 			pools.emplace_back(i+1, cfg.sPoolAddr, wallet, rigid, pwd, 9.9, false, params.poolUseTls, cfg.tls_fingerprint, nicehash);
 		}
 		else
@@ -544,7 +544,7 @@ void executor::ex_main()
 			printer::inst()->print_msg(L1, "ERROR: You didn't specify the username / wallet address for %s", xmrstak::params::inst().poolURL.c_str());
 			win_exit();
 		}
-		
+
 		pools.emplace_back(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolRigid.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
 	}
 
@@ -556,7 +556,7 @@ void executor::ex_main()
 		else
 			pools.emplace_front(0, "donate.xmr-stak.net:5555", "", "", "", 0.0, true, false, "", true);
 		break;
-	
+
 	case cryptonight_monero:
 		if(dev_tls)
 			pools.emplace_front(0, "donate.xmr-stak.net:8800", "", "", "", 0.0, true, true, "", false);
@@ -781,7 +781,7 @@ void executor::hashrate_report(std::string& out)
 			auto bType = static_cast<xmrstak::iBackend::BackendType>(b);
 			std::string name(xmrstak::iBackend::getName(bType));
 			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
-			
+
 			out.append("HASHRATE REPORT - ").append(name).append("\n");
 			out.append("| ID |    10s |    60s |    15m |");
 			if(nthd != 1)
@@ -804,11 +804,11 @@ void executor::hashrate_report(std::string& out)
 				out.append(hps_format(fHps[0], num, sizeof(num))).append(" |");
 				out.append(hps_format(fHps[1], num, sizeof(num))).append(" |");
 				out.append(hps_format(fHps[2], num, sizeof(num))).append(1, ' ');
-				
+
 				fTotal[0] += (std::isnormal(fHps[0])) ? fHps[0] : 0.0;
 				fTotal[1] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
 				fTotal[2] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
-				
+
 				fTotalCur[0] += (std::isnormal(fHps[0])) ? fHps[0] : 0.0;
 				fTotalCur[1] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
 				fTotalCur[2] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
@@ -819,13 +819,13 @@ void executor::hashrate_report(std::string& out)
 
 			if((i & 0x1) == 1) //We had odd number of threads
 				out.append("|\n");
-			
+
 			out.append("Totals (").append(name).append("): ");
 			out.append(hps_format(fTotalCur[0], num, sizeof(num)));
 			out.append(hps_format(fTotalCur[1], num, sizeof(num)));
 			out.append(hps_format(fTotalCur[2], num, sizeof(num)));
 			out.append(" H/s\n");
-			
+
 			out.append("-----------------------------------------------------------------\n");
 		}
 	}
@@ -1017,7 +1017,7 @@ void executor::http_hashrate_report(std::string& out)
 					out.append(sHtmlMotdBoxStart);
 					have_motd = true;
 				}
-				
+
 				snprintf(buffer, sizeof(buffer), sHtmlMotdEntry, pool.get_pool_addr(), motd.c_str());
 				out.append(buffer);
 			}

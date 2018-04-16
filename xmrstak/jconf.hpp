@@ -53,7 +53,7 @@ public:
 	inline xmrstak_algo GetMiningAlgoRoot() const { return mining_algo_root; }
 
 	inline uint8_t GetMiningForkVersion() const { return mining_fork_version; }
-	
+
 	std::string GetMiningCoin();
 
 	static void GetAlgoList(std::string& list);

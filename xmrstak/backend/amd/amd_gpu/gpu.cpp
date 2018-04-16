@@ -26,7 +26,7 @@
 #include <algorithm>
 #include <regex>
 #include <cassert>
-#include <algorithm> 
+#include <algorithm>
 
 #include <fstream>
 #include <sstream>
@@ -921,7 +921,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 
 size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target, xmrstak_algo miner_algo)
 {
-	// switch to the kernel storage 
+	// switch to the kernel storage
 	int kernel_storage = miner_algo == ::jconf::inst()->GetMiningAlgo() ? 0 : 1;
 
 	cl_int ret;
@@ -1088,7 +1088,7 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo)
 {
 	// switch to the kernel storage
 	int kernel_storage = miner_algo == ::jconf::inst()->GetMiningAlgo() ? 0 : 1;
-	
+
 	cl_int ret;
 	cl_uint zero = 0;
 	size_t BranchNonces[4];

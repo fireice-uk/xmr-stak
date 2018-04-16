@@ -37,7 +37,7 @@ public:
 
 	bool printConfig()
 	{
-		
+
 		hwloc_topology_t topology;
 		hwloc_topology_init(&topology);
 		hwloc_topology_load(topology);
@@ -65,7 +65,7 @@ public:
 
 			for(hwloc_obj_t obj : tlcs)
 				processTopLevelCache(obj);
-			
+
 			for(uint32_t id : results)
 			{
 				conf += std::string("    { \"low_power_mode\" : ");

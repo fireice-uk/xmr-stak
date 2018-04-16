@@ -148,7 +148,7 @@ std::string get_multipool_entry(bool& final)
 	std::cin.clear(); std::cin.ignore(INT_MAX,'\n');
 	std::cout<<"- Password (mostly empty or x):"<<std::endl;
 	getline(std::cin, passwd);
-	
+
 	std::string rigid;
 	std::cout<<"- Rig identifier for pool-side statistics (needs pool support). Can be empty:"<<std::endl;
 	getline(std::cin, rigid);
@@ -299,7 +299,7 @@ void do_guided_pool_config()
 		std::cout << "Miner will mine mostly at the pool with the highest weight, unless the pool fails." << std::endl;
 		std::cout << "Weight must be an integer larger than 0." << std::endl;
 		std::cout << "- Please enter a weight for this pool: "<<std::endl;
-		
+
 		while(!(std::cin >> pool_weight) || pool_weight <= 0)
 		{
 			std::cin.clear();
@@ -579,7 +579,7 @@ int main(int argc, char *argv[])
 				win_exit();
 				return 1;
 			}
-			
+
 			params::inst().userSetRigid = true;
 			params::inst().poolRigid = argv[i];
 		}
@@ -734,7 +734,7 @@ int main(int argc, char *argv[])
 		printer::inst()->print_str("!!!! Doing only a benchmark and exiting. To mine, remove the '--benchmark' option. !!!!\n");
 		return do_benchmark(params::inst().benchmark_block_version);
 	}
-	
+
 	executor::inst()->ex_start(jconf::inst()->DaemonMode());
 
 	uint64_t lastTime = get_timestamp_ms();

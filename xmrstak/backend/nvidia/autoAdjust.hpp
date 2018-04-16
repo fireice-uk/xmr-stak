@@ -21,7 +21,7 @@ namespace nvidia
 {
 
 class autoAdjust
-{    
+{
 public:
 
 	autoAdjust()
@@ -42,7 +42,7 @@ public:
 		// evaluate config parameter for if auto adjustment is needed
 		for(int i = 0; i < deviceCount; i++)
 		{
-	   
+
 			nvid_ctx ctx;
 
 			ctx.device_id = i;

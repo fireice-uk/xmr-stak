@@ -238,8 +238,8 @@ void win_exit(size_t code)
 }
 
 #else
-void win_exit(size_t code) 
-{ 
+void win_exit(size_t code)
+{
 	std::exit(code);
 }
 #endif // _WIN32
