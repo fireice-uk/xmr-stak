@@ -30,7 +30,7 @@ void bindMemoryToNUMANode( size_t puId )
 
 	depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PU);
 
-	for( size_t i = 0;
+	for( uint32_t i = 0;
 		i < hwloc_get_nbobjs_by_depth(topology, depth);
 		i++ )
 	{
