@@ -104,7 +104,7 @@ xmrstak_coin_algo coin_algos[] = {
 	{ "graft", cryptonight, cryptonight, 0u, nullptr },
 	{ "intense", cryptonight, cryptonight, 0u, nullptr },
 	{ "karbo", cryptonight, cryptonight, 0u, nullptr },
-	{ "monero7", cryptonight_monero, cryptonight, 7u, "pool.usxmrpool.com:3333" },
+	{ "monero7", cryptonight_monero, cryptonight_monero, 7u, "pool.usxmrpool.com:3333" },
 	{ "stellite", cryptonight_monero, cryptonight, 3u, nullptr },
 	{ "sumokoin", cryptonight_heavy, cryptonight, 3u, nullptr }
 };
