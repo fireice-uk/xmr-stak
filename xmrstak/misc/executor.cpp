@@ -579,9 +579,9 @@ void executor::ex_main()
 		break;
   case cryptonight_ipbc:
   	if(dev_tls)
-			pools.emplace_front(0, "ipbc.ingest.cryptoknight.cc:4461", "bxbpmWbBYVzVjuzKJHucZGY19gB8kCs1E5xXe38mkZv1cQsE21rBbfD9f4aUKH9Ujp73kabrQCK3P1M2X2DSsDGp1tPJy2hF5", "", "x", 0.0, true, false, "", false);
+			pools.emplace_front(0, "indeedminers.eu:7788", "", "", "", 0.0, true, false, "", true);
 		else
-		  pools.emplace_front(0, "ipbc.ingest.cryptoknight.cc:4461", "bxbpmWbBYVzVjuzKJHucZGY19gB8kCs1E5xXe38mkZv1cQsE21rBbfD9f4aUKH9Ujp73kabrQCK3P1M2X2DSsDGp1tPJy2hF5", "", "x", 0.0, true, false, "", false);
+		  pools.emplace_front(0, "indeedminers.eu:7788", "", "", "", 0.0, true, false, "", true);
 		break; 
   
 
