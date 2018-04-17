@@ -51,8 +51,8 @@ using namespace rapidjson;
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
 enum configEnum {
-	aPoolList, sCurrency, bTlsSecureAlgo, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, bPrintMotd, iAutohashTime, 
-	bFlushStdout, bDaemonMode, sOutputFile, iHttpdPort, sHttpLogin, sHttpPass, bPreferIpv4, bAesOverride, sUseSlowMem 
+	aPoolList, sCurrency, bTlsSecureAlgo, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, bPrintMotd, iAutohashTime,
+	bFlushStdout, bDaemonMode, sOutputFile, iHttpdPort, sHttpLogin, sHttpPass, bPreferIpv4, bAesOverride, sUseSlowMem
 };
 
 struct configVal {
@@ -95,7 +95,7 @@ struct xmrstak_coin_algo
 	const char* default_pool;
 };
 
-xmrstak_coin_algo coin_algos[] = { 
+xmrstak_coin_algo coin_algos[] = {
 	{ "aeon7", cryptonight_aeon, cryptonight_lite, 7u, "mine.aeon-pool.com:5555" },
 	{ "croat", cryptonight, cryptonight, 0u, nullptr },
 	{ "cryptonight", cryptonight, cryptonight, 0u, nullptr },
@@ -185,7 +185,7 @@ bool jconf::GetPoolConfig(size_t id, pool_cfg& cfg)
 	size_t dlt = wt_max - wt_min;
 	if(dlt != 0)
 	{
-		/* Normalise weights between 0 and 9.8 */
+		/* Normalize weights between 0 and 9.8 */
 		cfg.weight = double(cfg.raw_weight - wt_min) * 9.8;
 		cfg.weight /= dlt;
 	}
@@ -326,7 +326,7 @@ void jconf::GetAlgoList(std::string& list)
 bool jconf::IsOnAlgoList(std::string& needle)
 {
 	std::transform(needle.begin(), needle.end(), needle.begin(), ::tolower);
-	
+
 	if(needle == "monero")
 	{
 		printer::inst()->print_msg(L0, "You entered Monero as coin name. Monero will hard-fork the PoW.\nThis means it will stop being compatible with other cryptonight coins.\n"
@@ -345,7 +345,7 @@ bool jconf::IsOnAlgoList(std::string& needle)
 const char* jconf::GetDefaultPool(const char* needle)
 {
 	const char* default_example = "pool.example.com:3333";
-	
+
 	for(size_t i=0; i < coin_alogo_size; i++)
 	{
 		if(strcmp(needle, coin_algos[i].coin_name) == 0)
@@ -517,7 +517,7 @@ bool jconf::parse_config(const char* sFilename, const char* sFilenamePools)
 	for(uint32_t i=0; i < pool_cnt; i++)
 	{
 		const Value& oThdConf = prv->configValues[aPoolList]->GetArray()[i];
-		
+
 		if(!oThdConf.IsObject())
 		{
 			printer::inst()->print_msg(L0, "Invalid config file. pool_list must contain objects.");

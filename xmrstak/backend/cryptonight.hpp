@@ -3,7 +3,7 @@
 #include <inttypes.h>
 #include <type_traits>
 
-enum xmrstak_algo 
+enum xmrstak_algo
 {
 	invalid_algo = 0,
 	cryptonight = 1,
@@ -51,7 +51,7 @@ inline size_t cn_select_memory(xmrstak_algo algo)
 	{
 	case cryptonight_monero:
 	case cryptonight:
-		return CRYPTONIGHT_MEMORY;	
+		return CRYPTONIGHT_MEMORY;
 	case cryptonight_aeon:
 	case cryptonight_lite:
 		return CRYPTONIGHT_LITE_MEMORY;
