@@ -84,8 +84,8 @@ private:
 		constexpr size_t byteToMiB = 1024u * 1024u;
 
 		size_t hashMemSize = std::max(
-			cn_select_memory(::jconf::inst()->GetMiningAlgo()),
-			cn_select_memory(::jconf::inst()->GetMiningAlgoRoot())
+			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
+			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
 		);
 
 		std::string conf;
@@ -128,7 +128,7 @@ private:
 			}
 
 			// increase all intensity limits by two for aeon
-			if(::jconf::inst()->GetMiningAlgo() == cryptonight_lite)
+			if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_lite)
 				maxThreads *= 2u;
 
 			// keep 128MiB memory free (value is randomly chosen)

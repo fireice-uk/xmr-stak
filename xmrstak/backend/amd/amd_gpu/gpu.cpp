@@ -309,8 +309,8 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	}
 
 	size_t scratchPadSize = std::max(
-		cn_select_memory(::jconf::inst()->GetMiningAlgo()),
-		cn_select_memory(::jconf::inst()->GetMiningAlgoRoot())
+		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
+		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
 	);
 
 	size_t g_thd = ctx->rawIntensity;
@@ -376,8 +376,8 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	}
 
 	xmrstak_algo miner_algo[2] = {
-		::jconf::inst()->GetMiningAlgo(),
-		::jconf::inst()->GetMiningAlgoRoot()
+		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo(),
+		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot()
 	};
 	int num_algos = miner_algo[0] == miner_algo[1] ? 1 : 2;
 
@@ -936,7 +936,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target, xmrstak_algo miner_algo)
 {
 	// switch to the kernel storage 
-	int kernel_storage = miner_algo == ::jconf::inst()->GetMiningAlgo() ? 0 : 1;
+	int kernel_storage = miner_algo == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() ? 0 : 1;
 
 	cl_int ret;
 
@@ -1101,7 +1101,7 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo)
 {
 	// switch to the kernel storage
-	int kernel_storage = miner_algo == ::jconf::inst()->GetMiningAlgo() ? 0 : 1;
+	int kernel_storage = miner_algo == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() ? 0 : 1;
 	
 	cl_int ret;
 	cl_uint zero = 0;

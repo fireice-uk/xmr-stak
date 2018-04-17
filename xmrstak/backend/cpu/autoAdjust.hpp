@@ -37,8 +37,8 @@ public:
 	{
 
 		const size_t hashMemSizeKB = std::max(
-			cn_select_memory(::jconf::inst()->GetMiningAlgo()),
-			cn_select_memory(::jconf::inst()->GetMiningAlgoRoot())
+			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
+			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
 		) / 1024u;
 		const size_t halfHashMemSizeKB = hashMemSizeKB / 2u;
 
