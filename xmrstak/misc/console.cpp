@@ -225,7 +225,7 @@ void printer::print_str(const char* str)
 
 //Do a press any key for the windows folk. *insert any key joke here*
 #ifdef _WIN32
-void win_exit(size_t code)
+void win_exit(int code)
 {
 	size_t envSize = 0;
 	getenv_s(&envSize, nullptr, 0, "XMRSTAK_NOWAIT");
@@ -238,7 +238,7 @@ void win_exit(size_t code)
 }
 
 #else
-void win_exit(size_t code) 
+void win_exit(int code)
 { 
 	std::exit(code);
 }
