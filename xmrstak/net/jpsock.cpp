@@ -229,7 +229,7 @@ void jpsock::jpsock_thread()
 	else
 		disconnect_time = 0;
 
-	std::unique_lock<std::mutex>(job_mutex);
+	std::unique_lock<std::mutex> lck(job_mutex);
 	memset(&oCurrentJob, 0, sizeof(oCurrentJob));
 	bRunning = false;
 }
@@ -439,7 +439,7 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 
 	if(motd != nullptr && motd->IsString() && (motd->GetStringLength() & 0x01) == 0)
 	{
-		std::unique_lock<std::mutex>(motd_mutex);
+		std::unique_lock<std::mutex> lck(motd_mutex);
 		if(motd->GetStringLength() > 0)
 		{
 			pool_motd.resize(motd->GetStringLength()/2 + 1);
@@ -454,7 +454,7 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 
 	executor::inst()->push_event(ex_event(oPoolJob, pool_id));
 
-	std::unique_lock<std::mutex>(job_mutex);
+	std::unique_lock<std::mutex> lck(job_mutex);
 	oCurrentJob = oPoolJob;
 	return true;
 }
@@ -679,13 +679,13 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 
 void jpsock::save_nonce(uint32_t nonce)
 {
-	std::unique_lock<std::mutex>(job_mutex);
+	std::unique_lock<std::mutex> lck(job_mutex);
 	oCurrentJob.iSavedNonce = nonce;
 }
 
 bool jpsock::get_current_job(pool_job& job)
 {
-	std::unique_lock<std::mutex>(job_mutex);
+	std::unique_lock<std::mutex> lck(job_mutex);
 
 	if(oCurrentJob.iWorkLen == 0)
 		return false;
@@ -699,7 +699,7 @@ bool jpsock::get_pool_motd(std::string& strin)
 	if(!ext_motd) 
 		return false;
 
-	std::unique_lock<std::mutex>(motd_mutex);
+	std::unique_lock<std::mutex> lck(motd_mutex);
 	if(pool_motd.size() > 0)
 	{
 		strin.assign(pool_motd);
