@@ -48,6 +48,7 @@ bool plain_socket::set_hostname(const char* sAddr)
 	char sAddrMb[256];
 	char *sTmp, *sPort;
 
+	sock_closed = false;
 	size_t ln = strlen(sAddr);
 	if (ln >= sizeof(sAddrMb))
 		return pCallback->set_socket_error("CONNECT error: Pool address overflow.");
@@ -117,11 +118,16 @@ bool plain_socket::set_hostname(const char* sAddr)
 		return pCallback->set_socket_error_strerr("CONNECT error: Socket creation failed ");
 	}
 
+	int flag = 1;
+	/* If it fails, it fails, we won't loose too much sleep over it */
+	setsockopt(hSocket, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, sizeof(int));
+
 	return true;
 }
 
 bool plain_socket::connect()
 {
+	sock_closed = false;
 	int ret = ::connect(hSocket, pSockAddr->ai_addr, (int)pSockAddr->ai_addrlen);
 
 	freeaddrinfo(pAddrRoot);
@@ -135,6 +141,9 @@ bool plain_socket::connect()
 
 int plain_socket::recv(char* buf, unsigned int len)
 {
+	if(sock_closed)
+		return 0;
+
 	int ret = ::recv(hSocket, buf, len, 0);
 
 	if(ret == 0)
@@ -147,7 +156,8 @@ int plain_socket::recv(char* buf, unsigned int len)
 
 bool plain_socket::send(const char* buf)
 {
-	int pos = 0, slen = strlen(buf);
+	size_t pos = 0;
+	size_t slen = strlen(buf);
 	while (pos != slen)
 	{
 		int ret = ::send(hSocket, buf + pos, slen - pos, 0);
@@ -167,6 +177,7 @@ void plain_socket::close(bool free)
 {
 	if(hSocket != INVALID_SOCKET)
 	{
+		sock_closed = true;
 		sock_close(hSocket);
 		hSocket = INVALID_SOCKET;
 	}
@@ -211,12 +222,13 @@ void tls_socket::init_ctx()
 
 	if(jconf::inst()->TlsSecureAlgos())
 	{
-		SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_COMPRESSION);
+		SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1);
 	}
 }
 
 bool tls_socket::set_hostname(const char* sAddr)
 {
+	sock_closed = false;
 	if(ctx == nullptr)
 	{
 		init_ctx();
@@ -233,6 +245,10 @@ bool tls_socket::set_hostname(const char* sAddr)
 		return false;
 	}
 
+	int flag = 1;
+	/* If it fails, it fails, we won't loose too much sleep over it */
+	setsockopt(BIO_get_fd(bio, nullptr), IPPROTO_TCP, TCP_NODELAY, (char *) &flag, sizeof(int));
+
 	if(BIO_set_conn_hostname(bio, sAddr) != 1)
 	{
 		print_error();
@@ -248,7 +264,7 @@ bool tls_socket::set_hostname(const char* sAddr)
 
 	if(jconf::inst()->TlsSecureAlgos())
 	{
-		if(SSL_set_cipher_list(ssl, "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4:!SHA1") != 1)
+		if(SSL_set_cipher_list(ssl, "HIGH:!aNULL:!PSK:!SRP:!MD5:!RC4:!SHA1") != 1)
 		{
 			print_error();
 			return false;
@@ -260,6 +276,7 @@ bool tls_socket::set_hostname(const char* sAddr)
 
 bool tls_socket::connect()
 {
+	sock_closed = false;
 	if(BIO_do_connect(bio) != 1)
 	{
 		print_error();
@@ -340,6 +357,9 @@ bool tls_socket::connect()
 
 int tls_socket::recv(char* buf, unsigned int len)
 {
+	if(sock_closed)
+		return 0;
+
 	int ret = BIO_read(bio, buf, len);
 
 	if(ret == 0)
@@ -360,6 +380,7 @@ void tls_socket::close(bool free)
 	if(bio == nullptr || ssl == nullptr)
 		return;
 
+	sock_closed = true;
 	if(!free)
 	{
 		sock_close(BIO_get_fd(bio, nullptr));

@@ -28,16 +28,11 @@ public:
 
 	autoAdjust()
 	{
-		if(::jconf::inst()->IsCurrencyMonero())
-		{
-			hashMemSize = MONERO_MEMORY;
-			halfHashMemSize = hashMemSize / 2u;
-		}
-		else
-		{
-			hashMemSize = AEON_MEMORY;
-			halfHashMemSize = hashMemSize / 2u;
-		}
+		hashMemSize = std::max(
+			cn_select_memory(::jconf::inst()->GetMiningAlgo()),
+			cn_select_memory(::jconf::inst()->GetMiningAlgoRoot())
+		);
+		halfHashMemSize = hashMemSize / 2u;
 	}
 
 	bool printConfig()
@@ -222,4 +217,4 @@ private:
 };
 
 } // namespace cpu
-} // namepsace xmrstak
+} // namespace xmrstak

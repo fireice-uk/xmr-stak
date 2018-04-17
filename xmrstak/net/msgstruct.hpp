@@ -179,7 +179,7 @@ inline size_t get_timestamp()
 	return time_point_cast<seconds>(steady_clock::now()).time_since_epoch().count();
 };
 
-//Get milisecond timestamp
+//Get millisecond timestamp
 inline size_t get_timestamp_ms()
 {
 	using namespace std::chrono;

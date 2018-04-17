@@ -1,6 +1,8 @@
 ###### fireice-uk's and psychocrypt's
 # XMR-Stak - Monero/Aeon All-in-One Mining Software
 
+**XMR-Stak is ready for the POW change of Monero-v7, Aeon-v7 and Sumukoin-v3**
+
 XMR-Stak is a universal Stratum pool miner. This miner supports CPUs, AMD and NVIDIA gpus and can be used to mine the crypto currency Monero and Aeon.
 
 ## HTML reports
@@ -8,19 +10,17 @@ XMR-Stak is a universal Stratum pool miner. This miner supports CPUs, AMD and NV
 
 ## Video setup guide on Windows
 
-[<img src="https://gist.githubusercontent.com/fireice-uk/3621b179d56f57a8ead6303d8e415cf6/raw/3215c7a8078a038efb14b8dd8fc2ba0a7731605c/vidguidetmb.jpg">](https://www.youtube.com/watch?v=m9XFoQvLH8Y)
+[<img src="https://gist.githubusercontent.com/fireice-uk/3621b179d56f57a8ead6303d8e415cf6/raw/f572faba67cc9418116f3c1dfd7783baf52182ce/vidguidetmb.jpg">](https://youtu.be/YNMa8NplWus)
 ###### Video by Crypto Sewer
 
 ## Overview
 * [Features](#features)
 * [Supported altcoins](#supported-altcoins)
 * [Download](#download)
-* [Linux Portable Binary](doc/Linux_deployment.md)
 * [Usage](doc/usage.md)
 * [HowTo Compile](doc/compile.md)
 * [FAQ](doc/FAQ.md)
 * [Developer Donation](#default-developer-donation)
-* [Release Cheksums](#release-checksums)
 * [Developer PGP Key's](doc/pgp_keys.md)
 
 ## Features
@@ -38,21 +38,28 @@ XMR-Stak is a universal Stratum pool miner. This miner supports CPUs, AMD and NV
 
 ## Supported altcoins
 
-Besides Monero, following coins can be mined using this miner:
+Besides [Monero](https://getmonero.org), following coins can be mined using this miner:
 
-- [Aeon](http://www.aeon.cash/)
+- [Aeon](http://www.aeon.cash)
+- [Croat](https://croat.cat)
+- [Edollar](https://edollar.cash)
 - [Electroneum](https://electroneum.com)
+- [Graft](https://www.graft.network)
+- [Haven](https://havenprotocol.com)
 - [Intense](https://intensecoin.com)
+- [Karbo](https://karbo.io)
 - [Sumokoin](https://www.sumokoin.org)
 
-For all coins, except Aeon, you can use Monero settings.
+If your prefered coin is not listed, you can chose one of the following algorithms:
+
+- Cryptonight - 2 MiB scratchpad memory
+- Cryptonight-light - 1 MiB scratchpad memory
 
 Please note, this list is not complete, and is not an endorsement.
 
 ## Download
 
 You can find the latest releases and precompiled binaries on GitHub under [Releases](https://github.com/fireice-uk/xmr-stak/releases).
-If you are running on Linux (especially Linux VMs), checkout [Linux Portable Binary](doc/Linux_deployment.md).
 
 ## Default Developer Donation
 
@@ -68,46 +75,4 @@ fireice-uk:
 psychocrypt:
 ```
 45tcqnJMgd3VqeTznNotiNj4G9PQoK67TGRiHyj6EYSZ31NUbAfs9XdiU5squmZb717iHJLxZv3KfEw8jCYGL5wa19yrVCn
-```
-
-## Release Checksums
-
-Please use the [Developer PGP Key's](doc/pgp_keys.md) to verify the integrity of the precompiled binaries.
-
-```
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA256
-
-XMR-Stak 2.2.0 Windows Build Checksums
-
-compiled by: psychocrypt
-
-$ sha1sum *
-3f1634244ccd336f7df581e3c82e1c6ca38ce714  libeay32.dll
-538f3bd9dfcafc379e912562bcf343333f5375c7  ssleay32.dll
-302e5be7c97fcd4922bf99b3533c0523ead5d109  xmrstak_cuda_backend.dll
-ad6b9e62a7ea132e1bec0efd8d9e5f8a2ae531ca  xmr-stak.exe
-393bc5deb7e59e61cc7f4ccc0f4438402422f3b0  xmrstak_opencl_backend.dll
-
-$ sha3sum *
-5aeefca7278be1b2706d99bf89fa23646931f881aff8bbca33654eb1  libeay32.dll
-6b696caa620b0c6372881b11e503313152b5191c2d5497b26f81ab79  ssleay32.dll
-038de57a707664c7c3ab3a74c8bdb3ed4e22000a74d8b7c359c7c4b5  xmrstak_cuda_backend.dll
-19ab61049051178a362dc0d1c17af06f5ca1eb0a75182c0388e5aa22  xmr-stak.exe
-cc7ba0fbde50d72df2a530ce52a831578cfa19999841eb954554a022  xmrstak_opencl_backend.dll
-
-date
-Fri Dec 22 22:09:59 CET 2017
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBCAAGBQJaPXYSAAoJEAUWOMCIZelDQpAH/As2BD6qDZvbKH5NPHjjDv6T
-KBJ6/0h+x2k4Iy3GelrtaogB4LvUDzci4MRfaTXr23Xr+rhwsx3J2xvVdWKZgPXh
-bQm5pTJFhiao6Dh+Orway6TLmuaEBLNtknatSkjPUPKmkVd/A7kxxkdelDB//yb+
-7k5HGb84T+HU8HBlB00pDITyXv/414egpZGMqWeBXsYDeEYa8KHZlEIO3YI4JrEz
-pNW44Q1YcWZ+zxqTDrvMgjW8KJZcXg6ijJ3fEhGBo+hcnF+WuUB3Yd3Frf0ps5J5
-MjnWXl/uOobML6K70g2UQcHcEDbPk8f9LUxX1++/I0aHsRMGMYhRj0ad5KYE1IY=
-=VCEv
------END PGP SIGNATURE-----
 ```

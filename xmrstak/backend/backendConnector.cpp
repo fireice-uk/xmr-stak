@@ -77,11 +77,12 @@ std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 #ifndef CONF_NO_OPENCL
 	if(params::inst().useAMD)
 	{
-		plugin amdplugin("AMD", "xmrstak_opencl_backend");
+		const std::string backendName = xmrstak::params::inst().openCLVendor;
+		plugin amdplugin(backendName, "xmrstak_opencl_backend");
 		std::vector<iBackend*>* amdThreads = amdplugin.startBackend(static_cast<uint32_t>(pvThreads->size()), pWork, environment::inst());
 		pvThreads->insert(std::end(*pvThreads), std::begin(*amdThreads), std::end(*amdThreads));
 		if(amdThreads->size() == 0)
-			printer::inst()->print_msg(L0, "WARNING: backend AMD disabled.");
+			printer::inst()->print_msg(L0, "WARNING: backend %s (OpenCL) disabled.", backendName.c_str());
 	}
 #endif
 
@@ -99,4 +100,4 @@ std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 	return pvThreads;
 }
 
-} // namepsace xmrstak
+} // namespace xmrstak

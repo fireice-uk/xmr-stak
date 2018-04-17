@@ -137,6 +137,8 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 	for (i = 0; i < n; i++)
 	{
 		jconf::inst()->GetThreadConfig(i, cfg);
+
+		const std::string backendName = xmrstak::params::inst().openCLVendor;
 		
 		if(cfg.cpu_aff >= 0)
 		{
@@ -144,10 +146,10 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 			printer::inst()->print_msg(L1, "WARNING on macOS thread affinity is only advisory.");
 #endif
 
-			printer::inst()->print_msg(L1, "Starting AMD GPU thread %d, affinity: %d.", i, (int)cfg.cpu_aff);
+			printer::inst()->print_msg(L1, "Starting %s GPU (OpenCL) thread %d, affinity: %d.", backendName.c_str(), i, (int)cfg.cpu_aff);
 		}
 		else
-			printer::inst()->print_msg(L1, "Starting AMD GPU thread %d, no affinity.", i);
+			printer::inst()->print_msg(L1, "Starting %s GPU (OpenCL) thread %d, no affinity.", backendName.c_str(), i);
 
 		minethd* thd = new minethd(pWork, i + threadOffset, &vGpuData[i], cfg);
 		pvThreads->push_back(thd);
@@ -191,8 +193,14 @@ void minethd::work_main()
 	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
-	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, ::jconf::inst()->IsCurrencyMonero());
+	
+	// start with root algorithm and switch later if fork version is reached
+	auto miner_algo = ::jconf::inst()->GetMiningAlgoRoot();
+	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
+
 	globalStates::inst().iConsumeCnt++;
+
+	uint8_t version = 0;
 
 	while (bQuit == 0)
 	{
@@ -210,12 +218,24 @@ void minethd::work_main()
 			continue;
 		}
 
+		uint8_t new_version = oWork.getVersion();
+		if(new_version != version)
+		{
+			if(new_version >= ::jconf::inst()->GetMiningForkVersion())
+			{
+				miner_algo = ::jconf::inst()->GetMiningAlgo();
+				hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
+			}
+			version = new_version;
+		}
+
 		uint32_t h_per_round = pGpuCtx->rawIntensity;
 		size_t round_ctr = 0;
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		uint64_t target = oWork.iTarget;
-		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target);
+		
+		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo);
 
 		if(oWork.bNiceHash)
 			pGpuCtx->Nonce = *(uint32_t*)(oWork.bWorkBlob + 39);
@@ -231,7 +251,7 @@ void minethd::work_main()
 			cl_uint results[0x100];
 			memset(results,0,sizeof(cl_uint)*(0x100));
 
-			XMRRunJob(pGpuCtx, results);
+			XMRRunJob(pGpuCtx, results, miner_algo);
 
 			for(size_t i = 0; i < results[0xFF]; i++)
 			{

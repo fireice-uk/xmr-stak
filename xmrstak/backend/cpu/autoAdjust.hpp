@@ -35,19 +35,12 @@ public:
 
 	bool printConfig()
 	{
-		size_t hashMemSizeKB;
-		size_t halfHashMemSizeKB;
 
-		if(::jconf::inst()->IsCurrencyMonero())
-		{
-			hashMemSizeKB = MONERO_MEMORY / 1024u;
-			halfHashMemSizeKB = hashMemSizeKB / 2u;
-		}
-		else
-		{
-			hashMemSizeKB = AEON_MEMORY / 1024u;
-			halfHashMemSizeKB = hashMemSizeKB / 2u;
-		}
+		const size_t hashMemSizeKB = std::max(
+			cn_select_memory(::jconf::inst()->GetMiningAlgo()),
+			cn_select_memory(::jconf::inst()->GetMiningAlgoRoot())
+		) / 1024u;
+		const size_t halfHashMemSizeKB = hashMemSizeKB / 2u;
 
 		configEditor configTpl{};
 
@@ -182,4 +175,4 @@ private:
 };
 
 } // namespace cpu
-} // namepsace xmrstak
+} // namespace xmrstak

@@ -60,4 +60,4 @@ private:
 };
 
 } // namespace nvidia
-} // namepsace xmrstak
+} // namespace xmrstak

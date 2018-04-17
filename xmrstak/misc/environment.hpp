@@ -45,4 +45,4 @@ struct environment
 #endif
 };
 
-} // namepsace xmrstak
+} // namespace xmrstak
