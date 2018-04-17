@@ -99,7 +99,7 @@ xmrstak::coin_selection coins[] = {
 	{ "electroneum",         {cryptonight_monero, cryptonight, 255u},      {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
 	{ "graft",               {cryptonight_monero, cryptonight, 8u},        {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
 	{ "haven",               {cryptonight_heavy, cryptonight, 2u},         {cryptonight_heavy, cryptonight_heavy, 0u},   nullptr },
-	{ "intense",             {cryptonight_monero, cryptonight, 255u},      {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
+	{ "intense",             {cryptonight_monero, cryptonight, 4u},        {cryptonight_monero, cryptonight_monero, 0u}, "45.32.171.89:4444" },
 	{ "karbo",               {cryptonight_monero, cryptonight, 255u},      {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
 	{ "monero7",             {cryptonight_monero, cryptonight_monero, 0u}, {cryptonight_monero, cryptonight_monero, 0u}, "pool.usxmrpool.com:3333" },
 	{ "stellite",            {cryptonight_monero, cryptonight, 3u},        {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
