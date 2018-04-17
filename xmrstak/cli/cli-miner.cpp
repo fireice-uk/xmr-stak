@@ -80,6 +80,8 @@ void help()
 #ifndef CONF_NO_OPENCL
 	cout<<"  --noAMD                    disable the AMD miner backend"<<endl;
 	cout<<"  --noAMDCache               disable the AMD(OpenCL) cache for precompiled binaries"<<endl;
+	cout<<"  --openCLVendor VENDOR      use OpenCL driver of VENDOR and devices [AMD,NVIDIA]"<<endl;
+	cout<<"                             default: AMD"<<endl;
 	cout<<"  --amd FILE                 AMD backend miner config file"<<endl;
 #endif
 #ifndef CONF_NO_CUDA
@@ -449,6 +451,24 @@ int main(int argc, char *argv[])
 		else if(opName.compare("--noAMD") == 0)
 		{
 			params::inst().useAMD = false;
+		}
+		else if(opName.compare("--openCLVendor") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--openCLVendor' given");
+				win_exit();
+				return 1;
+			}
+			std::string vendor(argv[i]);
+			params::inst().openCLVendor = vendor;
+			if(vendor != "AMD" && vendor != "NVIDIA")
+			{
+				printer::inst()->print_msg(L0, "'--openCLVendor' must be 'AMD' or 'NVIDIA'");
+				win_exit();
+				return 1;
+			}
 		}
 		else if(opName.compare("--noAMDCache") == 0)
 		{

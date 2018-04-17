@@ -89,8 +89,8 @@ double telemetry::calc_telemetry_data(size_t iLastMillisec, size_t iThread)
 		return nan("");
 
 	double fHashes, fTime;
-	fHashes = iLastestHashCnt - iEarliestHashCnt;
-	fTime = iLastestStamp - iEarliestStamp;
+	fHashes = static_cast<double>(iLastestHashCnt - iEarliestHashCnt);
+	fTime = static_cast<double>(iLastestStamp - iEarliestStamp);
 	fTime /= 1000.0;
 
 	return fHashes / fTime;

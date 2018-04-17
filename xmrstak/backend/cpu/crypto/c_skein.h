@@ -37,7 +37,7 @@ typedef enum
 }
 SkeinHashReturn;
 
-typedef size_t   SkeinDataLength;                /* bit count  type */
+typedef uint32_t SkeinDataLength;                /* bit count  type */
 typedef u08b_t   SkeinBitSequence;               /* bit stream type */
 
 /* "all-in-one" call */
