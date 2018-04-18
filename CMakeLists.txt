@@ -148,6 +148,11 @@ if(CUDA_ENABLE)
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11")
             endif()
 
+            # avoid that nvcc in CUDA 8 complains about sm_20 pending removal
+	    if(CUDA_VERSION VERSION_EQUAL 8.0)
+                set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wno-deprecated-gpu-targets")
+            endif()
+
             # avoid that nvcc in CUDA < 8 tries to use libc `memcpy` within the kernel
             if(CUDA_VERSION VERSION_LESS 8.0)
                 add_definitions(-D_FORCE_INLINES)
