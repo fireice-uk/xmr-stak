@@ -21,6 +21,7 @@ POOLCONF],
  * Currency to mine. Supported values:
  *
  *    aeon7 (use this for Aeon's new PoW)
+ *    bbscoin (automatic switch with block version 3 to cryptonight_v7)
  *    croat
  *    edollar
  *    electroneum
