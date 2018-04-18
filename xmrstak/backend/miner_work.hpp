@@ -81,4 +81,4 @@ namespace xmrstak
 		}
 
 	};
-} // namepsace xmrstak
+} // namespace xmrstak
