@@ -95,6 +95,7 @@ bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 	return pthread_setaffinity_np(h, sizeof(cpuset_t), &mn) == 0;
 #elif defined(__OpenBSD__)
         printer::inst()->print_msg(L0,"WARNING: thread pinning is not supported under OPENBSD.");
+        return true;
 #else
 	cpu_set_t mn;
 	CPU_ZERO(&mn);
