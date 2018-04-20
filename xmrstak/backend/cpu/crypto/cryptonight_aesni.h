@@ -43,7 +43,7 @@ extern "C"
 {
 	void keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen);
 	void keccakf(uint64_t st[25], int rounds);
-	extern void(*const extra_hashes[4])(const void *, size_t, char *);
+	extern void(*const extra_hashes[4])(const void *, uint32_t, char *);
 }
 
 // This will shift and xor tmp1 into itself as 4 32-bit vals such as
@@ -429,7 +429,7 @@ inline void cryptonight_monero_tweak(uint64_t* mem_out, __m128i tmp)
 	tmp = _mm_castps_si128(_mm_movehl_ps(_mm_castsi128_ps(tmp), _mm_castsi128_ps(tmp)));
 	uint64_t vh = _mm_cvtsi128_si64(tmp);
 
-	uint8_t x = vh >> 24;
+	uint8_t x = static_cast<uint8_t>(vh >> 24);
 	static const uint16_t table = 0x7531;
 	const uint8_t index = (((x >> 3) & 6) | (x & 1)) << 1;
 	vh ^= ((table >> index) & 0x3) << 28;

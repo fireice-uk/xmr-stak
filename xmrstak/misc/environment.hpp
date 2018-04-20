@@ -38,4 +38,4 @@ struct environment
 	params* pParams = nullptr;
 };
 
-} // namepsace xmrstak
+} // namespace xmrstak
