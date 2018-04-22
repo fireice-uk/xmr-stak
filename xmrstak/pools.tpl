@@ -28,6 +28,7 @@ POOLCONF],
  *    graft
  *    haven
  *    intense
+ *    ipbc
  *    karbo
  *    monero7 (use this for Monero's new PoW)
  *    sumokoin (automatic switch with block version 3 to cryptonight_heavy)
@@ -38,6 +39,7 @@ POOLCONF],
  *    # 1MiB scratchpad memory
  *    cryptonight_lite
  *    cryptonight_lite_v7
+ *    cryptonight_lite_v7_xor (algorithm used by ipbc)
  *    # 2MiB scratchpad memory
  *    cryptonight
  *    cryptonight_v7
