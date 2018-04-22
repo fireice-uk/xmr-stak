@@ -137,6 +137,8 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 	for (i = 0; i < n; i++)
 	{
 		jconf::inst()->GetThreadConfig(i, cfg);
+
+		const std::string backendName = xmrstak::params::inst().openCLVendor;
 		
 		if(cfg.cpu_aff >= 0)
 		{
@@ -144,10 +146,10 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 			printer::inst()->print_msg(L1, "WARNING on macOS thread affinity is only advisory.");
 #endif
 
-			printer::inst()->print_msg(L1, "Starting AMD GPU thread %d, affinity: %d.", i, (int)cfg.cpu_aff);
+			printer::inst()->print_msg(L1, "Starting %s GPU (OpenCL) thread %d, affinity: %d.", backendName.c_str(), i, (int)cfg.cpu_aff);
 		}
 		else
-			printer::inst()->print_msg(L1, "Starting AMD GPU thread %d, no affinity.", i);
+			printer::inst()->print_msg(L1, "Starting %s GPU (OpenCL) thread %d, no affinity.", backendName.c_str(), i);
 
 		minethd* thd = new minethd(pWork, i + threadOffset, &vGpuData[i], cfg);
 		pvThreads->push_back(thd);
@@ -193,12 +195,13 @@ void minethd::work_main()
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
 	
 	// start with root algorithm and switch later if fork version is reached
-	auto miner_algo = ::jconf::inst()->GetMiningAlgoRoot();
+	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
 	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
 
 	globalStates::inst().iConsumeCnt++;
 
 	uint8_t version = 0;
+	size_t lastPoolId = 0;
 
 	while (bQuit == 0)
 	{
@@ -217,14 +220,20 @@ void minethd::work_main()
 		}
 
 		uint8_t new_version = oWork.getVersion();
-		if (::jconf::inst()->GetMiningAlgo() == cryptonight_ipbc) new_version = oWork.bWorkBlob[1];
-		if(new_version != version)
+		if(new_version != version || oWork.iPoolId != lastPoolId)
 		{
-			if(new_version >= ::jconf::inst()->GetMiningForkVersion())
+			coinDescription coinDesc = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(oWork.iPoolId);
+			if(new_version >= coinDesc.GetMiningForkVersion())
 			{
-				miner_algo = ::jconf::inst()->GetMiningAlgo();
+				miner_algo = coinDesc.GetMiningAlgo();
 				hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
 			}
+			else
+			{
+				miner_algo = coinDesc.GetMiningAlgoRoot();
+				hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
+			}
+			lastPoolId = oWork.iPoolId;
 			version = new_version;
 		}
 

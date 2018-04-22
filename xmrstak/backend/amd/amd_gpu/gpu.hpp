@@ -27,6 +27,7 @@ struct GpuContext
 	size_t workSize;
 	int stridedIndex;
 	int memChunk;
+	bool isNVIDIA = false;
 	int compMode;
 
 	/*Output vars*/

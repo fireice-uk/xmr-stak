@@ -10,8 +10,7 @@ enum xmrstak_algo
 	cryptonight_lite = 2,
 	cryptonight_monero = 3,
 	cryptonight_heavy = 4,
-	cryptonight_aeon = 5,
-	cryptonight_ipbc = 6
+	cryptonight_aeon = 5
 };
 
 // define aeon settings
@@ -26,10 +25,6 @@ constexpr uint32_t CRYPTONIGHT_ITER = 0x80000;
 constexpr size_t CRYPTONIGHT_HEAVY_MEMORY = 4 * 1024 * 1024;
 constexpr uint32_t CRYPTONIGHT_HEAVY_MASK = 0x3FFFF0;
 constexpr uint32_t CRYPTONIGHT_HEAVY_ITER = 0x40000;
-
-constexpr size_t CRYPTONIGHT_IPBC_MEMORY = 1 * 1024 * 1024;
-constexpr uint32_t CRYPTONIGHT_IPBC_MASK = CRYPTONIGHT_IPBC_MEMORY - 16;
-constexpr uint32_t CRYPTONIGHT_IPBC_ITER = CRYPTONIGHT_IPBC_MEMORY / 4;
 
 template<xmrstak_algo ALGO>
 inline constexpr size_t cn_select_memory() { return 0; }
@@ -49,9 +44,6 @@ inline constexpr size_t cn_select_memory<cryptonight_heavy>() { return CRYPTONIG
 template<>
 inline constexpr size_t cn_select_memory<cryptonight_aeon>() { return CRYPTONIGHT_LITE_MEMORY; }
 
-template<>
-inline constexpr size_t cn_select_memory<cryptonight_ipbc>() { return CRYPTONIGHT_IPBC_MEMORY; }
-
 
 inline size_t cn_select_memory(xmrstak_algo algo)
 {
@@ -65,8 +57,6 @@ inline size_t cn_select_memory(xmrstak_algo algo)
 		return CRYPTONIGHT_LITE_MEMORY;
 	case cryptonight_heavy:
 		return CRYPTONIGHT_HEAVY_MEMORY;
-	case cryptonight_ipbc:
-		return CRYPTONIGHT_IPBC_MEMORY;
 	default:
 		return 0;
 	}
@@ -90,10 +80,6 @@ inline constexpr uint32_t cn_select_mask<cryptonight_heavy>() { return CRYPTONIG
 template<>
 inline constexpr uint32_t cn_select_mask<cryptonight_aeon>() { return CRYPTONIGHT_LITE_MASK; }
 
-template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_ipbc>() { return CRYPTONIGHT_IPBC_MASK; }
-
-
 inline size_t cn_select_mask(xmrstak_algo algo)
 {
 	switch(algo)
@@ -106,8 +92,6 @@ inline size_t cn_select_mask(xmrstak_algo algo)
 		return CRYPTONIGHT_LITE_MASK;
 	case cryptonight_heavy:
 		return CRYPTONIGHT_HEAVY_MASK;
-	case cryptonight_ipbc:
-		return CRYPTONIGHT_IPBC_MASK;
 	default:
 		return 0;
 	}
@@ -131,10 +115,6 @@ inline constexpr uint32_t cn_select_iter<cryptonight_heavy>() { return CRYPTONIG
 template<>
 inline constexpr uint32_t cn_select_iter<cryptonight_aeon>() { return CRYPTONIGHT_LITE_ITER; }
 
-template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_ipbc>() { return CRYPTONIGHT_IPBC_ITER; }
-
-
 inline size_t cn_select_iter(xmrstak_algo algo)
 {
 	switch(algo)
@@ -147,8 +127,6 @@ inline size_t cn_select_iter(xmrstak_algo algo)
 		return CRYPTONIGHT_LITE_ITER;
 	case cryptonight_heavy:
 		return CRYPTONIGHT_HEAVY_ITER;
-	case cryptonight_ipbc:
-		return CRYPTONIGHT_IPBC_ITER;
 	default:
 		return 0;
 	}

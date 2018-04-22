@@ -18,22 +18,42 @@ R"===(
 POOLCONF],
 
 /*
- * Currency to mine. Supported values:
+ * Currency to mine. (For IPBC download version 2.4.4) 
+ *    https://github.com/IndeedMiners/xmr-aeon-stak/releases/tag/2.4.4
+ *    Supported values:
  *
  *    aeon7 (use this for Aeon's new PoW)
+ *    alloy
+ *    bbscoin (automatic switch with block version 3 to cryptonight_v7)
+ *    bitcoal
  *    croat
- *    cryptonight (try this if your coin is not listed)
- *    cryptonight_lite
+ *    dero
+ *    dinastycoin
  *    edollar
  *    electroneum
  *    graft
  *    haven
  *    intense
- *    ipbc
+ *    italocoin
  *    karbo
+ *    leviarcoin
+ *    masari
  *    monero7 (use this for Monero's new PoW)
+ *    stellite
  *    sumokoin
+ *    turtlecoin
+ *    ultranote
  *
+ * Native algorithms which not depends on any block versions:
+ *
+ *    # 1MiB scratchpad memory
+ *    cryptonight_lite
+ *    cryptonight_lite_v7
+ *    # 2MiB scratchpad memory
+ *    cryptonight
+ *    cryptonight_v7
+ *    # 4MiB scratchpad memory
+ *    cryptonight_heavy
  */
 
 "currency" : "CURRENCY",
