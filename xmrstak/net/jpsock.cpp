@@ -645,19 +645,19 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 			algo_name = "cryptonight";
 			break;
 		case cryptonight_lite:
-			algo_name = "cryptonight-lite";
+			algo_name = "cryptonight_lite";
 			break;
 		case cryptonight_monero:
-			algo_name = "cryptonight-monerov7";
+			algo_name = "cryptonight_v7";
 			break;
 		case cryptonight_aeon:
-			algo_name = "cryptonight-aeonv7";
+			algo_name = "cryptonight_lite_v7";
 			break;
 		case cryptonight_ipbc:
-			algo_name = "cryptonight-ipbc";
+			algo_name = "cryptonight_lite_v7_xor";
 			break;
 		case cryptonight_heavy:
-			algo_name = "cryptonight-heavy";
+			algo_name = "cryptonight_heavy";
 			break;
 		default:
 			algo_name = "unknown";
