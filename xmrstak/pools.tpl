@@ -30,6 +30,7 @@ POOLCONF],
  *    intense
  *    karbo
  *    monero7 (use this for Monero's new PoW)
+ *    stellite
  *    sumokoin (automatic switch with block version 3 to cryptonight_heavy)
  *
  * Native algorithms which not depends on any block versions:
