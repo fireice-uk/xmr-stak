@@ -49,6 +49,7 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 - [Haven](https://havenprotocol.com)
 - [Intense](https://intensecoin.com)
 - [Karbo](https://karbo.io)
+- [Stellite](https://stellite.cash)
 - [Sumokoin](https://www.sumokoin.org)
 
 If your prefered coin is not listed, you can chose one of the following algorithms:
