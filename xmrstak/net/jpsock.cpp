@@ -404,7 +404,7 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 
 	uint32_t iWorkLn = blob->GetStringLength() / 2;
 	if (iWorkLn > sizeof(pool_job::bWorkBlob))
-		return set_socket_error("PARSE error: Invalid job legth. Are you sure you are mining the correct coin?");
+		return set_socket_error("PARSE error: Invalid job length. Are you sure you are mining the correct coin?");
 
 	pool_job oPoolJob;
 	if (!hex2bin(blob->GetString(), iWorkLn * 2, oPoolJob.bWorkBlob))
