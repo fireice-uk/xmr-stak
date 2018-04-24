@@ -118,7 +118,7 @@ BOOL AddLargePageRights()
 
 		DWORD size = 0;
 		GetTokenInformation(hToken, TokenUser, NULL, 0, &size);
-		
+
 		if (size > 0 && bIsElevated)
 		{
 			user = (PTOKEN_USER)LocalAlloc(LPTR, size);
@@ -136,7 +136,7 @@ BOOL AddLargePageRights()
 	ZeroMemory(&attributes, sizeof(attributes));
 
 	BOOL result = FALSE;
-	if (LsaOpenPolicy(NULL, &attributes, POLICY_ALL_ACCESS, &handle) == 0) 
+	if (LsaOpenPolicy(NULL, &attributes, POLICY_ALL_ACCESS, &handle) == 0)
 	{
 		LSA_UNICODE_STRING lockmem;
 		lockmem.Buffer = L"SeLockMemoryPrivilege";

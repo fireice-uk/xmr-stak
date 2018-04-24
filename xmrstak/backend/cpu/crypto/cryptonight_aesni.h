@@ -716,7 +716,7 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 	ptr = (__m128i *)&l[idx & MASK];			\
 	if(PREFETCH)						\
 		_mm_prefetch((const char*)ptr, _MM_HINT_T0);	\
-	c = _mm_load_si128(ptr); 
+	c = _mm_load_si128(ptr);
 
 #define CN_STEP2(a, b, c, l, ptr, idx)				\
 	if(SOFT_AES)						\
@@ -902,13 +902,13 @@ void cryptonight_quad_hash(const void* input, size_t len, void* output, cryptoni
 	__m128i cx1 = _mm_set_epi64x(0, 0);
 	__m128i cx2 = _mm_set_epi64x(0, 0);
 	__m128i cx3 = _mm_set_epi64x(0, 0);
-	
+
 	uint64_t idx0, idx1, idx2, idx3;
 	idx0 = _mm_cvtsi128_si64(ax0);
 	idx1 = _mm_cvtsi128_si64(ax1);
 	idx2 = _mm_cvtsi128_si64(ax2);
 	idx3 = _mm_cvtsi128_si64(ax3);
-	
+
 	for (size_t i = 0; i < ITERATIONS/2; i++)
 	{
 		uint64_t hi, lo;

@@ -51,8 +51,8 @@ using namespace rapidjson;
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
 enum configEnum {
-	aPoolList, sCurrency, bTlsSecureAlgo, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, bPrintMotd, iAutohashTime, 
-	bFlushStdout, bDaemonMode, sOutputFile, iHttpdPort, sHttpLogin, sHttpPass, bPreferIpv4, bAesOverride, sUseSlowMem 
+	aPoolList, sCurrency, bTlsSecureAlgo, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, bPrintMotd, iAutohashTime,
+	bFlushStdout, bDaemonMode, sOutputFile, iHttpdPort, sHttpLogin, sHttpPass, bPreferIpv4, bAesOverride, sUseSlowMem
 };
 
 struct configVal {
@@ -110,7 +110,7 @@ xmrstak::coin_selection coins[] = {
 	{ "turtlecoin",          {cryptonight_lite, cryptonight_aeon, 255u},   {cryptonight_aeon, cryptonight_lite, 7u},     nullptr }
 };
 
-constexpr size_t coin_alogo_size = (sizeof(coins)/sizeof(coins[0]));
+constexpr size_t coin_algo_size = (sizeof(coins)/sizeof(coins[0]));
 
 inline bool checkType(Type have, Type want)
 {
@@ -311,7 +311,7 @@ std::string jconf::GetMiningCoin()
 void jconf::GetAlgoList(std::string& list)
 {
 	list.reserve(256);
-	for(size_t i=0; i < coin_alogo_size; i++)
+	for(size_t i=0; i < coin_algo_size; i++)
 	{
 		list += "\t- ";
 		list += coins[i].coin_name;
@@ -322,7 +322,7 @@ void jconf::GetAlgoList(std::string& list)
 bool jconf::IsOnAlgoList(std::string& needle)
 {
 	std::transform(needle.begin(), needle.end(), needle.begin(), ::tolower);
-	
+
 	if(needle == "monero")
 	{
 		printer::inst()->print_msg(L0, "You entered Monero as coin name. Monero will hard-fork the PoW.\nThis means it will stop being compatible with other cryptonight coins.\n"
@@ -330,7 +330,7 @@ bool jconf::IsOnAlgoList(std::string& needle)
 		return false;
 	}
 
-	for(size_t i=0; i < coin_alogo_size; i++)
+	for(size_t i=0; i < coin_algo_size; i++)
 	{
 		if(needle == coins[i].coin_name)
 			return true;
@@ -341,8 +341,8 @@ bool jconf::IsOnAlgoList(std::string& needle)
 const char* jconf::GetDefaultPool(const char* needle)
 {
 	const char* default_example = "pool.example.com:3333";
-	
-	for(size_t i=0; i < coin_alogo_size; i++)
+
+	for(size_t i=0; i < coin_algo_size; i++)
 	{
 		if(strcmp(needle, coins[i].coin_name) == 0)
 		{
@@ -513,7 +513,7 @@ bool jconf::parse_config(const char* sFilename, const char* sFilenamePools)
 	for(uint32_t i=0; i < pool_cnt; i++)
 	{
 		const Value& oThdConf = prv->configValues[aPoolList]->GetArray()[i];
-		
+
 		if(!oThdConf.IsObject())
 		{
 			printer::inst()->print_msg(L0, "Invalid config file. pool_list must contain objects.");
@@ -622,7 +622,7 @@ bool jconf::parse_config(const char* sFilename, const char* sFilenamePools)
 		return false;
 	}
 
-	for(size_t i=0; i < coin_alogo_size; i++)
+	for(size_t i=0; i < coin_algo_size; i++)
 	{
 		if(ctmp == "monero")
 		{

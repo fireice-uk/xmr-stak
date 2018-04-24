@@ -336,7 +336,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		}
 		else
 			printer::inst()->print_msg(L1, "Starting %dx thread, no affinity.", cfg.iMultiway);
-		
+
 		minethd* thd = new minethd(pWork, i + threadOffset, cfg.iMultiway, cfg.bNoPrefetch, cfg.iCpuAff);
 		pvThreads.push_back(thd);
 	}
@@ -586,7 +586,7 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		cryptonight_penta_hash<cryptonight_lite, true, false>,
 		cryptonight_penta_hash<cryptonight_lite, false, true>,
 		cryptonight_penta_hash<cryptonight_lite, true, true>,
-		
+
 		cryptonight_double_hash<cryptonight, false, false>,
 		cryptonight_double_hash<cryptonight, true, false>,
 		cryptonight_double_hash<cryptonight, false, true>,
@@ -659,7 +659,7 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 	std::bitset<2> digit;
 	digit.set(0, !bHaveAes);
 	digit.set(1, !bNoPrefetch);
-	
+
 	return func_table[algv << 4 | (N-2) << 2 | digit.to_ulong()];
 }
 

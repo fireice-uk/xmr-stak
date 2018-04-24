@@ -15,7 +15,7 @@
 	- Parsing or connection error
 	Those are fatal errors (we drop the connection if we encounter them).
 	After they are constructed from const char* strings from various places.
-	(can be from read-only mem), we passs them in an exectutor message
+	(can be from read-only mem), we pass them in an executor message
 	once the recv thread expires.
 	- Call error
 	This error happens when the "server says no". Usually because the job was
@@ -40,9 +40,9 @@ public:
 	static bool hex2bin(const char* in, unsigned int len, unsigned char* out);
 	static void bin2hex(const unsigned char* in, unsigned int len, char* out);
 
-	inline double get_pool_weight(bool gross_weight) 
-	{ 
-		double ret = pool_weight; 
+	inline double get_pool_weight(bool gross_weight)
+	{
+		double ret = pool_weight;
 		if(gross_weight && bRunning)
 			ret += 10.0;
 		if(gross_weight && bLoggedIn)
