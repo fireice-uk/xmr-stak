@@ -476,14 +476,14 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 			}
 			while(status == CL_BUILD_IN_PROGRESS);
 
-			std::vector<size_t> binary_sizes(num_devices);
-			clGetProgramInfo (ctx->Program[ii], CL_PROGRAM_BINARY_SIZES, sizeof(size_t) * binary_sizes.size(), binary_sizes.data(), NULL);
-
-			std::vector<char*> all_programs(num_devices);
-			std::vector<std::vector<char>> program_storage;
-
 			if(xmrstak::params::inst().AMDCache)
 			{
+				std::vector<size_t> binary_sizes(num_devices);
+				clGetProgramInfo (ctx->Program[ii], CL_PROGRAM_BINARY_SIZES, sizeof(size_t) * binary_sizes.size(), binary_sizes.data(), NULL);
+
+				std::vector<char*> all_programs(num_devices);
+				std::vector<std::vector<char>> program_storage;
+
 				int p_id = 0;
 				size_t mem_size = 0;
 				// create memory  structure to query all OpenCL program binaries
