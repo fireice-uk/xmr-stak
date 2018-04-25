@@ -492,5 +492,8 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t 
 	{
 		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_aeon>(ctx, startNonce);
 	}
-
+else if(miner_algo == cryptonight_alloy)
+	{
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ALLOY_ITER, CRYPTONIGHT_ALLOY_MASK, CRYPTONIGHT_ALLOY_MEMORY/4, cryptonight_alloy>(ctx, startNonce);
+	}
 }

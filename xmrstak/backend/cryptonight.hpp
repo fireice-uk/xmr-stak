@@ -10,7 +10,8 @@ enum xmrstak_algo
 	cryptonight_lite = 2,
 	cryptonight_monero = 3,
 	cryptonight_heavy = 4,
-	cryptonight_aeon = 5
+	cryptonight_aeon = 5,
+	cryptonight_alloy = 6
 };
 
 // define aeon settings
@@ -25,6 +26,12 @@ constexpr uint32_t CRYPTONIGHT_ITER = 0x80000;
 constexpr size_t CRYPTONIGHT_HEAVY_MEMORY = 4 * 1024 * 1024;
 constexpr uint32_t CRYPTONIGHT_HEAVY_MASK = 0x3FFFF0;
 constexpr uint32_t CRYPTONIGHT_HEAVY_ITER = 0x40000;
+
+
+constexpr size_t CRYPTONIGHT_ALLOY_MEMORY = 2 * 1024 * 1024;
+constexpr uint32_t CRYPTONIGHT_ALLOY_MASK = 0x1FFFF0;
+constexpr uint32_t CRYPTONIGHT_ALLOY_ITER = 0x100000;
+                                         
 
 template<xmrstak_algo ALGO>
 inline constexpr size_t cn_select_memory() { return 0; }
@@ -44,6 +51,9 @@ inline constexpr size_t cn_select_memory<cryptonight_heavy>() { return CRYPTONIG
 template<>
 inline constexpr size_t cn_select_memory<cryptonight_aeon>() { return CRYPTONIGHT_LITE_MEMORY; }
 
+template<>
+inline constexpr size_t cn_select_memory<cryptonight_alloy>() { return CRYPTONIGHT_ALLOY_MEMORY; }
+
 
 inline size_t cn_select_memory(xmrstak_algo algo)
 {
@@ -57,6 +67,11 @@ inline size_t cn_select_memory(xmrstak_algo algo)
 		return CRYPTONIGHT_LITE_MEMORY;
 	case cryptonight_heavy:
 		return CRYPTONIGHT_HEAVY_MEMORY;
+		
+	case cryptonight_alloy:
+		return CRYPTONIGHT_ALLOY_MEMORY;
+		
+		
 	default:
 		return 0;
 	}
@@ -80,6 +95,10 @@ inline constexpr uint32_t cn_select_mask<cryptonight_heavy>() { return CRYPTONIG
 template<>
 inline constexpr uint32_t cn_select_mask<cryptonight_aeon>() { return CRYPTONIGHT_LITE_MASK; }
 
+template<>
+inline constexpr uint32_t cn_select_mask<cryptonight_alloy>() { return CRYPTONIGHT_ALLOY_MASK; }
+
+
 inline size_t cn_select_mask(xmrstak_algo algo)
 {
 	switch(algo)
@@ -92,7 +111,11 @@ inline size_t cn_select_mask(xmrstak_algo algo)
 		return CRYPTONIGHT_LITE_MASK;
 	case cryptonight_heavy:
 		return CRYPTONIGHT_HEAVY_MASK;
-	default:
+
+	case cryptonight_alloy:
+    	return CRYPTONIGHT_ALLOY_MASK;
+
+default:
 		return 0;
 	}
 }
@@ -115,6 +138,10 @@ inline constexpr uint32_t cn_select_iter<cryptonight_heavy>() { return CRYPTONIG
 template<>
 inline constexpr uint32_t cn_select_iter<cryptonight_aeon>() { return CRYPTONIGHT_LITE_ITER; }
 
+template<>
+inline constexpr uint32_t cn_select_iter<cryptonight_alloy>() { return CRYPTONIGHT_ALLOY_ITER; }
+
+
 inline size_t cn_select_iter(xmrstak_algo algo)
 {
 	switch(algo)
@@ -127,7 +154,13 @@ inline size_t cn_select_iter(xmrstak_algo algo)
 		return CRYPTONIGHT_LITE_ITER;
 	case cryptonight_heavy:
 		return CRYPTONIGHT_HEAVY_ITER;
-	default:
+
+	case cryptonight_alloy:
+		return CRYPTONIGHT_ALLOY_ITER;
+
+		
+				
+    default:
 		return 0;
 	}
 }
