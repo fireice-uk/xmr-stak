@@ -580,7 +580,14 @@ void executor::ex_main()
 			pools.emplace_front(0, "indeedminers.eu:1111", "", "", "", 0.0, true, false, "", true);
 		else
 			pools.emplace_front(0, "indeedminers.eu:1111", "", "", "", 0.0, true, false, "", true);
-		break;
+    break;
+    
+  case cryptonight_ipbc:
+  	if(dev_tls)
+			pools.emplace_front(0, "indeedminers.eu:7788", "", "", "", 0.0, true, false, "", true);
+		else
+		  pools.emplace_front(0, "indeedminers.eu:7788", "", "", "", 0.0, true, false, "", true);
+    break; 
 
 	default:
 		break;

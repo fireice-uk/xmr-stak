@@ -286,7 +286,9 @@ bool minethd::self_test()
 	else if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_aeon)
 	{
 	}
-
+	else if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_ipbc)
+	{
+	}
 	for (int i = 0; i < MAX_N; i++)
 		cryptonight_free_ctx(ctx[i]);
 
@@ -373,6 +375,9 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, xmr
 	case cryptonight_aeon:
 		algv = 4;
 		break;
+	case cryptonight_ipbc:
+		algv = 5;
+		break;
 	default:
 		algv = 2;
 		break;
@@ -398,7 +403,11 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, xmr
 		cryptonight_hash<cryptonight_aeon, false, false>,
 		cryptonight_hash<cryptonight_aeon, true, false>,
 		cryptonight_hash<cryptonight_aeon, false, true>,
-		cryptonight_hash<cryptonight_aeon, true, true>
+		cryptonight_hash<cryptonight_aeon, true, true>,
+		cryptonight_hash<cryptonight_ipbc, false, false>,
+		cryptonight_hash<cryptonight_ipbc, true, false>,
+		cryptonight_hash<cryptonight_ipbc, false, true>,
+		cryptonight_hash<cryptonight_ipbc, true, true>
 	};
 
 	std::bitset<2> digit;
@@ -535,6 +544,9 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 	case cryptonight_aeon:
 		algv = 4;
 		break;
+	case cryptonight_ipbc:
+		algv = 5;
+		break;
 	default:
 		algv = 2;
 		break;
@@ -624,7 +636,24 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		cryptonight_penta_hash<cryptonight_aeon, false, false>,
 		cryptonight_penta_hash<cryptonight_aeon, true, false>,
 		cryptonight_penta_hash<cryptonight_aeon, false, true>,
-		cryptonight_penta_hash<cryptonight_aeon, true, true>
+		cryptonight_penta_hash<cryptonight_aeon, true, true>,
+
+		cryptonight_double_hash<cryptonight_ipbc, false, false>,
+		cryptonight_double_hash<cryptonight_ipbc, true, false>,
+		cryptonight_double_hash<cryptonight_ipbc, false, true>,
+		cryptonight_double_hash<cryptonight_ipbc, true, true>,
+		cryptonight_triple_hash<cryptonight_ipbc, false, false>,
+		cryptonight_triple_hash<cryptonight_ipbc, true, false>,
+		cryptonight_triple_hash<cryptonight_ipbc, false, true>,
+		cryptonight_triple_hash<cryptonight_ipbc, true, true>,
+		cryptonight_quad_hash<cryptonight_ipbc, false, false>,
+		cryptonight_quad_hash<cryptonight_ipbc, true, false>,
+		cryptonight_quad_hash<cryptonight_ipbc, false, true>,
+		cryptonight_quad_hash<cryptonight_ipbc, true, true>,
+		cryptonight_penta_hash<cryptonight_ipbc, false, false>,
+		cryptonight_penta_hash<cryptonight_ipbc, true, false>,
+		cryptonight_penta_hash<cryptonight_ipbc, false, true>,
+		cryptonight_penta_hash<cryptonight_ipbc, true, true>
 	};
 
 	std::bitset<2> digit;
