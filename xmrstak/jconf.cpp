@@ -107,7 +107,8 @@ xmrstak::coin_selection coins[] = {
 	{ "monero7",             {cryptonight_monero, cryptonight_monero, 0u}, {cryptonight_monero, cryptonight_monero, 0u}, "pool.usxmrpool.com:3333" },
 	{ "stellite",            {cryptonight_monero, cryptonight, 3u},        {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
 	{ "sumokoin",            {cryptonight_heavy, cryptonight_heavy, 0u},   {cryptonight_heavy, cryptonight_heavy, 0u},   nullptr },
-	{ "turtlecoin",          {cryptonight_lite, cryptonight_aeon, 255u},   {cryptonight_aeon, cryptonight_lite, 7u},     nullptr }
+	{ "turtlecoin",          {cryptonight_lite, cryptonight_aeon, 255u},   {cryptonight_aeon, cryptonight_lite, 7u},     nullptr },
+	{ "pinkstar",            {cryptonight_lite, cryptonight_aeon, 4u},     {cryptonight_aeon, cryptonight_lite, 4u},     nullptr }
 };
 
 constexpr size_t coin_alogo_size = (sizeof(coins)/sizeof(coins[0]));

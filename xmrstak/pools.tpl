@@ -33,6 +33,7 @@ POOLCONF],
  *    monero7 (use this for Monero's new PoW)
  *    sumokoin (automatic switch with block version 3 to cryptonight_heavy)
  *    turtlecoin
+ *    pinkstar (use this for PinkStarCoin v2)
  *
  * Native algorithms which not depends on any block versions:
  *
