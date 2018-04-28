@@ -876,6 +876,9 @@ void executor::result_report(std::string& out)
 	size_t iGoodRes = vMineResults[0].count, iTotalRes = iGoodRes;
 	size_t ln = vMineResults.size();
 
+	// use user selected locale 
+	setlocale(LC_ALL, ""); 
+
 	for(size_t i=1; i < ln; i++)
 		iTotalRes += vMineResults[i].count;
 
@@ -891,26 +894,29 @@ void executor::result_report(std::string& out)
 		using namespace std::chrono;
 		dConnSec = (double)duration_cast<seconds>(system_clock::now() - tPoolConnTime).count();
 	}
-
+	snprintf(num, sizeof(num), "%'lu\n", iPoolDiff);
+	out.append("Difficulty       : ").append(num);
 	snprintf(num, sizeof(num), " (%.1f %%)\n", 100.0 * iGoodRes / iTotalRes);
-
-	out.append("Difficulty       : ").append(std::to_string(iPoolDiff)).append(1, '\n');
-	out.append("Good results     : ").append(std::to_string(iGoodRes)).append(" / ").
-		append(std::to_string(iTotalRes)).append(num);
+	out.append("Good results     : ").append(std::to_string(iGoodRes)).append(" / ")
+	   .append(std::to_string(iTotalRes)).append(num);
 
 	if(iPoolCallTimes.size() != 0)
 	{
 		// Here we use iPoolCallTimes since it also gets reset when we disconnect
 		snprintf(num, sizeof(num), "%.1f sec\n", dConnSec / iPoolCallTimes.size());
 		out.append("Avg result time  : ").append(num);
+		snprintf(num, sizeof(num), "%'.0f secs\n", dConnSec);
+	        out.append("Total time       : ").append(num);
 	}
-	out.append("Pool-side hashes : ").append(std::to_string(iPoolHashes)).append(2, '\n');
+
+	snprintf(num, sizeof(num), "%'lu hashes\n",  iPoolHashes);
+	out.append("Pool-side hashes : ").append(num).append(2,'\n');
 	out.append("Top 10 best results found:\n");
 
 	for(size_t i=0; i < 10; i += 2)
 	{
-		snprintf(num, sizeof(num), "| %2llu | %16llu | %2llu | %16llu |\n",
-			int_port(i), int_port(iTopDiff[i]), int_port(i+1), int_port(iTopDiff[i+1]));
+		snprintf(num, sizeof(num), "| %'2llu | %'16llu | %'2llu | %'16llu |\n",
+		int_port(i), int_port(iTopDiff[i]), int_port(i+1), int_port(iTopDiff[i+1]));
 		out.append(num);
 	}
 
