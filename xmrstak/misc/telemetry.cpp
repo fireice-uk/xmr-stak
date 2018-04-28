@@ -96,6 +96,21 @@ double telemetry::calc_telemetry_data(size_t iLastMilisec, size_t iThread)
 	return fHashes / fTime;
 }
 
+uint64_t telemetry::get_last_metrics(size_t iThread)
+{
+	uint64_t iLastestHashCnt = 0;
+
+	//Start at 1, buckettop points to next empty
+	size_t idx = (iBucketTop[iThread] - 1) & iBucketMask; //overflow expected here
+
+	if (ppTimestamps[iThread][idx] == 0)
+		return 0; //That means we don't have the data yet
+
+	iLastestHashCnt = ppHashCounts[iThread][idx];
+
+	return iLastestHashCnt;
+}
+
 void telemetry::push_perf_value(size_t iThd, uint64_t iHashCount, uint64_t iTimestamp)
 {
 	size_t iTop = iBucketTop[iThd];

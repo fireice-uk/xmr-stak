@@ -670,6 +670,7 @@ void executor::ex_main()
 		case EV_HTML_RESULTS:
 		case EV_HTML_CONNSTAT:
 		case EV_HTML_JSON:
+		case EV_METRICS:
 			http_report(ev.iName);
 			break;
 
@@ -1067,6 +1068,66 @@ void executor::http_hashrate_report(std::string& out)
 	out.append(buffer);
 }
 
+void executor::http_metrics_report(std::string& out)
+{
+	char buffer[4096];
+	size_t nthd = pvThreads->size();
+	size_t iGoodRes = vMineResults[0].count, iTotalRes = iGoodRes;
+	size_t ln = vMineResults.size();
+
+	for(size_t i=1; i < ln; i++)
+		iTotalRes += vMineResults[i].count;
+	double dConnSec;
+	{
+		using namespace std::chrono;
+		dConnSec = (double)duration_cast<seconds>(system_clock::now() - tPoolConnTime).count();
+	}
+
+
+	out.reserve(4096);
+
+	snprintf(buffer, sizeof(buffer), "# TYPE connection_uptime counter\nconnection_uptime %f\n", dConnSec);
+	out.append(buffer);
+	snprintf(buffer, sizeof(buffer), "# TYPE difficulty gauge\ndifficulty %d\n", iPoolDiff);
+	out.append(buffer);
+	snprintf(buffer, sizeof(buffer), "# TYPE good_results counter\ngood_results %d\n", iGoodRes);
+	out.append(buffer);
+	snprintf(buffer, sizeof(buffer), "# TYPE total_results counter\ntotal_results %d\n", iTotalRes);
+	out.append(buffer);
+
+	snprintf(buffer, sizeof(buffer), "# TYPE threads gauge\nthreads %d\n", nthd);
+	out.append(buffer);
+
+	snprintf(buffer, sizeof(buffer), "# TYPE hashes_count counter\n");
+	out.append(buffer);
+
+	for( uint32_t b = 0; b < 4u; ++b)
+	{
+		std::vector<xmrstak::iBackend*> backEnds;
+		std::copy_if(pvThreads->begin(), pvThreads->end(), std::back_inserter(backEnds),
+			[&](xmrstak::iBackend* backend)
+			{
+				return backend->backendType == b;
+			}
+		);
+
+		size_t nthd = backEnds.size();
+		if(nthd != 0)
+		{
+			size_t i;
+			auto bType = static_cast<xmrstak::iBackend::BackendType>(b);
+			std::string name(xmrstak::iBackend::getName(bType));
+
+			for (i = 0; i < nthd; i++)
+			{
+				uint32_t tid = backEnds[i]->iThreadNo;
+				snprintf(buffer, sizeof(buffer), "hashes_count{name=\"%s\", thread=\"%d\"} %d\n", name.c_str(), tid, telem->get_last_metrics(tid));
+				out.append(buffer);
+			}
+		}
+	}
+}
+
 void executor::http_result_report(std::string& out)
 {
 	char date[128];
@@ -1293,6 +1354,10 @@ void executor::http_report(ex_event_name ev)
 
 	case EV_HTML_JSON:
 		http_json_report(*pHttpString);
+		break;
+
+	case EV_METRICS:
+		http_metrics_report(*pHttpString);
 		break;
 
 	default:

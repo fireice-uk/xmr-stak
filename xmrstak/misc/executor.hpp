@@ -103,6 +103,7 @@ private:
 	void connection_report(std::string& out);
 
 	void http_hashrate_report(std::string& out);
+	void http_metrics_report(std::string& out);
 	void http_result_report(std::string& out);
 	void http_connection_report(std::string& out);
 	void http_json_report(std::string& out);
