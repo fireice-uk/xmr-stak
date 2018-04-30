@@ -4,7 +4,8 @@
 
 ### AMD APP SDK 3.0 (only needed to use AMD GPUs)
 
-- download and install the latest version from [http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)
+~~- download and install the latest version from [http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)~~
+- AMD APP SDK 3.0 is no longer available on AMD website. Take a look at [#1511](https://github.com/fireice-uk/xmr-stak/issues/1511)
 
 ### Cuda 8.0+ (only needed to use NVIDIA GPUs)
 
