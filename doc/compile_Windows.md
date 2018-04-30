@@ -32,7 +32,8 @@
 
 ### AMD APP SDK 3.0 (only needed for AMD GPUs)
 
-- Download and install the latest version from http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/
+~~- Download and install the latest version from http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/~~
+- AMD APP SDK 3.0 is no longer available on AMD website. Take a look at [#1511](https://github.com/fireice-uk/xmr-stak/issues/1511)
 
 ### Dependencies OpenSSL/Hwloc and Microhttpd
 - For CUDA 8*:
