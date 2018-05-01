@@ -31,6 +31,8 @@ struct globalStates
 			nonce = iGlobalNonce.fetch_add(reserve_count);
 	}
 
+	void consume_work( miner_work& threadWork, uint64_t& currentJobId);
+
 	miner_work oGlobalWork;
 	std::atomic<uint64_t> iGlobalJobNo;
 	std::atomic<uint64_t> iConsumeCnt;
@@ -39,7 +41,7 @@ struct globalStates
 	size_t pool_id = invalid_pool_id;
 
 private:
-	globalStates() : iThreadCount(0)
+	globalStates() : iThreadCount(0), iGlobalJobNo(0), iConsumeCnt(0)
 	{
 	}
 };

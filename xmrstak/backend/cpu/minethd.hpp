@@ -47,11 +47,8 @@ private:
 	void quad_work_main();
 	void penta_work_main();
 
-	void consume_work();
-
 	uint64_t iJobNo;
 
-	static miner_work oGlobalWork;
 	miner_work oWork;
 
 	std::promise<void> order_fix;
