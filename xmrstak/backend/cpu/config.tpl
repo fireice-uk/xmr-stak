@@ -7,7 +7,7 @@ R"===(
  *                  the maximum performance. When set to a number N greater than 1, this mode will increase the
  *                  cache usage and single thread performance by N times.
  *
- * no_prefetch -    Some sytems can gain up to extra 5% here, but sometimes it will have no difference or make
+ * no_prefetch -    Some systems can gain up to extra 5% here, but sometimes it will have no difference or make
  *                  things slower.
  *
  * affine_to_cpu -  This can be either false (no affinity), or the CPU core number. Note that on hyperthreading 
