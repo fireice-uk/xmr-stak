@@ -19,7 +19,7 @@ POOLCONF],
 
 /*
  * Currency to mine. Supported values:
- *
+ *    alloy
  *    aeon7 (use this for Aeon's new PoW)
  *    bbscoin (automatic switch with block version 3 to cryptonight_v7)
  *    croat
@@ -28,18 +28,15 @@ POOLCONF],
  *    graft
  *    haven
  *    intense
- *    ipbc
  *    karbo
  *    monero7 (use this for Monero's new PoW)
  *    sumokoin (automatic switch with block version 3 to cryptonight_heavy)
- *    turtlecoin
  *
  * Native algorithms which not depends on any block versions:
  *
  *    # 1MiB scratchpad memory
  *    cryptonight_lite
  *    cryptonight_lite_v7
- *    cryptonight_lite_v7_xor (algorithm used by ipbc)
  *    # 2MiB scratchpad memory
  *    cryptonight
  *    cryptonight_v7

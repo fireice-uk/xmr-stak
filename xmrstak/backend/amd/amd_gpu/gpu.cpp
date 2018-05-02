@@ -476,14 +476,14 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 			}
 			while(status == CL_BUILD_IN_PROGRESS);
 
+			std::vector<size_t> binary_sizes(num_devices);
+			clGetProgramInfo (ctx->Program[ii], CL_PROGRAM_BINARY_SIZES, sizeof(size_t) * binary_sizes.size(), binary_sizes.data(), NULL);
+
+			std::vector<char*> all_programs(num_devices);
+			std::vector<std::vector<char>> program_storage;
+
 			if(xmrstak::params::inst().AMDCache)
 			{
-				std::vector<size_t> binary_sizes(num_devices);
-				clGetProgramInfo (ctx->Program[ii], CL_PROGRAM_BINARY_SIZES, sizeof(size_t) * binary_sizes.size(), binary_sizes.data(), NULL);
-
-				std::vector<char*> all_programs(num_devices);
-				std::vector<std::vector<char>> program_storage;
-
 				int p_id = 0;
 				size_t mem_size = 0;
 				// create memory  structure to query all OpenCL program binaries
@@ -1004,7 +1004,7 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 		return(ERR_OCL_API);
 	}
 
-	if(miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon || miner_algo == cryptonight_ipbc)
+	if(miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon )
 	{
 		// Input
 		if ((ret = clSetKernelArg(ctx->Kernels[kernel_storage][1], 3, sizeof(cl_mem), &ctx->InputBuffer)) != CL_SUCCESS)
