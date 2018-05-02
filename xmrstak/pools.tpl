@@ -22,6 +22,7 @@ POOLCONF],
  *
  *    aeon7 (use this for Aeon's new PoW)
  *    bbscoin (automatic switch with block version 3 to cryptonight_v7)
+ *    bitcoinnova
  *    croat
  *    edollar
  *    electroneum

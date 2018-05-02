@@ -42,6 +42,7 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 
 - [Aeon](http://www.aeon.cash)
 - [BBSCoin](https://www.bbscoin.xyz)
+- [BitcoinNova](http://bitcoinnova.org)
 - [Croat](https://croat.cat)
 - [Edollar](https://edollar.cash)
 - [Electroneum](https://electroneum.com)
