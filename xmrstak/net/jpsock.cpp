@@ -404,7 +404,7 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 
 	uint32_t iWorkLn = blob->GetStringLength() / 2;
 	if (iWorkLn > sizeof(pool_job::bWorkBlob))
-		return set_socket_error("PARSE error: Invalid job legth. Are you sure you are mining the correct coin?");
+		return set_socket_error("PARSE error: Invalid job length. Are you sure you are mining the correct coin?");
 
 	pool_job oPoolJob;
 	if (!hex2bin(blob->GetString(), iWorkLn * 2, oPoolJob.bWorkBlob))
@@ -645,16 +645,19 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 			algo_name = "cryptonight";
 			break;
 		case cryptonight_lite:
-			algo_name = "cryptonight-lite";
+			algo_name = "cryptonight_lite";
 			break;
 		case cryptonight_monero:
-			algo_name = "cryptonight-monerov7";
+			algo_name = "cryptonight_v7";
 			break;
 		case cryptonight_aeon:
-			algo_name = "cryptonight-aeonv7";
+			algo_name = "cryptonight_lite_v7";
+			break;
+		case cryptonight_ipbc:
+			algo_name = "cryptonight_lite_v7_xor";
 			break;
 		case cryptonight_heavy:
-			algo_name = "cryptonight-heavy";
+			algo_name = "cryptonight_heavy";
 			break;
 		default:
 			algo_name = "unknown";
