@@ -43,6 +43,12 @@
 #include <iostream>
 #include <time.h>
 #include <iostream>
+#include <memory>
+
+#ifndef CONF_NO_PROMETHEUS
+#include <prometheus/exposer.h>
+#include <prometheus/registry.h>
+#endif
 
 #ifndef CONF_NO_TLS
 #include <openssl/ssl.h>
@@ -739,6 +745,14 @@ int main(int argc, char *argv[])
 #ifndef CONF_NO_OPENCL
 	printer::inst()->print_str("Based on OpenCL mining code by wolf9466.\n");
 #endif
+
+#ifndef CONF_NO_PROMETHEUS
+	auto registry = std::make_shared<prometheus::Registry>();
+	auto& env = xmrstak::environment::inst();
+	if(env.pRegistry == nullptr)
+		env.pRegistry = &registry;
+#endif
+
 	char buffer[64];
 	snprintf(buffer, sizeof(buffer), "\nConfigurable dev donation level is set to %.1f%%\n\n", fDevDonationLevel * 100.0);
 	printer::inst()->print_str(buffer);

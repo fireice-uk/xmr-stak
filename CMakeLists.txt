@@ -371,6 +371,54 @@ else()
 endif()
 
 ################################################################################
+# Find prometheus & protobuf
+################################################################################
+
+option(PROMETHEUS_ENABLE "Enable or disable the requirement of prometheus" OFF)
+if(PROMETHEUS_ENABLE)
+    find_path(PROMETHEUS_CCP_INCLUDE_DIR
+        NAMES
+            prometheus/registry.h
+        PATHS
+            /opt/local
+            /usr/local
+            /usr
+            ENV "PROGRAMFILES(X86)"
+            ENV "PROMETHEUS_CCP_ROOT"
+        PATH_SUFFIXES
+            include)
+
+    find_library(PROMETHEUS_CCP
+        NAMES
+            libprometheus-cpp.a
+        PATHS
+            ENV "PROMETHEUS_CCP_ROOT"
+        PATH_SUFFIXES
+            lib)
+
+    if(PROMETHEUS_CCP STREQUAL "PROMETHEUS_CCP-NOTFOUND" OR ${PROMETHEUS_CCP_INCLUDE_DIR} STREQUAL "PROMETHEUS_CCP_INCLUDE_DIR-NOTFOUND")
+        message(FATAL_ERROR "prometheus-cpp NOT found: use `-DPROMETHEUS_ENABLE=OFF` to build without prometheus metrics support")
+    else()
+        set(LIBS ${LIBS} ${PROMETHEUS_CCP}/libprometheus-cpp.a)
+        include_directories(AFTER ${PROMETHEUS_CCP_INCLUDE_DIR})
+    endif()
+else()
+    add_definitions("-DCONF_NO_PROMETHEUS")
+endif()
+
+if(PROMETHEUS_ENABLE)
+    find_package(Protobuf)
+    if(PROTOBUF_FOUND)
+        include_directories(${PROTOBUF_INCLUDE_DIR})
+        set(LIBS ${LIBS} ${PROTOBUF_LIBRARIES})
+    else()
+        message(FATAL_ERROR "Protobuf NOT found: use `-DPROMETHEUS_ENABLE=OFF` to build without prometheus metrics support, because protobuf is required for prometheus.")
+    endif()
+else()
+    add_definitions("-DCONF_NO_PROMETHEUS")
+endif()
+
+################################################################################
 # Windows Sockets
 ################################################################################
 
@@ -475,6 +523,8 @@ add_library(xmr-stak-backend
     ${BACKEND_CPP}
 )
 target_link_libraries(xmr-stak-backend xmr-stak-c ${CMAKE_DL_LIBS})
+
+target_include_directories(xmr-stak-backend PUBLIC)
 
 # compile CUDA backend
 if(CUDA_FOUND)

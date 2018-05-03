@@ -14,6 +14,10 @@
 #include <future>
 #include <chrono>
 
+#ifndef CONF_NO_PROMETHEUS
+#include <prometheus/registry.h>
+#endif
+
 class jpsock;
 
 namespace xmrstak
@@ -106,6 +110,7 @@ private:
 	void http_result_report(std::string& out);
 	void http_connection_report(std::string& out);
 	void http_json_report(std::string& out);
+    void http_prometheus_report(std::string& out);
 
 	void http_report(ex_event_name ev);
 	void print_report(ex_event_name ev);
@@ -194,5 +199,23 @@ private:
 	void eval_pool_choice();
 
 	inline size_t sec_to_ticks(size_t sec) { return sec * (1000 / iTickTime); }
+
+#ifndef CONF_NO_PROMETHEUS
+	// Metrics
+	struct metric {
+		prometheus::Counter* cSubmittedResultsAccepted;
+		prometheus::Counter* cSubmittedResultsRejected;
+		prometheus::Gauge* gDifficulty;
+		prometheus::Gauge* gUptime;
+		std::vector<prometheus::Gauge*> vgHashRates;
+		prometheus::Gauge* agHashRateTotal[3];
+		// TODO: Make vector and build dynamically based on config
+		prometheus::Gauge* gPoolPing;
+	};
+	metric sMetric;
+
+	// Initialize result counters
+	void init_metrics();
+#endif
 };
 
