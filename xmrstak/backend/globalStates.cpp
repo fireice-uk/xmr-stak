@@ -35,57 +35,18 @@ namespace xmrstak
 
 void globalStates::consume_work( miner_work& threadWork, uint64_t& currentJobId)
 {
-	/* Only the executer thread which updates the job is ever setting iConsumeCnt
-	 * to 1000. In this case each consumer must wait until the job is fully updated.
-	 */
-	uint64_t numConsumer = 0;
-
-	/* Take care that we not consume a job if the job is updated.
-	 * If we leave the loop we have increased iConsumeCnt so that
-	 * the job will not be updated until we leave the method.
-	 */
-	do{
-		numConsumer = iConsumeCnt.load(std::memory_order_relaxed);
-		if(numConsumer < 1000)
-		{
-			// register that thread try consume job data
-			numConsumer = ++iConsumeCnt;
-			if(numConsumer >= 1000)
-			{
-				iConsumeCnt--;
-				// 11 is a arbitrary chosen prime number
-				std::this_thread::sleep_for(std::chrono::milliseconds(11));
-			}
-		}
-		else
-		{
-			// an other thread is preparing a new job, 11 is a arbitrary chosen prime number
-			std::this_thread::sleep_for(std::chrono::milliseconds(11));
-		}
-	}
-	while(numConsumer >= 1000);
+	jobLock.rdlock();
 
 	threadWork = oGlobalWork;
 	currentJobId = iGlobalJobNo.load(std::memory_order_relaxed);
 	
-	// signal that thread consumed work
-	iConsumeCnt--;
+	jobLock.unlock();
 }
 
 void globalStates::switch_work(miner_work& pWork, pool_data& dat)
 {
-	/* 1000 is used to notify that the the job will be updated as soon
-	 * as all consumer (which currently coping oGlobalWork has copied
-	 * all data)
-	 */
-	iConsumeCnt += 1000;
-	// wait until all threads which entered consume_work are finished
-	while (iConsumeCnt.load(std::memory_order_relaxed) > 1000)
-	{
-		// 7 is a arbitrary chosen prime number which is smaller than the consumer waiting time
-		std::this_thread::sleep_for(std::chrono::milliseconds(7));
-	}
-	// BEGIN CRITICAL SECTION
+	jobLock.wrlock();
+	
 	// this notifies all threads that the job has changed
 	iGlobalJobNo++; 
 
@@ -100,8 +61,8 @@ void globalStates::switch_work(miner_work& pWork, pool_data& dat)
 	 */
 	dat.iSavedNonce = iGlobalNonce.exchange(dat.iSavedNonce, std::memory_order_relaxed);
 	oGlobalWork = pWork;
-	// END CRITICAL SECTION: allow job consume
-	iConsumeCnt -= 1000;
+	
+	jobLock.unlock();
 }
 
 } // namespace xmrstak
