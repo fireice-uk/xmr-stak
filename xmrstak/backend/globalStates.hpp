@@ -1,25 +1,14 @@
 #pragma once
 
-#include "miner_work.hpp"
+#include "xmrstak/backend/miner_work.hpp"
 #include "xmrstak/misc/environment.hpp"
 #include "xmrstak/misc/console.hpp"
+#include "xmrstak/backend/pool_data.hpp"
 
 #include <atomic>
 
-constexpr static size_t invalid_pool_id = (-1);
-
 namespace xmrstak
 {
-
-struct pool_data
-{
-	uint32_t iSavedNonce;
-	size_t   pool_id;
-
-	pool_data() : iSavedNonce(0), pool_id(invalid_pool_id)
-	{
-	}
-};
 
 struct globalStates
 {
