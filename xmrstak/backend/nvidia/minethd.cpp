@@ -181,7 +181,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 		}
 		else
 			printer::inst()->print_msg(L1, "Starting NVIDIA GPU thread %d, no affinity.", i);
-		
+
 		minethd* thd = new minethd(pWork, i + threadOffset, cfg);
 		pvThreads->push_back(thd);
 
@@ -223,7 +223,7 @@ void minethd::work_main()
 
 	if(cuda_get_deviceinfo(&ctx) != 0 || cryptonight_extra_cpu_init(&ctx) != 1)
 	{
-		printer::inst()->print_msg(L0, "Setup failed for GPU %d. Exitting.\n", (int)iThreadNo);
+		printer::inst()->print_msg(L0, "Setup failed for GPU %d. Exiting.\n", (int)iThreadNo);
 		std::exit(0);
 	}
 
@@ -237,11 +237,11 @@ void minethd::work_main()
 	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
-	
+
 	// start with root algorithm and switch later if fork version is reached
 	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
 	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
-	
+
 	uint32_t iNonce;
 
 	globalStates::inst().iConsumeCnt++;
@@ -299,7 +299,7 @@ void minethd::work_main()
 			{
 				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, h_per_round * 16);
 			}
-			
+
 			uint32_t foundNonce[10];
 			uint32_t foundCount;
 
