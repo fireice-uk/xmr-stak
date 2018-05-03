@@ -3,7 +3,7 @@
 #include <inttypes.h>
 #include <type_traits>
 
-enum xmrstak_algo 
+enum xmrstak_algo
 {
 	invalid_algo = 0,
 	cryptonight = 1,

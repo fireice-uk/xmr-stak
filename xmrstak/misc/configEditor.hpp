@@ -14,7 +14,7 @@ struct configEditor
 {
 	std::string m_fileContent;
 
-	configEditor() 
+	configEditor()
 	{
 
 	}
