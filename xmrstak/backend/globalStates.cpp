@@ -35,17 +35,17 @@ namespace xmrstak
 
 void globalStates::consume_work( miner_work& threadWork, uint64_t& currentJobId)
 {
-	jobLock.rdlock();
+	jobLock.ReadLock();
 
 	threadWork = oGlobalWork;
 	currentJobId = iGlobalJobNo.load(std::memory_order_relaxed);
 	
-	jobLock.unlock();
+	jobLock.UnLock();
 }
 
 void globalStates::switch_work(miner_work& pWork, pool_data& dat)
 {
-	jobLock.wrlock();
+	jobLock.WriteLock();
 	
 	// this notifies all threads that the job has changed
 	iGlobalJobNo++; 
@@ -62,7 +62,7 @@ void globalStates::switch_work(miner_work& pWork, pool_data& dat)
 	dat.iSavedNonce = iGlobalNonce.exchange(dat.iSavedNonce, std::memory_order_relaxed);
 	oGlobalWork = pWork;
 	
-	jobLock.unlock();
+	jobLock.UnLock();
 }
 
 } // namespace xmrstak
