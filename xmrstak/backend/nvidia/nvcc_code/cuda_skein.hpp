@@ -221,7 +221,7 @@ __device__ void cn_skein512_processblock(Skein_512_Ctxt_t * __restrict__ ctx, co
 		ctx->X[7] = X7 ^ w[7];
 
 		ts[1] &= ~SKEIN_T1_FLAG_FIRST;
-	} 
+	}
 	while (--blkCnt);
 
 	ctx->h.T[0] = ts[0];
@@ -239,7 +239,7 @@ __device__ void cn_skein_final(skeinHashState * __restrict__ state, uint8_t * __
 
 	ctx->h.T[1] |= SKEIN_T1_FLAG_FINAL;
 
-	if (ctx->h.bCnt < SKEIN_512_BLOCK_BYTES) 
+	if (ctx->h.bCnt < SKEIN_512_BLOCK_BYTES)
 	{
 		memset(&ctx->b[ctx->h.bCnt],0,SKEIN_512_BLOCK_BYTES - ctx->h.bCnt);
 		//p8 = &ctx->b[ctx->h.bCnt];
@@ -258,7 +258,7 @@ __device__ void cn_skein_final(skeinHashState * __restrict__ state, uint8_t * __
 
 	memcpy(X,ctx->X,sizeof(X));
 
-	for (i=0;i*SKEIN_512_BLOCK_BYTES < byteCnt;i++) 
+	for (i=0;i*SKEIN_512_BLOCK_BYTES < byteCnt;i++)
 	{
 		((uint64_t *)ctx->b)[0]= (uint64_t)i;
 		Skein_Start_New_Type(ctx,OUT_FINAL);
@@ -275,15 +275,15 @@ __device__ void cn_skein512_update(Skein_512_Ctxt_t * __restrict__ ctx, const ui
 {
 	size_t n;
 
-	if (msgByteCnt + ctx->h.bCnt > SKEIN_512_BLOCK_BYTES) 
+	if (msgByteCnt + ctx->h.bCnt > SKEIN_512_BLOCK_BYTES)
 	{
 
-		if (ctx->h.bCnt) 
+		if (ctx->h.bCnt)
 		{
 
 			n = SKEIN_512_BLOCK_BYTES - ctx->h.bCnt;
 
-			if (n) 
+			if (n)
 			{
 				memcpy(&ctx->b[ctx->h.bCnt],msg,n);
 				msgByteCnt  -= n;
@@ -295,7 +295,7 @@ __device__ void cn_skein512_update(Skein_512_Ctxt_t * __restrict__ ctx, const ui
 			ctx->h.bCnt = 0;
 		}
 
-		if (msgByteCnt > SKEIN_512_BLOCK_BYTES) 
+		if (msgByteCnt > SKEIN_512_BLOCK_BYTES)
 		{
 			n = (msgByteCnt-1) / SKEIN_512_BLOCK_BYTES;
 			cn_skein512_processblock(ctx,msg,n,SKEIN_512_BLOCK_BYTES);
@@ -304,7 +304,7 @@ __device__ void cn_skein512_update(Skein_512_Ctxt_t * __restrict__ ctx, const ui
 		}
 	}
 
-	if (msgByteCnt) 
+	if (msgByteCnt)
 	{
 		memcpy(&ctx->b[ctx->h.bCnt],msg,msgByteCnt);
 		ctx->h.bCnt += msgByteCnt;
@@ -313,11 +313,11 @@ __device__ void cn_skein512_update(Skein_512_Ctxt_t * __restrict__ ctx, const ui
 
 __device__ void cn_skein_update(skeinHashState * __restrict__ state, const BitSequence * __restrict__ data, DataLength databitlen)
 {
-	if ((databitlen & 7) == 0) 
+	if ((databitlen & 7) == 0)
 	{
 		cn_skein512_update(&state->u.ctx_512,data,databitlen >> 3);
 	}
-	else 
+	else
 	{
 
 		size_t bCnt = (databitlen >> 3) + 1;

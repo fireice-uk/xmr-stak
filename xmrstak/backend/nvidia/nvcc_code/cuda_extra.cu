@@ -184,7 +184,7 @@ __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint3
 	uint32_t * __restrict__ ctx_state = d_ctx_state + thread * 50;
 	uint64_t hash[4];
 	uint32_t state[50];
-	
+
 	#pragma unroll
 	for ( i = 0; i < 50; i++ )
 		state[i] = ctx_state[i];
@@ -296,7 +296,7 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	}
 	else
 		ctx->d_ctx_state2 = ctx->d_ctx_state;
-	
+
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key1, 40 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key2, 40 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_text, 32 * sizeof(uint32_t) * wsize));
@@ -472,7 +472,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		std::vector<int>::iterator it = std::find(arch.begin(), arch.end(), 20);
 		if(it == arch.end())
 		{
-			printf("WARNING: NVIDIA GPU %d: miner not compiled for the gpu architecture %d.\n", ctx->device_id, gpuArch);
+			printf("WARNING: NVIDIA GPU %d: miner not compiled for CUDA architecture %d.\n", ctx->device_id, gpuArch);
 			return 5;
 		}
 	}
@@ -490,7 +490,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 				minSupportedArch = arch[i];
 		if(minSupportedArch < 30 || gpuArch < minSupportedArch)
 		{
-			printf("WARNING: NVIDIA GPU %d: miner not compiled for the gpu architecture %d.\n", ctx->device_id, gpuArch);
+			printf("WARNING: NVIDIA GPU %d: miner not compiled for CUDA architecture %d.\n", ctx->device_id, gpuArch);
 			return 5;
 		}
 	}
@@ -517,7 +517,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		 */
 		ctx->device_threads = 64;
 		constexpr size_t byteToMiB = 1024u * 1024u;
-		
+
 		// no limit by default 1TiB
 		size_t maxMemUsage = byteToMiB * byteToMiB;
 		if(props.major == 6)
@@ -575,7 +575,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		CUDA_CHECK(ctx->device_id, cudaFree(tmp));
 		// delete created context on the gpu
 		CUDA_CHECK(ctx->device_id, cudaDeviceReset());
-		
+
 		ctx->total_device_memory = totalMemory;
 		ctx->free_device_memory = freeMemory;
 
@@ -614,7 +614,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		size_t perThread = hashMemSize + 16192u + 680u;
 		if(cryptonight_heavy == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo())
 			perThread += 50 * 4; // state double buffer
-		
+
 		size_t max_intensity = limitedMemory / perThread;
 		ctx->device_threads = max_intensity / ctx->device_blocks;
 		// use only odd number of threads
