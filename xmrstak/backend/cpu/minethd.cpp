@@ -289,6 +289,9 @@ bool minethd::self_test()
 	else if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_ipbc)
 	{
 	}
+	else if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_stellite)
+	{
+	}
 	for (int i = 0; i < MAX_N; i++)
 		cryptonight_free_ctx(ctx[i]);
 
@@ -336,7 +339,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		}
 		else
 			printer::inst()->print_msg(L1, "Starting %dx thread, no affinity.", cfg.iMultiway);
-		
+
 		minethd* thd = new minethd(pWork, i + threadOffset, cfg.iMultiway, cfg.bNoPrefetch, cfg.iCpuAff);
 		pvThreads.push_back(thd);
 	}
@@ -378,6 +381,9 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, xmr
 	case cryptonight_ipbc:
 		algv = 5;
 		break;
+	case cryptonight_stellite:
+		algv = 6;
+		break;
 	default:
 		algv = 2;
 		break;
@@ -407,7 +413,11 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, xmr
 		cryptonight_hash<cryptonight_ipbc, false, false>,
 		cryptonight_hash<cryptonight_ipbc, true, false>,
 		cryptonight_hash<cryptonight_ipbc, false, true>,
-		cryptonight_hash<cryptonight_ipbc, true, true>
+		cryptonight_hash<cryptonight_ipbc, true, true>,
+		cryptonight_hash<cryptonight_stellite, false, false>,
+		cryptonight_hash<cryptonight_stellite, true, false>,
+		cryptonight_hash<cryptonight_stellite, false, true>,
+		cryptonight_hash<cryptonight_stellite, true, true>
 	};
 
 	std::bitset<2> digit;
@@ -547,6 +557,9 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 	case cryptonight_ipbc:
 		algv = 5;
 		break;
+	case cryptonight_stellite:
+		algv = 6;
+		break;
 	default:
 		algv = 2;
 		break;
@@ -586,7 +599,7 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		cryptonight_penta_hash<cryptonight_lite, true, false>,
 		cryptonight_penta_hash<cryptonight_lite, false, true>,
 		cryptonight_penta_hash<cryptonight_lite, true, true>,
-		
+
 		cryptonight_double_hash<cryptonight, false, false>,
 		cryptonight_double_hash<cryptonight, true, false>,
 		cryptonight_double_hash<cryptonight, false, true>,
@@ -653,13 +666,30 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		cryptonight_penta_hash<cryptonight_ipbc, false, false>,
 		cryptonight_penta_hash<cryptonight_ipbc, true, false>,
 		cryptonight_penta_hash<cryptonight_ipbc, false, true>,
-		cryptonight_penta_hash<cryptonight_ipbc, true, true>
+		cryptonight_penta_hash<cryptonight_ipbc, true, true>,
+
+		cryptonight_double_hash<cryptonight_stellite, false, false>,
+		cryptonight_double_hash<cryptonight_stellite, true, false>,
+		cryptonight_double_hash<cryptonight_stellite, false, true>,
+		cryptonight_double_hash<cryptonight_stellite, true, true>,
+		cryptonight_triple_hash<cryptonight_stellite, false, false>,
+		cryptonight_triple_hash<cryptonight_stellite, true, false>,
+		cryptonight_triple_hash<cryptonight_stellite, false, true>,
+		cryptonight_triple_hash<cryptonight_stellite, true, true>,
+		cryptonight_quad_hash<cryptonight_stellite, false, false>,
+		cryptonight_quad_hash<cryptonight_stellite, true, false>,
+		cryptonight_quad_hash<cryptonight_stellite, false, true>,
+		cryptonight_quad_hash<cryptonight_stellite, true, true>,
+		cryptonight_penta_hash<cryptonight_stellite, false, false>,
+		cryptonight_penta_hash<cryptonight_stellite, true, false>,
+		cryptonight_penta_hash<cryptonight_stellite, false, true>,
+		cryptonight_penta_hash<cryptonight_stellite, true, true>,
 	};
 
 	std::bitset<2> digit;
 	digit.set(0, !bHaveAes);
 	digit.set(1, !bNoPrefetch);
-	
+
 	return func_table[algv << 4 | (N-2) << 2 | digit.to_ulong()];
 }
 

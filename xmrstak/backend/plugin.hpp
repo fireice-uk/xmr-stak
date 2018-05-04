@@ -27,7 +27,7 @@ namespace xmrstak
 struct plugin
 {
 
-	plugin(const std::string backendName, const std::string libName) : fn_starterBackend(nullptr), m_backendName(backendName)
+	plugin(const std::string backendName, const std::string libName) : fn_startBackend(nullptr), m_backendName(backendName)
 	{
 #ifdef WIN32
 		libBackend = LoadLibrary(TEXT((libName + ".dll").c_str()));
@@ -59,15 +59,15 @@ struct plugin
 #endif
 
 #ifdef WIN32
-		fn_starterBackend = (starterBackend_t) GetProcAddress(libBackend, "xmrstak_start_backend");
-		if (!fn_starterBackend)
+		fn_startBackend = (startBackend_t) GetProcAddress(libBackend, "xmrstak_start_backend");
+		if (!fn_startBackend)
 		{
 			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'xmrstak_start_backend': " <<GetLastError()<< std::endl;
 		}
 #else
 		// reset last error
 		dlerror();
-		fn_starterBackend = (starterBackend_t) dlsym(libBackend, "xmrstak_start_backend");
+		fn_startBackend = (startBackend_t) dlsym(libBackend, "xmrstak_start_backend");
 		const char* dlsym_error = dlerror();
 		if(dlsym_error)
 		{
@@ -78,21 +78,21 @@ struct plugin
 
 	std::vector<iBackend*>* startBackend(uint32_t threadOffset, miner_work& pWork, environment& env)
 	{
-		if(fn_starterBackend == nullptr)
+		if(fn_startBackend == nullptr)
 		{
 			std::vector<iBackend*>* pvThreads = new std::vector<iBackend*>();
 			std::cerr << "WARNING: " << m_backendName << " Backend disabled"<< std::endl;
 			return pvThreads;
 		}
 
-		return fn_starterBackend(threadOffset, pWork, env);
+		return fn_startBackend(threadOffset, pWork, env);
 	}
 
 	std::string m_backendName;
 
-	typedef std::vector<iBackend*>* (*starterBackend_t)(uint32_t threadOffset, miner_work& pWork, environment& env);
+	typedef std::vector<iBackend*>* (*startBackend_t)(uint32_t threadOffset, miner_work& pWork, environment& env);
 
-	starterBackend_t fn_starterBackend;
+	startBackend_t fn_startBackend;
 
 #ifdef WIN32
 	HINSTANCE libBackend;
@@ -100,7 +100,7 @@ struct plugin
 	void *libBackend;
 #endif
 
-/* \todo add unload to destructor and change usage of plugin that libs keeped open until the miner endss
+/* \todo add unload to destructor and change usage of plugin that libs kept open until the miner ends
 #ifdef WIN32
 	FreeLibrary(libBackend);
 #else

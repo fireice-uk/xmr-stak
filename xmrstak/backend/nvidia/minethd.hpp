@@ -33,7 +33,7 @@ private:
 
 	minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg);
 	void start_mining();
-	
+
 	void work_main();
 	void consume_work();
 

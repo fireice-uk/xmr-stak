@@ -7,12 +7,12 @@ R"===(
  * use_nicehash    - Limit the nonce to 3 bytes as required by nicehash.
  * use_tls         - This option will make us connect using Transport Layer Security.
  * tls_fingerprint - Server's SHA256 fingerprint. If this string is non-empty then we will check the server's cert against it.
- * pool_weight     - Pool weight is a number telling the miner how important the pool is. Miner will mine mostly at the pool 
+ * pool_weight     - Pool weight is a number telling the miner how important the pool is. Miner will mine mostly at the pool
  *                   with the highest weight, unless the pool fails. Weight must be an integer larger than 0.
  *
  * We feature pools up to 1MH/s. For a more complete list see M5M400's pool list at www.moneropools.com
  */
- 
+
 "pool_list" :
 [
 POOLCONF],
@@ -33,12 +33,16 @@ POOLCONF],
  *    haven
  *    intense
  *    ipbc
+ *    italocoin
  *    karbo
  *    leviarcoin
+ *    loki
  *    masari
  *    monero7 (use this for Monero's new PoW)
+ *    ombre
  *    sumokoin (automatic switch with block version 3 to cryptonight_heavy)
  *    stellite
+ *    solace
  *    turtlecoin
  *    ultranote
  *
@@ -53,9 +57,10 @@ POOLCONF],
  *    cryptonight_v7
  *    # 4MiB scratchpad memory
  *    cryptonight_heavy
+ *    cryptonight_v7_stellite
  */
 
 "currency" : "CURRENCY",
 
 )==="
-		
+

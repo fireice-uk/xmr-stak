@@ -111,7 +111,7 @@ __device__ void cn_jh_E8(jhHashState *state)
 {
 	uint64_t i,roundnumber,temp0,temp1;
 
-	for (roundnumber = 0; roundnumber < 42; roundnumber = roundnumber+7) 
+	for (roundnumber = 0; roundnumber < 42; roundnumber = roundnumber+7)
 	{
 		for (i = 0; i < 2; i++)
 		{
@@ -155,13 +155,13 @@ __device__ void cn_jh_E8(jhHashState *state)
 			JH_SWAP32(state->x[1][i]); JH_SWAP32(state->x[3][i]); JH_SWAP32(state->x[5][i]); JH_SWAP32(state->x[7][i]);
 		}
 
-		for (i = 0; i < 2; i++) 
+		for (i = 0; i < 2; i++)
 		{
 			JH_SS(state->x[0][i],state->x[2][i],state->x[4][i],state->x[6][i],state->x[1][i],state->x[3][i],state->x[5][i],state->x[7][i],((uint64_t *)d_E8_rc[roundnumber+6])[i],((uint64_t *)d_E8_rc[roundnumber+6])[i+2] );
 			JH_L(state->x[0][i],state->x[2][i],state->x[4][i],state->x[6][i],state->x[1][i],state->x[3][i],state->x[5][i],state->x[7][i]);
 		}
 
-		for (i = 1; i < 8; i = i+2) 
+		for (i = 1; i < 8; i = i+2)
 		{
 			temp0 = state->x[i][0];
 			state->x[i][0] = state->x[i][1];
@@ -190,7 +190,7 @@ __device__ void cn_jh_update(jhHashState * __restrict__ state, const BitSequence
 	state->databitlen += databitlen;
 	index = 0;
 
-	if ( (state->datasize_in_buffer > 0 ) && (( state->datasize_in_buffer + databitlen) < 512)  ) 
+	if ( (state->datasize_in_buffer > 0 ) && (( state->datasize_in_buffer + databitlen) < 512)  )
 	{
 		if ( (databitlen & 7) == 0 )
 			memcpy(state->buffer + (state->datasize_in_buffer >> 3), data, 64-(state->datasize_in_buffer >> 3));
@@ -215,7 +215,7 @@ __device__ void cn_jh_update(jhHashState * __restrict__ state, const BitSequence
 		cn_jh_F8(state);
 	}
 
-	if ( databitlen > 0) 
+	if ( databitlen > 0)
 	{
 		if ((databitlen & 7) == 0)
 			memcpy(state->buffer, data+index, (databitlen & 0x1ff) >> 3);
@@ -247,7 +247,7 @@ __device__ void cn_jh_final(jhHashState * __restrict__ state, BitSequence * __re
 		state->buffer[56] = (state->databitlen >> 56) & 0xff;
 		cn_jh_F8(state);
 	}
-	else 
+	else
 	{
 		/*set the rest of the bytes in the buffer to 0*/
 		if ( (state->datasize_in_buffer & 7) == 0)
