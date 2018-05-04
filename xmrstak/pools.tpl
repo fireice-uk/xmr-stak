@@ -30,6 +30,7 @@ POOLCONF],
  *    intense
  *    ipbc
  *    karbo
+ *    masari
  *    monero7 (use this for Monero's new PoW)
  *    sumokoin (automatic switch with block version 3 to cryptonight_heavy)
  *    turtlecoin

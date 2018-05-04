@@ -105,6 +105,7 @@ xmrstak::coin_selection coins[] = {
 	{ "intense",             {cryptonight_monero, cryptonight, 4u},        {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
 	{ "ipbc",                {cryptonight_aeon, cryptonight_ipbc, 255u},   {cryptonight_aeon, cryptonight_aeon, 255u},     nullptr },
 	{ "karbo",               {cryptonight_monero, cryptonight, 255u},      {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
+	{ "masari",              {cryptonight_monero, cryptonight, 5u},        {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
 	{ "monero7",             {cryptonight_monero, cryptonight_monero, 0u}, {cryptonight_monero, cryptonight_monero, 0u}, "pool.usxmrpool.com:3333" },
 	{ "stellite",            {cryptonight_stellite, cryptonight_monero, 4u}, {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
 	{ "sumokoin",            {cryptonight_heavy, cryptonight_heavy, 0u},   {cryptonight_heavy, cryptonight_heavy, 0u},   nullptr },
