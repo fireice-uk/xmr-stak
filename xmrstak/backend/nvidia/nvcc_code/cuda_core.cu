@@ -515,5 +515,10 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t 
 	{
 		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_stellite>(ctx, startNonce);
 	}
+	
+	else if(miner_algo == cryptonight_alloy)
+	{
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_alloy>(ctx, startNonce);
+	}
 
 }

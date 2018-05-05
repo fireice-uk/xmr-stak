@@ -93,6 +93,7 @@ xmrstak::coin_selection coins[] = {
 	{ "croat",               {cryptonight_monero, cryptonight, 255u},      {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
 	{ "cryptonight",         {cryptonight_monero, cryptonight, 255u},      {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
 	{ "cryptonight_heavy",   {cryptonight_heavy, cryptonight_heavy, 0u},   {cryptonight_heavy, cryptonight_heavy, 0u},   nullptr },
+	{ "cryptonight_alloy",   {cryptonight_alloy, cryptonight_alloy, 0u},   {cryptonight_alloy, cryptonight_alloy, 0u},   "alloypool.com:3333" },	
 	{ "cryptonight_lite",    {cryptonight_aeon, cryptonight_lite, 255u},   {cryptonight_aeon, cryptonight_lite, 7u},     nullptr },
 	{ "cryptonight_lite_v7", {cryptonight_lite, cryptonight_aeon, 255u},   {cryptonight_aeon, cryptonight_lite, 7u},     nullptr },
 	{ "cryptonight_lite_v7_xor", {cryptonight_aeon, cryptonight_ipbc, 255u}, {cryptonight_aeon, cryptonight_aeon, 255u}, nullptr },
