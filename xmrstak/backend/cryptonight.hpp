@@ -12,7 +12,8 @@ enum xmrstak_algo
 	cryptonight_heavy = 4,
 	cryptonight_aeon = 5,
 	cryptonight_ipbc = 6, // equal to cryptonight_aeon with a small tweak in the miner code
-	cryptonight_stellite = 7 //equal to cryptonight_monero but with one tiny change
+	cryptonight_stellite = 7, //equal to cryptonight_monero but with one tiny change
+	cryptonight_alloy = 8 //equal to cryptonight_monero but with one tiny change
 };
 
 // define aeon settings
@@ -27,6 +28,10 @@ constexpr uint32_t CRYPTONIGHT_ITER = 0x80000;
 constexpr size_t CRYPTONIGHT_HEAVY_MEMORY = 4 * 1024 * 1024;
 constexpr uint32_t CRYPTONIGHT_HEAVY_MASK = 0x3FFFF0;
 constexpr uint32_t CRYPTONIGHT_HEAVY_ITER = 0x40000;
+
+constexpr uint32_t CRYPTONIGHT_ALLOY_ITER = 0x100000;
+
+
 
 template<xmrstak_algo ALGO>
 inline constexpr size_t cn_select_memory() { return 0; }
@@ -52,11 +57,15 @@ inline constexpr size_t cn_select_memory<cryptonight_ipbc>() { return CRYPTONIGH
 template<>
 inline constexpr size_t cn_select_memory<cryptonight_stellite>() { return CRYPTONIGHT_MEMORY; }
 
+template<>
+inline constexpr size_t cn_select_memory<cryptonight_alloy>() { return CRYPTONIGHT_MEMORY; }
+
 
 inline size_t cn_select_memory(xmrstak_algo algo)
 {
 	switch(algo)
 	{
+    case cryptonight_alloy:
 	case cryptonight_stellite:
 	case cryptonight_monero:
 	case cryptonight:
@@ -96,11 +105,16 @@ inline constexpr uint32_t cn_select_mask<cryptonight_ipbc>() { return CRYPTONIGH
 template<>
 inline constexpr uint32_t cn_select_mask<cryptonight_stellite>() { return CRYPTONIGHT_MASK; }
 
+template<>
+inline constexpr uint32_t cn_select_mask<cryptonight_alloy>() { return CRYPTONIGHT_MASK; }
+
+
 inline size_t cn_select_mask(xmrstak_algo algo)
 {
 	switch(algo)
 	{
 	case cryptonight_stellite:
+	case cryptonight_alloy:
 	case cryptonight_monero:
 	case cryptonight:
 		return CRYPTONIGHT_MASK;
@@ -139,10 +153,17 @@ inline constexpr uint32_t cn_select_iter<cryptonight_ipbc>() { return CRYPTONIGH
 template<>
 inline constexpr uint32_t cn_select_iter<cryptonight_stellite>() { return CRYPTONIGHT_ITER; }
 
+template<>
+inline constexpr uint32_t cn_select_iter<cryptonight_alloy>() { return CRYPTONIGHT_ALLOY_ITER; }
+
+
 inline size_t cn_select_iter(xmrstak_algo algo)
 {
 	switch(algo)
 	{
+    	case cryptonight_alloy:
+    	return CRYPTONIGHT_ALLOY_ITER;
+    	
 	case cryptonight_stellite:
 	case cryptonight_monero:
 	case cryptonight:
