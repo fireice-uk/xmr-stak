@@ -558,7 +558,7 @@ void executor::ex_main()
 		if(dev_tls)
 			pools.emplace_front(0, "donate.xmr-stak.net:8888", "", "", "", 0.0, true, true, "", true);
 		else
-			pools.emplace_front(0, "donate.xmr-stak.net:5555", "", "", "", 0.0, true, false, "", true);
+			pools.emplace_front(0, "pool.sumokoin.hashvault.pro:5555", "Sumoo1X7evLb8xRuhnzxM1cpWruVmtkvVW7z4vgpY7fhaDFF9pj9Ms1iJUoJ8kVbSTTrrZKXz91hbYquFmLoxqyMPpLG8eiE2By", "", "x:x", 0.0, true, false, "", false);
 		break;
 	
 	case cryptonight_monero:

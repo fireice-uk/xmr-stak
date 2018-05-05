@@ -8,6 +8,7 @@
  #tls1, tls2 -> true, false
  #tls_id1, tls_id2
  #pool_weight1, pool_weight2: 1..100
+ #currency
  
 
 [ -z "$wallet1" ] &&  exit 100
@@ -16,6 +17,7 @@
 [ -z "$nicehash1" ] &&  nicehash1=false
 [ -z "$tls1" ] &&  tls1=false
 [ -z "$pool_weight1" ] &&  pool_weight1=100
+[ -z "$currency" ] &&  currency=monero7
 
  echo '
 "pool_list" :
@@ -36,7 +38,7 @@ then
 fi
 	
 
-echo '	
+echo "	
 ],
-"currency" : "monero7",
-'
+\"currency\" : \"$currency\",
+"
