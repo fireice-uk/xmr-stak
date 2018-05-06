@@ -45,6 +45,7 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 - [Haven](https://havenprotocol.com)
 - [Intense](https://intensecoin.com)
 - [Masari](https://getmasari.org)
+- [QRL](https://theqrl.org)
 - [Ryo](https://ryo-currency.com)
 - [TurtleCoin](https://turtlecoin.lol)
 

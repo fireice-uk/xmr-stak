@@ -28,6 +28,7 @@ POOLCONF],
  *    intense
  *    masari
  *    monero7 (use this for Monero's new PoW)
+ *    qrl - Quantum Resistant Ledger
  *    ryo
  *    turtlecoin
  *
