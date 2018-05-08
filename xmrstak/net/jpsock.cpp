@@ -452,10 +452,12 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 
 	iJobDiff = t64_to_diff(oPoolJob.iTarget);
 
-	executor::inst()->push_event(ex_event(oPoolJob, pool_id));
-
 	std::unique_lock<std::mutex> lck(job_mutex);
 	oCurrentJob = oPoolJob;
+	lck.unlock();
+	// send event after current job data are updated
+	executor::inst()->push_event(ex_event(oPoolJob, pool_id));
+	
 	return true;
 }
 
