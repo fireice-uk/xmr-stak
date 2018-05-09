@@ -399,18 +399,45 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 		return set_socket_error("PARSE error: Job error 2");
 	}
 
+	if(motd != nullptr && motd->IsString() && (motd->GetStringLength() & 0x01) == 0)
+	{
+		std::unique_lock<std::mutex> lck(motd_mutex);
+		if(motd->GetStringLength() > 0)
+		{
+			pool_motd.resize(motd->GetStringLength()/2 + 1);
+			if(!hex2bin(motd->GetString(), motd->GetStringLength(), (unsigned char*)&pool_motd.front()))
+				pool_motd.clear();
+		}
+		else
+			pool_motd.clear();
+	}
+
 	if (jobid->GetStringLength() >= sizeof(pool_job::sJobID)) // Note >=
 		return set_socket_error("PARSE error: Job error 3");
 
-	uint32_t iWorkLen = blob->GetStringLength() / 2;
+	pool_job oPoolJob;
+
+	const uint32_t iWorkLen = blob->GetStringLength() / 2;
+	oPoolJob.iWorkLen = iWorkLen;
+	
 	if (iWorkLen > sizeof(pool_job::bWorkBlob))
 		return set_socket_error("PARSE error: Invalid job length. Are you sure you are mining the correct coin?");
 
-	pool_job oPoolJob;
 	if (!hex2bin(blob->GetString(), iWorkLen * 2, oPoolJob.bWorkBlob))
 		return set_socket_error("PARSE error: Job error 4");
 
-	oPoolJob.iWorkLen = iWorkLen;
+	// lock reading of oCurrentJob
+	std::unique_lock<std::mutex> jobIdLock(job_mutex);
+	// compare possible non equal length job id's
+	if(iWorkLen == oCurrentJob.iWorkLen &&
+		memcmp(oPoolJob.bWorkBlob, oCurrentJob.bWorkBlob, iWorkLen) == 0 &&
+		strcmp(jobid->GetString(), oCurrentJob.sJobID) == 0
+	)
+	{
+		return set_socket_error("Duplicate equal job detected! Please contact your pool admin.");
+	}
+	jobIdLock.unlock();
+
 	memset(oPoolJob.sJobID, 0, sizeof(pool_job::sJobID));
 	memcpy(oPoolJob.sJobID, jobid->GetString(), jobid->GetStringLength()); //Bounds checking at proto error 3
 
@@ -436,19 +463,6 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 	}
 	else
 		return set_socket_error("PARSE error: Job error 5");
-
-	if(motd != nullptr && motd->IsString() && (motd->GetStringLength() & 0x01) == 0)
-	{
-		std::unique_lock<std::mutex> lck(motd_mutex);
-		if(motd->GetStringLength() > 0)
-		{
-			pool_motd.resize(motd->GetStringLength()/2 + 1);
-			if(!hex2bin(motd->GetString(), motd->GetStringLength(), (unsigned char*)&pool_motd.front()))
-				pool_motd.clear();
-		}
-		else
-			pool_motd.clear();
-	}
 
 	iJobDiff = t64_to_diff(oPoolJob.iTarget);
 
