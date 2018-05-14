@@ -22,3 +22,9 @@ xmr-stak.kdev4
 cmake-build-release/
 cmake-build-debug/
 \.idea/
+
+# CMake files
+xmrstak/CMakeCache.txt
+xmrstak/CMakeFiles/
+xmrstak/Makefile
+xmrstak/cmake_install.cmake
