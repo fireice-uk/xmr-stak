@@ -322,7 +322,7 @@ int main(int argc, char *argv[])
 #endif
 
 	srand(time(0));
-	uint64_t numHashes= 0xffffffff;
+	uint64_t numHashes= 100000;
 
 	using namespace xmrstak;
 
@@ -523,8 +523,8 @@ int main(int argc, char *argv[])
 		else
 		{
 			printer::inst()->print_msg(L0, "Parameter unknown '%s'",argv[i]);
-			win_exit();
-			return 1;
+//			win_exit();
+//			return 1;
 		}
 	}
 
