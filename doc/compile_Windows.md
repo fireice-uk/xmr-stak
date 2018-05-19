@@ -13,7 +13,7 @@
 - During install choose following components:
   - `Desktop development with C++` (left side)
   - `VC++ 2015.3 v140 toolset for desktop` (right side - **NOT** needed for CUDA 9 or AMD GPU)
-  - Since release of VS2017 15.5 (12/04/17), require `VC++ 2017 version 15.4 v14.11 toolset` (under tab `Individual Components`, section `Compilers, build tools, and runtimes`), as CUDA 9.1 is not compatible with compiler 14.12.X
+  - Since release of VS2017 15.5 (12/04/17), require `VC++ 2017 version 15.4 v14.11 toolset` (under tab `Individual Components`, section `Compilers, build tools, and runtimes`), as CUDA 9.x is not compatible with compiler 14.12.X
 
 ### CMake for Win64
 
@@ -82,7 +82,7 @@
 - Go to extracted source code directory (e.g. `cd C:\Users\USERNAME\xmr-stak-<version>`)
 - Execute the following commands (NOTE: path to Visual Studio Community 2017 can be different)
   ```
-  # Execute next line only if compiling for Cuda 9.1 and using Visual Studio 2017 >= 15.5 (released 12/04/17)
+  # Execute next line only if compiling for Cuda 9.x and using Visual Studio 2017 >= 15.5 (released 12/04/17)
   "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 -vcvars_ver=14.11
 
   "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsMSBuildCmd.bat"
