@@ -106,7 +106,8 @@ xmrstak_coin_algo coin_algos[] = {
 	{ "karbo", cryptonight, cryptonight, 0u, nullptr },
 	{ "monero7", cryptonight_monero, cryptonight_monero, 7u, "pool.usxmrpool.com:3333" },
 	{ "stellite", cryptonight_monero, cryptonight, 3u, nullptr },
-	{ "sumokoin", cryptonight_heavy, cryptonight, 3u, nullptr }
+	{ "sumokoin", cryptonight_heavy, cryptonight, 3u, nullptr },
+	{ "cryptonight_heavy", cryptonight_heavy, cryptonight_heavy, 3u, nullptr }
 };
 
 constexpr size_t coin_alogo_size = (sizeof(coin_algos)/sizeof(coin_algos[0]));
