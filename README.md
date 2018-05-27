@@ -45,13 +45,14 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 - [Croat](https://croat.cat)
 - [Edollar](https://edollar.cash)
 - [Electroneum](https://electroneum.com)
+- [Electronero](https://electronero.org)
 - [Graft](https://www.graft.network)
 - [Haven](https://havenprotocol.com)
 - [Intense](https://intensecoin.com)
-- [IPBC](https://ipbc.io)
+- [IPBC](https://ipbc.io)	
 - [Karbo](https://karbo.io)
-- [Masari](https://getmasari.org)
 - [Sumokoin](https://www.sumokoin.org)
+- [Masari](https://getmasari.org)	
 - [TurtleCoin](https://turtlecoin.lol)
 
 If your prefered coin is not listed, you can chose one of the following algorithms:

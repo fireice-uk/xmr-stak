@@ -25,6 +25,7 @@ POOLCONF],
  *    croat
  *    edollar
  *    electroneum
+ *    electronero
  *    graft
  *    haven
  *    intense

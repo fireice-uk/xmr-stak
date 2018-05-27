@@ -100,6 +100,7 @@ xmrstak::coin_selection coins[] = {
 	{ "cryptonight_v7_stellite", {cryptonight_monero, cryptonight_stellite, 255u}, {cryptonight_monero, cryptonight_monero, 255u}, nullptr },
 	{ "edollar",             {cryptonight_monero, cryptonight, 255u},      {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
 	{ "electroneum",         {cryptonight_monero, cryptonight, 255u},      {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
+	{ "electronero",         {cryptonight_monero, cryptonight_monero, 255u}, {cryptonight_monero, cryptonight_monero, 255u}, "donate.electronero.org:3333" },
 	{ "graft",               {cryptonight_monero, cryptonight, 8u},        {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
 	{ "haven",               {cryptonight_heavy, cryptonight, 2u},         {cryptonight_heavy, cryptonight_heavy, 0u},   nullptr },
 	{ "intense",             {cryptonight_monero, cryptonight, 4u},        {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
