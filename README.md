@@ -49,8 +49,11 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 - [Graft](https://www.graft.network)
 - [Haven](https://havenprotocol.com)
 - [Intense](https://intensecoin.com)
+- [IPBC](https://ipbc.io)	
 - [Karbo](https://karbo.io)
 - [Sumokoin](https://www.sumokoin.org)
+- [Masari](https://getmasari.org)	
+- [TurtleCoin](https://turtlecoin.lol)
 
 If your prefered coin is not listed, you can chose one of the following algorithms:
 
