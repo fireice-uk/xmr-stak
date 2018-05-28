@@ -279,12 +279,15 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	if(gpuArch < 70)
 		CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
 
-	size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
+	size_t hashMemSize = std::max(
+		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
+		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
+	);
 
 	size_t wsize = ctx->device_blocks * ctx->device_threads;
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state, 50 * sizeof(uint32_t) * wsize));
 	size_t ctx_b_size = 4 * sizeof(uint32_t) * wsize;
-	if(cryptonight_heavy == ::jconf::inst()->GetMiningAlgo())
+	if(cryptonight_heavy == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo())
 	{
 		// extent ctx_b to hold the state of idx0
 		ctx_b_size += sizeof(uint32_t) * wsize;
@@ -458,7 +461,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 #undef XMRSTAK_PP_TOSTRING1
 	std::stringstream ss(archStringList);
 
-	//transform string list sperated with `+` into a vector of integers
+	//transform string list separated with `+` into a vector of integers
 	int tmpArch;
 	while ( ss >> tmpArch )
 		arch.push_back( tmpArch );
@@ -492,7 +495,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		}
 	}
 
-	// set all evice option those marked as auto (-1) to a valid value
+	// set all device option those marked as auto (-1) to a valid value
 	if(ctx->device_blocks == -1)
 	{
 		/* good values based of my experience
@@ -576,7 +579,10 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		ctx->total_device_memory = totalMemory;
 		ctx->free_device_memory = freeMemory;
 
-		size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
+		size_t hashMemSize = std::max(
+			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
+			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
+		);
 
 #ifdef WIN32
 		/* We use in windows bfactor (split slow kernel into smaller parts) to avoid
@@ -606,7 +612,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		// up to 16kibyte extra memory is used per thread for some kernel (lmem/local memory)
 		// 680bytes are extra meta data memory per hash
 		size_t perThread = hashMemSize + 16192u + 680u;
-		if(cryptonight_heavy == ::jconf::inst()->GetMiningAlgo())
+		if(cryptonight_heavy == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo())
 			perThread += 50 * 4; // state double buffer
 		
 		size_t max_intensity = limitedMemory / perThread;

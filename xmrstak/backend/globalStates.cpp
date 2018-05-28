@@ -53,4 +53,4 @@ void globalStates::switch_work(miner_work& pWork, pool_data& dat)
 	iGlobalJobNo++;
 }
 
-} // namepsace xmrstak
+} // namespace xmrstak

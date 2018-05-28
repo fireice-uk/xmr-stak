@@ -89,8 +89,8 @@ double telemetry::calc_telemetry_data(size_t iLastMilisec, size_t iThread)
 		return nan("");
 
 	double fHashes, fTime;
-	fHashes = iLastestHashCnt - iEarliestHashCnt;
-	fTime = iLastestStamp - iEarliestStamp;
+	fHashes = static_cast<double>(iLastestHashCnt - iEarliestHashCnt);
+	fTime = static_cast<double>(iLastestStamp - iEarliestStamp);
 	fTime /= 1000.0;
 
 	return fHashes / fTime;
@@ -105,4 +105,4 @@ void telemetry::push_perf_value(size_t iThd, uint64_t iHashCount, uint64_t iTime
 	iBucketTop[iThd] = (iTop + 1) & iBucketMask;
 }
 
-} // namepsace xmrstak
+} // namespace xmrstak
