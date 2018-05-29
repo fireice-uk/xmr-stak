@@ -46,6 +46,7 @@ private:
 	void triple_work_main();
 	void quad_work_main();
 	void penta_work_main();
+	void twenty_work_main();
 
 	uint64_t iJobNo;
 
