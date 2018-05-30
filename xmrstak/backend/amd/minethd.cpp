@@ -73,7 +73,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::th
 
 extern "C"  {
 #ifdef WIN32
-__declspec(dllexport) 
+__declspec(dllexport)
 #endif
 std::vector<iBackend*>* xmrstak_start_backend(uint32_t threadOffset, miner_work& pWork, environment& env)
 {
@@ -122,7 +122,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 		win_exit();
 	}
 
-	// \ todo get device count and exit if no opencl device 
+	// \ todo get device count and exit if no opencl device
 
 	if(!init_gpus())
 	{
@@ -139,7 +139,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 		jconf::inst()->GetThreadConfig(i, cfg);
 
 		const std::string backendName = xmrstak::params::inst().openCLVendor;
-		
+
 		if(cfg.cpu_aff >= 0)
 		{
 #if defined(__APPLE__)
@@ -158,27 +158,6 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 	return pvThreads;
 }
 
-void minethd::switch_work(miner_work& pWork)
-{
-	// iConsumeCnt is a basic lock-like polling mechanism just in case we happen to push work
-	// faster than threads can consume them. This should never happen in real life.
-	// Pool cant physically send jobs faster than every 250ms or so due to net latency.
-
-	while (globalStates::inst().iConsumeCnt.load(std::memory_order_seq_cst) < globalStates::inst().iThreadCount)
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-	globalStates::inst().oGlobalWork = pWork;
-	globalStates::inst().iConsumeCnt.store(0, std::memory_order_seq_cst);
-	globalStates::inst().iGlobalJobNo++;
-}
-
-void minethd::consume_work()
-{
-	memcpy(&oWork, &globalStates::inst().oGlobalWork, sizeof(miner_work));
-	iJobNo++;
-	globalStates::inst().iConsumeCnt++;
-
-}
 
 void minethd::work_main()
 {
@@ -193,12 +172,10 @@ void minethd::work_main()
 	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
-	
+
 	// start with root algorithm and switch later if fork version is reached
 	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
 	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
-
-	globalStates::inst().iConsumeCnt++;
 
 	uint8_t version = 0;
 	size_t lastPoolId = 0;
@@ -215,7 +192,7 @@ void minethd::work_main()
 			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-			consume_work();
+			globalStates::inst().consume_work(oWork, iJobNo);
 			continue;
 		}
 
@@ -242,7 +219,7 @@ void minethd::work_main()
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		uint64_t target = oWork.iTarget;
-		
+
 		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo);
 
 		if(oWork.bNiceHash)
@@ -254,7 +231,11 @@ void minethd::work_main()
 			if((round_ctr++ & 0xF) == 0)
 			{
 				globalStates::inst().calc_start_nonce(pGpuCtx->Nonce, oWork.bNiceHash, h_per_round * 16);
+				// check if the job is still valid, there is a small possibility that the job is switched
+				if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo)
+					break;
 			}
+			
 
 			cl_uint results[0x100];
 			memset(results,0,sizeof(cl_uint)*(0x100));
@@ -285,7 +266,7 @@ void minethd::work_main()
 			std::this_thread::yield();
 		}
 
-		consume_work();
+		globalStates::inst().consume_work(oWork, iJobNo);
 	}
 }
 

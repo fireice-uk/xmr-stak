@@ -82,10 +82,10 @@ If you are unsure of either GPU or platform index value, you can use `clinfo` to
 ```
 "gpu_threads_conf" :
 [
-    { "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false, 
+    { "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false,
       "strided_index" : true, "mem_chunk" : 2, "comp_mode" : true
     },
-    { "index" : 1, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false, 
+    { "index" : 1, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false,
       "strided_index" : true, "mem_chunk" : 2, "comp_mode" : true
     },
 ],

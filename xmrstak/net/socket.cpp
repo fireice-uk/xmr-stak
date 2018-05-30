@@ -339,7 +339,7 @@ bool tls_socket::connect()
 	{
 		if(!pCallback->is_dev_pool())
 		{
-			printer::inst()->print_msg(L0, "FINGERPRINT FAILED CHECK [%s] %.*s was given, %s was configured", 
+			printer::inst()->print_msg(L0, "FINGERPRINT FAILED CHECK [%s] %.*s was given, %s was configured",
 				pCallback->get_pool_addr(), (int)b64_len, b64_md, conf_md);
 		}
 

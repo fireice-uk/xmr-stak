@@ -24,7 +24,6 @@ class minethd : public iBackend
 {
 public:
 
-	static void switch_work(miner_work& pWork);
 	static std::vector<iBackend*>* thread_starter(uint32_t threadOffset, miner_work& pWork);
 	static bool self_test();
 
@@ -33,16 +32,14 @@ private:
 
 	minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg);
 	void start_mining();
-	
+
 	void work_main();
-	void consume_work();
 
 	static std::atomic<uint64_t> iGlobalJobNo;
 	static std::atomic<uint64_t> iConsumeCnt;
 	static uint64_t iThreadCount;
 	uint64_t iJobNo;
 
-	static miner_work oGlobalWork;
 	miner_work oWork;
 
 	std::promise<void> numa_promise;

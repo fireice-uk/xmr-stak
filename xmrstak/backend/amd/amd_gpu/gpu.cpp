@@ -26,7 +26,7 @@
 #include <algorithm>
 #include <regex>
 #include <cassert>
-#include <algorithm> 
+#include <algorithm>
 
 #include <fstream>
 #include <sstream>
@@ -397,7 +397,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		 * used data:
 		 *   - source code
 		 *   - device name
-		 *   - compile paramater
+		 *   - compile parameter
 		 */
 		std::string src_str(source_code);
 		src_str += options;
@@ -476,14 +476,14 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 			}
 			while(status == CL_BUILD_IN_PROGRESS);
 
-			std::vector<size_t> binary_sizes(num_devices);
-			clGetProgramInfo (ctx->Program[ii], CL_PROGRAM_BINARY_SIZES, sizeof(size_t) * binary_sizes.size(), binary_sizes.data(), NULL);
-
-			std::vector<char*> all_programs(num_devices);
-			std::vector<std::vector<char>> program_storage;
-
 			if(xmrstak::params::inst().AMDCache)
 			{
+				std::vector<size_t> binary_sizes(num_devices);
+				clGetProgramInfo (ctx->Program[ii], CL_PROGRAM_BINARY_SIZES, sizeof(size_t) * binary_sizes.size(), binary_sizes.data(), NULL);
+
+				std::vector<char*> all_programs(num_devices);
+				std::vector<std::vector<char>> program_storage;
+
 				int p_id = 0;
 				size_t mem_size = 0;
 				// create memory  structure to query all OpenCL program binaries
@@ -935,7 +935,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 
 size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target, xmrstak_algo miner_algo)
 {
-	// switch to the kernel storage 
+	// switch to the kernel storage
 	int kernel_storage = miner_algo == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() ? 0 : 1;
 
 	cl_int ret;
@@ -1004,12 +1004,12 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 		return(ERR_OCL_API);
 	}
 
-	if(miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon )
+	if(miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon || miner_algo == cryptonight_ipbc || miner_algo == cryptonight_stellite)
 	{
 		// Input
 		if ((ret = clSetKernelArg(ctx->Kernels[kernel_storage][1], 3, sizeof(cl_mem), &ctx->InputBuffer)) != CL_SUCCESS)
 		{
-			printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 1, arugment 4(input buffer).", err_to_str(ret));
+			printer::inst()->print_msg(L1, "Error %s when calling clSetKernelArg for kernel 1, argument 4(input buffer).", err_to_str(ret));
 			return ERR_OCL_API;
 		}
 	}
@@ -1102,7 +1102,7 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo)
 {
 	// switch to the kernel storage
 	int kernel_storage = miner_algo == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() ? 0 : 1;
-	
+
 	cl_int ret;
 	cl_uint zero = 0;
 	size_t BranchNonces[4];

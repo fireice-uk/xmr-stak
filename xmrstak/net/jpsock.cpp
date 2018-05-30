@@ -43,8 +43,9 @@ struct jpsock::call_rsp
 	uint64_t iCallId;
 	Value* pCallData;
 	std::string sCallErr;
+	uint64_t iMessageId;
 
-	call_rsp(Value* val) : pCallData(val)
+	call_rsp(Value* val) : pCallData(val), iMessageId(0)
 	{
 		bHaveResponse = false;
 		iCallId = 0;
@@ -215,6 +216,7 @@ void jpsock::jpsock_thread()
 		prv->oCallRsp.bHaveResponse = true;
 		prv->oCallRsp.iCallId = 0;
 		prv->oCallRsp.pCallData = nullptr;
+		prv->oCallRsp.iMessageId = 0;
 		bCallWaiting = true;
 	}
 	mlock.unlock();
@@ -286,6 +288,7 @@ bool jpsock::process_line(char* line, size_t len)
 	prv->jsonDoc.SetNull();
 	prv->parseAllocator.Clear();
 	prv->callAllocator.Clear();
+	++iMessageCnt;
 
 	/*NULL terminate the line instead of '\n', parsing will add some more NULLs*/
 	line[len-1] = '\0';
@@ -320,7 +323,7 @@ bool jpsock::process_line(char* line, size_t len)
 			return set_socket_error("PARSE error: Protocol error 2");
 
 		opq_json_val v(mt);
-		return process_pool_job(&v);
+		return process_pool_job(&v, iMessageCnt);
 	}
 	else
 	{
@@ -334,7 +337,7 @@ bool jpsock::process_line(char* line, size_t len)
 		mt = GetObjectMember(prv->jsonDoc, "error");
 
 		const char* sError = nullptr;
-		size_t iErrorLn = 0;
+		size_t iErrorLen = 0;
 		if (mt == nullptr || mt->IsNull())
 		{
 			/* If there was no error we need a result */
@@ -351,7 +354,7 @@ bool jpsock::process_line(char* line, size_t len)
 			if(msg == nullptr || !msg->IsString())
 				return set_socket_error("PARSE error: Protocol error 6");
 
-			iErrorLn = msg->GetStringLength();
+			iErrorLen = msg->GetStringLength();
 			sError = msg->GetString();
 		}
 
@@ -365,11 +368,12 @@ bool jpsock::process_line(char* line, size_t len)
 
 		prv->oCallRsp.bHaveResponse = true;
 		prv->oCallRsp.iCallId = iCallId;
+		prv->oCallRsp.iMessageId = iMessageCnt;
 
 		if(sError != nullptr)
 		{
 			prv->oCallRsp.pCallData = nullptr;
-			prv->oCallRsp.sCallErr.assign(sError, iErrorLn);
+			prv->oCallRsp.sCallErr.assign(sError, iErrorLen);
 			call_error = true;
 		}
 		else
@@ -382,8 +386,20 @@ bool jpsock::process_line(char* line, size_t len)
 	}
 }
 
-bool jpsock::process_pool_job(const opq_json_val* params)
+bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t messageId)
 {
+	std::unique_lock<std::mutex> mlock(job_mutex);
+	if(messageId < iLastMessageId)
+	{
+		/* In the case where the processed job message id is lesser than the last
+		 * processed job message id we skip the processing to avoid mining old jobs
+		 */
+		return true;
+	}
+	iLastMessageId = messageId;
+
+	mlock.unlock();
+
 	if (!params->val->IsObject())
 		return set_socket_error("PARSE error: Job error 1");
 
@@ -399,44 +415,6 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 		return set_socket_error("PARSE error: Job error 2");
 	}
 
-	if (jobid->GetStringLength() >= sizeof(pool_job::sJobID)) // Note >=
-		return set_socket_error("PARSE error: Job error 3");
-
-	uint32_t iWorkLn = blob->GetStringLength() / 2;
-	if (iWorkLn > sizeof(pool_job::bWorkBlob))
-		return set_socket_error("PARSE error: Invalid job legth. Are you sure you are mining the correct coin?");
-
-	pool_job oPoolJob;
-	if (!hex2bin(blob->GetString(), iWorkLn * 2, oPoolJob.bWorkBlob))
-		return set_socket_error("PARSE error: Job error 4");
-
-	oPoolJob.iWorkLen = iWorkLn;
-	memset(oPoolJob.sJobID, 0, sizeof(pool_job::sJobID));
-	memcpy(oPoolJob.sJobID, jobid->GetString(), jobid->GetStringLength()); //Bounds checking at proto error 3
-
-	size_t target_slen = target->GetStringLength();
-	if(target_slen <= 8)
-	{
-		uint32_t iTempInt = 0;
-		char sTempStr[] = "00000000"; // Little-endian CPU FTW
-		memcpy(sTempStr, target->GetString(), target_slen);
-		if(!hex2bin(sTempStr, 8, (unsigned char*)&iTempInt) || iTempInt == 0)
-			return set_socket_error("PARSE error: Invalid target");
-
-		
-		oPoolJob.iTarget = t32_to_t64(iTempInt);
-	}
-	else if(target_slen <= 16)
-	{
-		oPoolJob.iTarget = 0;
-		char sTempStr[] = "0000000000000000";
-		memcpy(sTempStr, target->GetString(), target_slen);
-		if(!hex2bin(sTempStr, 16, (unsigned char*)&oPoolJob.iTarget) || oPoolJob.iTarget == 0)
-			return set_socket_error("PARSE error: Invalid target");
-	}
-	else
-		return set_socket_error("PARSE error: Job error 5");
-
 	if(motd != nullptr && motd->IsString() && (motd->GetStringLength() & 0x01) == 0)
 	{
 		std::unique_lock<std::mutex> lck(motd_mutex);
@@ -450,12 +428,66 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 			pool_motd.clear();
 	}
 
-	iJobDiff = t64_to_diff(oPoolJob.iTarget);
+	if (jobid->GetStringLength() >= sizeof(pool_job::sJobID)) // Note >=
+		return set_socket_error("PARSE error: Job error 3");
 
-	executor::inst()->push_event(ex_event(oPoolJob, pool_id));
+	pool_job oPoolJob;
+
+	const uint32_t iWorkLen = blob->GetStringLength() / 2;
+	oPoolJob.iWorkLen = iWorkLen;
+	
+	if (iWorkLen > sizeof(pool_job::bWorkBlob))
+		return set_socket_error("PARSE error: Invalid job length. Are you sure you are mining the correct coin?");
+
+	if (!hex2bin(blob->GetString(), iWorkLen * 2, oPoolJob.bWorkBlob))
+		return set_socket_error("PARSE error: Job error 4");
+
+	// lock reading of oCurrentJob
+	std::unique_lock<std::mutex> jobIdLock(job_mutex);
+	// compare possible non equal length job id's
+	if(iWorkLen == oCurrentJob.iWorkLen &&
+		memcmp(oPoolJob.bWorkBlob, oCurrentJob.bWorkBlob, iWorkLen) == 0 &&
+		strcmp(jobid->GetString(), oCurrentJob.sJobID) == 0
+	)
+	{
+		return set_socket_error("Duplicate equal job detected! Please contact your pool admin.");
+	}
+	jobIdLock.unlock();
+
+	memset(oPoolJob.sJobID, 0, sizeof(pool_job::sJobID));
+	memcpy(oPoolJob.sJobID, jobid->GetString(), jobid->GetStringLength()); //Bounds checking at proto error 3
+
+	size_t target_slen = target->GetStringLength();
+	if(target_slen <= 8)
+	{
+		uint32_t iTempInt = 0;
+		char sTempStr[] = "00000000"; // Little-endian CPU FTW
+		memcpy(sTempStr, target->GetString(), target_slen);
+		if(!hex2bin(sTempStr, 8, (unsigned char*)&iTempInt) || iTempInt == 0)
+			return set_socket_error("PARSE error: Invalid target");
+
+
+		oPoolJob.iTarget = t32_to_t64(iTempInt);
+	}
+	else if(target_slen <= 16)
+	{
+		oPoolJob.iTarget = 0;
+		char sTempStr[] = "0000000000000000";
+		memcpy(sTempStr, target->GetString(), target_slen);
+		if(!hex2bin(sTempStr, 16, (unsigned char*)&oPoolJob.iTarget) || oPoolJob.iTarget == 0)
+			return set_socket_error("PARSE error: Invalid target");
+	}
+	else
+		return set_socket_error("PARSE error: Job error 5");
+
+	iJobDiff = t64_to_diff(oPoolJob.iTarget);
 
 	std::unique_lock<std::mutex> lck(job_mutex);
 	oCurrentJob = oPoolJob;
+	lck.unlock();
+	// send event after current job data are updated
+	executor::inst()->push_event(ex_event(oPoolJob, pool_id));
+	
 	return true;
 }
 
@@ -498,7 +530,7 @@ void jpsock::disconnect(bool quiet)
 	quiet_close = false;
 }
 
-bool jpsock::cmd_ret_wait(const char* sPacket, opq_json_val& poResult)
+bool jpsock::cmd_ret_wait(const char* sPacket, opq_json_val& poResult, uint64_t& messageId)
 {
 	//printf("SEND: %s\n", sPacket);
 
@@ -538,8 +570,10 @@ bool jpsock::cmd_ret_wait(const char* sPacket, opq_json_val& poResult)
 	}
 
 	if(bSuccess)
+	{
 		poResult.val = &prv->oCallValue;
-
+		messageId = prv->oCallRsp.iMessageId;
+	}
 	return bSuccess;
 }
 
@@ -551,9 +585,10 @@ bool jpsock::cmd_login()
 		usr_login.c_str(), usr_pass.c_str(), usr_rigid.c_str(), get_version_str().c_str());
 
 	opq_json_val oResult(nullptr);
+	uint64_t messageId = 0;
 
 	/*Normal error conditions (failed login etc..) will end here*/
-	if (!cmd_ret_wait(cmd_buffer, oResult))
+	if (!cmd_ret_wait(cmd_buffer, oResult, messageId))
 		return false;
 
 	if (!oResult.val->IsObject())
@@ -589,7 +624,7 @@ bool jpsock::cmd_login()
 		for(size_t i=0; i < ext->Size(); i++)
 		{
 			const Value& jextname = ext->GetArray()[i];
-			
+
 			if(!jextname.IsString())
 				continue;
 
@@ -608,7 +643,7 @@ bool jpsock::cmd_login()
 	}
 
 	opq_json_val v(job);
-	if(!process_pool_job(&v))
+	if(!process_pool_job(&v, messageId))
 	{
 		disconnect();
 		return false;
@@ -645,16 +680,22 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 			algo_name = "cryptonight";
 			break;
 		case cryptonight_lite:
-			algo_name = "cryptonight-lite";
+			algo_name = "cryptonight_lite";
 			break;
 		case cryptonight_monero:
-			algo_name = "cryptonight-monerov7";
+			algo_name = "cryptonight_v7";
 			break;
 		case cryptonight_aeon:
-			algo_name = "cryptonight-aeonv7";
+			algo_name = "cryptonight_lite_v7";
+			break;
+		case cryptonight_stellite:
+			algo_name = "cryptonight_v7_stellite";
+			break;
+		case cryptonight_ipbc:
+			algo_name = "cryptonight_lite_v7_xor";
 			break;
 		case cryptonight_heavy:
-			algo_name = "cryptonight-heavy";
+			algo_name = "cryptonight_heavy";
 			break;
 		default:
 			algo_name = "unknown";
@@ -673,8 +714,9 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"submit\",\"params\":{\"id\":\"%s\",\"job_id\":\"%s\",\"nonce\":\"%s\",\"result\":\"%s\"%s%s%s},\"id\":1}\n",
 		sMinerId, sJobId, sNonce, sResult, sBackend, sHashcount, sAlgo);
 
+	uint64_t messageId = 0;
 	opq_json_val oResult(nullptr);
-	return cmd_ret_wait(cmd_buffer, oResult);
+	return cmd_ret_wait(cmd_buffer, oResult, messageId);
 }
 
 void jpsock::save_nonce(uint32_t nonce)
@@ -696,7 +738,7 @@ bool jpsock::get_current_job(pool_job& job)
 
 bool jpsock::get_pool_motd(std::string& strin)
 {
-	if(!ext_motd) 
+	if(!ext_motd)
 		return false;
 
 	std::unique_lock<std::mutex> lck(motd_mutex);

@@ -141,7 +141,6 @@ if(CUDA_ENABLE)
                 # set flags to create device code for the given architectures
                 set(CLANG_BUILD_FLAGS "${CLANG_BUILD_FLAGS} --cuda-gpu-arch=sm_${CUDA_ARCH_ELEM}")
             endforeach()
-
         elseif(CUDA_COMPILER STREQUAL "nvcc")
             # add c++11 for cuda
             if(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
@@ -149,7 +148,7 @@ if(CUDA_ENABLE)
             endif()
 
             # avoid that nvcc in CUDA 8 complains about sm_20 pending removal
-	    if(CUDA_VERSION VERSION_EQUAL 8.0)
+            if(CUDA_VERSION VERSION_EQUAL 8.0)
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wno-deprecated-gpu-targets")
             endif()
 
@@ -180,14 +179,14 @@ if(CUDA_ENABLE)
             if(CUDA_KEEP_FILES)
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" --keep --keep-dir "${PROJECT_BINARY_DIR}")
             endif(CUDA_KEEP_FILES)
-        
+
             if(CUDA_VERSION VERSION_LESS 8.0)
                 # for CUDA 7.5 fix compile error: https://github.com/fireice-uk/xmr-stak/issues/34
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" "-D_MWAITXINTRIN_H_INCLUDED")
             endif()
 
             if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND
-                (CUDA_VERSION VERSION_EQUAL 9.0 OR CUDA_VERSION VERSION_EQUAL 9.1)
+                (CUDA_VERSION VERSION_EQUAL 9.0 OR CUDA_VERSION VERSION_EQUAL 9.1 OR CUDA_VERSION VERSION_EQUAL 9.2)
             )
                 # workaround find_package(CUDA) is using the wrong path to the CXX host compiler
                 # overwrite the CUDA host compiler variable with the used CXX MSVC
@@ -232,7 +231,7 @@ if(OpenCL_ENABLE)
             "AMD APP/include")
 
     find_library(OpenCL_LIBRARY
-        NAMES 
+        NAMES
             OpenCL
             OpenCL.lib
         NO_DEFAULT_PATH
@@ -284,7 +283,7 @@ endif()
 # Find microhttpd
 ################################################################################
 
-option(MICROHTTPD_ENABLE "Enable or disable the requirement of microhttp (http deamon)" ON)
+option(MICROHTTPD_ENABLE "Enable or disable the requirement of microhttp (http daemon)" ON)
 if(MICROHTTPD_ENABLE)
     find_path(MTHD_INCLUDE_DIR
         NAMES
@@ -307,7 +306,7 @@ if(MICROHTTPD_ENABLE)
         PATH_SUFFIXES
             lib)
     if(MHTD STREQUAL "MHTD-NOTFOUND")
-        message(FATAL_ERROR "microhttpd NOT found: use `-DMICROHTTPD_ENABLE=OFF` to build without http deamon support")
+        message(FATAL_ERROR "microhttpd NOT found: use `-DMICROHTTPD_ENABLE=OFF` to build without http daemon support")
     else()
         set(LIBS ${LIBS} ${MHTD})
         include_directories(AFTER ${MTHD_INCLUDE_DIR})
@@ -399,10 +398,10 @@ execute_process(
 )
 
 if(NOT GIT_COMMIT_HASH STREQUAL "")
-	add_definitions("-DGIT_COMMIT_HASH=${GIT_COMMIT_HASH}")
+    add_definitions("-DGIT_COMMIT_HASH=${GIT_COMMIT_HASH}")
 endif()
 if(NOT GIT_BRANCH STREQUAL "")
-	add_definitions("-DGIT_BRANCH=${GIT_BRANCH}")
+    add_definitions("-DGIT_BRANCH=${GIT_BRANCH}")
 endif()
 
 # generate backend string
@@ -426,7 +425,6 @@ else()
     # activate sse2 and aes-ni
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2 -maes")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2 -maes")
-
 endif()
 
 # add -Wall for debug builds with gcc
@@ -478,7 +476,7 @@ target_link_libraries(xmr-stak-backend xmr-stak-c ${CMAKE_DL_LIBS})
 
 # compile CUDA backend
 if(CUDA_FOUND)
-    file(GLOB CUDASRCFILES 
+    file(GLOB CUDASRCFILES
         "xmrstak/backend/nvidia/nvcc_code/*.cu"
         "xmrstak/backend/nvidia/*.cpp")
 
@@ -506,7 +504,7 @@ endif()
 
 # compile AMD backend
 if(OpenCL_FOUND)
-    file(GLOB OPENCLSRCFILES  
+    file(GLOB OPENCLSRCFILES
         "xmrstak/backend/amd/amd_gpu/*.cpp"
         "xmrstak/backend/amd/*.cpp")
     add_library(xmrstak_opencl_backend
@@ -535,7 +533,6 @@ target_link_libraries(xmr-stak ${LIBS} xmr-stak-c xmr-stak-backend)
 ################################################################################
 # Install
 ################################################################################
-
 
 # do not install the binary if the project and install are equal
 if( NOT CMAKE_INSTALL_PREFIX STREQUAL PROJECT_BINARY_DIR )

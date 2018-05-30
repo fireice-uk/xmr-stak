@@ -57,9 +57,6 @@ bool BackendConnector::self_test()
 
 std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 {
-	globalStates::inst().iGlobalJobNo = 0;
-	globalStates::inst().iConsumeCnt = 0;
-
 
 	std::vector<iBackend*>* pvThreads = new std::vector<iBackend*>;
 

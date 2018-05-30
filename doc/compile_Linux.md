@@ -4,7 +4,8 @@
 
 ### AMD APP SDK 3.0 (only needed to use AMD GPUs)
 
-- download and install the latest version from [http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)
+- download and install the latest version from https://www.dropbox.com/sh/mpg882ekirnsfa7/AADWz5X-TgVdsmWt0QwMgTWLa/AMD-APP-SDKInstaller-v3.0.130.136-GA-linux64.tar.bz2?dl=0
+  (do not wonder why it is a link to a dropbox but AMD has removed the SDK downloads, see https://community.amd.com/thread/228059)
 
 ### Cuda 8.0+ (only needed to use NVIDIA GPUs)
 
@@ -64,7 +65,7 @@
     cd xmr-stak/build
     cmake ..
     make install
-    
+
     # TinyCore Linux 8.x
     # TinyCore is 32-bit only, but there is an x86-64 port, known as "Pure 64,"
     # hosted on the TinyCore home page, and it works well.
@@ -94,7 +95,7 @@
     make install
 ```
 
-- g++ version 5.1 or higher is required for full C++11 support. 
+- g++ version 5.1 or higher is required for full C++11 support.
 If you want to compile the binary without installing libraries / compiler or just compile binary for some other distribution, please check the [build_xmr-stak_docker.sh script](scripts/build_xmr-stak_docker/build_xmr-stak_docker.sh).
 
 - Some newer gcc versions are not supported by CUDA (e.g. Ubuntu 17.10). It will require installing gcc 5 but you can avoid changing defaults.
