@@ -32,7 +32,8 @@
 
 ### AMD APP SDK 3.0 (only needed for AMD GPUs)
 
-- Download and install the latest version from http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/
+- Download and install the latest version from https://www.dropbox.com/s/gq8vqhelq0m6gj4/AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe
+  (do not wonder why it is a link to a dropbox but AMD has removed the SDK downloads, see https://community.amd.com/thread/222855)
 
 ### Dependencies OpenSSL/Hwloc and Microhttpd
 - For CUDA 8*:
