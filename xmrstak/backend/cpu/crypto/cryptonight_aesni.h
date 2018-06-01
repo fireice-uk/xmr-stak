@@ -1154,7 +1154,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 		return;
 	}
 
-	for (size_t i = 0; i < 20; i++)
+	for (size_t i = 0; i < 10; i++)
 	{
 		keccak((const uint8_t *)input + len * i, len, ctx[i]->hash_state, 200);
 		cn_explode_scratchpad<MEM, SOFT_AES, PREFETCH, ALGO>((__m128i*)ctx[i]->hash_state, (__m128i*)ctx[i]->long_state);
@@ -1170,7 +1170,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	CONST_INIT(ctx[7], 7);
 	CONST_INIT(ctx[8], 8);
 	CONST_INIT(ctx[9], 9);
-	CONST_INIT(ctx[10], 10);
+	/* CONST_INIT(ctx[10], 10);
 	CONST_INIT(ctx[11], 11);
 	CONST_INIT(ctx[12], 12);
 	CONST_INIT(ctx[13], 13);
@@ -1179,7 +1179,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	CONST_INIT(ctx[16], 16);
 	CONST_INIT(ctx[17], 17);
 	CONST_INIT(ctx[18], 18);
-	CONST_INIT(ctx[19], 19);
+	CONST_INIT(ctx[19], 19); */
 
 	uint8_t* l0 = ctx[0]->long_state;
 	uint8_t* l1 = ctx[1]->long_state;
@@ -1191,7 +1191,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	uint8_t* l7 = ctx[7]->long_state;
 	uint8_t* l8 = ctx[8]->long_state;
 	uint8_t* l9 = ctx[9]->long_state;
-	uint8_t* l10 = ctx[10]->long_state;
+	/* uint8_t* l10 = ctx[10]->long_state;
 	uint8_t* l11 = ctx[11]->long_state;
 	uint8_t* l12 = ctx[12]->long_state;
 	uint8_t* l13 = ctx[13]->long_state;
@@ -1200,7 +1200,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	uint8_t* l16 = ctx[16]->long_state;
 	uint8_t* l17 = ctx[17]->long_state;
 	uint8_t* l18 = ctx[18]->long_state;
-	uint8_t* l19 = ctx[19]->long_state;
+	uint8_t* l19 = ctx[19]->long_state; */
 
 	uint64_t* h0 = (uint64_t*)ctx[0]->hash_state;
 	uint64_t* h1 = (uint64_t*)ctx[1]->hash_state;
@@ -1212,7 +1212,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	uint64_t* h7 = (uint64_t*)ctx[7]->hash_state;
 	uint64_t* h8 = (uint64_t*)ctx[8]->hash_state;
 	uint64_t* h9 = (uint64_t*)ctx[9]->hash_state;
-	uint64_t* h10 = (uint64_t*)ctx[10]->hash_state;
+	/* uint64_t* h10 = (uint64_t*)ctx[10]->hash_state;
 	uint64_t* h11 = (uint64_t*)ctx[11]->hash_state;
 	uint64_t* h12 = (uint64_t*)ctx[12]->hash_state;
 	uint64_t* h13 = (uint64_t*)ctx[13]->hash_state;
@@ -1221,7 +1221,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	uint64_t* h16 = (uint64_t*)ctx[16]->hash_state;
 	uint64_t* h17 = (uint64_t*)ctx[17]->hash_state;
 	uint64_t* h18 = (uint64_t*)ctx[18]->hash_state;
-	uint64_t* h19 = (uint64_t*)ctx[19]->hash_state;
+	uint64_t* h19 = (uint64_t*)ctx[19]->hash_state; */
 
 	__m128i ax0 = _mm_set_epi64x(h0[1] ^ h0[5], h0[0] ^ h0[4]);
 	__m128i ax1 = _mm_set_epi64x(h1[1] ^ h1[5], h1[0] ^ h1[4]);
@@ -1233,7 +1233,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	__m128i ax7 = _mm_set_epi64x(h7[1] ^ h7[5], h7[0] ^ h7[4]);
 	__m128i ax8 = _mm_set_epi64x(h8[1] ^ h8[5], h8[0] ^ h8[4]);
 	__m128i ax9 = _mm_set_epi64x(h9[1] ^ h9[5], h9[0] ^ h9[4]);
-	__m128i ax10 = _mm_set_epi64x(h10[1] ^ h10[5], h10[0] ^ h10[4]);
+	/* __m128i ax10 = _mm_set_epi64x(h10[1] ^ h10[5], h10[0] ^ h10[4]);
 	__m128i ax11 = _mm_set_epi64x(h11[1] ^ h11[5], h11[0] ^ h11[4]);
 	__m128i ax12 = _mm_set_epi64x(h12[1] ^ h12[5], h12[0] ^ h12[4]);
 	__m128i ax13 = _mm_set_epi64x(h13[1] ^ h13[5], h13[0] ^ h13[4]);
@@ -1242,7 +1242,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	__m128i ax16 = _mm_set_epi64x(h16[1] ^ h16[5], h16[0] ^ h16[4]);
 	__m128i ax17 = _mm_set_epi64x(h17[1] ^ h17[5], h17[0] ^ h17[4]);
 	__m128i ax18 = _mm_set_epi64x(h18[1] ^ h18[5], h18[0] ^ h18[4]);
-	__m128i ax19 = _mm_set_epi64x(h19[1] ^ h19[5], h19[0] ^ h19[4]);
+	__m128i ax19 = _mm_set_epi64x(h19[1] ^ h19[5], h19[0] ^ h19[4]); */
 
 	__m128i bx0 = _mm_set_epi64x(h0[3] ^ h0[7], h0[2] ^ h0[6]);
 	__m128i bx1 = _mm_set_epi64x(h1[3] ^ h1[7], h1[2] ^ h1[6]);
@@ -1254,7 +1254,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	__m128i bx7 = _mm_set_epi64x(h7[3] ^ h7[7], h7[2] ^ h7[6]);
 	__m128i bx8 = _mm_set_epi64x(h8[3] ^ h8[7], h8[2] ^ h8[6]);
 	__m128i bx9 = _mm_set_epi64x(h9[3] ^ h9[7], h9[2] ^ h9[6]);
-	__m128i bx10 = _mm_set_epi64x(h10[3] ^ h10[7], h10[2] ^ h10[6]);
+	/* __m128i bx10 = _mm_set_epi64x(h10[3] ^ h10[7], h10[2] ^ h10[6]);
 	__m128i bx11 = _mm_set_epi64x(h11[3] ^ h11[7], h11[2] ^ h11[6]);
 	__m128i bx12 = _mm_set_epi64x(h12[3] ^ h12[7], h12[2] ^ h12[6]);
 	__m128i bx13 = _mm_set_epi64x(h13[3] ^ h13[7], h13[2] ^ h13[6]);
@@ -1263,7 +1263,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	__m128i bx16 = _mm_set_epi64x(h16[3] ^ h16[7], h16[2] ^ h16[6]);
 	__m128i bx17 = _mm_set_epi64x(h17[3] ^ h17[7], h17[2] ^ h17[6]);
 	__m128i bx18 = _mm_set_epi64x(h18[3] ^ h18[7], h18[2] ^ h18[6]);
-	__m128i bx19 = _mm_set_epi64x(h19[3] ^ h19[7], h19[2] ^ h19[6]);
+	__m128i bx19 = _mm_set_epi64x(h19[3] ^ h19[7], h19[2] ^ h19[6]); */
 
 	__m128i cx0 = _mm_set_epi64x(0, 0);
 	__m128i cx1 = _mm_set_epi64x(0, 0);
@@ -1275,7 +1275,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	__m128i cx7 = _mm_set_epi64x(0, 0);
 	__m128i cx8 = _mm_set_epi64x(0, 0);
 	__m128i cx9 = _mm_set_epi64x(0, 0);
-	__m128i cx10 = _mm_set_epi64x(0, 0);
+	/* __m128i cx10 = _mm_set_epi64x(0, 0);
 	__m128i cx11 = _mm_set_epi64x(0, 0);
 	__m128i cx12 = _mm_set_epi64x(0, 0);
 	__m128i cx13 = _mm_set_epi64x(0, 0);
@@ -1284,7 +1284,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	__m128i cx16 = _mm_set_epi64x(0, 0);
 	__m128i cx17 = _mm_set_epi64x(0, 0);
 	__m128i cx18 = _mm_set_epi64x(0, 0);
-	__m128i cx19 = _mm_set_epi64x(0, 0);
+	__m128i cx19 = _mm_set_epi64x(0, 0); */
 
 	uint64_t idx0 = _mm_cvtsi128_si64(ax0);
 	uint64_t idx1 = _mm_cvtsi128_si64(ax1);
@@ -1296,7 +1296,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	uint64_t idx7 = _mm_cvtsi128_si64(ax7);
 	uint64_t idx8 = _mm_cvtsi128_si64(ax8);
 	uint64_t idx9 = _mm_cvtsi128_si64(ax9);
-	uint64_t idx10 = _mm_cvtsi128_si64(ax10);
+	/* uint64_t idx10 = _mm_cvtsi128_si64(ax10);
 	uint64_t idx11 = _mm_cvtsi128_si64(ax11);
 	uint64_t idx12 = _mm_cvtsi128_si64(ax12);
 	uint64_t idx13 = _mm_cvtsi128_si64(ax13);
@@ -1305,10 +1305,10 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	uint64_t idx16 = _mm_cvtsi128_si64(ax16);
 	uint64_t idx17 = _mm_cvtsi128_si64(ax17);
 	uint64_t idx18 = _mm_cvtsi128_si64(ax18);
-	uint64_t idx19 = _mm_cvtsi128_si64(ax19);
+	uint64_t idx19 = _mm_cvtsi128_si64(ax19); */
 
 	__m128i *ptr0, *ptr1, *ptr2, *ptr3, *ptr4, *ptr5, *ptr6, *ptr7, *ptr8, *ptr9;
-	__m128i *ptr10, *ptr11, *ptr12, *ptr13, *ptr14, *ptr15, *ptr16, *ptr17, *ptr18, *ptr19;
+	//__m128i *ptr10, *ptr11, *ptr12, *ptr13, *ptr14, *ptr15, *ptr16, *ptr17, *ptr18, *ptr19;
 
 	uint64_t hi, lo;
 
@@ -1322,7 +1322,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	CN_STEP1_A(ax7, bx7, cx7, l7, ptr7, idx7);
 	CN_STEP1_A(ax8, bx8, cx8, l8, ptr8, idx8);
 	CN_STEP1_A(ax9, bx9, cx9, l9, ptr9, idx9);
-	CN_STEP1_A(ax10, bx10, cx10, l10, ptr10, idx10);
+	/* CN_STEP1_A(ax10, bx10, cx10, l10, ptr10, idx10);
 	CN_STEP1_A(ax11, bx11, cx11, l11, ptr11, idx11);
 	CN_STEP1_A(ax12, bx12, cx12, l12, ptr12, idx12);
 	CN_STEP1_A(ax13, bx13, cx13, l13, ptr13, idx13);
@@ -1331,7 +1331,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	CN_STEP1_A(ax16, bx16, cx16, l16, ptr16, idx16);
 	CN_STEP1_A(ax17, bx17, cx17, l17, ptr17, idx17);
 	CN_STEP1_A(ax18, bx18, cx18, l18, ptr18, idx18);
-	CN_STEP1_A(ax19, bx19, cx19, l19, ptr19, idx19);
+	CN_STEP1_A(ax19, bx19, cx19, l19, ptr19, idx19); */
 
 	CN2_STEP2(ax0, bx0, cx0, l0, mc0, ptr0, idx0);
 	CN2_STEP2(ax1, bx1, cx1, l1, mc1, ptr1, idx1);
@@ -1343,7 +1343,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	CN2_STEP2(ax7, bx7, cx7, l7, mc7, ptr7, idx7);
 	CN2_STEP2(ax8, bx8, cx8, l8, mc8, ptr8, idx8);
 	CN2_STEP2(ax9, bx9, cx9, l9, mc9, ptr9, idx9);
-	CN2_STEP2(ax10, bx10, cx10, l10, mc10, ptr10, idx10);
+	/* CN2_STEP2(ax10, bx10, cx10, l10, mc10, ptr10, idx10);
 	CN2_STEP2(ax11, bx11, cx11, l11, mc11, ptr11, idx11);
 	CN2_STEP2(ax12, bx12, cx12, l12, mc12, ptr12, idx12);
 	CN2_STEP2(ax13, bx13, cx13, l13, mc13, ptr13, idx13);
@@ -1352,7 +1352,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	CN2_STEP2(ax16, bx16, cx16, l16, mc16, ptr16, idx16);
 	CN2_STEP2(ax17, bx17, cx17, l17, mc17, ptr17, idx17);
 	CN2_STEP2(ax18, bx18, cx18, l18, mc18, ptr18, idx18);
-	CN2_STEP2(ax19, bx19, cx19, l19, mc19, ptr19, idx19);
+	CN2_STEP2(ax19, bx19, cx19, l19, mc19, ptr19, idx19); */
 
 	CN2_STEP1(ax0, cx0, bx0, l0, mc0, ptr0, idx0);
 	CN2_STEP1(ax1, cx1, bx1, l1, mc1, ptr1, idx1);
@@ -1364,7 +1364,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	CN2_STEP1(ax7, cx7, bx7, l7, mc7, ptr7, idx7);
 	CN2_STEP1(ax8, cx8, bx8, l8, mc8, ptr8, idx8);
 	CN2_STEP1(ax9, cx9, bx9, l9, mc9, ptr9, idx9);
-	CN2_STEP1(ax10, cx10, bx10, l10, mc10, ptr10, idx10);
+	/* CN2_STEP1(ax10, cx10, bx10, l10, mc10, ptr10, idx10);
 	CN2_STEP1(ax11, cx11, bx11, l11, mc11, ptr11, idx11);
 	CN2_STEP1(ax12, cx12, bx12, l12, mc12, ptr12, idx12);
 	CN2_STEP1(ax13, cx13, bx13, l13, mc13, ptr13, idx13);
@@ -1373,7 +1373,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	CN2_STEP1(ax16, cx16, bx16, l16, mc16, ptr16, idx16);
 	CN2_STEP1(ax17, cx17, bx17, l17, mc17, ptr17, idx17);
 	CN2_STEP1(ax18, cx18, bx18, l18, mc18, ptr18, idx18);
-	CN2_STEP1(ax19, cx19, bx19, l19, mc19, ptr19, idx19);
+	CN2_STEP1(ax19, cx19, bx19, l19, mc19, ptr19, idx19); */
 
 	CN2_STEP2(ax0, cx0, bx0, l0, mc0, ptr0, idx0);
 	CN2_STEP2(ax1, cx1, bx1, l1, mc1, ptr1, idx1);
@@ -1385,7 +1385,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	CN2_STEP2(ax7, cx7, bx7, l7, mc7, ptr7, idx7);
 	CN2_STEP2(ax8, cx8, bx8, l8, mc8, ptr8, idx8);
 	CN2_STEP2(ax9, cx9, bx9, l9, mc9, ptr9, idx9);
-	CN2_STEP2(ax10, cx10, bx10, l10, mc10, ptr10, idx10);
+	/* CN2_STEP2(ax10, cx10, bx10, l10, mc10, ptr10, idx10);
 	CN2_STEP2(ax11, cx11, bx11, l11, mc11, ptr11, idx11);
 	CN2_STEP2(ax12, cx12, bx12, l12, mc12, ptr12, idx12);
 	CN2_STEP2(ax13, cx13, bx13, l13, mc13, ptr13, idx13);
@@ -1394,7 +1394,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	CN2_STEP2(ax16, cx16, bx16, l16, mc16, ptr16, idx16);
 	CN2_STEP2(ax17, cx17, bx17, l17, mc17, ptr17, idx17);
 	CN2_STEP2(ax18, cx18, bx18, l18, mc18, ptr18, idx18);
-	CN2_STEP2(ax19, cx19, bx19, l19, mc19, ptr19, idx19);
+	CN2_STEP2(ax19, cx19, bx19, l19, mc19, ptr19, idx19); */
 
 	for (size_t i = 1; i < ITERATIONS/2; i++)
 	{
@@ -1408,7 +1408,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 		CN2_STEP1(ax7, bx7, cx7, l7, mc7, ptr7, idx7);
 		CN2_STEP1(ax8, bx8, cx8, l8, mc8, ptr8, idx8);
 		CN2_STEP1(ax9, bx9, cx9, l9, mc9, ptr9, idx9);
-		CN2_STEP1(ax10, bx10, cx10, l10, mc10, ptr10, idx10);
+		/* CN2_STEP1(ax10, bx10, cx10, l10, mc10, ptr10, idx10);
 		CN2_STEP1(ax11, bx11, cx11, l11, mc11, ptr11, idx11);
 		CN2_STEP1(ax12, bx12, cx12, l12, mc12, ptr12, idx12);
 		CN2_STEP1(ax13, bx13, cx13, l13, mc13, ptr13, idx13);
@@ -1417,7 +1417,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 		CN2_STEP1(ax16, bx16, cx16, l16, mc16, ptr16, idx16);
 		CN2_STEP1(ax17, bx17, cx17, l17, mc17, ptr17, idx17);
 		CN2_STEP1(ax18, bx18, cx18, l18, mc18, ptr18, idx18);
-		CN2_STEP1(ax19, bx19, cx19, l19, mc19, ptr19, idx19);
+		CN2_STEP1(ax19, bx19, cx19, l19, mc19, ptr19, idx19); */
 
 		CN2_STEP2(ax0, bx0, cx0, l0, mc0, ptr0, idx0);
 		CN2_STEP2(ax1, bx1, cx1, l1, mc1, ptr1, idx1);
@@ -1429,7 +1429,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 		CN2_STEP2(ax7, bx7, cx7, l7, mc7, ptr7, idx7);
 		CN2_STEP2(ax8, bx8, cx8, l8, mc8, ptr8, idx8);
 		CN2_STEP2(ax9, bx9, cx9, l9, mc9, ptr9, idx9);
-		CN2_STEP2(ax10, bx10, cx10, l10, mc10, ptr10, idx10);
+		/* CN2_STEP2(ax10, bx10, cx10, l10, mc10, ptr10, idx10);
 		CN2_STEP2(ax11, bx11, cx11, l11, mc11, ptr11, idx11);
 		CN2_STEP2(ax12, bx12, cx12, l12, mc12, ptr12, idx12);
 		CN2_STEP2(ax13, bx13, cx13, l13, mc13, ptr13, idx13);
@@ -1438,7 +1438,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 		CN2_STEP2(ax16, bx16, cx16, l16, mc16, ptr16, idx16);
 		CN2_STEP2(ax17, bx17, cx17, l17, mc17, ptr17, idx17);
 		CN2_STEP2(ax18, bx18, cx18, l18, mc18, ptr18, idx18);
-		CN2_STEP2(ax19, bx19, cx19, l19, mc19, ptr19, idx19);
+		CN2_STEP2(ax19, bx19, cx19, l19, mc19, ptr19, idx19); */
 
 		CN2_STEP1(ax0, cx0, bx0, l0, mc0, ptr0, idx0);
 		CN2_STEP1(ax1, cx1, bx1, l1, mc1, ptr1, idx1);
@@ -1450,7 +1450,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 		CN2_STEP1(ax7, cx7, bx7, l7, mc7, ptr7, idx7);
 		CN2_STEP1(ax8, cx8, bx8, l8, mc8, ptr8, idx8);
 		CN2_STEP1(ax9, cx9, bx9, l9, mc9, ptr9, idx9);
-		CN2_STEP1(ax10, cx10, bx10, l10, mc10, ptr10, idx10);
+		/* CN2_STEP1(ax10, cx10, bx10, l10, mc10, ptr10, idx10);
 		CN2_STEP1(ax11, cx11, bx11, l11, mc11, ptr11, idx11);
 		CN2_STEP1(ax12, cx12, bx12, l12, mc12, ptr12, idx12);
 		CN2_STEP1(ax13, cx13, bx13, l13, mc13, ptr13, idx13);
@@ -1459,7 +1459,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 		CN2_STEP1(ax16, cx16, bx16, l16, mc16, ptr16, idx16);
 		CN2_STEP1(ax17, cx17, bx17, l17, mc17, ptr17, idx17);
 		CN2_STEP1(ax18, cx18, bx18, l18, mc18, ptr18, idx18);
-		CN2_STEP1(ax19, cx19, bx19, l19, mc19, ptr19, idx19);
+		CN2_STEP1(ax19, cx19, bx19, l19, mc19, ptr19, idx19); */
 
 		CN2_STEP2(ax0, cx0, bx0, l0, mc0, ptr0, idx0);
 		CN2_STEP2(ax1, cx1, bx1, l1, mc1, ptr1, idx1);
@@ -1471,7 +1471,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 		CN2_STEP2(ax7, cx7, bx7, l7, mc7, ptr7, idx7);
 		CN2_STEP2(ax8, cx8, bx8, l8, mc8, ptr8, idx8);
 		CN2_STEP2(ax9, cx9, bx9, l9, mc9, ptr9, idx9);
-		CN2_STEP2(ax10, cx10, bx10, l10, mc10, ptr10, idx10);
+		/* CN2_STEP2(ax10, cx10, bx10, l10, mc10, ptr10, idx10);
 		CN2_STEP2(ax11, cx11, bx11, l11, mc11, ptr11, idx11);
 		CN2_STEP2(ax12, cx12, bx12, l12, mc12, ptr12, idx12);
 		CN2_STEP2(ax13, cx13, bx13, l13, mc13, ptr13, idx13);
@@ -1480,7 +1480,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 		CN2_STEP2(ax16, cx16, bx16, l16, mc16, ptr16, idx16);
 		CN2_STEP2(ax17, cx17, bx17, l17, mc17, ptr17, idx17);
 		CN2_STEP2(ax18, cx18, bx18, l18, mc18, ptr18, idx18);
-		CN2_STEP2(ax19, cx19, bx19, l19, mc19, ptr19, idx19);
+		CN2_STEP2(ax19, cx19, bx19, l19, mc19, ptr19, idx19); */
 	}
 
 	CN2_STEP3(ax0, cx0, bx0, l0, mc0, ptr0, idx0);
@@ -1493,7 +1493,7 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	CN2_STEP3(ax7, cx7, bx7, l7, mc7, ptr7, idx7);
 	CN2_STEP3(ax8, cx8, bx8, l8, mc8, ptr8, idx8);
 	CN2_STEP3(ax9, cx9, bx9, l9, mc9, ptr9, idx9);
-	CN2_STEP3(ax10, cx10, bx10, l10, mc10, ptr10, idx10);
+/*	CN2_STEP3(ax10, cx10, bx10, l10, mc10, ptr10, idx10);
 	CN2_STEP3(ax11, cx11, bx11, l11, mc11, ptr11, idx11);
 	CN2_STEP3(ax12, cx12, bx12, l12, mc12, ptr12, idx12);
 	CN2_STEP3(ax13, cx13, bx13, l13, mc13, ptr13, idx13);
@@ -1502,9 +1502,9 @@ void cryptonight_twenty_hash(const void* input, size_t len, void* output, crypto
 	CN2_STEP3(ax16, cx16, bx16, l16, mc16, ptr16, idx16);
 	CN2_STEP3(ax17, cx17, bx17, l17, mc17, ptr17, idx17);
 	CN2_STEP3(ax18, cx18, bx18, l18, mc18, ptr18, idx18);
-	CN2_STEP3(ax19, cx19, bx19, l19, mc19, ptr19, idx19);
+	CN2_STEP3(ax19, cx19, bx19, l19, mc19, ptr19, idx19); */
 
-	for (size_t i = 0; i < 20; i++)
+	for (size_t i = 0; i < 10; i++)
 	{
 		cn_implode_scratchpad<MEM, SOFT_AES, PREFETCH, ALGO>((__m128i*)ctx[i]->long_state, (__m128i*)ctx[i]->hash_state);
 		keccakf((uint64_t*)ctx[i]->hash_state, 24);
