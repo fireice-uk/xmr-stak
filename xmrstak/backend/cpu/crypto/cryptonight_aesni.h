@@ -871,7 +871,6 @@ void cryptonight_triple_hash(const void* input, size_t len, void* output, crypto
 
 	for (size_t i = 1; i < ITERATIONS/2; i++)
 	{
-
 		CN2_STEP1(ax0, bx0, cx0, l0, mc0, ptr0, idx0);
 		CN2_STEP1(ax1, bx1, cx1, l1, mc1, ptr1, idx1);
 		CN2_STEP1(ax2, bx2, cx2, l2, mc2, ptr2, idx2);
@@ -979,7 +978,6 @@ void cryptonight_quad_hash(const void* input, size_t len, void* output, cryptoni
 
 	for (size_t i = 1; i < ITERATIONS/2; i++)
 	{
-
 		CN2_STEP1(ax0, bx0, cx0, l0, mc0, ptr0, idx0);
 		CN2_STEP1(ax1, bx1, cx1, l1, mc1, ptr1, idx1);
 		CN2_STEP1(ax2, bx2, cx2, l2, mc2, ptr2, idx2);
