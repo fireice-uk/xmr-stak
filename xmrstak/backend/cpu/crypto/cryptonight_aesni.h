@@ -1063,61 +1063,67 @@ void cryptonight_penta_hash(const void* input, size_t len, void* output, crypton
 	idx3 = _mm_cvtsi128_si64(ax3);
 	idx4 = _mm_cvtsi128_si64(ax4);
 
-	for (size_t i = 0; i < ITERATIONS/2; i++)
+	uint64_t hi, lo;
+	__m128i *ptr0, *ptr1, *ptr2, *ptr3, *ptr4;
+
+
+	CN_STEP1_A(ax0, bx0, cx0, l0, ptr0, idx0);
+	CN_STEP1_A(ax1, bx1, cx1, l1, ptr1, idx1);
+	CN_STEP1_A(ax2, bx2, cx2, l2, ptr2, idx2);
+	CN_STEP1_A(ax3, bx3, cx3, l3, ptr3, idx3);
+	CN_STEP1_A(ax4, bx4, cx4, l4, ptr4, idx4);
+
+	CN2_STEP2(ax0, bx0, cx0, l0, mc0, ptr0, idx0);
+	CN2_STEP2(ax1, bx1, cx1, l1, mc1, ptr1, idx1);
+	CN2_STEP2(ax2, bx2, cx2, l2, mc2, ptr2, idx2);
+	CN2_STEP2(ax3, bx3, cx3, l3, mc3, ptr3, idx3);
+	CN2_STEP2(ax4, bx4, cx4, l4, mc4, ptr4, idx4);
+
+	CN2_STEP1(ax0, cx0, bx0, l0, mc0, ptr0, idx0);
+	CN2_STEP1(ax1, cx1, bx1, l1, mc1, ptr1, idx1);
+	CN2_STEP1(ax2, cx2, bx2, l2, mc2, ptr2, idx2);
+	CN2_STEP1(ax3, cx3, bx3, l3, mc3, ptr3, idx3);
+	CN2_STEP1(ax4, cx4, bx4, l4, mc4, ptr4, idx4);
+
+	CN2_STEP2(ax0, cx0, bx0, l0, mc0, ptr0, idx0);
+	CN2_STEP2(ax1, cx1, bx1, l1, mc1, ptr1, idx1);
+	CN2_STEP2(ax2, cx2, bx2, l2, mc2, ptr2, idx2);
+	CN2_STEP2(ax3, cx3, bx3, l3, mc3, ptr3, idx3);
+	CN2_STEP2(ax4, cx4, bx4, l4, mc4, ptr4, idx4);
+
+	for (size_t i = 1; i < ITERATIONS/2; i++)
 	{
-		uint64_t hi, lo;
-		__m128i *ptr0, *ptr1, *ptr2, *ptr3, *ptr4;
 
-		// EVEN ROUND
-		CN_STEP1(ax0, bx0, cx0, l0, ptr0, idx0);
-		CN_STEP1(ax1, bx1, cx1, l1, ptr1, idx1);
-		CN_STEP1(ax2, bx2, cx2, l2, ptr2, idx2);
-		CN_STEP1(ax3, bx3, cx3, l3, ptr3, idx3);
-		CN_STEP1(ax4, bx4, cx4, l4, ptr4, idx4);
+		CN2_STEP1(ax0, bx0, cx0, l0, mc0, ptr0, idx0);
+		CN2_STEP1(ax1, bx1, cx1, l1, mc1, ptr1, idx1);
+		CN2_STEP1(ax2, bx2, cx2, l2, mc2, ptr2, idx2);
+		CN2_STEP1(ax3, bx3, cx3, l3, mc3, ptr3, idx3);
+		CN2_STEP1(ax4, bx4, cx4, l4, mc4, ptr4, idx4);
 
-		CN_STEP2(ax0, bx0, cx0, l0, ptr0, idx0);
-		CN_STEP2(ax1, bx1, cx1, l1, ptr1, idx1);
-		CN_STEP2(ax2, bx2, cx2, l2, ptr2, idx2);
-		CN_STEP2(ax3, bx3, cx3, l3, ptr3, idx3);
-		CN_STEP2(ax4, bx4, cx4, l4, ptr4, idx4);
+		CN2_STEP2(ax0, bx0, cx0, l0, mc0, ptr0, idx0);
+		CN2_STEP2(ax1, bx1, cx1, l1, mc1, ptr1, idx1);
+		CN2_STEP2(ax2, bx2, cx2, l2, mc2, ptr2, idx2);
+		CN2_STEP2(ax3, bx3, cx3, l3, mc3, ptr3, idx3);
+		CN2_STEP2(ax4, bx4, cx4, l4, mc4, ptr4, idx4);
 
-		CN_STEP3(ax0, bx0, cx0, l0, ptr0, idx0);
-		CN_STEP3(ax1, bx1, cx1, l1, ptr1, idx1);
-		CN_STEP3(ax2, bx2, cx2, l2, ptr2, idx2);
-		CN_STEP3(ax3, bx3, cx3, l3, ptr3, idx3);
-		CN_STEP3(ax4, bx4, cx4, l4, ptr4, idx4);
+		CN2_STEP1(ax0, cx0, bx0, l0, mc0, ptr0, idx0);
+		CN2_STEP1(ax1, cx1, bx1, l1, mc1, ptr1, idx1);
+		CN2_STEP1(ax2, cx2, bx2, l2, mc2, ptr2, idx2);
+		CN2_STEP1(ax3, cx3, bx3, l3, mc3, ptr3, idx3);
+		CN2_STEP1(ax4, cx4, bx4, l4, mc4, ptr4, idx4);
 
-		CN_STEP4(ax0, bx0, cx0, l0, mc0, ptr0, idx0);
-		CN_STEP4(ax1, bx1, cx1, l1, mc1, ptr1, idx1);
-		CN_STEP4(ax2, bx2, cx2, l2, mc2, ptr2, idx2);
-		CN_STEP4(ax3, bx3, cx3, l3, mc3, ptr3, idx3);
-		CN_STEP4(ax4, bx4, cx4, l4, mc4, ptr4, idx4);
-
-		// ODD ROUND
-		CN_STEP1(ax0, cx0, bx0, l0, ptr0, idx0);
-		CN_STEP1(ax1, cx1, bx1, l1, ptr1, idx1);
-		CN_STEP1(ax2, cx2, bx2, l2, ptr2, idx2);
-		CN_STEP1(ax3, cx3, bx3, l3, ptr3, idx3);
-		CN_STEP1(ax4, cx4, bx4, l4, ptr4, idx4);
-
-		CN_STEP2(ax0, cx0, bx0, l0, ptr0, idx0);
-		CN_STEP2(ax1, cx1, bx1, l1, ptr1, idx1);
-		CN_STEP2(ax2, cx2, bx2, l2, ptr2, idx2);
-		CN_STEP2(ax3, cx3, bx3, l3, ptr3, idx3);
-		CN_STEP2(ax4, cx4, bx4, l4, ptr4, idx4);
-
-		CN_STEP3(ax0, cx0, bx0, l0, ptr0, idx0);
-		CN_STEP3(ax1, cx1, bx1, l1, ptr1, idx1);
-		CN_STEP3(ax2, cx2, bx2, l2, ptr2, idx2);
-		CN_STEP3(ax3, cx3, bx3, l3, ptr3, idx3);
-		CN_STEP3(ax4, cx4, bx4, l4, ptr4, idx4);
-
-		CN_STEP4(ax0, cx0, bx0, l0, mc0, ptr0, idx0);
-		CN_STEP4(ax1, cx1, bx1, l1, mc1, ptr1, idx1);
-		CN_STEP4(ax2, cx2, bx2, l2, mc2, ptr2, idx2);
-		CN_STEP4(ax3, cx3, bx3, l3, mc3, ptr3, idx3);
-		CN_STEP4(ax4, cx4, bx4, l4, mc4, ptr4, idx4);
+		CN2_STEP2(ax0, cx0, bx0, l0, mc0, ptr0, idx0);
+		CN2_STEP2(ax1, cx1, bx1, l1, mc1, ptr1, idx1);
+		CN2_STEP2(ax2, cx2, bx2, l2, mc2, ptr2, idx2);
+		CN2_STEP2(ax3, cx3, bx3, l3, mc3, ptr3, idx3);
+		CN2_STEP2(ax4, cx4, bx4, l4, mc4, ptr4, idx4);
 	}
+
+	CN2_STEP3(ax0, cx0, bx0, l0, mc0, ptr0, idx0);
+	CN2_STEP3(ax1, cx1, bx1, l1, mc1, ptr1, idx1);
+	CN2_STEP3(ax2, cx2, bx2, l2, mc2, ptr2, idx2);
+	CN2_STEP3(ax3, cx3, bx3, l3, mc3, ptr3, idx3);
+	CN2_STEP3(ax4, cx4, bx4, l4, mc4, ptr4, idx4);
 
 	for (size_t i = 0; i < 5; i++)
 	{
