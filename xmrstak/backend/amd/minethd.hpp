@@ -20,7 +20,6 @@ class minethd  : public iBackend
 {
 public:
 
-	static void switch_work(miner_work& pWork);
 	static std::vector<iBackend*>* thread_starter(uint32_t threadOffset, miner_work& pWork);
 	static bool init_gpus();
 
@@ -30,11 +29,9 @@ private:
 	minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::thd_cfg cfg);
 
 	void work_main();
-	void consume_work();
 
 	uint64_t iJobNo;
-
-	static miner_work oGlobalWork;
+	
 	miner_work oWork;
 
 	std::promise<void> order_fix;

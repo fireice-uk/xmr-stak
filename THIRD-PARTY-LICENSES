@@ -5,7 +5,7 @@ This application bundles the following third-party software in accordance with t
 Package: Original NVidia mining code
 Authors: tsiv and KlausT
 License: GNU GPLv3
-Notes: Improvements are (c) of Xmr-Stak team
+Notes: Improvements are (c) of Xmr-Stak team and are covered by GNU GPLv3
 
 -------------------------------------------------------------------------
 
@@ -24,6 +24,13 @@ License: MIT License and BSD License
 
 Package: PicoSHA2
 Authors: okdshin
+License: MIT License
+
+-------------------------------------------------------------------------
+
+Package: cpputil
+Authors: Will Zhang
+Source: https://github.com/willzhang4a58/cpputil
 License: MIT License
 
 -------------------------------------------------------------------------

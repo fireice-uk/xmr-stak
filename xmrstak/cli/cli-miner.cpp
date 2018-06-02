@@ -55,7 +55,7 @@
 #	include "xmrstak/misc/uac.hpp"
 #endif // _WIN32
 
-int do_benchmark(int block_version);
+int do_benchmark(int block_version, int wait_sec, int work_sec);
 
 void help()
 {
@@ -72,7 +72,9 @@ void help()
 #ifdef _WIN32
 	cout<<"  --noUAC                    disable the UAC dialog"<<endl;
 #endif
-	cout<<"  --benchmark BLOCKVERSION   ONLY do a 60-second benchmark and exit"<<endl;
+	cout<<"  --benchmark BLOCKVERSION   ONLY do a benchmark and exit"<<endl;
+	cout<<"  --benchwait WAIT_SEC             ... benchmark wait time"<<endl;
+	cout<<"  --benchwork WORK_SEC             ... benchmark work time"<<endl;
 #ifndef CONF_NO_CPU
 	cout<<"  --noCPU                    disable the CPU miner backend"<<endl;
 	cout<<"  --cpu FILE                 CPU backend miner config file"<<endl;
@@ -674,6 +676,44 @@ int main(int argc, char *argv[])
 			}
 			params::inst().benchmark_block_version = bversion;
 		}
+		else if(opName.compare("--benchwait") == 0)
+		{
+			++i;
+			if( i >= argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--benchwait' given");
+				win_exit();
+				return 1;
+			}
+			char* wait_sec = nullptr;
+			long int waitsec = strtol(argv[i], &wait_sec, 10);
+
+			if(waitsec < 0 || waitsec >= 300)
+			{
+				printer::inst()->print_msg(L0, "Benchmark wait seconds must be in the range [0,300]");
+				return 1;
+			}
+			params::inst().benchmark_wait_sec = waitsec;
+		}
+		else if(opName.compare("--benchwork") == 0)
+		{
+			++i;
+			if( i >= argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--benchwork' given");
+				win_exit();
+				return 1;
+			}
+			char* work_sec = nullptr;
+			long int worksec = strtol(argv[i], &work_sec, 10);
+
+			if(worksec < 10 || worksec >= 300)
+			{
+				printer::inst()->print_msg(L0, "Benchmark work seconds must be in the range [10,300]");
+				return 1;
+			}
+			params::inst().benchmark_work_sec = worksec;
+		}
 		else
 		{
 			printer::inst()->print_msg(L0, "Parameter unknown '%s'",argv[i]);
@@ -757,7 +797,7 @@ int main(int argc, char *argv[])
 	if(params::inst().benchmark_block_version >= 0)
 	{
 		printer::inst()->print_str("!!!! Doing only a benchmark and exiting. To mine, remove the '--benchmark' option. !!!!\n");
-		return do_benchmark(params::inst().benchmark_block_version);
+		return do_benchmark(params::inst().benchmark_block_version, params::inst().benchmark_wait_sec, params::inst().benchmark_work_sec);
 	}
 
 	executor::inst()->ex_start(jconf::inst()->DaemonMode());
@@ -794,7 +834,7 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-int do_benchmark(int block_version)
+int do_benchmark(int block_version, int wait_sec, int work_sec)
 {
 	using namespace std::chrono;
 	std::vector<xmrstak::iBackend*>* pvThreads;
@@ -810,18 +850,18 @@ int do_benchmark(int block_version)
 	xmrstak::miner_work oWork = xmrstak::miner_work();
 	pvThreads = xmrstak::BackendConnector::thread_starter(oWork);
 
-	printer::inst()->print_msg(L0, "Wait 30 sec until all backends are initialized");
-	std::this_thread::sleep_for(std::chrono::seconds(30));
+	printer::inst()->print_msg(L0, "Wait %d sec until all backends are initialized",wait_sec);
+	std::this_thread::sleep_for(std::chrono::seconds(wait_sec));
 
 	/* AMD and NVIDIA is currently only supporting work sizes up to 84byte
 	 * \todo fix this issue
 	 */
 	xmrstak::miner_work benchWork = xmrstak::miner_work("", work, 84, 0, false, 0);
-	printer::inst()->print_msg(L0, "Start a 60 second benchmark...");
+	printer::inst()->print_msg(L0, "Start a %d second benchmark...",work_sec);
 	xmrstak::globalStates::inst().switch_work(benchWork, dat);
 	uint64_t iStartStamp = get_timestamp_ms();
 
-	std::this_thread::sleep_for(std::chrono::seconds(60));
+	std::this_thread::sleep_for(std::chrono::seconds(work_sec));
 	xmrstak::globalStates::inst().switch_work(oWork, dat);
 
 	double fTotalHps = 0.0;

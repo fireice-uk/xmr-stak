@@ -124,8 +124,8 @@ private:
 	void jpsock_thread();
 	bool jpsock_thd_main();
 	bool process_line(char* line, size_t len);
-	bool process_pool_job(const opq_json_val* params);
-	bool cmd_ret_wait(const char* sPacket, opq_json_val& poResult);
+	bool process_pool_job(const opq_json_val* params, const uint64_t messageId);
+	bool cmd_ret_wait(const char* sPacket, opq_json_val& poResult, uint64_t& messageId);
 
 	char sMinerId[64];
 	std::atomic<uint64_t> iJobDiff;
@@ -142,5 +142,8 @@ private:
 
 	opaque_private* prv;
 	base_socket* sck;
+
+	uint64_t iMessageCnt = 0;
+	uint64_t iLastMessageId = 0;
 };
 

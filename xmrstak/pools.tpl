@@ -28,7 +28,7 @@ POOLCONF],
  *    dero
  *    dinastycoin
  *    edollar
- *    electroneum
+ *    electroneum (POW change to CN v7)
  *    graft
  *    haven
  *    intense
@@ -40,9 +40,10 @@ POOLCONF],
  *    masari
  *    monero7 (use this for Monero's new PoW)
  *    ombre
- *    sumokoin (automatic switch with block version 3 to cryptonight_heavy)
- *    stellite
+ *    ryo (RYO/SUMO with CN-Heavy)
  *    solace
+ *    sumokoin (CN algo - old pow for ASICs)
+ *    stellite
  *    turtlecoin
  *    ultranote
  *
@@ -57,7 +58,6 @@ POOLCONF],
  *    cryptonight_v7
  *    # 4MiB scratchpad memory
  *    cryptonight_heavy
- *    cryptonight_v7_stellite
  */
 
 "currency" : "CURRENCY",
