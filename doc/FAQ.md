@@ -11,6 +11,7 @@
 * [How can I mine Monero](#how-can-i-mine-monero)
 * [Why is Monero named monero7](#why-is-monero-named-monero7)
 * [Which currency must be chosen if my fork coin is not listed](#which-currency-must-be-chosen-if-my-fork-coin-is-not-listed)
+* [Internal compiler error: Killed (program cc1plus)](#internal-compiler-error)
 
 ## "Obtaining SeLockMemoryPrivilege failed."
 
@@ -87,3 +88,7 @@ To avoid configuration conflicts after the hard fork of Monero to the new POW wi
 
 If your coin you want to mine is not listed please check the documentation of the coin and try to find out if `cryptonight` or `cryptonight-lite` is the used algorithm.
 Select one of these generic coin algorithms.
+
+## Internal compiler error
+
+Seeing `g++: internal compiler error: Killed (program cc1plus)` is probably related to not enough RAM to compile. 1 Gb RAM should be enough (it is on clean Ubuntu 16.04).
