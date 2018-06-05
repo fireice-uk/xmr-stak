@@ -26,7 +26,7 @@ POOLCONF],
  *    edollar
  *    electroneum
  *    graft
- *    haven
+ *    haven (automatic switch with block version 3 to cryptonight_haven)
  *    intense
  *    ipbc
  *    karbo
