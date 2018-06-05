@@ -555,6 +555,7 @@ void executor::ex_main()
 	switch(jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgo())
 	{
 	case cryptonight_heavy:
+	case cryptonight_haven:
 		if(dev_tls)
 			pools.emplace_front(0, "donate.xmr-stak.net:8888", "", "", "", 0.0, true, true, "", true);
 		else

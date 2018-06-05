@@ -180,7 +180,7 @@ void cn_explode_scratchpad(const __m128i* input, __m128i* output)
 	xin6 = _mm_load_si128(input + 10);
 	xin7 = _mm_load_si128(input + 11);
 
-	if(ALGO == cryptonight_heavy)
+	if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven)
 	{
 		for(size_t i=0; i < 16; i++)
 		{
@@ -324,11 +324,11 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 			aes_round(k9, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
 		}
 
-		if(ALGO == cryptonight_heavy)
+		if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven)
 			mix_and_propagate(xout0, xout1, xout2, xout3, xout4, xout5, xout6, xout7);
 	}
 
-	if(ALGO == cryptonight_heavy)
+	if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven)
 	{
 		for (size_t i = 0; i < MEM / sizeof(__m128i); i += 8)
 		{
@@ -375,7 +375,7 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 				aes_round(k9, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
 			}
 
-			if(ALGO == cryptonight_heavy)
+			if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven)
 				mix_and_propagate(xout0, xout1, xout2, xout3, xout4, xout5, xout6, xout7);
 		}
 
@@ -540,6 +540,15 @@ void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_c
 			((int64_t*)&l0[idx0 & MASK])[0] = n ^ q;
 			idx0 = d ^ q;
 		}
+		else if(ALGO == cryptonight_haven)
+		{
+			int64_t n  = ((int64_t*)&l0[idx0 & MASK])[0];
+			int32_t d  = ((int32_t*)&l0[idx0 & MASK])[2];
+			int64_t q = n / (d | 0x5);
+
+			((int64_t*)&l0[idx0 & MASK])[0] = n ^ q;
+			idx0 = (~d) ^ q;
+		}
 	}
 
 	// Optim - 90% time boundary
@@ -671,6 +680,15 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 			((int64_t*)&l0[idx0 & MASK])[0] = n ^ q;
 			idx0 = d ^ q;
 		}
+		else if(ALGO == cryptonight_haven)
+		{
+			int64_t n  = ((int64_t*)&l0[idx0 & MASK])[0];
+			int32_t d  = ((int32_t*)&l0[idx0 & MASK])[2];
+			int64_t q = n / (d | 0x5);
+
+			((int64_t*)&l0[idx0 & MASK])[0] = n ^ q;
+			idx0 = (~d) ^ q;
+		}
 
 		if(PREFETCH)
 			_mm_prefetch((const char*)&l0[idx0 & MASK], _MM_HINT_T0);
@@ -706,6 +724,15 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 
 			((int64_t*)&l1[idx1 & MASK])[0] = n ^ q;
 			idx1 = d ^ q;
+		}
+		else if(ALGO == cryptonight_haven)
+		{
+			int64_t n  = ((int64_t*)&l1[idx1 & MASK])[0];
+			int32_t d  = ((int32_t*)&l1[idx1 & MASK])[2];
+			int64_t q = n / (d | 0x5);
+
+			((int64_t*)&l1[idx1 & MASK])[0] = n ^ q;
+			idx1 = (~d) ^ q;
 		}
 
 		if(PREFETCH)
@@ -768,6 +795,14 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 		int64_t q = n / (d | 0x5); \
 		((int64_t*)&l[idx & MASK])[0] = n ^ q; \
 		idx = d ^ q; \
+	} \
+	else if(ALGO == cryptonight_haven) \
+	{ \
+		int64_t n  = ((int64_t*)&l[idx & MASK])[0]; \
+		int32_t d  = ((int32_t*)&l[idx & MASK])[2]; \
+		int64_t q = n / (d | 0x5); \
+		((int64_t*)&l[idx & MASK])[0] = n ^ q; \
+		idx = (~d) ^ q; \
 	}
 
 #define CONST_INIT(ctx, n) \
