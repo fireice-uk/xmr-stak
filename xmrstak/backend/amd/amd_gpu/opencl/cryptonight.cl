@@ -553,8 +553,8 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
 __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states, ulong Threads
-// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite
-#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7)
+// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_fast
+#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8)
 , __global ulong *input
 #endif
 )
@@ -574,8 +574,8 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 	}
 
 	barrier(CLK_LOCAL_MEM_FENCE);
-// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite
-#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7)
+// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_fast
+#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8)
     uint2 tweak1_2;
 #endif
 	uint4 b_x;
@@ -599,8 +599,8 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 		b[1] = states[3] ^ states[7];
 
 		b_x = ((uint4 *)b)[0];
-// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite
-#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7)
+// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_fast
+#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8)
 		tweak1_2 = as_uint2(input[4]);
 		tweak1_2.s0 >>= 24;
 		tweak1_2.s0 |= tweak1_2.s1 << 8;
@@ -627,8 +627,8 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			((uint4 *)c)[0] = AES_Round(AES0, AES1, AES2, AES3, ((uint4 *)c)[0], ((uint4 *)a)[0]);
 
 			b_x ^= ((uint4 *)c)[0];
-// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite
-#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7)
+// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_fast
+#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8)
 			uint table = 0x75310U;
 // cryptonight_stellite
 #	if(ALGO == 7)
@@ -646,8 +646,8 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			a[1] += c[0] * as_ulong2(tmp).s0;
 			a[0] += mul_hi(c[0], as_ulong2(tmp).s0);
 
-// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite
-#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7)
+// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_fast
+#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8)
 
 #	if(ALGO == 6)
 			uint2 ipbc_tmp = tweak1_2 ^ ((uint2 *)&(a[0]))[0];
