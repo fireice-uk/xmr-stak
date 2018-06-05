@@ -12,7 +12,8 @@ enum xmrstak_algo
 	cryptonight_heavy = 4,
 	cryptonight_aeon = 5,
 	cryptonight_ipbc = 6, // equal to cryptonight_aeon with a small tweak in the miner code
-	cryptonight_stellite = 7 //equal to cryptonight_monero but with one tiny change
+	cryptonight_stellite = 7, //equal to cryptonight_monero but with one tiny change
+	cryptonight_haven = 8 // // equal to cryptonight_heavy with a small tweak
 };
 
 // define aeon settings
@@ -52,6 +53,9 @@ inline constexpr size_t cn_select_memory<cryptonight_ipbc>() { return CRYPTONIGH
 template<>
 inline constexpr size_t cn_select_memory<cryptonight_stellite>() { return CRYPTONIGHT_MEMORY; }
 
+template<>
+inline constexpr size_t cn_select_memory<cryptonight_haven>() { return CRYPTONIGHT_HEAVY_MEMORY; }
+
 
 inline size_t cn_select_memory(xmrstak_algo algo)
 {
@@ -66,6 +70,7 @@ inline size_t cn_select_memory(xmrstak_algo algo)
 	case cryptonight_lite:
 		return CRYPTONIGHT_LITE_MEMORY;
 	case cryptonight_heavy:
+	case cryptonight_haven:
 		return CRYPTONIGHT_HEAVY_MEMORY;
 	default:
 		return 0;
@@ -96,6 +101,9 @@ inline constexpr uint32_t cn_select_mask<cryptonight_ipbc>() { return CRYPTONIGH
 template<>
 inline constexpr uint32_t cn_select_mask<cryptonight_stellite>() { return CRYPTONIGHT_MASK; }
 
+template<>
+inline constexpr uint32_t cn_select_mask<cryptonight_haven>() { return CRYPTONIGHT_HEAVY_MASK; }
+
 inline size_t cn_select_mask(xmrstak_algo algo)
 {
 	switch(algo)
@@ -109,6 +117,7 @@ inline size_t cn_select_mask(xmrstak_algo algo)
 	case cryptonight_lite:
 		return CRYPTONIGHT_LITE_MASK;
 	case cryptonight_heavy:
+	case cryptonight_haven:
 		return CRYPTONIGHT_HEAVY_MASK;
 	default:
 		return 0;
@@ -139,6 +148,9 @@ inline constexpr uint32_t cn_select_iter<cryptonight_ipbc>() { return CRYPTONIGH
 template<>
 inline constexpr uint32_t cn_select_iter<cryptonight_stellite>() { return CRYPTONIGHT_ITER; }
 
+template<>
+inline constexpr uint32_t cn_select_iter<cryptonight_haven>() { return CRYPTONIGHT_HEAVY_ITER; }
+
 inline size_t cn_select_iter(xmrstak_algo algo)
 {
 	switch(algo)
@@ -152,6 +164,7 @@ inline size_t cn_select_iter(xmrstak_algo algo)
 	case cryptonight_lite:
 		return CRYPTONIGHT_LITE_ITER;
 	case cryptonight_heavy:
+	case cryptonight_haven:
 		return CRYPTONIGHT_HEAVY_ITER;
 	default:
 		return 0;
