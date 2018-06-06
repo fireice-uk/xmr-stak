@@ -180,7 +180,7 @@ void cn_explode_scratchpad(const __m128i* input, __m128i* output)
 	xin6 = _mm_load_si128(input + 10);
 	xin7 = _mm_load_si128(input + 11);
 
-	if(ALGO == cryptonight_heavy)
+	if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven)
 	{
 		for(size_t i=0; i < 16; i++)
 		{
@@ -324,11 +324,11 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 			aes_round(k9, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
 		}
 
-		if(ALGO == cryptonight_heavy)
+		if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven)
 			mix_and_propagate(xout0, xout1, xout2, xout3, xout4, xout5, xout6, xout7);
 	}
 
-	if(ALGO == cryptonight_heavy)
+	if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven)
 	{
 		for (size_t i = 0; i < MEM / sizeof(__m128i); i += 8)
 		{
@@ -375,7 +375,7 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 				aes_round(k9, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
 			}
 
-			if(ALGO == cryptonight_heavy)
+			if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven)
 				mix_and_propagate(xout0, xout1, xout2, xout3, xout4, xout5, xout6, xout7);
 		}
 
@@ -531,11 +531,11 @@ void cryptonight_hash(const void* input, size_t len, void* output, cryptonight_c
 
 		idx0 = al0;
 
-		if(ALGO == cryptonight_heavy)
+		if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven)
 		{
 			int64_t n  = ((int64_t*)&l0[idx0 & MASK])[0];
 			int32_t d  = ((int32_t*)&l0[idx0 & MASK])[2];
-			int64_t q = n / (d | 0x5);
+			int64_t q = ALGO == cryptonight_haven ? n / (d | 0x7) : n / (d | 0x5);
 
 			((int64_t*)&l0[idx0 & MASK])[0] = n ^ q;
 			idx0 = d ^ q;
@@ -662,11 +662,11 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 		axl0 ^= cl;
 		idx0 = axl0;
 
-		if(ALGO == cryptonight_heavy)
+		if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven)
 		{
 			int64_t n  = ((int64_t*)&l0[idx0 & MASK])[0];
 			int32_t d  = ((int32_t*)&l0[idx0 & MASK])[2];
-			int64_t q = n / (d | 0x5);
+			int64_t q = ALGO == cryptonight_haven ? n / (d | 0x7) : n / (d | 0x5);
 
 			((int64_t*)&l0[idx0 & MASK])[0] = n ^ q;
 			idx0 = d ^ q;
@@ -698,11 +698,11 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 		axl1 ^= cl;
 		idx1 = axl1;
 
-		if(ALGO == cryptonight_heavy)
+		if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven)
 		{
 			int64_t n  = ((int64_t*)&l1[idx1 & MASK])[0];
 			int32_t d  = ((int32_t*)&l1[idx1 & MASK])[2];
-			int64_t q = n / (d | 0x5);
+			int64_t q = ALGO == cryptonight_haven ? n / (d | 0x7) : n / (d | 0x5);
 
 			((int64_t*)&l1[idx1 & MASK])[0] = n ^ q;
 			idx1 = d ^ q;
@@ -761,11 +761,11 @@ void cryptonight_double_hash(const void* input, size_t len, void* output, crypto
 		_mm_store_si128(ptr, a);\
 	a = _mm_xor_si128(a, b); \
 	idx = _mm_cvtsi128_si64(a);	\
-	if(ALGO == cryptonight_heavy) \
+	if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven) \
 	{ \
 		int64_t n  = ((int64_t*)&l[idx & MASK])[0]; \
 		int32_t d  = ((int32_t*)&l[idx & MASK])[2]; \
-		int64_t q = n / (d | 0x5); \
+		int64_t q = ALGO == cryptonight_haven ? n / (d | 0x7) : n / (d | 0x5); \
 		((int64_t*)&l[idx & MASK])[0] = n ^ q; \
 		idx = d ^ q; \
 	}
