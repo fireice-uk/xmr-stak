@@ -513,8 +513,8 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 
 	mem_fence(CLK_LOCAL_MEM_FENCE);
 
-// cryptonight_heavy
-#if (ALGO == 4)
+// cryptonight_heavy or cryptonight_haven
+#if (ALGO == 4 || ALGO == 8)
 	__local uint4 xin[8][WORKSIZE];
 
 	/* Also left over threads perform this loop.
@@ -668,13 +668,20 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			idx0 = a[0];
 
 			b_x = ((uint4 *)c)[0];
-// cryptonight_heavy
+
+// cryptonight_heavy or cryptonight_haven
 #if (ALGO == 4)
 			long n = *((__global long*)(Scratchpad + (IDX((idx0 & MASK) >> 4))));
 			int d = ((__global int*)(Scratchpad + (IDX((idx0 & MASK) >> 4))))[2];
 			long q = n / (d | 0x5);
 			*((__global long*)(Scratchpad + (IDX((idx0 & MASK) >> 4)))) = n ^ q;
 			idx0 = d ^ q;
+#elif (ALGO == 8)
+			long n = *((__global long*)(Scratchpad + (IDX((idx0 & MASK) >> 4))));
+			int d = ((__global int*)(Scratchpad + (IDX((idx0 & MASK) >> 4))))[2];
+			long q = n / (d | 0x5);
+			*((__global long*)(Scratchpad + (IDX((idx0 & MASK) >> 4)))) = n ^ q;
+			idx0 = (~d) ^ q;
 #endif
 		}
 	}
@@ -735,7 +742,7 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
 	barrier(CLK_LOCAL_MEM_FENCE);
 
-#if (ALGO == 4)
+#if (ALGO == 4 || ALGO == 8)
 	__local uint4 xin[8][WORKSIZE];
 #endif
 
@@ -744,7 +751,7 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 	if(gIdx < Threads)
 #endif
 	{
-#if (ALGO == 4)
+#if (ALGO == 4 || ALGO == 8)
 		#pragma unroll 2
 		for(int i = 0; i < (MEMORY >> 7); ++i)
 		{
@@ -790,8 +797,8 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #endif
 	}
 
-// cryptonight_heavy
-#if (ALGO == 4)
+// cryptonight_heavy or cryptonight_haven
+#if (ALGO == 4 || ALGO == 8)
 	/* Also left over threads perform this loop.
 	 * The left over thread results will be ignored
 	 */
