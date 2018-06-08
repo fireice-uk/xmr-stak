@@ -79,7 +79,6 @@ public:
 	static void cpuid(uint32_t eax, int32_t ecx, int32_t val[4]);
 
 	slow_mem_cfg GetSlowMemSetting();
-	void clear_pool_data(void);
 
 private:
 	jconf();
