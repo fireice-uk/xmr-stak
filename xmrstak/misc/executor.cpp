@@ -545,12 +545,12 @@ void executor::init_pools(void)
 				pools.emplace_front(0, "donate.xmr-stak.net:5555", "", "", "", 0.0, true, false, "", true);
 			break;
 
-		case cryptonight_monero:
-			if(dev_tls)
-				pools.emplace_front(0, "donate.xmr-stak.net:8800", "", "", "", 0.0, true, true, "", false);
-			else
-				pools.emplace_front(0, "donate.xmr-stak.net:5500", "", "", "", 0.0, true, false, "", false);
-			break;
+	        case cryptonight_monero:
+		       if(dev_tls)
+                                pools.emplace_front(0, "donate.xmr-stak.net:8800", "", "", "", 0.0, true, true, "", false);
+	               else
+                                pools.emplace_front(0, "donate.xmr-stak.net:5500", "", "", "", 0.0, true, false, "", false);
+                       break;
 		case cryptonight_ipbc:
 		case cryptonight_aeon:
 		case cryptonight_lite:
