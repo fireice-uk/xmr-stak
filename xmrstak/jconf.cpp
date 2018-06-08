@@ -272,11 +272,6 @@ void jconf::cpuid(uint32_t eax, int32_t ecx, int32_t val[4])
 #endif
 }
 
-void jconf::clear_pool_data(void)
-{
-	memset((void*)prv->configValues[aPoolList],0,sizeof(*prv->configValues[aPoolList]));
-}
-
 bool jconf::check_cpu_features()
 {
 	constexpr int AESNI_BIT = 1 << 25;
