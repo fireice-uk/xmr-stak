@@ -87,7 +87,6 @@ private:
 
 	bool check_cpu_features();
 	struct opaque_private;
-    
 	opaque_private* prv;
 
 	bool bHaveAes;
