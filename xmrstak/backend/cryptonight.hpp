@@ -13,7 +13,7 @@ enum xmrstak_algo
 	cryptonight_aeon = 5,
 	cryptonight_ipbc = 6, // equal to cryptonight_aeon with a small tweak in the miner code
 	cryptonight_stellite = 7, //equal to cryptonight_monero but with one tiny change
-	cryptonight_haven = 8 // // equal to cryptonight_heavy with a small tweak
+	cryptonight_haven = 9 // // equal to cryptonight_heavy with a small tweak
 };
 
 // define aeon settings

@@ -45,6 +45,7 @@ POOLCONF],
  *    cryptonight
  *    cryptonight_v7
  *    # 4MiB scratchpad memory
+ *    cryptonight_haven
  *    cryptonight_heavy
  */
 

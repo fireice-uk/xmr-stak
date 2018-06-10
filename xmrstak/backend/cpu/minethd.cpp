@@ -378,7 +378,7 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, xmr
 		algv = 6;
 		break;
 	case cryptonight_haven:
-		algv = 7;
+		algv = 8;
 		break;
 	default:
 		algv = 2;
@@ -563,7 +563,7 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		algv = 6;
 		break;
 	case cryptonight_haven:
-		algv = 7;
+		algv = 8;
 		break;
 	default:
 		algv = 2;
