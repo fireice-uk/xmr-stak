@@ -36,6 +36,7 @@
 #include "xmrstak/donate-level.hpp"
 #include "xmrstak/version.hpp"
 #include "xmrstak/http/webdesign.hpp"
+#include "xmrstak/params.hpp"
 
 #include <thread>
 #include <string>
@@ -487,26 +488,8 @@ void disable_sigpipe()
 inline void disable_sigpipe() {}
 #endif
 
-void executor::ex_main()
-{
-	disable_sigpipe();
-
-	assert(1000 % iTickTime == 0);
-
-	xmrstak::miner_work oWork = xmrstak::miner_work();
-
-	// \todo collect all backend threads
-	pvThreads = xmrstak::BackendConnector::thread_starter(oWork);
-
-	if(pvThreads->size()==0)
-	{
-		printer::inst()->print_msg(L1, "ERROR: No miner backend enabled.");
-		win_exit();
-	}
-
-	telem = new xmrstak::telemetry(pvThreads->size());
-
-	set_timestamp();
+void executor::init_pools(void)
+{	
 	size_t pc = jconf::inst()->GetPoolCount();
 	bool dev_tls = true;
 	bool already_have_cli_pool = false;
@@ -539,6 +522,7 @@ void executor::ex_main()
 		else
 			pools.emplace_back(i+1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sRigId, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
 	}
+	
 
 	if(!xmrstak::params::inst().poolURL.empty() && !already_have_cli_pool)
 	{
@@ -551,41 +535,79 @@ void executor::ex_main()
 
 		pools.emplace_back(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolRigid.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
 	}
-
+	
 	switch(jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgo())
 	{
-	case cryptonight_heavy:
-		if(dev_tls)
-			pools.emplace_front(0, "donate.xmr-stak.net:8888", "", "", "", 0.0, true, true, "", true);
-		else
-			pools.emplace_front(0, "donate.xmr-stak.net:5555", "", "", "", 0.0, true, false, "", true);
-		break;
+		case cryptonight_heavy:
+			if(dev_tls)
+				pools.emplace_front(0, "donate.xmr-stak.net:8888", "", "", "", 0.0, true, true, "", true);
+			else
+				pools.emplace_front(0, "donate.xmr-stak.net:5555", "", "", "", 0.0, true, false, "", true);
+			break;
 
-	case cryptonight_monero:
-		if(dev_tls)
-			pools.emplace_front(0, "donate.xmr-stak.net:8800", "", "", "", 0.0, true, true, "", false);
-		else
-			pools.emplace_front(0, "donate.xmr-stak.net:5500", "", "", "", 0.0, true, false, "", false);
-		break;
-	case cryptonight_ipbc:
-	case cryptonight_aeon:
-	case cryptonight_lite:
-		if(dev_tls)
-			pools.emplace_front(0, "donate.xmr-stak.net:7777", "", "", "", 0.0, true, true, "", true);
-		else
-			pools.emplace_front(0, "donate.xmr-stak.net:4444", "", "", "", 0.0, true, false, "", true);
-		break;
+	        case cryptonight_monero:
+		       if(dev_tls)
+                                pools.emplace_front(0, "donate.xmr-stak.net:8800", "", "", "", 0.0, true, true, "", false);
+	               else
+                                pools.emplace_front(0, "donate.xmr-stak.net:5500", "", "", "", 0.0, true, false, "", false);
+                       break;
+		case cryptonight_ipbc:
+		case cryptonight_aeon:
+		case cryptonight_lite:
+			if(dev_tls)
+				pools.emplace_front(0, "donate.xmr-stak.net:7777", "", "", "", 0.0, true, true, "", true);
+			else
+				pools.emplace_front(0, "donate.xmr-stak.net:4444", "", "", "", 0.0, true, false, "", true);
+			break;
 
-	case cryptonight:
-		if(dev_tls)
-			pools.emplace_front(0, "donate.xmr-stak.net:6666", "", "", "", 0.0, true, true, "", false);
-		else
-			pools.emplace_front(0, "donate.xmr-stak.net:3333", "", "", "", 0.0, true, false, "", false);
-		break;
+		case cryptonight:
+			if(dev_tls)
+				pools.emplace_front(0, "donate.xmr-stak.net:6666", "", "", "", 0.0, true, true, "", false);
+			else
+				pools.emplace_front(0, "donate.xmr-stak.net:3333", "", "", "", 0.0, true, false, "", false);
+			break;
 
-	default:
-		break;
+		default:
+			break;
 	}
+	
+}
+
+
+void executor::on_pools_reload(void)
+{
+	if(!jconf::inst()->parse_config(xmrstak::params::inst().configFile.c_str(), xmrstak::params::inst().configFilePools.c_str()))
+		printer::inst()->print_msg(L1, "ERROR: Failed to reload pools");  
+	else
+	{
+		pools.clear();
+		init_pools();
+		printer::inst()->print_msg(L1, "Pool list updated");
+	}
+}
+
+
+void executor::ex_main()
+{
+	disable_sigpipe();
+
+	assert(1000 % iTickTime == 0);
+
+	xmrstak::miner_work oWork = xmrstak::miner_work();
+
+	// \todo collect all backend threads
+	pvThreads = xmrstak::BackendConnector::thread_starter(oWork);
+
+	if(pvThreads->size()==0)
+	{
+		printer::inst()->print_msg(L1, "ERROR: No miner backend enabled.");
+		win_exit();
+	}
+
+	telem = new xmrstak::telemetry(pvThreads->size());
+
+	set_timestamp();
+	init_pools();
 
 	ex_event ev;
 	std::thread clock_thd(&executor::ex_clock_thd, this);
@@ -600,7 +622,7 @@ void executor::ex_main()
 	if(jconf::inst()->GetVerboseLevel() >= 4)
 		push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 
-	size_t cnt = 0;
+	size_t cnt = 0,i=0;
 	while (true)
 	{
 		ev = oEventQ.pop();
@@ -677,6 +699,10 @@ void executor::ex_main()
 			print_report(EV_USR_HASHRATE);
 			push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 			break;
+			
+	    case EV_USR_POOLRELOAD:
+		    on_pools_reload();
+		    break;
 
 		case EV_INVALID_VAL:
 		default:
