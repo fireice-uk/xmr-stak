@@ -26,7 +26,7 @@ POOLCONF],
  *    edollar
  *    electroneum
  *    graft
- *    haven
+ *    haven (automatic switch with block version 3 to cryptonight_haven)
  *    intense
  *    ipbc
  *    karbo
@@ -45,6 +45,7 @@ POOLCONF],
  *    cryptonight
  *    cryptonight_v7
  *    # 4MiB scratchpad memory
+ *    cryptonight_haven
  *    cryptonight_heavy
  */
 
