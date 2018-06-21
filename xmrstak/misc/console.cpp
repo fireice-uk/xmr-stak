@@ -190,18 +190,10 @@ void printer::print_msg(verbosity verbose, const char* fmt, ...)
 	buf[bpos] = '\n';
 	buf[bpos+1] = '\0';
 
-	std::unique_lock<std::mutex> lck(print_mutex);
-	fputs(buf, stdout);
-	fflush(stdout);
-
-	if(logfile != nullptr)
-	{
-		fputs(buf, logfile);
-		fflush(logfile);
-	}
+    print_str(buf);
 }
 
-void printer::print_str(const char* str)
+inline void printer::print_str(const char* str)
 {
 	std::unique_lock<std::mutex> lck(print_mutex);
 	fputs(str, stdout);
