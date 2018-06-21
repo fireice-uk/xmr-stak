@@ -52,7 +52,7 @@ using namespace rapidjson;
  */
 enum configEnum {
 	aPoolList, sCurrency, bTlsSecureAlgo, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, bPrintMotd, iAutohashTime,
-	bFlushStdout, bDaemonMode, sOutputFile, iHttpdPort, sHttpLogin, sHttpPass, bPreferIpv4, bAesOverride, sUseSlowMem
+	bDaemonMode, sOutputFile, iHttpdPort, sHttpLogin, sHttpPass, bPreferIpv4, bAesOverride, sUseSlowMem
 };
 
 struct configVal {
@@ -73,7 +73,6 @@ configVal oConfigValues[] = {
 	{ iVerboseLevel, "verbose_level", kNumberType },
 	{ bPrintMotd, "print_motd", kTrueType },
 	{ iAutohashTime, "h_print_time", kNumberType },
-	{ bFlushStdout, "flush_stdout", kTrueType},
 	{ bDaemonMode, "daemon_mode", kTrueType },
 	{ sOutputFile, "output_file", kStringType },
 	{ iHttpdPort, "httpd_port", kNumberType },
@@ -606,16 +605,6 @@ bool jconf::parse_config(const char* sFilename, const char* sFilenamePools)
 		return false;
 	}
 #endif // _WIN32
-
-	if (prv->configValues[bFlushStdout]->IsBool())
-	{
-		bool bflush = prv->configValues[bFlushStdout]->GetBool();
-		printer::inst()->set_flush_stdout(bflush);
-		if (bflush)
-		{
-			printer::inst()->print_msg(L0, "Flush stdout forced.");
-		}
-	}
 
 	std::string ctmp = GetMiningCoin();
 	std::transform(ctmp.begin(), ctmp.end(), ctmp.begin(), ::tolower);
