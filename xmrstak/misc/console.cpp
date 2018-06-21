@@ -156,6 +156,8 @@ printer::printer()
 {
 	verbose_level = LINF;
 	logfile = nullptr;
+	// Windows doesn't do line buffering, so it needs to enable full buffering and manually flush the buffer
+	setvbuf(stdout, NULL, _IOFBF, BUFSIZ);
 }
 
 bool printer::open_logfile(const char* file)
@@ -193,7 +195,7 @@ void printer::print_msg(verbosity verbose, const char* fmt, ...)
     print_str(buf);
 }
 
-inline void printer::print_str(const char* str)
+void printer::print_str(const char* str)
 {
 	std::unique_lock<std::mutex> lck(print_mutex);
 	fputs(str, stdout);

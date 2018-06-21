@@ -36,7 +36,7 @@ public:
 
 	inline void set_verbose_level(size_t level) { verbose_level = (verbosity)level; }
 	void print_msg(verbosity verbose, const char* fmt, ...);
-	inline void print_str(const char* str);
+	void print_str(const char* str);
 	bool open_logfile(const char* file);
 
 private:
