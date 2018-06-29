@@ -22,10 +22,13 @@ R"===(
  * A filled out configuration should look like this:
  * "gpu_threads_conf" :
  * [
- *     { "index" : 0, "threads" : 17, "blocks" : 60, "bfactor" : 0, "bsleep" :  0, 
+ *     { "index" : 0, "threads" : 17, "blocks" : 60, "bfactor" : 0, "bsleep" :  0,
  *       "affine_to_cpu" : false, "sync_mode" : 3,
  *     },
  * ],
+ * If you do not wish to mine with your nVidia GPU(s) then use:
+ * "gpu_threads_conf" :
+ * null,
  */
 
 "gpu_threads_conf" :

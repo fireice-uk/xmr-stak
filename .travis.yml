@@ -55,6 +55,22 @@ matrix:
         - CMAKE_C_COMPILER=gcc-6
         - XMRSTAK_CMAKE_FLAGS="-DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF"
 
+    # test with disabled HWLOC, MICROHTTPD, OpenSSL and no accelerators
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - *default_packages
+            - gcc-6
+            - g++-6
+      env:
+        - CMAKE_CXX_COMPILER=g++-6
+        - CMAKE_C_COMPILER=gcc-6
+        - XMRSTAK_CMAKE_FLAGS="-DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF -DHWLOC_ENABLE=OFF -DOpenSSL_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF"
+
     - os: linux
       compiler: gcc
       addons:
@@ -77,9 +93,8 @@ matrix:
 
 before_install:
   - . CI/checkPRBranch
-  - if [ $TRAVIS_OS_NAME = osx ]; then
+  - if [ $TRAVIS_OS_NAME = osx ] ; then
       brew update;
-      brew tap homebrew/science;
     fi
   - export PATH=$CUDA_ROOT/bin:$PATH
 

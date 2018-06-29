@@ -1,25 +1,15 @@
 #pragma once
 
-#include "miner_work.hpp"
+#include "xmrstak/backend/miner_work.hpp"
 #include "xmrstak/misc/environment.hpp"
 #include "xmrstak/misc/console.hpp"
+#include "xmrstak/backend/pool_data.hpp"
+#include "xmrstak/cpputil/read_write_lock.h"
 
 #include <atomic>
 
-constexpr static size_t invalid_pool_id = (-1);
-
 namespace xmrstak
 {
-
-struct pool_data
-{
-	uint32_t iSavedNonce;
-	size_t   pool_id;
-
-	pool_data() : iSavedNonce(0), pool_id(invalid_pool_id)
-	{
-	}
-};
 
 struct globalStates
 {
@@ -42,6 +32,8 @@ struct globalStates
 			nonce = iGlobalNonce.fetch_add(reserve_count);
 	}
 
+	void consume_work( miner_work& threadWork, uint64_t& currentJobId);
+
 	miner_work oGlobalWork;
 	std::atomic<uint64_t> iGlobalJobNo;
 	std::atomic<uint64_t> iConsumeCnt;
@@ -50,9 +42,11 @@ struct globalStates
 	size_t pool_id = invalid_pool_id;
 
 private:
-	globalStates() : iThreadCount(0)
+	globalStates() : iThreadCount(0), iGlobalJobNo(0), iConsumeCnt(0)
 	{
 	}
+
+	::cpputil::RWLock jobLock;
 };
 
-} // namepsace xmrstak
+} // namespace xmrstak

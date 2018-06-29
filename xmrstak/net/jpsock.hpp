@@ -2,6 +2,7 @@
 
 #include "xmrstak/backend/iBackend.hpp"
 #include "msgstruct.hpp"
+#include "xmrstak/jconf.hpp"
 
 #include <mutex>
 #include <atomic>
@@ -14,7 +15,7 @@
 	- Parsing or connection error
 	Those are fatal errors (we drop the connection if we encounter them).
 	After they are constructed from const char* strings from various places.
-	(can be from read-only mem), we passs them in an exectutor message
+	(can be from read-only mem), we pass them in an executor message
 	once the recv thread expires.
 	- Call error
 	This error happens when the "server says no". Usually because the job was
@@ -27,21 +28,21 @@ class base_socket;
 class jpsock
 {
 public:
-	jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sPassword, double pool_weight, bool dev_pool, bool tls, const char* tls_fp, bool nicehash);
+	jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sRigId, const char* sPassword, double pool_weight, bool dev_pool, bool tls, const char* tls_fp, bool nicehash);
 	~jpsock();
 
 	bool connect(std::string& sConnectError);
 	void disconnect(bool quiet = false);
 
 	bool cmd_login();
-	bool cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult, xmrstak::iBackend* bend, bool algo_full_cn);
+	bool cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult, const char* backend_name, uint64_t backend_hashcount, uint64_t total_hashcount, xmrstak_algo algo);
 
 	static bool hex2bin(const char* in, unsigned int len, unsigned char* out);
 	static void bin2hex(const unsigned char* in, unsigned int len, char* out);
 
-	inline double get_pool_weight(bool gross_weight) 
-	{ 
-		double ret = pool_weight; 
+	inline double get_pool_weight(bool gross_weight)
+	{
+		double ret = pool_weight;
 		if(gross_weight && bRunning)
 			ret += 10.0;
 		if(gross_weight && bLoggedIn)
@@ -62,6 +63,7 @@ public:
 	bool get_pool_motd(std::string& strin);
 
 	std::string&& get_call_error();
+	bool have_call_error() { return call_error; }
 	bool have_sock_error() { return bHaveSocketError; }
 
 	inline static uint64_t t32_to_t64(uint32_t t) { return 0xFFFFFFFFFFFFFFFFULL / (0xFFFFFFFFULL / ((uint64_t)t)); }
@@ -82,6 +84,7 @@ public:
 private:
 	std::string net_addr;
 	std::string usr_login;
+	std::string usr_rigid;
 	std::string usr_pass;
 	std::string tls_fp;
 
@@ -105,6 +108,7 @@ private:
 	std::atomic<bool> bRunning;
 	std::atomic<bool> bLoggedIn;
 	std::atomic<bool> quiet_close;
+	std::atomic<bool> call_error;
 
 	uint8_t* bJsonRecvMem;
 	uint8_t* bJsonParseMem;
@@ -120,8 +124,8 @@ private:
 	void jpsock_thread();
 	bool jpsock_thd_main();
 	bool process_line(char* line, size_t len);
-	bool process_pool_job(const opq_json_val* params);
-	bool cmd_ret_wait(const char* sPacket, opq_json_val& poResult);
+	bool process_pool_job(const opq_json_val* params, const uint64_t messageId);
+	bool cmd_ret_wait(const char* sPacket, opq_json_val& poResult, uint64_t& messageId);
 
 	char sMinerId[64];
 	std::atomic<uint64_t> iJobDiff;
@@ -138,5 +142,8 @@ private:
 
 	opaque_private* prv;
 	base_socket* sck;
+
+	uint64_t iMessageCnt = 0;
+	uint64_t iLastMessageId = 0;
 };
 

@@ -95,7 +95,7 @@ __device__ void cn_blake_update(blake_state *  S, const uint8_t *  data, uint64_
 	uint32_t left = S->buflen >> 3;
 	uint32_t fill = 64 - left;
 
-	if (left && (((datalen >> 3) & 0x3F) >= fill)) 
+	if (left && (((datalen >> 3) & 0x3F) >= fill))
 	{
 		memcpy((void *) (S->buf + left), (void *) data, fill);
 		S->t[0] += 512;
@@ -106,7 +106,7 @@ __device__ void cn_blake_update(blake_state *  S, const uint8_t *  data, uint64_
 		left = 0;
 	}
 
-	while (datalen >= 512) 
+	while (datalen >= 512)
 	{
 		S->t[0] += 512;
 		if (S->t[0] == 0) S->t[1]++;
@@ -115,12 +115,12 @@ __device__ void cn_blake_update(blake_state *  S, const uint8_t *  data, uint64_
 		datalen -= 512;
 	}
 
-	if (datalen > 0) 
+	if (datalen > 0)
 	{
 		memcpy((void *) (S->buf + left), (void *) data, datalen >> 3);
 		S->buflen = (left << 3) + datalen;
 	}
-	else 
+	else
 	{
 		S->buflen = 0;
 	}
@@ -128,7 +128,7 @@ __device__ void cn_blake_update(blake_state *  S, const uint8_t *  data, uint64_
 
 __device__ void cn_blake_final(blake_state *  S, uint8_t *  digest)
 {
-	const uint8_t padding[] = 
+	const uint8_t padding[] =
 	{
 		0x80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
@@ -141,20 +141,20 @@ __device__ void cn_blake_final(blake_state *  S, uint8_t *  digest)
 	U32TO8(msglen + 0, hi);
 	U32TO8(msglen + 4, lo);
 
-	if (S->buflen == 440) 
+	if (S->buflen == 440)
 	{
 		S->t[0] -= 8;
 		cn_blake_update(S, &pa, 8);
-	} 
-	else 
+	}
+	else
 	{
-		if (S->buflen < 440) 
+		if (S->buflen < 440)
 		{
 			if (S->buflen == 0) S->nullt = 1;
 			S->t[0] -= 440 - S->buflen;
 			cn_blake_update(S, padding, 440 - S->buflen);
 		}
-		else 
+		else
 		{
 			S->t[0] -= 512 - S->buflen;
 			cn_blake_update(S, padding, 512 - S->buflen);
