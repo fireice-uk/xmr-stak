@@ -1,0 +1,5 @@
+xmrstak/backend/cpu/crypto
+xmrstak/rapidjson
+xmrstak/rapidjson/error
+xmrstak/rapidjson/internal
+xmrstak/rapidjson/msinttypes

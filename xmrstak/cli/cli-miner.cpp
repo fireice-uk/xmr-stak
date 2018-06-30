@@ -389,6 +389,7 @@ int main(int argc, char *argv[])
 #endif
 
 	srand(time(0));
+	uint64_t numHashes= 100000;
 
 	using namespace xmrstak;
 
@@ -714,11 +715,22 @@ int main(int argc, char *argv[])
 			}
 			params::inst().benchmark_work_sec = worksec;
 		}
+		else if(opName.compare("--hash-count") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--hash-count' given");
+				win_exit();
+				return 1;
+			}
+			sscanf(argv[i], "%ld", &numHashes);
+		}
 		else
 		{
 			printer::inst()->print_msg(L0, "Parameter unknown '%s'",argv[i]);
-			win_exit();
-			return 1;
+//			win_exit();
+//			return 1;
 		}
 	}
 
@@ -795,7 +807,7 @@ int main(int argc, char *argv[])
 		return do_benchmark(params::inst().benchmark_block_version, params::inst().benchmark_wait_sec, params::inst().benchmark_work_sec);
 	}
 
-	executor::inst()->ex_start(jconf::inst()->DaemonMode());
+	executor::inst()->ex_start(jconf::inst()->DaemonMode(), numHashes);
 
 	uint64_t lastTime = get_timestamp_ms();
 	int key;

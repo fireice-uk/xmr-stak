@@ -31,17 +31,19 @@
 namespace xmrstak
 {
 
-telemetry::telemetry(size_t iThd)
+telemetry::telemetry(size_t iThd, int64_t hashCount):numThreads(iThd), hashCount(hashCount)
 {
 	ppHashCounts = new uint64_t*[iThd];
 	ppTimestamps = new uint64_t*[iThd];
 	iBucketTop = new uint32_t[iThd];
+	threadHashCount = new uint64_t[iThd];
 
 	for (size_t i = 0; i < iThd; i++)
 	{
 		ppHashCounts[i] = new uint64_t[iBucketSize];
 		ppTimestamps[i] = new uint64_t[iBucketSize];
 		iBucketTop[i] = 0;
+		threadHashCount[i]=0;
 		memset(ppHashCounts[i], 0, sizeof(uint64_t) * iBucketSize);
 		memset(ppTimestamps[i], 0, sizeof(uint64_t) * iBucketSize);
 	}
@@ -101,8 +103,24 @@ void telemetry::push_perf_value(size_t iThd, uint64_t iHashCount, uint64_t iTime
 	size_t iTop = iBucketTop[iThd];
 	ppHashCounts[iThd][iTop] = iHashCount;
 	ppTimestamps[iThd][iTop] = iTimestamp;
+	threadHashCount[iThd] = threadHashCount[iThd]+ iHashCount;
 
 	iBucketTop[iThd] = (iTop + 1) & iBucketMask;
+	if(0xffffffff != hashCount){
+		if(calc_total_hashes() > *(reinterpret_cast<uint64_t*>(&hashCount) ) ){
+			system("stty sane");
+//			system("reset");
+			exit(0);
+		}
+	}
+}
+
+uint64_t telemetry::calc_total_hashes(void){
+	uint64_t ret =0;
+	for(size_t i=0; i < numThreads; i++){
+		ret+= threadHashCount[i];
+	}
+	return ret;
 }
 
 } // namespace xmrstak
