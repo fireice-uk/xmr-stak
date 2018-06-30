@@ -33,25 +33,14 @@ class autoAdjust
 {
 public:
 
-	size_t hashMemSize;
-	size_t halfHashMemSize;
-
-	autoAdjust()
-	{
-		if(::jconf::inst()->IsCurrencyMonero())
-		{
-			hashMemSize = MONERO_MEMORY;
-			halfHashMemSize = hashMemSize / 2u;
-		}
-		else
-		{
-			hashMemSize = AEON_MEMORY;
-			halfHashMemSize = hashMemSize / 2u;
-		}
-	}
-
 	bool printConfig()
 	{
+
+		const size_t hashMemSizeKB = std::max(
+			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
+			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
+		) / 1024u;
+		const size_t halfHashMemSizeKB = hashMemSizeKB / 2u;
 
 		configEditor configTpl{};
 
@@ -63,9 +52,10 @@ public:
 
 		std::string conf;
 
-		if(!detectL3Size() || L3KB_size < halfHashMemSize || L3KB_size > (halfHashMemSize * 100u))
+
+		if(!detectL3Size() || L3KB_size < halfHashMemSizeKB || L3KB_size > (halfHashMemSizeKB * 2048u))
 		{
-			if(L3KB_size < halfHashMemSize || L3KB_size > (halfHashMemSize * 100))
+			if(L3KB_size < halfHashMemSizeKB || L3KB_size > (halfHashMemSizeKB * 2048))
 				printer::inst()->print_msg(L0, "Autoconf failed: L3 size sanity check failed - %u KB.", L3KB_size);
 
 			conf += std::string("    { \"low_power_mode\" : false, \"no_prefetch\" : true, \"affine_to_cpu\" : false },\n");
@@ -88,7 +78,7 @@ public:
 				if(L3KB_size <= 0)
 					break;
 
-				double_mode = L3KB_size / hashMemSize > (int32_t)(corecnt-i);
+				double_mode = L3KB_size / hashMemSizeKB > (int32_t)(corecnt-i);
 
 				conf += std::string("    { \"low_power_mode\" : ");
 				conf += std::string(double_mode ? "true" : "false");
@@ -107,9 +97,9 @@ public:
 					aff_id++;
 
 				if(double_mode)
-					L3KB_size -= hashMemSize * 2u;
+					L3KB_size -= hashMemSizeKB * 2u;
 				else
-					L3KB_size -= hashMemSize;
+					L3KB_size -= hashMemSizeKB;
 			}
 		}
 
@@ -137,12 +127,12 @@ private:
 
 			if(get_masked(cpu_info[0], 7, 5) != 3)
 			{
-				printer::inst()->print_msg(L0, "Autoconf failed: Couln't find L3 cache page.");
+				printer::inst()->print_msg(L0, "Autoconf failed: Couldn't find L3 cache page.");
 				return false;
 			}
 
 			L3KB_size = ((get_masked(cpu_info[1], 31, 22) + 1) * (get_masked(cpu_info[1], 21, 12) + 1) *
-				(get_masked(cpu_info[1], 11, 0) + 1) * (cpu_info[2] + 1)) / halfHashMemSize;
+				(get_masked(cpu_info[1], 11, 0) + 1) * (cpu_info[2] + 1)) / 1024;
 
 			return true;
 		}
@@ -185,4 +175,4 @@ private:
 };
 
 } // namespace cpu
-} // namepsace xmrstak
+} // namespace xmrstak

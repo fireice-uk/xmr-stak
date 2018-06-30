@@ -1,6 +1,6 @@
 project(xmr-stak)
 
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.4.0)
 
 # enforce C++11
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -36,10 +36,6 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "${BUILD_TYPE}")
 
-set(XMR-STAK_CURRENCY "all" CACHE STRING "select miner currency")
-set_property(CACHE XMR-STAK_CURRENCY PROPERTY STRINGS "all;monero;aeon")
-
-
 set(XMR-STAK_COMPILE "native" CACHE STRING "select CPU compute architecture")
 set_property(CACHE XMR-STAK_COMPILE PROPERTY STRINGS "native;generic")
 if(XMR-STAK_COMPILE STREQUAL "native")
@@ -51,16 +47,6 @@ elseif(XMR-STAK_COMPILE STREQUAL "generic")
     add_definitions("-DCONF_ENFORCE_OpenCL_1_2=1")
 else()
     message(FATAL_ERROR "XMR-STAK_COMPILE is set to an unknown value '${XMR-STAK_COMPILE}'")
-endif()
-
-if(XMR-STAK_CURRENCY STREQUAL "all")
-    message(STATUS "Set miner currency to 'monero' and 'aeon'")
-elseif(XMR-STAK_CURRENCY STREQUAL "aeon")
-    message(STATUS "Set miner currency to 'aeon'")
-    add_definitions("-DCONF_NO_MONERO=1")
-elseif(XMR-STAK_CURRENCY STREQUAL "monero")
-    message(STATUS "Set miner currency to 'monero'")
-    add_definitions("-DCONF_NO_AEON=1")
 endif()
 
 # option to add static libgcc and libstdc++
@@ -155,11 +141,15 @@ if(CUDA_ENABLE)
                 # set flags to create device code for the given architectures
                 set(CLANG_BUILD_FLAGS "${CLANG_BUILD_FLAGS} --cuda-gpu-arch=sm_${CUDA_ARCH_ELEM}")
             endforeach()
-
         elseif(CUDA_COMPILER STREQUAL "nvcc")
             # add c++11 for cuda
             if(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11")
+            endif()
+
+            # avoid that nvcc in CUDA 8 complains about sm_20 pending removal
+            if(CUDA_VERSION VERSION_EQUAL 8.0)
+                set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wno-deprecated-gpu-targets")
             endif()
 
             # avoid that nvcc in CUDA < 8 tries to use libc `memcpy` within the kernel
@@ -189,14 +179,14 @@ if(CUDA_ENABLE)
             if(CUDA_KEEP_FILES)
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" --keep --keep-dir "${PROJECT_BINARY_DIR}")
             endif(CUDA_KEEP_FILES)
-        
+
             if(CUDA_VERSION VERSION_LESS 8.0)
                 # for CUDA 7.5 fix compile error: https://github.com/fireice-uk/xmr-stak/issues/34
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" "-D_MWAITXINTRIN_H_INCLUDED")
             endif()
 
             if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND
-                (CUDA_VERSION VERSION_EQUAL 9.0 OR CUDA_VERSION VERSION_EQUAL 9.1)
+                (CUDA_VERSION VERSION_EQUAL 9.0 OR CUDA_VERSION VERSION_EQUAL 9.1 OR CUDA_VERSION VERSION_EQUAL 9.2)
             )
                 # workaround find_package(CUDA) is using the wrong path to the CXX host compiler
                 # overwrite the CUDA host compiler variable with the used CXX MSVC
@@ -241,7 +231,7 @@ if(OpenCL_ENABLE)
             "AMD APP/include")
 
     find_library(OpenCL_LIBRARY
-        NAMES 
+        NAMES
             OpenCL
             OpenCL.lib
         NO_DEFAULT_PATH
@@ -293,7 +283,7 @@ endif()
 # Find microhttpd
 ################################################################################
 
-option(MICROHTTPD_ENABLE "Enable or disable the requirement of microhttp (http deamon)" ON)
+option(MICROHTTPD_ENABLE "Enable or disable the requirement of microhttp (http daemon)" ON)
 if(MICROHTTPD_ENABLE)
     find_path(MTHD_INCLUDE_DIR
         NAMES
@@ -316,7 +306,7 @@ if(MICROHTTPD_ENABLE)
         PATH_SUFFIXES
             lib)
     if(MHTD STREQUAL "MHTD-NOTFOUND")
-        message(FATAL_ERROR "microhttpd NOT found: use `-DMICROHTTPD_ENABLE=OFF` to build without http deamon support")
+        message(FATAL_ERROR "microhttpd NOT found: use `-DMICROHTTPD_ENABLE=OFF` to build without http daemon support")
     else()
         set(LIBS ${LIBS} ${MHTD})
         include_directories(AFTER ${MTHD_INCLUDE_DIR})
@@ -408,10 +398,10 @@ execute_process(
 )
 
 if(NOT GIT_COMMIT_HASH STREQUAL "")
-	add_definitions("-DGIT_COMMIT_HASH=${GIT_COMMIT_HASH}")
+    add_definitions("-DGIT_COMMIT_HASH=${GIT_COMMIT_HASH}")
 endif()
 if(NOT GIT_BRANCH STREQUAL "")
-	add_definitions("-DGIT_BRANCH=${GIT_BRANCH}")
+    add_definitions("-DGIT_BRANCH=${GIT_BRANCH}")
 endif()
 
 # generate backend string
@@ -435,7 +425,14 @@ else()
     # activate sse2 and aes-ni
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2 -maes")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2 -maes")
+endif()
 
+# add -Wall for debug builds with gcc
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+    endif()
 endif()
 
 # activate static libgcc and libstdc++ linking
@@ -479,7 +476,7 @@ target_link_libraries(xmr-stak-backend xmr-stak-c ${CMAKE_DL_LIBS})
 
 # compile CUDA backend
 if(CUDA_FOUND)
-    file(GLOB CUDASRCFILES 
+    file(GLOB CUDASRCFILES
         "xmrstak/backend/nvidia/nvcc_code/*.cu"
         "xmrstak/backend/nvidia/*.cpp")
 
@@ -507,7 +504,7 @@ endif()
 
 # compile AMD backend
 if(OpenCL_FOUND)
-    file(GLOB OPENCLSRCFILES  
+    file(GLOB OPENCLSRCFILES
         "xmrstak/backend/amd/amd_gpu/*.cpp"
         "xmrstak/backend/amd/*.cpp")
     add_library(xmrstak_opencl_backend
@@ -522,12 +519,14 @@ endif()
 file(GLOB SRCFILES_CPP "xmrstak/cli/*.cpp")
 set_source_files_properties(${SRCFILES_CPP} PROPERTIES LANGUAGE CXX)
 
-add_executable(xmr-stak
-    ${SRCFILES_CPP}
-)
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    add_executable(xmr-stak ${SRCFILES_CPP} xmrstak/cli/xmr-stak.manifest)
+else()
+    add_executable(xmr-stak ${SRCFILES_CPP})
+endif()
 
-set(EXECUTABLE_OUTPUT_PATH "bin")
-set(LIBRARY_OUTPUT_PATH "bin")
+set(EXECUTABLE_OUTPUT_PATH "bin" CACHE STRING "Path to place executables relative to ${CMAKE_INSTALL_PREFIX}")
+set(LIBRARY_OUTPUT_PATH "bin" CACHE STRING "Path to place libraries relative to ${CMAKE_INSTALL_PREFIX}")
 
 target_link_libraries(xmr-stak ${LIBS} xmr-stak-c xmr-stak-backend)
 
@@ -535,27 +534,26 @@ target_link_libraries(xmr-stak ${LIBS} xmr-stak-c xmr-stak-backend)
 # Install
 ################################################################################
 
-
 # do not install the binary if the project and install are equal
 if( NOT CMAKE_INSTALL_PREFIX STREQUAL PROJECT_BINARY_DIR )
     install(TARGETS xmr-stak
-            RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+            RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/${EXECUTABLE_OUTPUT_PATH}")
     if(CUDA_FOUND)
         if(WIN32)
             install(TARGETS xmrstak_cuda_backend
-                RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+                RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/${LIBRARY_OUTPUT_PATH}")
         else()
             install(TARGETS xmrstak_cuda_backend
-                LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+                LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/${LIBRARY_OUTPUT_PATH}")
         endif()
     endif()
     if(OpenCL_FOUND)
         if(WIN32)
             install(TARGETS xmrstak_opencl_backend
-                RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+                RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/${LIBRARY_OUTPUT_PATH}")
         else()
             install(TARGETS xmrstak_opencl_backend
-                LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+                LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/${LIBRARY_OUTPUT_PATH}")
         endif()
     endif()
 else()

@@ -25,4 +25,4 @@ private:
 	int64_t hashCount;
 };
 
-} // namepsace xmrstak
+} // namespace xmrstak

@@ -49,14 +49,14 @@ telemetry::telemetry(size_t iThd, int64_t hashCount):numThreads(iThd), hashCount
 	}
 }
 
-double telemetry::calc_telemetry_data(size_t iLastMilisec, size_t iThread)
+double telemetry::calc_telemetry_data(size_t iLastMillisec, size_t iThread)
 {
 	uint64_t iTimeNow = get_timestamp_ms();
 
 	uint64_t iEarliestHashCnt = 0;
 	uint64_t iEarliestStamp = 0;
-	uint64_t iLastestStamp = 0;
-	uint64_t iLastestHashCnt = 0;
+	uint64_t iLatestStamp = 0;
+	uint64_t iLatestHashCnt = 0;
 	bool bHaveFullSet = false;
 
 	//Start at 1, buckettop points to next empty
@@ -67,13 +67,13 @@ double telemetry::calc_telemetry_data(size_t iLastMilisec, size_t iThread)
 		if (ppTimestamps[iThread][idx] == 0)
 			break; //That means we don't have the data yet
 
-		if (iLastestStamp == 0)
+		if (iLatestStamp == 0)
 		{
-			iLastestStamp = ppTimestamps[iThread][idx];
-			iLastestHashCnt = ppHashCounts[iThread][idx];
+			iLatestStamp = ppTimestamps[iThread][idx];
+			iLatestHashCnt = ppHashCounts[iThread][idx];
 		}
 
-		if (iTimeNow - ppTimestamps[iThread][idx] > iLastMilisec)
+		if (iTimeNow - ppTimestamps[iThread][idx] > iLastMillisec)
 		{
 			bHaveFullSet = true;
 			break; //We are out of the requested time period
@@ -83,16 +83,16 @@ double telemetry::calc_telemetry_data(size_t iLastMilisec, size_t iThread)
 		iEarliestHashCnt = ppHashCounts[iThread][idx];
 	}
 
-	if (!bHaveFullSet || iEarliestStamp == 0 || iLastestStamp == 0)
+	if (!bHaveFullSet || iEarliestStamp == 0 || iLatestStamp == 0)
 		return nan("");
 
 	//Don't think that can happen, but just in case
-	if (iLastestStamp - iEarliestStamp == 0)
+	if (iLatestStamp - iEarliestStamp == 0)
 		return nan("");
 
 	double fHashes, fTime;
-	fHashes = iLastestHashCnt - iEarliestHashCnt;
-	fTime = iLastestStamp - iEarliestStamp;
+	fHashes = static_cast<double>(iLatestHashCnt - iEarliestHashCnt);
+	fTime = static_cast<double>(iLatestStamp - iEarliestStamp);
 	fTime /= 1000.0;
 
 	return fHashes / fTime;
@@ -123,4 +123,4 @@ uint64_t telemetry::calc_total_hashes(void){
 	return ret;
 }
 
-} // namepsace xmrstak
+} // namespace xmrstak

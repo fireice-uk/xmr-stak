@@ -9,7 +9,7 @@
 * [Compile on Windows](compile_Windows.md)
 * [Compile on Linux](compile_Linux.md)
 * [Compile on FreeBSD](compile_FreeBSD.md)
-* [Compile on MacOS](compile_MacOS.md)
+* [Compile on macOS](compile_macOS.md)
 
 ## Build System
 
@@ -31,12 +31,12 @@ After the configuration you need to compile the miner, follow the guide for your
 * [Compile in Windows](compile_Windows.md)
 * [Compile in Linux](compile_Linux.md)
 * [Compile in FreeBSD](compile_FreeBSD.md)
-* [Compile in MacOS](compile_MacOS.md)
+* [Compile in macOS](compile_macOS.md)
 
 ## Generic Build Options
 - `CMAKE_INSTALL_PREFIX` install miner to the home folder
-  - `cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/xmr-stak-cpu`
-  - you can find the binary and the `config.txt` file after `make install` in `$HOME/xmr-stak-cpu/bin`
+  - `cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/xmr-stak`
+  - you can find the binary and the `config.txt` file after `make install` in `$HOME/xmr-stak/bin`
 - `CMAKE_LINK_STATIC` link libgcc and libstdc++ libraries static (default OFF)
   - disable with `cmake .. -DCMAKE_LINK_STATIC=ON`
   - if you use static compile to run the miner on another system set `-DXMR-STAK_COMPILE=generic`
@@ -47,7 +47,6 @@ After the configuration you need to compile the miner, follow the guide for your
   - there is no *http* interface available if option is disabled: `cmake .. -DMICROHTTPD_ENABLE=OFF`
 - `OpenSSL_ENABLE` allow to disable/enable the dependency *OpenSSL*
   - it is not possible to connect to a *https* secured pool if option is disabled: `cmake .. -DOpenSSL_ENABLE=OFF`
-- `XMR-STAK_CURRENCY` - compile for Monero(XMR) or Aeon(AEON) usage only e.g. `cmake .. -DXMR-STAK_CURRENCY=monero`
 - `XMR-STAK_COMPILE` select the CPU compute architecture (default: native)
   - native means the miner binary can be used only on the system where it is compiled but will archive the highest hash rate
   - use `cmake .. -DXMR-STAK_COMPILE=generic` to run the miner on all CPU's with sse2
@@ -56,7 +55,7 @@ After the configuration you need to compile the miner, follow the guide for your
 
 - `CPU_ENABLE` allow to disable/enable the CPU backend of the miner
 - `HWLOC_ENABLE` allow to disable/enable the dependency *hwloc*
-  - the config suggestion is not optimal if option is disabled: `cmake . -DHWLOC_ENABLE=OFF`
+  - the config suggestion is not optimal if option is disabled: `cmake .. -DHWLOC_ENABLE=OFF`
   - disabling can be reduce the miner performance
 
 ## AMD Build Options

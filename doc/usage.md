@@ -5,7 +5,7 @@
 * [Usage on Windows](#usage-on-windows)
 * [Usage on Linux](#usage-on-linux)
 * [Command Line Options](#command-line-options)
-* [HTML and JSON API report configuraton](#xx)
+* [HTML and JSON API report configuraton](#html-and-json-api-report-configuraton)
 
 ## Configurations
 
@@ -13,17 +13,19 @@ Before you started the miner the first time there are no config files available.
 Config files will be created at the first start.
 The number of files depends on the available backends.
 `config.txt` contains the common miner settings.
+`pools.txt` contains the selected mining pools and currency to mine.
 `amd.txt`, `cpu.txt` and `nvidia.txt` contains miner backend specific settings and can be used for further tuning ([Tuning Guide](tuning.md)).
 
+Note: If the pool is ignoring the option `rig_id` in `pools.txt` to name your worker please check the pool documentation how a worker name can be set.
 
 ## Usage on Windows
 1) Double click the `xmr-stak.exe` file
-2) Fill in the pool url, username and password
+2) Fill in the pool url settings, currency, username and password
 
 `set XMRSTAK_NOWAIT=1` disable the dialog `Press any key to exit.` for non UAC execution.
 
 
-## Usage on Linux & MacOS
+## Usage on Linux & macOS
 1) Open a terminal within the folder with the binary
 2) Start the miner with `./xmr-stak`
 

@@ -14,7 +14,7 @@ struct configEditor
 {
 	std::string m_fileContent;
 
-	configEditor() 
+	configEditor()
 	{
 
 	}
@@ -54,4 +54,4 @@ struct configEditor
 
 };
 
-} // namepsace xmrstak
+} // namespace xmrstak

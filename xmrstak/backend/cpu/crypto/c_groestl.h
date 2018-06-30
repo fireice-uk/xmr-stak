@@ -4,10 +4,10 @@
 #include "crypto_uint8.h"
 #include "crypto_uint32.h"
 #include "crypto_uint64.h"
-#include "crypto_hash.h" 
+#include "crypto_hash.h"
 
-typedef crypto_uint8 uint8_t; 
-typedef crypto_uint32 uint32_t; 
+typedef crypto_uint8 uint8_t;
+typedef crypto_uint32 uint32_t;
 typedef crypto_uint64 uint64_t;
 */
 #include <stdint.h>
@@ -42,7 +42,7 @@ typedef struct {
   BitSequence buffer[SIZE512];      /* data buffer */
   int buf_ptr;              /* data buffer pointer */
   int bits_in_last_byte;    /* no. of message bits in last byte of
-			       data buffer */
+                               data buffer */
 } groestlHashState;
 
 /*void Init(hashState*);
@@ -53,8 +53,8 @@ void groestl(const BitSequence*, DataLength, BitSequence*);
 
 /*
 int crypto_hash(unsigned char *out,
-		const unsigned char *in,
-		unsigned long long len);
+                const unsigned char *in,
+                unsigned long long len);
 */
 
 #endif /* __hash_h */

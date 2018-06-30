@@ -31,7 +31,7 @@ namespace amd
 {
 
 class autoAdjust
-{    
+{
 public:
 
 	autoAdjust()
@@ -83,25 +83,29 @@ private:
 
 		constexpr size_t byteToMiB = 1024u * 1024u;
 
-		size_t hashMemSize;
-		if(::jconf::inst()->IsCurrencyMonero())
-		{
-			hashMemSize = MONERO_MEMORY;
-		}
-		else
-		{
-			hashMemSize = AEON_MEMORY;
-		}
+		size_t hashMemSize = std::max(
+			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
+			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
+		);
 
 		std::string conf;
-		int i = 0;
 		for(auto& ctx : devVec)
 		{
+			size_t minFreeMem = 128u * byteToMiB;
 			/* 1000 is a magic selected limit, the reason is that more than 2GiB memory
 			 * sowing down the memory performance because of TLB cache misses
 			 */
 			size_t maxThreads = 1000u;
-			if(ctx.name.compare("gfx901") == 0)
+			if(
+				ctx.name.compare("gfx901") == 0 ||
+				ctx.name.compare("gfx904") == 0 ||
+				// APU
+				ctx.name.compare("gfx902") == 0 ||
+				// UNKNOWN
+				ctx.name.compare("gfx900") == 0 ||
+				ctx.name.compare("gfx903") == 0 ||
+				ctx.name.compare("gfx905") == 0
+			)
 			{
 				/* Increase the number of threads for AMD VEGA gpus.
 				 * Limit the number of threads based on the issue: https://github.com/fireice-uk/xmr-stak/issues/5#issuecomment-339425089
@@ -110,32 +114,65 @@ private:
 				maxThreads = 2024u;
 			}
 
+			// NVIDIA optimizations
+			if(
+				ctx.isNVIDIA && (
+					ctx.name.find("P100") != std::string::npos ||
+				    ctx.name.find("V100") != std::string::npos
+				)
+			)
+			{
+				// do not limit the number of threads
+				maxThreads = 40000u;
+				minFreeMem = 512u * byteToMiB;
+			}
+
+			// increase all intensity limits by two for aeon
+			if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_lite)
+				maxThreads *= 2u;
+
 			// keep 128MiB memory free (value is randomly chosen)
-			size_t availableMem = ctx.freeMem - (128u * byteToMiB);
+			size_t availableMem = ctx.freeMem - minFreeMem;
 			// 224byte extra memory is used per thread for meta data
 			size_t perThread = hashMemSize + 224u;
 			size_t maxIntensity = availableMem / perThread;
 			size_t possibleIntensity = std::min( maxThreads , maxIntensity );
 			// map intensity to a multiple of the compute unit count, 8 is the number of threads per work group
 			size_t intensity = (possibleIntensity / (8 * ctx.computeUnits)) * ctx.computeUnits * 8;
-			conf += std::string("  // gpu: ") + ctx.name + " memory:" + std::to_string(availableMem / byteToMiB) + "\n";
-			conf += std::string("  // compute units: ") + std::to_string(ctx.computeUnits) + "\n";
-			// set 8 threads per block (this is a good value for the most gpus)
-			conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
-				"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
-				"    \"affine_to_cpu\" : false, \"strided_index\" : true\n"
-				"  },\n";
-			++i;
+			//If the intensity is 0, then it's because the multiple of the unit count is greater than intensity
+			if (intensity == 0)
+			{
+				printer::inst()->print_msg(L0, "WARNING: Auto detected intensity unexpectedly low. Try to set the environment variable GPU_SINGLE_ALLOC_PERCENT.");
+				intensity = possibleIntensity;
+
+			}
+			if (intensity != 0)
+			{
+				conf += std::string("  // gpu: ") + ctx.name + " memory:" + std::to_string(availableMem / byteToMiB) + "\n";
+				conf += std::string("  // compute units: ") + std::to_string(ctx.computeUnits) + "\n";
+				// set 8 threads per block (this is a good value for the most gpus)
+				conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
+					"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
+					"    \"affine_to_cpu\" : false, \"strided_index\" : " + (ctx.isNVIDIA ? "0" : "1") + ", \"mem_chunk\" : 2,\n"
+					"    \"comp_mode\" : true\n" +
+					"  },\n";
+			}
+			else
+			{
+				printer::inst()->print_msg(L0, "WARNING: Ignore gpu %s, %s MiB free memory is not enough to suggest settings.", ctx.name.c_str(), std::to_string(availableMem / byteToMiB).c_str());
+			}
 		}
 
 		configTpl.replace("PLATFORMINDEX",std::to_string(platformIndex));
 		configTpl.replace("GPUCONFIG",conf);
 		configTpl.write(params::inst().configFileAMD);
-		printer::inst()->print_msg(L0, "AMD: GPU configuration stored in file '%s'", params::inst().configFileAMD.c_str());
+
+		const std::string backendName = xmrstak::params::inst().openCLVendor;
+		printer::inst()->print_msg(L0, "%s: GPU (OpenCL) configuration stored in file '%s'", backendName.c_str(), params::inst().configFileAMD.c_str());
 	}
 
 	std::vector<GpuContext> devVec;
 };
 
 } // namespace amd
-} // namepsace xmrstak
+} // namespace xmrstak

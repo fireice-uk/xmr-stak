@@ -18,5 +18,12 @@ config-debug.txt
 .kdev4/
 xmr-stak.kdev4
 
+
 #coisas do Qt
 *.user
+
+# Idea/Clion project files
+cmake-build-release/
+cmake-build-debug/
+\.idea/
+
