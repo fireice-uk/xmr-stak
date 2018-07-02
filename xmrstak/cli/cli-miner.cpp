@@ -56,8 +56,6 @@
 #endif // _WIN32
 
 int do_benchmark(int block_version, int wait_sec, int work_sec);
-// expose it
-bool benchmark_mode = false;
 
 void help()
 {
@@ -677,7 +675,6 @@ int main(int argc, char *argv[])
 				return 1;
 			}
 			params::inst().benchmark_block_version = bversion;
-			benchmark_mode = true;
 		}
 		else if(opName.compare("--benchwait") == 0)
 		{
