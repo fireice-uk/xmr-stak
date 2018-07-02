@@ -31,7 +31,7 @@ namespace amd
 {
 
 class autoAdjust
-{    
+{
 public:
 
 	autoAdjust()

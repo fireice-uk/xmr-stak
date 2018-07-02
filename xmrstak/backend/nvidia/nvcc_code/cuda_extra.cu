@@ -114,7 +114,7 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
 	int thread = ( blockDim.x * blockIdx.x + threadIdx.x );
 	__shared__ uint32_t sharedMemory[1024];
 
-	if(ALGO == cryptonight_heavy)
+	if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven)
 	{
 		cn_aes_gpu_init( sharedMemory );
 		__syncthreads( );
@@ -148,7 +148,7 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
 	memcpy( d_ctx_key2 + thread * 40, ctx_key2, 40 * 4 );
 	memcpy( d_ctx_state + thread * 50, ctx_state, 50 * 4 );
 
-	if(ALGO == cryptonight_heavy)
+	if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven)
 	{
 
 		for(int i=0; i < 16; i++)
@@ -172,7 +172,7 @@ __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint3
 
 	__shared__ uint32_t sharedMemory[1024];
 
-	if(ALGO == cryptonight_heavy)
+	if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven)
 	{
 		cn_aes_gpu_init( sharedMemory );
 		__syncthreads( );
@@ -184,12 +184,12 @@ __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint3
 	uint32_t * __restrict__ ctx_state = d_ctx_state + thread * 50;
 	uint64_t hash[4];
 	uint32_t state[50];
-	
+
 	#pragma unroll
 	for ( i = 0; i < 50; i++ )
 		state[i] = ctx_state[i];
 
-	if(ALGO == cryptonight_heavy)
+	if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven)
 	{
 		uint32_t key[40];
 
@@ -287,7 +287,7 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	size_t wsize = ctx->device_blocks * ctx->device_threads;
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state, 50 * sizeof(uint32_t) * wsize));
 	size_t ctx_b_size = 4 * sizeof(uint32_t) * wsize;
-	if(cryptonight_heavy == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo())
+	if(cryptonight_heavy == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() || cryptonight_haven == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo())
 	{
 		// extent ctx_b to hold the state of idx0
 		ctx_b_size += sizeof(uint32_t) * wsize;
@@ -296,7 +296,7 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	}
 	else
 		ctx->d_ctx_state2 = ctx->d_ctx_state;
-	
+
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key1, 40 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key2, 40 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_text, 32 * sizeof(uint32_t) * wsize));
@@ -326,6 +326,11 @@ extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce
 		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<cryptonight_heavy><<<grid, block >>>( wsize, ctx->d_input, ctx->inputlen, startNonce,
 			ctx->d_ctx_state,ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2 ));
 	}
+	else if(miner_algo == cryptonight_haven)
+	{
+		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<cryptonight_haven><<<grid, block >>>( wsize, ctx->d_input, ctx->inputlen, startNonce,
+			ctx->d_ctx_state,ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2 ));
+	}
 	else
 	{
 		/* pass two times d_ctx_state because the second state is used later in phase1,
@@ -353,6 +358,14 @@ extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, 
 			ctx->device_id,
 			"\n**suggestion: Try to increase the value of the attribute 'bfactor' in the NVIDIA config file.**",
 			cryptonight_extra_gpu_final<cryptonight_heavy><<<grid, block >>>( wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state,ctx->d_ctx_key2 )
+		);
+	}
+	else if(miner_algo == cryptonight_haven)
+	{
+		CUDA_CHECK_MSG_KERNEL(
+			ctx->device_id,
+			"\n**suggestion: Try to increase the value of the attribute 'bfactor' in the NVIDIA config file.**",
+			cryptonight_extra_gpu_final<cryptonight_haven><<<grid, block >>>( wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state,ctx->d_ctx_key2 )
 		);
 	}
 	else
@@ -472,7 +485,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		std::vector<int>::iterator it = std::find(arch.begin(), arch.end(), 20);
 		if(it == arch.end())
 		{
-			printf("WARNING: NVIDIA GPU %d: miner not compiled for the gpu architecture %d.\n", ctx->device_id, gpuArch);
+			printf("WARNING: NVIDIA GPU %d: miner not compiled for CUDA architecture %d.\n", ctx->device_id, gpuArch);
 			return 5;
 		}
 	}
@@ -490,7 +503,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 				minSupportedArch = arch[i];
 		if(minSupportedArch < 30 || gpuArch < minSupportedArch)
 		{
-			printf("WARNING: NVIDIA GPU %d: miner not compiled for the gpu architecture %d.\n", ctx->device_id, gpuArch);
+			printf("WARNING: NVIDIA GPU %d: miner not compiled for CUDA architecture %d.\n", ctx->device_id, gpuArch);
 			return 5;
 		}
 	}
@@ -517,7 +530,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		 */
 		ctx->device_threads = 64;
 		constexpr size_t byteToMiB = 1024u * 1024u;
-		
+
 		// no limit by default 1TiB
 		size_t maxMemUsage = byteToMiB * byteToMiB;
 		if(props.major == 6)
@@ -575,7 +588,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		CUDA_CHECK(ctx->device_id, cudaFree(tmp));
 		// delete created context on the gpu
 		CUDA_CHECK(ctx->device_id, cudaDeviceReset());
-		
+
 		ctx->total_device_memory = totalMemory;
 		ctx->free_device_memory = freeMemory;
 
@@ -612,9 +625,9 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		// up to 16kibyte extra memory is used per thread for some kernel (lmem/local memory)
 		// 680bytes are extra meta data memory per hash
 		size_t perThread = hashMemSize + 16192u + 680u;
-		if(cryptonight_heavy == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo())
+		if(cryptonight_heavy == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() || cryptonight_haven == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo())
 			perThread += 50 * 4; // state double buffer
-		
+
 		size_t max_intensity = limitedMemory / perThread;
 		ctx->device_threads = max_intensity / ctx->device_blocks;
 		// use only odd number of threads

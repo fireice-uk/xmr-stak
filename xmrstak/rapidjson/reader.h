@@ -1065,7 +1065,7 @@ private:
         RAPIDJSON_FORCEINLINE Ch Peek() const { return is.Peek(); }
         RAPIDJSON_FORCEINLINE Ch TakePush() { return is.Take(); }
         RAPIDJSON_FORCEINLINE Ch Take() { return is.Take(); }
-		  RAPIDJSON_FORCEINLINE void Push(char) {}
+        RAPIDJSON_FORCEINLINE void Push(char) {}
 
         size_t Tell() { return is.Tell(); }
         size_t Length() { return 0; }

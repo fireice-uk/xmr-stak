@@ -98,6 +98,7 @@ bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 	return pthread_setaffinity_np(h, sizeof(cpuset_t), &mn) == 0;
 #elif defined(__OpenBSD__)
         printer::inst()->print_msg(L0,"WARNING: thread pinning is not supported under OPENBSD.");
+        return true;
 #else
 	cpu_set_t mn;
 	CPU_ZERO(&mn);
@@ -288,7 +289,15 @@ bool minethd::self_test()
 	else if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_aeon)
 	{
 	}
-
+	else if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_ipbc)
+	{
+	}
+	else if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_stellite)
+	{
+	}
+	else if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_masari)
+	{
+	}
 	for (int i = 0; i < MAX_N; i++)
 		cryptonight_free_ctx(ctx[i]);
 
@@ -336,7 +345,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		}
 		else
 			printer::inst()->print_msg(L1, "Starting %dx thread, no affinity.", cfg.iMultiway);
-		
+
 		minethd* thd = new minethd(pWork, i + threadOffset, cfg.iMultiway, cfg.bNoPrefetch, cfg.iCpuAff);
 
 // do this so it will not freeze the whole system
@@ -350,13 +359,6 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 	}
 
 	return pvThreads;
-}
-
-void minethd::consume_work()
-{
-	memcpy(&oWork, &globalStates::inst().inst().oGlobalWork, sizeof(miner_work));
-	iJobNo++;
-	globalStates::inst().inst().iConsumeCnt++;
 }
 
 minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, xmrstak_algo algo)
@@ -383,6 +385,18 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, xmr
 	case cryptonight_aeon:
 		algv = 4;
 		break;
+	case cryptonight_ipbc:
+		algv = 5;
+		break;
+	case cryptonight_stellite:
+		algv = 6;
+		break;
+	case cryptonight_masari:
+		algv = 7;
+		break;
+	case cryptonight_haven:
+		algv = 8;
+		break;
 	default:
 		algv = 2;
 		break;
@@ -408,7 +422,23 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, xmr
 		cryptonight_hash<cryptonight_aeon, false, false>,
 		cryptonight_hash<cryptonight_aeon, true, false>,
 		cryptonight_hash<cryptonight_aeon, false, true>,
-		cryptonight_hash<cryptonight_aeon, true, true>
+		cryptonight_hash<cryptonight_aeon, true, true>,
+		cryptonight_hash<cryptonight_ipbc, false, false>,
+		cryptonight_hash<cryptonight_ipbc, true, false>,
+		cryptonight_hash<cryptonight_ipbc, false, true>,
+		cryptonight_hash<cryptonight_ipbc, true, true>,
+		cryptonight_hash<cryptonight_stellite, false, false>,
+		cryptonight_hash<cryptonight_stellite, true, false>,
+		cryptonight_hash<cryptonight_stellite, false, true>,
+		cryptonight_hash<cryptonight_stellite, true, true>,
+		cryptonight_hash<cryptonight_masari, false, false>,
+		cryptonight_hash<cryptonight_masari, true, false>,
+		cryptonight_hash<cryptonight_masari, false, true>,
+		cryptonight_hash<cryptonight_masari, true, true>,
+		cryptonight_hash<cryptonight_haven, false, false>,
+		cryptonight_hash<cryptonight_haven, true, false>,
+		cryptonight_hash<cryptonight_haven, false, true>,
+		cryptonight_hash<cryptonight_haven, true, true>
 	};
 
 	std::bitset<2> digit;
@@ -441,7 +471,6 @@ void minethd::work_main()
 
 	piHashVal = (uint64_t*)(result.bResult + 24);
 	piNonce = (uint32_t*)(oWork.bWorkBlob + 39);
-	globalStates::inst().inst().iConsumeCnt++;
 	result.iThreadId = iThreadNo;
 
 	uint8_t version = 0;
@@ -459,7 +488,7 @@ void minethd::work_main()
 			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-			consume_work();
+			globalStates::inst().consume_work(oWork, iJobNo);
 			continue;
 		}
 
@@ -502,6 +531,9 @@ void minethd::work_main()
 			if((nonce_ctr++ & (nonce_chunk-1)) == 0)
 			{
 				globalStates::inst().calc_start_nonce(result.iNonce, oWork.bNiceHash, nonce_chunk);
+				// check if the job is still valid, there is a small posibility that the job is switched
+				if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo)
+					break;
 			}
 
 			*piNonce = result.iNonce;
@@ -515,7 +547,7 @@ void minethd::work_main()
 			std::this_thread::yield();
 		}
 
-		consume_work();
+		globalStates::inst().consume_work(oWork, iJobNo);
 	}
 
 	cryptonight_free_ctx(ctx);
@@ -544,6 +576,18 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		break;
 	case cryptonight_aeon:
 		algv = 4;
+		break;
+	case cryptonight_ipbc:
+		algv = 5;
+		break;
+	case cryptonight_stellite:
+		algv = 6;
+		break;
+	case cryptonight_masari:
+		algv = 7;
+		break;
+	case cryptonight_haven:
+		algv = 8;
 		break;
 	default:
 		algv = 2;
@@ -584,7 +628,7 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		cryptonight_penta_hash<cryptonight_lite, true, false>,
 		cryptonight_penta_hash<cryptonight_lite, false, true>,
 		cryptonight_penta_hash<cryptonight_lite, true, true>,
-		
+
 		cryptonight_double_hash<cryptonight, false, false>,
 		cryptonight_double_hash<cryptonight, true, false>,
 		cryptonight_double_hash<cryptonight, false, true>,
@@ -634,13 +678,82 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		cryptonight_penta_hash<cryptonight_aeon, false, false>,
 		cryptonight_penta_hash<cryptonight_aeon, true, false>,
 		cryptonight_penta_hash<cryptonight_aeon, false, true>,
-		cryptonight_penta_hash<cryptonight_aeon, true, true>
+		cryptonight_penta_hash<cryptonight_aeon, true, true>,
+
+		cryptonight_double_hash<cryptonight_ipbc, false, false>,
+		cryptonight_double_hash<cryptonight_ipbc, true, false>,
+		cryptonight_double_hash<cryptonight_ipbc, false, true>,
+		cryptonight_double_hash<cryptonight_ipbc, true, true>,
+		cryptonight_triple_hash<cryptonight_ipbc, false, false>,
+		cryptonight_triple_hash<cryptonight_ipbc, true, false>,
+		cryptonight_triple_hash<cryptonight_ipbc, false, true>,
+		cryptonight_triple_hash<cryptonight_ipbc, true, true>,
+		cryptonight_quad_hash<cryptonight_ipbc, false, false>,
+		cryptonight_quad_hash<cryptonight_ipbc, true, false>,
+		cryptonight_quad_hash<cryptonight_ipbc, false, true>,
+		cryptonight_quad_hash<cryptonight_ipbc, true, true>,
+		cryptonight_penta_hash<cryptonight_ipbc, false, false>,
+		cryptonight_penta_hash<cryptonight_ipbc, true, false>,
+		cryptonight_penta_hash<cryptonight_ipbc, false, true>,
+		cryptonight_penta_hash<cryptonight_ipbc, true, true>,
+
+		cryptonight_double_hash<cryptonight_stellite, false, false>,
+		cryptonight_double_hash<cryptonight_stellite, true, false>,
+		cryptonight_double_hash<cryptonight_stellite, false, true>,
+		cryptonight_double_hash<cryptonight_stellite, true, true>,
+		cryptonight_triple_hash<cryptonight_stellite, false, false>,
+		cryptonight_triple_hash<cryptonight_stellite, true, false>,
+		cryptonight_triple_hash<cryptonight_stellite, false, true>,
+		cryptonight_triple_hash<cryptonight_stellite, true, true>,
+		cryptonight_quad_hash<cryptonight_stellite, false, false>,
+		cryptonight_quad_hash<cryptonight_stellite, true, false>,
+		cryptonight_quad_hash<cryptonight_stellite, false, true>,
+		cryptonight_quad_hash<cryptonight_stellite, true, true>,
+		cryptonight_penta_hash<cryptonight_stellite, false, false>,
+		cryptonight_penta_hash<cryptonight_stellite, true, false>,
+		cryptonight_penta_hash<cryptonight_stellite, false, true>,
+		cryptonight_penta_hash<cryptonight_stellite, true, true>,
+
+		cryptonight_double_hash<cryptonight_masari, false, false>,
+		cryptonight_double_hash<cryptonight_masari, true, false>,
+		cryptonight_double_hash<cryptonight_masari, false, true>,
+		cryptonight_double_hash<cryptonight_masari, true, true>,
+		cryptonight_triple_hash<cryptonight_masari, false, false>,
+		cryptonight_triple_hash<cryptonight_masari, true, false>,
+		cryptonight_triple_hash<cryptonight_masari, false, true>,
+		cryptonight_triple_hash<cryptonight_masari, true, true>,
+		cryptonight_quad_hash<cryptonight_masari, false, false>,
+		cryptonight_quad_hash<cryptonight_masari, true, false>,
+		cryptonight_quad_hash<cryptonight_masari, false, true>,
+		cryptonight_quad_hash<cryptonight_masari, true, true>,
+		cryptonight_penta_hash<cryptonight_masari, false, false>,
+		cryptonight_penta_hash<cryptonight_masari, true, false>,
+		cryptonight_penta_hash<cryptonight_masari, false, true>,
+		cryptonight_penta_hash<cryptonight_masari, true, true>,
+		
+		cryptonight_double_hash<cryptonight_haven, false, false>,
+		cryptonight_double_hash<cryptonight_haven, true, false>,
+		cryptonight_double_hash<cryptonight_haven, false, true>,
+		cryptonight_double_hash<cryptonight_haven, true, true>,
+		cryptonight_triple_hash<cryptonight_haven, false, false>,
+		cryptonight_triple_hash<cryptonight_haven, true, false>,
+		cryptonight_triple_hash<cryptonight_haven, false, true>,
+		cryptonight_triple_hash<cryptonight_haven, true, true>,
+		cryptonight_quad_hash<cryptonight_haven, false, false>,
+		cryptonight_quad_hash<cryptonight_haven, true, false>,
+		cryptonight_quad_hash<cryptonight_haven, false, true>,
+		cryptonight_quad_hash<cryptonight_haven, true, true>,
+		cryptonight_penta_hash<cryptonight_haven, false, false>,
+		cryptonight_penta_hash<cryptonight_haven, true, false>,
+		cryptonight_penta_hash<cryptonight_haven, false, true>,
+		cryptonight_penta_hash<cryptonight_haven, true, true>
+
 	};
 
 	std::bitset<2> digit;
 	digit.set(0, !bHaveAes);
 	digit.set(1, !bNoPrefetch);
-	
+
 	return func_table[algv << 4 | (N-2) << 2 | digit.to_ulong()];
 }
 
@@ -724,7 +837,7 @@ void minethd::multiway_work_main()
 			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-			consume_work();
+			globalStates::inst().consume_work(oWork, iJobNo);
 			prep_multiway_work<N>(bWorkBlob, piNonce);
 			continue;
 		}
@@ -769,6 +882,9 @@ void minethd::multiway_work_main()
 			{
 				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, nonce_chunk);
 				nonce_ctr = nonce_chunk;
+				// check if the job is still valid, there is a small posibility that the job is switched
+				if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo)
+					break;
 			}
 
 			for (size_t i = 0; i < N; i++)
@@ -787,7 +903,7 @@ void minethd::multiway_work_main()
 			std::this_thread::yield();
 		}
 
-		consume_work();
+		globalStates::inst().consume_work(oWork, iJobNo);
 		prep_multiway_work<N>(bWorkBlob, piNonce);
 	}
 
