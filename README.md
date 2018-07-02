@@ -51,6 +51,7 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 - [IPBC](https://ipbc.io)
 - [Karbo](https://karbo.io)
 - [Masari](https://getmasari.org)
+- [QRL](https://theqrl.org)
 - [Sumokoin](https://www.sumokoin.org)
 - [TurtleCoin](https://turtlecoin.lol)
 

@@ -32,6 +32,7 @@ POOLCONF],
  *    karbo
  *    masari
  *    monero7 (use this for Monero's new PoW)
+ *    qrl - Quantum Resistant Ledger
  *    sumokoin (automatic switch with block version 3 to cryptonight_heavy)
  *    turtlecoin
  *
