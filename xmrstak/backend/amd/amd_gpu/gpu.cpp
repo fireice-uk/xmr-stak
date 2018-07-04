@@ -625,7 +625,7 @@ uint32_t getNumPlatforms()
 	clStatus = clGetPlatformIDs(0, NULL, &num_platforms);
 	if(clStatus != CL_SUCCESS)
 	{
-		printer::inst()->print_msg(L1,"WARNING: %s when calling clGetPlatformIDs for number of platforms.", err_to_str(clStatus));
+		printer::inst()->print_msg(L1,"WARNING: %s when calling clGetPlatformIDs for number of platforms. (%d)", err_to_str(clStatus), clStatus);
 		return 0u;
 	}
 
@@ -803,7 +803,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 
 	if((ret = clGetPlatformIDs(0, NULL, &entries)) != CL_SUCCESS)
 	{
-		printer::inst()->print_msg(L1,"Error %s when calling clGetPlatformIDs for number of platforms.", err_to_str(ret));
+		printer::inst()->print_msg(L1,"Error %s when calling clGetPlatformIDs for number of platforms (%d).", err_to_str(ret), ret);
 		return ERR_OCL_API;
 	}
 
@@ -823,7 +823,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 #endif
 	if((ret = clGetPlatformIDs(entries, PlatformIDList, NULL)) != CL_SUCCESS)
 	{
-		printer::inst()->print_msg(L1,"Error %s when calling clGetPlatformIDs for platform ID information.", err_to_str(ret));
+		printer::inst()->print_msg(L1,"Error %s when calling clGetPlatformIDs for platform ID information. (%d)", err_to_str(ret), ret);
 		return ERR_OCL_API;
 	}
 
