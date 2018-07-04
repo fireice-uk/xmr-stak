@@ -488,8 +488,8 @@ void disable_sigpipe()
 inline void disable_sigpipe() {}
 #endif
 
-void executor::init_pools(void)
-{	
+void executor::init_pools()
+{
 	size_t pc = jconf::inst()->GetPoolCount();
 	bool dev_tls = true;
 	bool already_have_cli_pool = false;
@@ -522,7 +522,7 @@ void executor::init_pools(void)
 		else
 			pools.emplace_back(i+1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sRigId, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
 	}
-	
+
 
 	if(!xmrstak::params::inst().poolURL.empty() && !already_have_cli_pool)
 	{
@@ -535,7 +535,7 @@ void executor::init_pools(void)
 
 		pools.emplace_back(i+1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolRigid.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
 	}
-	
+
 	switch(jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgo())
 	{
 		case cryptonight_heavy:
@@ -570,14 +570,14 @@ void executor::init_pools(void)
 		default:
 			break;
 	}
-	
+
 }
 
 
-void executor::on_pools_reload(void)
+void executor::on_pools_reload()
 {
 	if(!jconf::inst()->parse_config(xmrstak::params::inst().configFile.c_str(), xmrstak::params::inst().configFilePools.c_str()))
-		printer::inst()->print_msg(L1, "ERROR: Failed to reload pools");  
+		printer::inst()->print_msg(L1, "ERROR: Failed to reload pools");
 	else
 	{
 		pools.clear();
@@ -622,7 +622,7 @@ void executor::ex_main()
 	if(jconf::inst()->GetVerboseLevel() >= 4)
 		push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 
-	size_t cnt = 0,i=0;
+	size_t cnt = 0, i = 0;
 	while (true)
 	{
 		ev = oEventQ.pop();
@@ -662,7 +662,6 @@ void executor::ex_main()
 				double fHps = 0.0;
 				double fTelem;
 				bool normal = true;
-
 				for (i = 0; i < pvThreads->size(); i++)
 				{
 					fTelem = telem->calc_telemetry_data(10000, i);
@@ -699,8 +698,8 @@ void executor::ex_main()
 			print_report(EV_USR_HASHRATE);
 			push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 			break;
-			
-	    case EV_USR_POOLRELOAD:
+
+	        case EV_USR_POOLRELOAD:
 		    on_pools_reload();
 		    break;
 
