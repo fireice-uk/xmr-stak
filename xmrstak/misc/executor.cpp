@@ -622,7 +622,7 @@ void executor::ex_main()
 	if(jconf::inst()->GetVerboseLevel() >= 4)
 		push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 
-	size_t cnt = 0, i = 0;
+	size_t cnt = 0;
 	while (true)
 	{
 		ev = oEventQ.pop();
@@ -653,7 +653,7 @@ void executor::ex_main()
 			break;
 
 		case EV_PERF_TICK:
-			for (i = 0; i < pvThreads->size(); i++)
+			for (size_t i = 0; i < pvThreads->size(); i++)
 				telem->push_perf_value(i, pvThreads->at(i)->iHashCount.load(std::memory_order_relaxed),
 				pvThreads->at(i)->iTimestamp.load(std::memory_order_relaxed));
 
@@ -662,7 +662,7 @@ void executor::ex_main()
 				double fHps = 0.0;
 				double fTelem;
 				bool normal = true;
-				for (i = 0; i < pvThreads->size(); i++)
+				for (size_t i = 0; i < pvThreads->size(); i++)
 				{
 					fTelem = telem->calc_telemetry_data(10000, i);
 					if(std::isnormal(fTelem))
