@@ -815,7 +815,7 @@ int main(int argc, char *argv[])
 		case 'c':
 			executor::inst()->push_event(ex_event(EV_USR_CONNSTAT));
 			break;
-        case 'p':
+		case 'p':
 			executor::inst()->push_event(ex_event(EV_USR_POOLRELOAD));
 			break;
 		default:
