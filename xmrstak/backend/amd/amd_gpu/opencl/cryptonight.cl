@@ -520,9 +520,10 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 	/* Also left over threads perform this loop.
 	 * The left over thread results will be ignored
 	 */
+	#pragma unroll 16
 	for(size_t i=0; i < 16; i++)
 	{
-		#pragma unroll
+		#pragma unroll 10
 		for(int j = 0; j < 10; ++j)
 			text = AES_Round(AES0, AES1, AES2, AES3, text, ((uint4 *)ExpandedKey1)[j]);
 		barrier(CLK_LOCAL_MEM_FENCE);
@@ -805,9 +806,10 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 	/* Also left over threads perform this loop.
 	 * The left over thread results will be ignored
 	 */
+	#pragma unroll 16
 	for(size_t i=0; i < 16; i++)
 	{
-		#pragma unroll
+		#pragma unroll 10
 		for(int j = 0; j < 10; ++j)
 			text = AES_Round(AES0, AES1, AES2, AES3, text, ((uint4 *)ExpandedKey2)[j]);
 		barrier(CLK_LOCAL_MEM_FENCE);
