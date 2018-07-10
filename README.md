@@ -1,9 +1,7 @@
 ###### fireice-uk's and psychocrypt's
-# XMR-Stak - Monero/Aeon All-in-One Mining Software
+# XMR-Stak - Cryptonight All-in-One Mining Software
 
-**XMR-Stak is ready for the POW change of Monero-v7, Aeon-v7, stellite-v4 and Sumukoin-v3**
-
-XMR-Stak is a universal Stratum pool miner. This miner supports CPUs, AMD and NVIDIA gpus and can be used to mine the crypto currency Monero and Aeon.
+XMR-Stak is a universal Stratum pool miner. This miner supports CPUs, AMD and NVIDIA gpus and can be used to mine the crypto currencys Monero, Aeon and many more Cryptonight coins.
 
 ## HTML reports
 <img src="https://gist.githubusercontent.com/fireice-uk/2da301131ac01695ff79539a27b81d68/raw/4c09cdeee86f94df2e9dd86b927e64aded6184f5/xmr-stak-cpu-hashrate.png" width="260"> <img src="https://gist.githubusercontent.com/fireice-uk/2da301131ac01695ff79539a27b81d68/raw/4c09cdeee86f94df2e9dd86b927e64aded6184f5/xmr-stak-cpu-results.png" width="260"> <img src="https://gist.githubusercontent.com/fireice-uk/2da301131ac01695ff79539a27b81d68/raw/4c09cdeee86f94df2e9dd86b927e64aded6184f5/xmr-stak-cpu-connection.png" width="260">
@@ -42,23 +40,28 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 
 - [Aeon](http://www.aeon.cash)
 - [BBSCoin](https://www.bbscoin.xyz)
-- [Croat](https://croat.cat)
-- [Edollar](https://edollar.cash)
-- [Electroneum](https://electroneum.com)
 - [Graft](https://www.graft.network)
 - [Haven](https://havenprotocol.com)
 - [Intense](https://intensecoin.com)
 - [IPBC](https://ipbc.io)
-- [Karbo](https://karbo.io)
 - [Masari](https://getmasari.org)
 - [Ryo](https://ryo-currency.com)
-- [Sumokoin](https://www.sumokoin.org)
 - [TurtleCoin](https://turtlecoin.lol)
 
 If your prefered coin is not listed, you can chose one of the following algorithms:
 
-- Cryptonight - 2 MiB scratchpad memory
-- Cryptonight-light - 1 MiB scratchpad memory
+- 1MiB scratchpad memory
+    - cryptonight_lite
+    - cryptonight_lite_v7
+    - cryptonight_lite_v7_xor (algorithm used by ipbc)
+- 2MiB scratchpad memory
+    - cryptonight
+    - cryptonight_masari
+    - cryptonight_v7
+    - cryptonight_v7_stellite
+- 4MiB scratchpad memory
+    - cryptonight_haven
+    - cryptonight_heavy
 
 Please note, this list is not complete, and is not an endorsement.
 
