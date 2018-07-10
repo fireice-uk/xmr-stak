@@ -30,6 +30,7 @@ POOLCONF],
  *    karbo
  *    monero7 (use this for Monero's new PoW)
  *    sumokoin
+ *    qwertycoin
  *
  */
 
