@@ -504,6 +504,7 @@ void minethd::work_main()
 				miner_algo = coinDesc.GetMiningAlgoRoot();
 				hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
 			}
+			result.algorithm = miner_algo;
 			lastPoolId = oWork.iPoolId;
 			version = new_version;
 		}
@@ -885,7 +886,10 @@ void minethd::multiway_work_main()
 			{
 				if (*piHashVal[i] < oWork.iTarget)
 				{
-					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce - N + i, bHashOut + 32 * i, iThreadNo), oWork.iPoolId));
+					executor::inst()->push_event(
+						ex_event(job_result(oWork.sJobID, iNonce - N + i, bHashOut + 32 * i, iThreadNo, miner_algo),
+						oWork.iPoolId)
+					);
 				}
 			}
 
