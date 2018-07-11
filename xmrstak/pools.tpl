@@ -22,18 +22,13 @@ POOLCONF],
  *
  *    aeon7 (use this for Aeon's new PoW)
  *    bbscoin (automatic switch with block version 3 to cryptonight_v7)
- *    croat
- *    edollar
- *    electroneum
  *    graft
  *    haven (automatic switch with block version 3 to cryptonight_haven)
  *    intense
  *    ipbc
- *    karbo
  *    masari
  *    monero7 (use this for Monero's new PoW)
  *    ryo
- *    sumokoin (automatic switch with block version 3 to cryptonight_heavy)
  *    turtlecoin
  *
  * Native algorithms which not depends on any block versions:
