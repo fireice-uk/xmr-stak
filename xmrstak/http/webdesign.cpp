@@ -136,13 +136,13 @@ extern const char sHtmlCommonHeader [] =
 
 	"<div class='flex-container'>"
 		"<div class='links flex-item'>"
-			"<a href='/h'><div><span class='letter'>H</span>ashrate</div></a>"
+			"<a href='h'><div><span class='letter'>H</span>ashrate</div></a>"
 		"</div>"
 		"<div class='links flex-item'>"
-			"<a href='/r'><div><span class='letter'>R</span>esults</div></a>"
+			"<a href='r'><div><span class='letter'>R</span>esults</div></a>"
 		"</div>"
 		"<div class='links flex-item'>"
-			"<a href='/c'><div><span class='letter'>C</span>onnection</div></a>"
+			"<a href='c'><div><span class='letter'>C</span>onnection</div></a>"
 		"</div>"
 	"</div>"
 	"<h4>%s</h4>";
