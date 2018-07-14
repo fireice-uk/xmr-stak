@@ -40,10 +40,10 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 
 - [Aeon](http://www.aeon.cash)
 - [BBSCoin](https://www.bbscoin.xyz)
+- [BitTube](https://coin.bit.tube/)
 - [Graft](https://www.graft.network)
 - [Haven](https://havenprotocol.com)
 - [Intense](https://intensecoin.com)
-- [IPBC](https://ipbc.io)
 - [Masari](https://getmasari.org)
 - [Ryo](https://ryo-currency.com)
 - [TurtleCoin](https://turtlecoin.lol)
