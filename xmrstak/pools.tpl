@@ -22,10 +22,10 @@ POOLCONF],
  *
  *    aeon7 (use this for Aeon's new PoW)
  *    bbscoin (automatic switch with block version 3 to cryptonight_v7)
+ *    bittube (uses cyrptonight_bittube2 algorithm)
  *    graft
  *    haven (automatic switch with block version 3 to cryptonight_haven)
  *    intense
- *    ipbc
  *    masari
  *    monero7 (use this for Monero's new PoW)
  *    ryo
@@ -41,6 +41,7 @@ POOLCONF],
  *    cryptonight
  *    cryptonight_v7
  *    # 4MiB scratchpad memory
+ *    cyrptonight_bittube2
  *    cryptonight_haven
  *    cryptonight_heavy
  */
