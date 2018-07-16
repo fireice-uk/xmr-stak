@@ -25,7 +25,7 @@
 
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/backend/iBackend.hpp"
-#include "xmrstak/backend//globalStates.hpp"
+#include "xmrstak/backend/globalStates.hpp"
 #include "xmrstak/misc/configEditor.hpp"
 #include "xmrstak/params.hpp"
 #include "jconf.hpp"
@@ -295,6 +295,22 @@ bool minethd::self_test()
 	else if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_masari)
 	{
 	}
+	else if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_bittube2)
+	{
+		unsigned char out[32 * MAX_N];
+		cn_hash_fun hashf;
+
+		hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_bittube2);
+
+		hashf("\x38\x27\x4c\x97\xc4\x5a\x17\x2c\xfc\x97\x67\x98\x70\x42\x2e\x3a\x1a\xb0\x78\x49\x60\xc6\x05\x14\xd8\x16\x27\x14\x15\xc3\x06\xee\x3a\x3e\xd1\xa7\x7e\x31\xf6\xa8\x85\xc3\xcb\xff\x01\x02\x03\x04", 48, out, ctx[0]);
+		bResult = memcmp(out, "\x18\x2c\x30\x41\x93\x1a\x14\x73\xc6\xbf\x7e\x77\xfe\xb5\x17\x9b\xa8\xbe\xa9\x68\xba\x9e\xe1\xe8\x24\x1a\x12\x7a\xac\x81\xb4\x24", 32) == 0;
+
+		hashf("\x04\x04\xb4\x94\xce\xd9\x05\x18\xe7\x25\x5d\x01\x28\x63\xde\x8a\x4d\x27\x72\xb1\xff\x78\x8c\xd0\x56\x20\x38\x98\x3e\xd6\x8c\x94\xea\x00\xfe\x43\x66\x68\x83\x00\x00\x00\x00\x18\x7c\x2e\x0f\x66\xf5\x6b\xb9\xef\x67\xed\x35\x14\x5c\x69\xd4\x69\x0d\x1f\x98\x22\x44\x01\x2b\xea\x69\x6e\xe8\xb3\x3c\x42\x12\x01", 76, out, ctx[0]);
+		bResult = bResult && memcmp(out, "\x7f\xbe\xb9\x92\x76\x87\x5a\x3c\x43\xc2\xbe\x5a\x73\x36\x06\xb5\xdc\x79\xcc\x9c\xf3\x7c\x43\x3e\xb4\x18\x56\x17\xfb\x9b\xc9\x36", 32) == 0;
+
+		hashf("\x85\x19\xe0\x39\x17\x2b\x0d\x70\xe5\xca\x7b\x33\x83\xd6\xb3\x16\x73\x15\xa4\x22\x74\x7b\x73\xf0\x19\xcf\x95\x28\xf0\xfd\xe3\x41\xfd\x0f\x2a\x63\x03\x0b\xa6\x45\x05\x25\xcf\x6d\xe3\x18\x37\x66\x9a\xf6\xf1\xdf\x81\x31\xfa\xf5\x0a\xaa\xb8\xd3\xa7\x40\x55\x89", 64, out, ctx[0]);
+		bResult = bResult && memcmp(out, "\x90\xdc\x65\x53\x8d\xb0\x00\xea\xa2\x52\xcd\xd4\x1c\x17\x7a\x64\xfe\xff\x95\x36\xe7\x71\x68\x35\xd4\xcf\x5c\x73\x56\xb1\x2f\xcd", 32) == 0;
+	}
 	for (int i = 0; i < MAX_N; i++)
 		cryptonight_free_ctx(ctx[i]);
 
@@ -386,6 +402,9 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, xmr
 	case cryptonight_haven:
 		algv = 8;
 		break;
+	case cryptonight_bittube2:
+		algv = 9;
+		break;
 	default:
 		algv = 2;
 		break;
@@ -427,7 +446,11 @@ minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, xmr
 		cryptonight_hash<cryptonight_haven, false, false>,
 		cryptonight_hash<cryptonight_haven, true, false>,
 		cryptonight_hash<cryptonight_haven, false, true>,
-		cryptonight_hash<cryptonight_haven, true, true>
+		cryptonight_hash<cryptonight_haven, true, true>,
+		cryptonight_hash<cryptonight_bittube2, false, false>,
+		cryptonight_hash<cryptonight_bittube2, true, false>,
+		cryptonight_hash<cryptonight_bittube2, false, true>,
+		cryptonight_hash<cryptonight_bittube2, true, true>
 	};
 
 	std::bitset<2> digit;
@@ -504,6 +527,7 @@ void minethd::work_main()
 				miner_algo = coinDesc.GetMiningAlgoRoot();
 				hash_fun = func_selector(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
 			}
+			result.algorithm = miner_algo;
 			lastPoolId = oWork.iPoolId;
 			version = new_version;
 		}
@@ -577,6 +601,9 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		break;
 	case cryptonight_haven:
 		algv = 8;
+		break;
+	case cryptonight_bittube2:
+		algv = 9;
 		break;
 	default:
 		algv = 2;
@@ -735,8 +762,24 @@ minethd::cn_hash_fun_multi minethd::func_multi_selector(size_t N, bool bHaveAes,
 		cryptonight_penta_hash<cryptonight_haven, false, false>,
 		cryptonight_penta_hash<cryptonight_haven, true, false>,
 		cryptonight_penta_hash<cryptonight_haven, false, true>,
-		cryptonight_penta_hash<cryptonight_haven, true, true>
+		cryptonight_penta_hash<cryptonight_haven, true, true>,
 
+		cryptonight_double_hash<cryptonight_bittube2, false, false>,
+		cryptonight_double_hash<cryptonight_bittube2, true, false>,
+		cryptonight_double_hash<cryptonight_bittube2, false, true>,
+		cryptonight_double_hash<cryptonight_bittube2, true, true>,
+		cryptonight_triple_hash<cryptonight_bittube2, false, false>,
+		cryptonight_triple_hash<cryptonight_bittube2, true, false>,
+		cryptonight_triple_hash<cryptonight_bittube2, false, true>,
+		cryptonight_triple_hash<cryptonight_bittube2, true, true>,
+		cryptonight_quad_hash<cryptonight_bittube2, false, false>,
+		cryptonight_quad_hash<cryptonight_bittube2, true, false>,
+		cryptonight_quad_hash<cryptonight_bittube2, false, true>,
+		cryptonight_quad_hash<cryptonight_bittube2, true, true>,
+		cryptonight_penta_hash<cryptonight_bittube2, false, false>,
+		cryptonight_penta_hash<cryptonight_bittube2, true, false>,
+		cryptonight_penta_hash<cryptonight_bittube2, false, true>,
+		cryptonight_penta_hash<cryptonight_bittube2, true, true>
 	};
 
 	std::bitset<2> digit;
@@ -885,7 +928,10 @@ void minethd::multiway_work_main()
 			{
 				if (*piHashVal[i] < oWork.iTarget)
 				{
-					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce - N + i, bHashOut + 32 * i, iThreadNo), oWork.iPoolId));
+					executor::inst()->push_event(
+						ex_event(job_result(oWork.sJobID, iNonce - N + i, bHashOut + 32 * i, iThreadNo, miner_algo),
+						oWork.iPoolId)
+					);
 				}
 			}
 

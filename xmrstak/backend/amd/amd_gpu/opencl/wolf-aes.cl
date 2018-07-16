@@ -74,6 +74,19 @@ static const __constant uint AES0_C[256] =
 
 #define BYTE(x, y)	(amd_bfe((x), (y) << 3U, 8U))
 
+inline uint4 AES_Round_bittube2(const __local uint *AES0, const __local uint *AES1, const __local uint *AES2, const __local uint *AES3, uint4 x, uint4 k)
+{
+	x = ~x;
+	k[0] ^= AES0[BYTE(x[0], 0)] ^ AES1[BYTE(x[1], 1)] ^ AES2[BYTE(x[2], 2)] ^ AES3[BYTE(x[3], 3)];
+	x[0] ^= k[0];
+	k[1] ^= AES0[BYTE(x[1], 0)] ^ AES1[BYTE(x[2], 1)] ^ AES2[BYTE(x[3], 2)] ^ AES3[BYTE(x[0], 3)];
+	x[1] ^= k[1];
+	k[2] ^= AES0[BYTE(x[2], 0)] ^ AES1[BYTE(x[3], 1)] ^ AES2[BYTE(x[0], 2)] ^ AES3[BYTE(x[1], 3)];
+	x[2] ^= k[2];
+	k[3] ^= AES0[BYTE(x[3], 0)] ^ AES1[BYTE(x[0], 1)] ^ AES2[BYTE(x[1], 2)] ^ AES3[BYTE(x[2], 3)];
+	return k;
+}
+
 uint4 AES_Round(const __local uint *AES0, const __local uint *AES1, const __local uint *AES2, const __local uint *AES3, const uint4 X, uint4 key)
 {
 	key.s0 ^= AES0[BYTE(X.s0, 0)];
