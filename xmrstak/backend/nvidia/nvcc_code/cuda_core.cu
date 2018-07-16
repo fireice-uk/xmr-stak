@@ -268,26 +268,27 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 				k[2] = shuffle<4>(sPtr,sub, k[0], sub + 2);
 				k[3] = shuffle<4>(sPtr,sub, k[0], sub + 3);
 
-				uint32_t r;
-
 				#pragma unroll 4
 				for(int i = 0; i < 4; ++i)
 				{
 					// only calculate the key if all data are up to date
 					if(i == sub)
 					{
-						r = a ^
+						d[x] = a ^
 							t_fn0( k[0] & 0xff ) ^
 							t_fn1( (k[1] >> 8) & 0xff ) ^
 							t_fn2( (k[2] >> 16) & 0xff ) ^
 							t_fn3( (k[3] >> 24 ) );
 					}
-					/* avoid negative number for modulo
-					 * load valid key (k) depending on the round
-					 */
-					k[(4 - sub + i)%4] = shuffle<4>(sPtr,sub, k[0] ^ r, i);
+					// the last shuffle is not needed
+					if(i != 3)
+					{
+						/* avoid negative number for modulo
+						 * load valid key (k) depending on the round
+						 */
+						k[(4 - sub + i)%4] = shuffle<4>(sPtr,sub, k[0] ^ d[x], i);
+					}
 				}
-				d[x] = r;
 			}
 			else
 			{
