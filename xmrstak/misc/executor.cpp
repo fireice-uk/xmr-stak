@@ -37,6 +37,14 @@
 #include "xmrstak/version.hpp"
 #include "xmrstak/http/webdesign.hpp"
 
+#ifdef OPENCL_ROCM_EARLY
+#if defined(__APPLE__)
+#include <OpenCL/cl.h>
+#else
+#include <CL/cl.h>
+#endif
+#endif
+
 #include <thread>
 #include <string>
 #include <cmath>
@@ -492,6 +500,14 @@ void executor::ex_main()
 	disable_sigpipe();
 
 	assert(1000 % iTickTime == 0);
+
+#ifdef OPENCL_ROCM_EARLY
+	cl_int clret;
+	cl_uint entries;
+	printer::inst()->print_msg(L1, "Calling early ocl enumerate (rocm workaround)...");
+	clret = clGetPlatformIDs(0, NULL, &entries);
+	printer::inst()->print_msg(L1, "We appear to have %d platforms for ocl. (ret: %u)", entries, clret);
+#endif
 
 	xmrstak::miner_work oWork = xmrstak::miner_work();
 
