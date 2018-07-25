@@ -48,7 +48,7 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 - [Ryo](https://ryo-currency.com)
 - [TurtleCoin](https://turtlecoin.lol)
 
-If your prefered coin is not listed, you can chose one of the following algorithms:
+If your prefered coin is not listed, you can choose one of the following algorithms:
 
 - 1MiB scratchpad memory
     - cryptonight_lite
