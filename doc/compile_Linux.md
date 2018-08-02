@@ -105,6 +105,8 @@ In that case you can force CUDA to use an older compiler in the following way:
 cmake -DCUDA_HOST_COMPILER=/usr/bin/gcc-5 ..
 ```
 
+- You need 1 Gb RAM to compile (a bit less might be enough, 512 Mb isn't). 
+
 ### To do a generic and static build for a system without gcc 5.1+
 ```
     cmake -DCMAKE_LINK_STATIC=ON -DXMR-STAK_COMPILE=generic .
