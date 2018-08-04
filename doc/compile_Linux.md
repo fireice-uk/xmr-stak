@@ -22,7 +22,7 @@
     git clone https://github.com/fireice-uk/xmr-stak.git
     mkdir xmr-stak/build
     cd xmr-stak/build
-    cmake ..
+    cmake -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF ..
     make install
 
     # Arch
@@ -48,7 +48,7 @@
     git clone https://github.com/fireice-uk/xmr-stak.git
     mkdir xmr-stak/build
     cd xmr-stak/build
-    cmake3 ..
+    cmake3 -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF ..
     make install
 
     # Ubuntu 14.04
