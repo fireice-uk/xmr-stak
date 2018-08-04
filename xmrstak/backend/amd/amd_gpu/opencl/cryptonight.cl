@@ -542,9 +542,9 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 		#pragma unroll 2
 		for(int i = 0; i < (MEMORY >> 7); ++i)
 		{
-			#pragma unroll
+			#pragma unroll 10
 			for(int j = 0; j < 10; ++j)
-				text = AES_Round(AES0, AES1, AES2, AES3, text, ((uint4 *)ExpandedKey1)[j]);
+				text = AES_Round_Short(AES0, AES1, AES2, AES3, text) ^ ((uint4 *)ExpandedKey1)[j];
 
 			Scratchpad[IDX((i << 3) + get_local_id(1))] = text;
 		}
