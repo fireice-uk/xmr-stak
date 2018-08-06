@@ -17,7 +17,7 @@
 [ -z "$nicehash1" ] &&  nicehash1=false
 [ -z "$tls1" ] &&  tls1=false
 [ -z "$pool_weight1" ] &&  pool_weight1=100
-[ -z "$currency" ] &&  currency=bittube
+[ -z "$currency" ] &&  exit 102
 
  echo '
 "pool_list" :
