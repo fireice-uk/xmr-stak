@@ -261,18 +261,18 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 	if (ptr->long_state == MAP_FAILED)
 	{
 		_mm_free(ptr);
-		msg->warning = "mmap failed";
+		msg->warning = strerror(errno);
 		return NULL;
 	}
 
 	ptr->ctx_info[0] = 1;
 
 	if(madvise(ptr->long_state, hashMemSize, MADV_RANDOM|MADV_WILLNEED) != 0)
-		msg->warning = "madvise failed";
+		msg->warning = strerror(errno);
 
 	ptr->ctx_info[1] = 0;
 	if(use_mlock != 0 && mlock(ptr->long_state, hashMemSize) != 0)
-		msg->warning = "mlock failed";
+		msg->warning = strerror(errno);
 	else
 		ptr->ctx_info[1] = 1;
 
