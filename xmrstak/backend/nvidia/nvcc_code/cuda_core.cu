@@ -194,6 +194,31 @@ __forceinline__ __device__ uint32_t shuffle(volatile uint32_t* ptr,const uint32_
 #endif
 }
 
+template<size_t group_n>
+__forceinline__ __device__ uint64_t shuffle64(volatile uint32_t* ptr,const uint32_t sub,const int val,const uint32_t src, const uint32_t src2)
+{
+	uint64_t tmp;
+	((uint32_t*)&tmp)[0] = shuffle<group_n>(ptr, sub, val, src);
+	((uint32_t*)&tmp)[1] = shuffle<group_n>(ptr, sub, val, src2);
+	return tmp;
+}
+
+__forceinline__ __device__ uint64_t int_sqrt33_1_double_precision(int i,const uint64_t n0)
+{
+	uint64_t x = (n0 >> 12) + (1023ULL << 52);
+	const double xx = sqrt( *reinterpret_cast<double*>(&x) );
+	uint64_t r = *reinterpret_cast<const uint64_t*>(&xx);
+
+	const uint64_t s = r >> 20;
+	r >>= 19;
+
+	uint64_t x2 = (s - (1022ULL << 32)) * (r - s - (1022ULL << 32) + 1);
+
+ 	if (x2 < n0) ++r;
+
+	return r;
+}
+
 template<size_t ITERATIONS, uint32_t MEMORY, uint32_t MASK, xmrstak_algo ALGO>
 #ifdef XMR_STAK_THREADS
 __launch_bounds__( XMR_STAK_THREADS * 4 )
@@ -227,7 +252,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 	const int start = partidx * batchsize;
 	const int end = start + batchsize;
 	uint32_t * long_state = &d_long_state[(IndexType) thread * MEMORY];
-	uint32_t a, d[2], idx0;
+	uint32_t a, a1, d[2], idx0;
 	uint32_t t1[2], t2[2], res;
 
 	uint32_t tweak1_2[2];
@@ -250,7 +275,19 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 			idx0 = *(d_ctx_b + threads * 4 + thread);
 		}
 	}
-	d[1] = (d_ctx_b + thread * 4)[sub];
+
+	uint32_t bx1, division_result, sqrt_result;
+	if(ALGO == cryptonight_monero_v8)
+	{
+		d[1] = (d_ctx_b + thread * 12)[sub];
+		bx1 = (d_ctx_b + thread * 12 + 4)[sub];
+
+		// must be valid only for `sub < 2`
+		division_result = (d_ctx_b + thread * 12 + 4 * 2)[sub % 2];
+		sqrt_result = (d_ctx_b + thread * 12 + 4 * 2 + 2)[sub % 2];
+	}
+	else
+		d[1] = (d_ctx_b + thread * 4)[sub];
 
 	#pragma unroll 2
 	for ( i = start; i < end; ++i )
@@ -296,6 +333,10 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 				const uint32_t x_1 = shuffle<4>(sPtr,sub, x_0, sub + 1);
 				const uint32_t x_2 = shuffle<4>(sPtr,sub, x_0, sub + 2);
 				const uint32_t x_3 = shuffle<4>(sPtr,sub, x_0, sub + 3);
+				if(ALGO == cryptonight_monero_v8)
+				{
+					a1 = a;
+				}
 				d[x] = a ^
 					t_fn0( x_0 & 0xff ) ^
 					t_fn1( (x_1 >> 8) & 0xff ) ^
@@ -303,6 +344,33 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 					t_fn3( ( x_3 >> 24 ) );
 			}
 
+			// Shuffle the other 3x16 byte chunks in the current 64-byte cache line
+			if(ALGO == cryptonight_monero_v8)
+			{
+				// Shuffle constants here were chosen carefully
+				// to maximize permutation cycle length
+				// and have no 2-byte elements stay in their places
+				const uint32_t chunk1 = loadGlobal32<uint32_t>( (uint32_t*)((uint64_t)(long_state + j) ^ 0x10)  );
+				const uint32_t chunk2 = loadGlobal32<uint32_t>( (uint32_t*)((uint64_t)(long_state + j) ^ 0x20)  );
+				const uint32_t chunk3 = loadGlobal32<uint32_t>( (uint32_t*)((uint64_t)(long_state + j) ^ 0x30)  );
+
+				uint32_t src = sub & 2;
+				const uint64_t bx1_64 = shuffle64<4>(sPtr,sub, bx1, src, src | 1);
+				const uint64_t chunk3_64 = shuffle64<4>(sPtr,sub, chunk3, src, src | 1);
+				const uint64_t cc3 = bx1_64 + chunk3_64;
+				storeGlobal32( (uint32_t*)((uint64_t)(long_state + j) ^ 0x10), ((uint32_t*)&cc3)[sub & 1]);
+
+				const uint64_t bx0_64 = shuffle64<4>(sPtr,sub, d[(x + 1) % 2], src, src | 1);
+				const uint64_t chunk1_64 = shuffle64<4>(sPtr,sub, chunk1, src, src | 1);
+				const uint64_t cc1 = bx0_64 + chunk1_64;
+				storeGlobal32( (uint32_t*)((uint64_t)(long_state + j) ^ 0x20), ((uint32_t*)&cc1)[sub & 1]);
+
+				const uint64_t ax0_64 = shuffle64<4>(sPtr,sub, a1, src, src | 1);
+				const uint64_t chunk2_64 = shuffle64<4>(sPtr,sub, chunk2, src, src | 1);
+				const uint64_t cc2 = ax0_64 + chunk2_64;
+				storeGlobal32( (uint32_t*)((uint64_t)(long_state + j) ^ 0x30), ((uint32_t*)&cc2)[sub & 1]);
+				
+			}
 			//XOR_BLOCKS_DST(c, b, &long_state[j]);
 			t1[0] = shuffle<4>(sPtr,sub, d[x], 0);
 
@@ -331,10 +399,76 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 
 			uint32_t yy[2];
 			*( (uint64_t*) yy ) = loadGlobal64<uint64_t>( ( (uint64_t *) long_state )+( j >> 1 ) );
+
+			if(ALGO == cryptonight_monero_v8 )
+			{
+				const uint64_t sqrt_result_64 = shuffle64<4>(sPtr, sub, sqrt_result, 0, 1);
+
+				// Use division and square root results from the _previous_ iteration to hide the latency
+				const uint64_t cx0 = shuffle64<4>(sPtr, sub, d[x], 0, 1);
+
+
+				const uint64_t division_result_64 = shuffle64<4>(sPtr,sub, division_result, 0, 1);
+				const uint64_t cl_rhs = division_result_64 ^ (sqrt_result_64 << 32);
+
+				if(sub < 2)
+					*((uint64_t*)yy) ^= cl_rhs;
+
+
+				const uint32_t dd = (cx0 + (sqrt_result_64 << 1)) | 0x80000001UL;
+
+				// Most and least significant bits in the divisor are set to 1
+				// to make sure we don't divide by a small or even number,
+				// so there are no shortcuts for such cases
+				//
+				// Quotient may be as large as (2^64 - 1)/(2^31 + 1) = 8589934588 = 2^33 - 4
+				// We drop the highest bit to fit both quotient and remainder in 32 bits
+
+				// Compiler will optimize it to a single div instruction
+				const uint64_t cx1 = shuffle64<4>(sPtr, sub, d[x], 2, 3);
+
+
+				const uint64_t division_result_tmp = static_cast<uint32_t>(cx1 / dd) + ((cx1 % dd) << 32);
+
+				division_result = ((uint32_t*)&division_result_tmp)[sub % 2];
+								
+				// Use division_result as an input for the square root to prevent parallel implementation in hardware
+				const uint64_t sqrt_result_tmp = int_sqrt33_1_double_precision(i, cx0 + division_result_tmp);
+				sqrt_result = ((uint32_t*)&sqrt_result_tmp)[sub % 2];
+			}
+
 			uint32_t zz[2];
 			zz[0] = shuffle<4>(sPtr,sub, yy[0], 0);
 			zz[1] = shuffle<4>(sPtr,sub, yy[1], 0);
+			// Shuffle the other 3x16 byte chunks in the current 64-byte cache line
+			if(ALGO == cryptonight_monero_v8)
+			{
+				// Shuffle constants here were chosen carefully
+				// to maximize permutation cycle length
+				// and have no 2-byte elements stay in their places
+				const uint32_t chunk1 = loadGlobal32<uint32_t>( (uint32_t*)((uint64_t)(long_state + j) ^ 0x10)  );
+				const uint32_t chunk2 = loadGlobal32<uint32_t>( (uint32_t*)((uint64_t)(long_state + j) ^ 0x20)  );
+				const uint32_t chunk3 = loadGlobal32<uint32_t>( (uint32_t*)((uint64_t)(long_state + j) ^ 0x30)  );
 
+				uint32_t src = sub & 2;
+				const uint64_t bx1_64 = shuffle64<4>(sPtr,sub, bx1, src, src | 1);
+				const uint64_t chunk3_64 = shuffle64<4>(sPtr,sub, chunk3, src, src | 1);
+				const uint64_t cc3 = bx1_64 + chunk3_64;
+				storeGlobal32( (uint32_t*)((uint64_t)(long_state + j) ^ 0x10), ((uint32_t*)&cc3)[sub & 1]);
+
+
+
+				const uint64_t bx0_64 = shuffle64<4>(sPtr,sub, d[(x + 1) % 2], src, src | 1);
+				const uint64_t chunk1_64 = shuffle64<4>(sPtr,sub, chunk1, src, src | 1);
+				const uint64_t cc1 = bx0_64 + chunk1_64;
+				storeGlobal32( (uint32_t*)((uint64_t)(long_state + j) ^ 0x20), ((uint32_t*)&cc1)[sub & 1]);
+
+				const uint64_t ax0_64 = shuffle64<4>(sPtr,sub, a1, src, src | 1);
+				const uint64_t chunk2_64 = shuffle64<4>(sPtr,sub, chunk2, src, src | 1);
+				const uint64_t cc2 = ax0_64 + chunk2_64;
+				storeGlobal32( (uint32_t*)((uint64_t)(long_state + j) ^ 0x30), ((uint32_t*)&cc2)[sub & 1]);
+			}
+			
 			t1[1] = shuffle<4>(sPtr,sub, d[x], 1);
 			#pragma unroll
 			for ( k = 0; k < 2; k++ )
@@ -384,13 +518,31 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 
 				idx0 = (~d) ^ q;
 			}
+			if(ALGO == cryptonight_monero_v8)
+			{
+				bx1 = d[(x + 1) % 2];
+			}
 		}
 	}
 
 	if ( bfactor > 0 )
 	{
 		(d_ctx_a + thread * 4)[sub] = a;
-		(d_ctx_b + thread * 4)[sub] = d[1];
+		if(ALGO == cryptonight_monero_v8)
+		{
+			(d_ctx_b + thread * 12)[sub] = d[1];
+			(d_ctx_b + thread * 12 + 4)[sub] = bx1;
+
+			if(sub < 2)
+			{
+				// must be valid only for `sub < 2`
+				(d_ctx_b + thread * 12 + 4 * 2)[sub % 2] = division_result;
+				(d_ctx_b + thread * 12 + 4 * 2 + 2)[sub % 2] = sqrt_result;
+			}
+		}
+		else
+			(d_ctx_b + thread * 4)[sub] = d[1];
+			
 		if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2)
 			if(sub&1)
 				*(d_ctx_b + threads * 4 + thread) = idx0;
@@ -533,6 +685,10 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t 
 	if(miner_algo == cryptonight_monero)
 	{
 		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero>(ctx, startNonce);
+	}
+	else if(miner_algo == cryptonight_monero_v8)
+	{
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero_v8>(ctx, startNonce);
 	}
 	else if(miner_algo == cryptonight_heavy)
 	{
