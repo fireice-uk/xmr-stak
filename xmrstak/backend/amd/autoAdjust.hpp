@@ -127,6 +127,24 @@ private:
 				minFreeMem = 512u * byteToMiB;
 			}
 
+			// check if cryptonight_monero_v8 is selected for the user or dev pool
+			bool useCryptonight_v8 =
+				::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_monero_v8 ||
+				::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot() == cryptonight_monero_v8 ||
+				::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgo() == cryptonight_monero_v8 ||
+				::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgoRoot() == cryptonight_monero_v8;
+
+			// set strided index to default
+			ctx.stridedIndex = 1;
+
+			// nvidia performance is very bad if the scratchpad is not contiguous
+			if(ctx.isNVIDIA)
+				ctx.stridedIndex = 0;
+
+			// use chunked (4x16byte) scratchpad for all backends. Default `mem_chunk` is `2`
+			if(useCryptonight_v8)
+				ctx.stridedIndex = 2;
+
 			// increase all intensity limits by two for aeon
 			if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_lite)
 				maxThreads *= 2u;
@@ -153,7 +171,7 @@ private:
 				// set 8 threads per block (this is a good value for the most gpus)
 				conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
 					"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
-					"    \"affine_to_cpu\" : false, \"strided_index\" : " + (ctx.isNVIDIA ? "0" : "1") + ", \"mem_chunk\" : 2,\n"
+					"    \"affine_to_cpu\" : false, \"strided_index\" : " + std::to_string(ctx.stridedIndex) + ", \"mem_chunk\" : 2,\n"
 					"    \"comp_mode\" : true\n" +
 					"  },\n";
 			}

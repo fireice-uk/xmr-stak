@@ -78,6 +78,8 @@ inline int amd_bfe(const uint src0, const uint offset, const uint width)
 }
 #endif
 
+//#include "opencl/fast_int_math_v2.cl"
+XMRSTAK_INCLUDE_FAST_INT_MATH_V2
 //#include "opencl/wolf-aes.cl"
 XMRSTAK_INCLUDE_WOLF_AES
 //#include "opencl/wolf-skein.cl"
@@ -556,6 +558,8 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 	}
 	mem_fence(CLK_GLOBAL_MEM_FENCE);
 }
+
+#define SCRATCHPAD_CHUNK(N) (Scratchpad[IDX(((idx0) >> 4) ^ N)])
 		
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
 __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states, ulong Threads
@@ -565,9 +569,24 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #endif
 )
 {
-	ulong a[2], b[2];
+	ulong a[2];
+
+// cryptonight_monero_v8
+#if(ALGO==11)		
+	ulong b[4];
+	uint4 b_x[2];
+#else
+	ulong b[2];
+	uint4 b_x[1];
+#endif
 	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
 
+// cryptonight_monero_v8
+#if(ALGO==11)
+	__local uint RCP[256];
+	uint2 division_result;
+	uint sqrt_result;
+#endif
 	const ulong gIdx = getIdx();
 
 	for(int i = get_local_id(0); i < 256; i += WORKSIZE)
@@ -577,6 +596,10 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 		AES1[i] = rotate(tmp, 8U);
 		AES2[i] = rotate(tmp, 16U);
 		AES3[i] = rotate(tmp, 24U);
+// cryptonight_monero_v8
+#if(ALGO==11)
+		RCP[i] = RCP_C[i];
+#endif
 	}
 
 	barrier(CLK_LOCAL_MEM_FENCE);
@@ -584,7 +607,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10)
     uint2 tweak1_2;
 #endif
-	uint4 b_x;
+
 #if(COMP_MODE==1)
 	// do not use early return here
 	if(gIdx < Threads)
@@ -604,7 +627,17 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 		a[1] = states[1] ^ states[5];
 		b[1] = states[3] ^ states[7];
 
-		b_x = ((uint4 *)b)[0];
+		b_x[0] = ((uint4 *)b)[0];
+
+// cryptonight_monero_v8
+#if(ALGO==11)
+		a[1] = states[1] ^ states[5];
+		b[2] = states[8] ^ states[10];
+		b[3] = states[9] ^ states[11];
+		b_x[1] = ((uint4 *)b)[1];
+		division_result = as_uint2(states[12]);
+		sqrt_result = as_uint2(states[13]).s0;
+#endif
 // cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2
 #if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10)
 		tweak1_2 = as_uint2(input[4]);
@@ -622,37 +655,81 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 	if(gIdx < Threads)
 #endif
 	{
-		ulong idx0 = a[0];
+		ulong idx0 = a[0] & MASK;
 
 		#pragma unroll 8
 		for(int i = 0; i < ITERATIONS; ++i)
 		{
 			ulong c[2];
 
-			((uint4 *)c)[0] = Scratchpad[IDX((idx0 & MASK) >> 4)];
+			((uint4 *)c)[0] = SCRATCHPAD_CHUNK(0);
 // cryptonight_bittube2
 #if(ALGO == 10)
 			((uint4 *)c)[0] = AES_Round_bittube2(AES0, AES1, AES2, AES3, ((uint4 *)c)[0], ((uint4 *)a)[0]);
 #else
 			((uint4 *)c)[0] = AES_Round(AES0, AES1, AES2, AES3, ((uint4 *)c)[0], ((uint4 *)a)[0]);
 #endif
-			b_x ^= ((uint4 *)c)[0];
+
+// cryptonight_monero_v8
+#if(ALGO==11)
+			{
+				ulong2 chunk1 = as_ulong2(SCRATCHPAD_CHUNK(1));
+				ulong2 chunk2 = as_ulong2(SCRATCHPAD_CHUNK(2));
+				ulong2 chunk3 = as_ulong2(SCRATCHPAD_CHUNK(3));
+				SCRATCHPAD_CHUNK(1) = as_uint4(chunk3 + ((ulong2 *)(b_x + 1))[0]);
+				SCRATCHPAD_CHUNK(2) = as_uint4(chunk1 + ((ulong2 *)b_x)[0]);
+				SCRATCHPAD_CHUNK(3) = as_uint4(chunk2 + ((ulong2 *)a)[0]);
+			}
+#endif
+
 // cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2
 #if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10)
 			uint table = 0x75310U;
+			b_x[0] ^= ((uint4 *)c)[0];
 // cryptonight_stellite
 #	if(ALGO == 7)
-			uint index = ((b_x.s2 >> 27) & 12) | ((b_x.s2 >> 23) & 2);
+			uint index = ((b_x[0].s2 >> 27) & 12) | ((b_x[0].s2 >> 23) & 2);
 #	else
-			uint index = ((b_x.s2 >> 26) & 12) | ((b_x.s2 >> 23) & 2);
+			uint index = ((b_x[0].s2 >> 26) & 12) | ((b_x[0].s2 >> 23) & 2);
 #	endif
-			b_x.s2 ^= ((table >> index) & 0x30U) << 24;
+			b_x[0].s2 ^= ((table >> index) & 0x30U) << 24;
+			SCRATCHPAD_CHUNK(0) = b_x[0];
+// cryptonight_monero_v8
+#elif(ALGO==11)
+			SCRATCHPAD_CHUNK(0) = b_x[0] ^ ((uint4 *)c)[0];
+#else
+			b_x[0] ^= ((uint4 *)c)[0];
+			SCRATCHPAD_CHUNK(0) = b_x[0];
 #endif
-			Scratchpad[IDX((idx0 & MASK) >> 4)] = b_x;
-
+			idx0 = c[0] & MASK;
 			uint4 tmp;
-			tmp = Scratchpad[IDX((c[0] & MASK) >> 4)];
-
+			tmp = SCRATCHPAD_CHUNK(0);
+// cryptonight_monero_v8
+#if(ALGO==11)
+			// Use division and square root results from the _previous_ iteration to hide the latency
+			tmp.s0 ^= division_result.s0;
+			tmp.s1 ^= division_result.s1 ^ sqrt_result;
+ 			// Most and least significant bits in the divisor are set to 1
+			// to make sure we don't divide by a small or even number,
+			// so there are no shortcuts for such cases
+			const uint d = (((uint *)c)[0] + (sqrt_result << 1)) | 0x80000001UL;
+ 			// Quotient may be as large as (2^64 - 1)/(2^31 + 1) = 8589934588 = 2^33 - 4
+			// We drop the highest bit to fit both quotient and remainder in 32 bits
+			division_result = fast_div_v2(RCP, c[1], d);
+ 			// Use division_result as an input for the square root to prevent parallel implementation in hardware
+			sqrt_result = fast_sqrt_v2(c[0] + as_ulong(division_result));
+#endif
+// cryptonight_monero_v8
+#if(ALGO==11)
+			{
+				ulong2 chunk1 = as_ulong2(SCRATCHPAD_CHUNK(1));
+				ulong2 chunk2 = as_ulong2(SCRATCHPAD_CHUNK(2));
+				ulong2 chunk3 = as_ulong2(SCRATCHPAD_CHUNK(3));
+				SCRATCHPAD_CHUNK(1) = as_uint4(chunk3 + ((ulong2 *)(b_x + 1))[0]);
+				SCRATCHPAD_CHUNK(2) = as_uint4(chunk1 + ((ulong2 *)b_x)[0]);
+				SCRATCHPAD_CHUNK(3) = as_uint4(chunk2 + ((ulong2 *)a)[0]);
+			}
+#endif
 			a[1] += c[0] * as_ulong2(tmp).s0;
 			a[0] += mul_hi(c[0], as_ulong2(tmp).s0);
 
@@ -663,39 +740,42 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #	if(ALGO == 6 || ALGO == 10)
 			uint2 ipbc_tmp = tweak1_2 ^ ((uint2 *)&(a[0]))[0];
 			((uint2 *)&(a[1]))[0] ^= ipbc_tmp;
-			Scratchpad[IDX((c[0] & MASK) >> 4)] = ((uint4 *)a)[0];
+			SCRATCHPAD_CHUNK(0) = ((uint4 *)a)[0];
 			((uint2 *)&(a[1]))[0] ^= ipbc_tmp;
 #	else
 			((uint2 *)&(a[1]))[0] ^= tweak1_2;
-			Scratchpad[IDX((c[0] & MASK) >> 4)] = ((uint4 *)a)[0];
+			SCRATCHPAD_CHUNK(0) = ((uint4 *)a)[0];
 			((uint2 *)&(a[1]))[0] ^= tweak1_2;
 #	endif
 
 #else
-			Scratchpad[IDX((c[0] & MASK) >> 4)] = ((uint4 *)a)[0];
+			SCRATCHPAD_CHUNK(0) = ((uint4 *)a)[0];
 #endif
 
 			((uint4 *)a)[0] ^= tmp;
-			idx0 = a[0];
-
-			b_x = ((uint4 *)c)[0];
+			idx0 = a[0] & MASK;
 
 // cryptonight_heavy || cryptonight_bittube2
 #if (ALGO == 4 || ALGO == 10)
-			long n = *((__global long*)(Scratchpad + (IDX((idx0 & MASK) >> 4))));
-			int d = ((__global int*)(Scratchpad + (IDX((idx0 & MASK) >> 4))))[2];
+			long n = *((__global long*)(Scratchpad + (IDX((idx0) >> 4))));
+			int d = ((__global int*)(Scratchpad + (IDX((idx0) >> 4))))[2];
 			long q = n / (d | 0x5);
-			*((__global long*)(Scratchpad + (IDX((idx0 & MASK) >> 4)))) = n ^ q;
-			idx0 = d ^ q;
-#endif
+			*((__global long*)(Scratchpad + (IDX((idx0) >> 4)))) = n ^ q;
+			idx0 = (d ^ q) & MASK;
 // cryptonight_haven
-#if (ALGO == 9)
-			long n = *((__global long*)(Scratchpad + (IDX((idx0 & MASK) >> 4))));
-			int d = ((__global int*)(Scratchpad + (IDX((idx0 & MASK) >> 4))))[2];
+#elif (ALGO == 9)
+			long n = *((__global long*)(Scratchpad + (IDX((idx0) >> 4))));
+			int d = ((__global int*)(Scratchpad + (IDX((idx0) >> 4))))[2];
 			long q = n / (d | 0x5);
-			*((__global long*)(Scratchpad + (IDX((idx0 & MASK) >> 4)))) = n ^ q;
-			idx0 = (~d) ^ q;
+			*((__global long*)(Scratchpad + (IDX((idx0) >> 4)))) = n ^ q;
+			idx0 = ((~d) ^ q) & MASK;
 #endif
+		
+// cryptonight_monero_v8
+#if (ALGO == 11)
+			b_x[1] = b_x[0];
+#endif
+			b_x[0] = ((uint4 *)c)[0];
 		}
 	}
 	mem_fence(CLK_GLOBAL_MEM_FENCE);
