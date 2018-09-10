@@ -489,6 +489,9 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 	case cryptonight_bittube2:
 		algv = 9;
 		break;
+	case cryptonight_monero_v8:
+		algv = 10;
+		break;
 	default:
 		algv = 2;
 		break;
