@@ -4,7 +4,7 @@
 
 ### AMD APP SDK 3.0 (only needed to use AMD GPUs)
 
-- download and install the latest version from https://www.dropbox.com/sh/mpg882ekirnsfa7/AADWz5X-TgVdsmWt0QwMgTWLa/AMD-APP-SDKInstaller-v3.0.130.136-GA-linux64.tar.bz2?dl=0
+- download and install the latest version from http://debian.nullivex.com/amd/AMD-APP-SDKInstaller-v3.0.130.136-GA-linux64.tar.bz2 (see https://github.com/fireice-uk/xmr-stak/issues/1511#issuecomment-385120692)
   (do not wonder why it is a link to a dropbox but AMD has removed the SDK downloads, see https://community.amd.com/thread/228059)
 
 ### Cuda 8.0+ (only needed to use NVIDIA GPUs)
