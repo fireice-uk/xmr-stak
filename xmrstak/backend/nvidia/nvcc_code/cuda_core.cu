@@ -252,7 +252,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 	const int start = partidx * batchsize;
 	const int end = start + batchsize;
 	uint32_t * long_state = &d_long_state[(IndexType) thread * MEMORY];
-	uint32_t a, a1, d[2], idx0;
+	uint32_t a, d[2], idx0;
 	uint32_t t1[2], t2[2], res;
 
 	uint32_t tweak1_2[2];
@@ -296,7 +296,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 		for ( int x = 0; x < 2; ++x )
 		{
 			j = ( ( idx0 & MASK ) >> 2 ) + sub;
-
+			
 			if(ALGO == cryptonight_bittube2)
 			{
 				uint32_t k[4];
@@ -327,49 +327,68 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 					}
 				}
 			}
+			else if(ALGO == cryptonight_monero_v8)
+			{
+
+				const uint4 chunk = *( (uint4*)((uint64_t)(long_state + (j & 0xFFFFFFFC)) ^ (sub<<4)) );
+				uint4 chunk0{};
+				chunk0.x = shuffle<4>(sPtr,sub, ((uint32_t*)&chunk)[0], 0);
+				chunk0.y = shuffle<4>(sPtr,sub, ((uint32_t*)&chunk)[1], 0);
+				chunk0.z = shuffle<4>(sPtr,sub, ((uint32_t*)&chunk)[2], 0);
+				chunk0.w = shuffle<4>(sPtr,sub, ((uint32_t*)&chunk)[3], 0);
+
+				const uint32_t x_0 = ((uint32_t*)&chunk0)[sub];
+				const uint32_t x_1 = ((uint32_t*)&chunk0)[(sub + 1) % 4];
+				const uint32_t x_2 = ((uint32_t*)&chunk0)[(sub + 2) % 4];
+				const uint32_t x_3 = ((uint32_t*)&chunk0)[(sub + 3) % 4];
+				d[x] = a ^
+					t_fn0( x_0 & 0xff ) ^
+					t_fn1( (x_1 >> 8) & 0xff ) ^
+					t_fn2( (x_2 >> 16) & 0xff ) ^
+					t_fn3( ( x_3 >> 24 ) );
+
+				uint4 value;
+				const uint64_t tmp10 = shuffle64<4>(sPtr,sub, d[(x + 1) % 2], 0 , 1);
+				if(sub == 1)
+					((uint64_t*)&value)[0] = tmp10;
+				const uint64_t tmp20 = shuffle64<4>(sPtr,sub, d[(x + 1) % 2], 2 , 3);
+				if(sub == 1)
+					((uint64_t*)&value)[1] = tmp20;
+				const uint64_t tmp11 = shuffle64<4>(sPtr,sub, a, 0 , 1);
+				if(sub == 2)
+					((uint64_t*)&value)[0] = tmp11;
+				const uint64_t tmp21 = shuffle64<4>(sPtr,sub, a, 2 , 3);
+				if(sub == 2)
+					((uint64_t*)&value)[1] = tmp21;
+				const uint64_t tmp12 = shuffle64<4>(sPtr,sub, bx1, 0 , 1);
+				if(sub == 3)
+					((uint64_t*)&value)[0] = tmp12;
+				const uint64_t tmp22 = shuffle64<4>(sPtr,sub, bx1, 2 , 3);
+				if(sub == 3)
+					((uint64_t*)&value)[1] = tmp22;
+
+				if(sub > 0)
+				{
+					uint4 store{};
+					((uint64_t*)&store)[0] = ((uint64_t*)&chunk)[0] + ((uint64_t*)&value)[0];
+					((uint64_t*)&store)[1] = ((uint64_t*)&chunk)[1] + ((uint64_t*)&value)[1];
+
+					const int dest = sub + 1;
+					const int dest2 = dest == 4 ? 1 : dest;
+					*( (uint4*)((uint64_t)(long_state + (j & 0xFFFFFFFC)) ^ (dest2<<4)) ) = store;
+				}
+			}
 			else
 			{
 				const uint32_t x_0 = loadGlobal32<uint32_t>( long_state + j );
 				const uint32_t x_1 = shuffle<4>(sPtr,sub, x_0, sub + 1);
 				const uint32_t x_2 = shuffle<4>(sPtr,sub, x_0, sub + 2);
 				const uint32_t x_3 = shuffle<4>(sPtr,sub, x_0, sub + 3);
-				if(ALGO == cryptonight_monero_v8)
-				{
-					a1 = a;
-				}
 				d[x] = a ^
 					t_fn0( x_0 & 0xff ) ^
 					t_fn1( (x_1 >> 8) & 0xff ) ^
 					t_fn2( (x_2 >> 16) & 0xff ) ^
 					t_fn3( ( x_3 >> 24 ) );
-			}
-
-			// Shuffle the other 3x16 byte chunks in the current 64-byte cache line
-			if(ALGO == cryptonight_monero_v8)
-			{
-				// Shuffle constants here were chosen carefully
-				// to maximize permutation cycle length
-				// and have no 2-byte elements stay in their places
-				const uint32_t chunk1 = loadGlobal32<uint32_t>( (uint32_t*)((uint64_t)(long_state + j) ^ 0x10)  );
-				const uint32_t chunk2 = loadGlobal32<uint32_t>( (uint32_t*)((uint64_t)(long_state + j) ^ 0x20)  );
-				const uint32_t chunk3 = loadGlobal32<uint32_t>( (uint32_t*)((uint64_t)(long_state + j) ^ 0x30)  );
-
-				uint32_t src = sub & 2;
-				const uint64_t bx1_64 = shuffle64<4>(sPtr,sub, bx1, src, src | 1);
-				const uint64_t chunk3_64 = shuffle64<4>(sPtr,sub, chunk3, src, src | 1);
-				const uint64_t cc3 = bx1_64 + chunk3_64;
-				storeGlobal32( (uint32_t*)((uint64_t)(long_state + j) ^ 0x10), ((uint32_t*)&cc3)[sub & 1]);
-
-				const uint64_t bx0_64 = shuffle64<4>(sPtr,sub, d[(x + 1) % 2], src, src | 1);
-				const uint64_t chunk1_64 = shuffle64<4>(sPtr,sub, chunk1, src, src | 1);
-				const uint64_t cc1 = bx0_64 + chunk1_64;
-				storeGlobal32( (uint32_t*)((uint64_t)(long_state + j) ^ 0x20), ((uint32_t*)&cc1)[sub & 1]);
-
-				const uint64_t ax0_64 = shuffle64<4>(sPtr,sub, a1, src, src | 1);
-				const uint64_t chunk2_64 = shuffle64<4>(sPtr,sub, chunk2, src, src | 1);
-				const uint64_t cc2 = ax0_64 + chunk2_64;
-				storeGlobal32( (uint32_t*)((uint64_t)(long_state + j) ^ 0x30), ((uint32_t*)&cc2)[sub & 1]);
-				
 			}
 			//XOR_BLOCKS_DST(c, b, &long_state[j]);
 			t1[0] = shuffle<4>(sPtr,sub, d[x], 0);
@@ -443,30 +462,36 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 			// Shuffle the other 3x16 byte chunks in the current 64-byte cache line
 			if(ALGO == cryptonight_monero_v8)
 			{
-				// Shuffle constants here were chosen carefully
-				// to maximize permutation cycle length
-				// and have no 2-byte elements stay in their places
-				const uint32_t chunk1 = loadGlobal32<uint32_t>( (uint32_t*)((uint64_t)(long_state + j) ^ 0x10)  );
-				const uint32_t chunk2 = loadGlobal32<uint32_t>( (uint32_t*)((uint64_t)(long_state + j) ^ 0x20)  );
-				const uint32_t chunk3 = loadGlobal32<uint32_t>( (uint32_t*)((uint64_t)(long_state + j) ^ 0x30)  );
+				uint4 value;
+				const uint64_t tmp10 = shuffle64<4>(sPtr,sub, d[(x + 1) % 2], 0 , 1);
+				if(sub == 1)
+					((uint64_t*)&value)[0] = tmp10;
+				const uint64_t tmp20 = shuffle64<4>(sPtr,sub, d[(x + 1) % 2], 2 , 3);
+				if(sub == 1)
+					((uint64_t*)&value)[1] = tmp20;
+				const uint64_t tmp11 = shuffle64<4>(sPtr,sub, a, 0 , 1);
+				if(sub == 2)
+					((uint64_t*)&value)[0] = tmp11;
+				const uint64_t tmp21 = shuffle64<4>(sPtr,sub, a, 2 , 3);
+				if(sub == 2)
+					((uint64_t*)&value)[1] = tmp21;
+				const uint64_t tmp12 = shuffle64<4>(sPtr,sub, bx1, 0 , 1);
+				if(sub == 3)
+					((uint64_t*)&value)[0] = tmp12;
+				const uint64_t tmp22 = shuffle64<4>(sPtr,sub, bx1, 2 , 3);
+				if(sub == 3)
+					((uint64_t*)&value)[1] = tmp22;
+				if(sub > 0)
+				{
+					const uint4 chunk = *( (uint4*)((uint64_t)(long_state + (j & 0xFFFFFFFC)) ^ (sub<<4)) );
+					uint4 store{};
+					((uint64_t*)&store)[0] = ((uint64_t*)&chunk)[0] + ((uint64_t*)&value)[0];
+					((uint64_t*)&store)[1] = ((uint64_t*)&chunk)[1] + ((uint64_t*)&value)[1];
 
-				uint32_t src = sub & 2;
-				const uint64_t bx1_64 = shuffle64<4>(sPtr,sub, bx1, src, src | 1);
-				const uint64_t chunk3_64 = shuffle64<4>(sPtr,sub, chunk3, src, src | 1);
-				const uint64_t cc3 = bx1_64 + chunk3_64;
-				storeGlobal32( (uint32_t*)((uint64_t)(long_state + j) ^ 0x10), ((uint32_t*)&cc3)[sub & 1]);
-
-
-
-				const uint64_t bx0_64 = shuffle64<4>(sPtr,sub, d[(x + 1) % 2], src, src | 1);
-				const uint64_t chunk1_64 = shuffle64<4>(sPtr,sub, chunk1, src, src | 1);
-				const uint64_t cc1 = bx0_64 + chunk1_64;
-				storeGlobal32( (uint32_t*)((uint64_t)(long_state + j) ^ 0x20), ((uint32_t*)&cc1)[sub & 1]);
-
-				const uint64_t ax0_64 = shuffle64<4>(sPtr,sub, a1, src, src | 1);
-				const uint64_t chunk2_64 = shuffle64<4>(sPtr,sub, chunk2, src, src | 1);
-				const uint64_t cc2 = ax0_64 + chunk2_64;
-				storeGlobal32( (uint32_t*)((uint64_t)(long_state + j) ^ 0x30), ((uint32_t*)&cc2)[sub & 1]);
+					const int dest = sub + 1;
+					const int dest2 = dest == 4 ? 1 : dest;
+					*( (uint4*)((uint64_t)(long_state + (j & 0xFFFFFFFC)) ^ (dest2<<4)) ) = store;
+				}
 			}
 			
 			t1[1] = shuffle<4>(sPtr,sub, d[x], 1);
