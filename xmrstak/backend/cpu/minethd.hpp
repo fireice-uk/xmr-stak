@@ -22,7 +22,7 @@ public:
 	static std::vector<iBackend*> thread_starter(uint32_t threadOffset, miner_work& pWork);
 	static bool self_test();
 
-	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx*);
+	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**);
 
 	static cn_hash_fun func_selector(bool bHaveAes, bool bNoPrefetch, xmrstak_algo algo);
 	static bool thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id);
@@ -30,8 +30,9 @@ public:
 	static cryptonight_ctx* minethd_alloc_ctx();
 
 private:
-	typedef void (*cn_hash_fun_multi)(const void*, size_t, void*, cryptonight_ctx**);
-	static cn_hash_fun_multi func_multi_selector(size_t N, bool bHaveAes, bool bNoPrefetch, xmrstak_algo algo);
+
+	template<size_t N>
+	static cn_hash_fun func_multi_selector(bool bHaveAes, bool bNoPrefetch, xmrstak_algo algo);
 
 	minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity);
 
