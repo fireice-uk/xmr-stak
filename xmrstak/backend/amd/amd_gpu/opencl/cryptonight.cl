@@ -418,6 +418,9 @@ void AESExpandKey256(uint *keybuf)
 	}
 }
 
+)==="
+R"===(
+
 #define MEM_CHUNK (1<<MEM_CHUNK_EXPONENT)
 
 #if(STRIDED_INDEX==0)
@@ -559,8 +562,14 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 	mem_fence(CLK_GLOBAL_MEM_FENCE);
 }
 
-#define SCRATCHPAD_CHUNK(N) (Scratchpad[IDX(((idx0) >> 4) ^ N)])
-		
+// cryptonight_monero_v8 && NVIDIA
+#if(ALGO==11 && defined(__NV_CL_C_VERSION))
+#	define SCRATCHPAD_CHUNK(N) (*(__local uint4*)((__local uchar*)(scratchpad_line) + (idxS ^ (N << 4))))
+#	define SCRATCHPAD_CHUNK_GLOBAL (*((__global uint16*)(Scratchpad + (IDX((idx0 & 0x1FFFC0U) >> 4)))))
+#else
+#	define SCRATCHPAD_CHUNK(N) (Scratchpad[IDX(((idx0) >> 4) ^ N)])
+#endif
+	
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
 __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states, ulong Threads
 // cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2
@@ -575,6 +584,11 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #if(ALGO==11)		
 	ulong b[4];
 	uint4 b_x[2];
+// NVIDIA
+#	ifdef __NV_CL_C_VERSION
+	__local uint16 scratchpad_line_buf[WORKSIZE];
+ 	__local uint16* scratchpad_line = scratchpad_line_buf + get_local_id(0);
+#	endif
 #else
 	ulong b[2];
 	uint4 b_x[1];
@@ -661,6 +675,11 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 		for(int i = 0; i < ITERATIONS; ++i)
 		{
 			ulong c[2];
+// cryptonight_monero_v8 && NVIDIA
+#if(ALGO==11 && defined(__NV_CL_C_VERSION))
+			ulong idxS = idx0 & 0x30;
+ 			*scratchpad_line = SCRATCHPAD_CHUNK_GLOBAL;
+#endif
 
 			((uint4 *)c)[0] = SCRATCHPAD_CHUNK(0);
 // cryptonight_bittube2
@@ -694,14 +713,24 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #	endif
 			b_x[0].s2 ^= ((table >> index) & 0x30U) << 24;
 			SCRATCHPAD_CHUNK(0) = b_x[0];
+			idx0 = c[0] & MASK;
 // cryptonight_monero_v8
 #elif(ALGO==11)
 			SCRATCHPAD_CHUNK(0) = b_x[0] ^ ((uint4 *)c)[0];
+#	ifdef __NV_CL_C_VERSION
+			// flush shuffeled data
+			SCRATCHPAD_CHUNK_GLOBAL = *scratchpad_line;
+ 			idx0 = c[0] & MASK;
+ 			idxS = idx0 & 0x30;
+ 			*scratchpad_line = SCRATCHPAD_CHUNK_GLOBAL;
+#	else
+			idx0 = c[0] & MASK;
+#	endif
 #else
 			b_x[0] ^= ((uint4 *)c)[0];
 			SCRATCHPAD_CHUNK(0) = b_x[0];
-#endif
 			idx0 = c[0] & MASK;
+#endif
 			uint4 tmp;
 			tmp = SCRATCHPAD_CHUNK(0);
 // cryptonight_monero_v8
@@ -753,6 +782,16 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #endif
 
 			((uint4 *)a)[0] ^= tmp;
+
+// cryptonight_monero_v8
+#if (ALGO == 11)
+#	if defined(__NV_CL_C_VERSION)
+			// flush shuffeled data
+			SCRATCHPAD_CHUNK_GLOBAL = *scratchpad_line;
+#	endif
+			b_x[1] = b_x[0];
+#endif
+			b_x[0] = ((uint4 *)c)[0];
 			idx0 = a[0] & MASK;
 
 // cryptonight_heavy || cryptonight_bittube2
@@ -771,15 +810,13 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			idx0 = ((~d) ^ q) & MASK;
 #endif
 		
-// cryptonight_monero_v8
-#if (ALGO == 11)
-			b_x[1] = b_x[0];
-#endif
-			b_x[0] = ((uint4 *)c)[0];
 		}
 	}
 	mem_fence(CLK_GLOBAL_MEM_FENCE);
 }
+
+)==="
+R"===(
 
 __attribute__((reqd_work_group_size(WORKSIZE, 8, 1)))
 __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states, __global uint *Branch0, __global uint *Branch1, __global uint *Branch2, __global uint *Branch3, ulong Threads)
