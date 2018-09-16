@@ -142,13 +142,13 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 		return false;
 	}
 
-	cfg.memChunk = (int)memChunk->GetInt64();
-
-	if(!idx->IsUint64() || cfg.memChunk > 18 )
+	if(!memChunk->IsUint64() || (int)memChunk->GetInt64() > 18 )
 	{
 		printer::inst()->print_msg(L0, "ERROR: mem_chunk must be smaller than 18");
 		return false;
 	}
+
+	cfg.memChunk = (int)memChunk->GetInt64();
 
 	if(!compMode->IsBool())
 		return false;
