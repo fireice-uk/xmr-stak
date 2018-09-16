@@ -7,10 +7,15 @@ R"===(
  *                  the maximum performance. When set to a number N greater than 1, this mode will increase the
  *                  cache usage and single thread performance by N times.
  *
- * no_prefetch -    Some systems can gain up to extra 5% here, but sometimes it will have no difference or make
+ * no_prefetch    - Some systems can gain up to extra 5% here, but sometimes it will have no difference or make
  *                  things slower.
  *
- * affine_to_cpu -  This can be either false (no affinity), or the CPU core number. Note that on hyperthreading
+ * asm            - Allow to switch to a assembler version of cryptonight_v8; allowed value [auto, intel, ryzen]
+ *                    - auto: used the default implementation (no assembler version)
+ *                    - intel: supports Intel Ivy Bridge (Xeon v2, Core i7/i5/i3 3xxx, Pentium G2xxx, Celeron G1xxx)
+ *                    - ryzen: AMD Ryzen (1xxx and 2xxx series)
+ *
+ * affine_to_cpu  - This can be either false (no affinity), or the CPU core number. Note that on hyperthreading
  *                  systems it is better to assign threads to physical cores. On Windows this usually means selecting
  *                  even or odd numbered cpu numbers. For Linux it will be usually the lower CPU numbers, so for a 4
  *                  physical core CPU you should select cpu numbers 0-3.
@@ -21,8 +26,8 @@ R"===(
  * A filled out configuration should look like this:
  * "cpu_threads_conf" :
  * [
- *      { "low_power_mode" : false, "no_prefetch" : true, "affine_to_cpu" : 0 },
- *      { "low_power_mode" : false, "no_prefetch" : true, "affine_to_cpu" : 1 },
+ *      { "low_power_mode" : false, "no_prefetch" : true, "asm" : "auto", "affine_to_cpu" : 0 },
+ *      { "low_power_mode" : false, "no_prefetch" : true, "asm" : "auto", "affine_to_cpu" : 1 },
  * ],
  * If you do not wish to mine with your CPU(s) then use:
  * "cpu_threads_conf" :

@@ -82,7 +82,7 @@ public:
 
 				conf += std::string("    { \"low_power_mode\" : ");
 				conf += std::string(double_mode ? "true" : "false");
-				conf += std::string(", \"no_prefetch\" : true, \"affine_to_cpu\" : ");
+				conf += std::string(", \"no_prefetch\" : true, \"asm\" : \"auto\", \"affine_to_cpu\" : ");
 				conf += std::to_string(aff_id);
 				conf += std::string(" },\n");
 

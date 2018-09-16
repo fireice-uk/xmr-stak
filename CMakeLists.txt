@@ -458,6 +458,15 @@ if(MICROHTTPD_ENABLE)
 endif()
 target_link_libraries(xmr-stak-c ${LIBS})
 
+enable_language(ASM)
+# asm optimized monero v8 code
+add_library(xmr-stak-asm
+    STATIC
+    "xmrstak/backend/cpu/crypto/asm/cryptonigh_v8_main_loop.S"
+)
+set_property(TARGET xmr-stak-asm PROPERTY LINKER_LANGUAGE C)
+
+
 # compile generic backend files
 file(GLOB BACKEND_CPP
     "xmrstak/*.cpp"
@@ -472,7 +481,7 @@ add_library(xmr-stak-backend
     STATIC
     ${BACKEND_CPP}
 )
-target_link_libraries(xmr-stak-backend xmr-stak-c ${CMAKE_DL_LIBS})
+target_link_libraries(xmr-stak-backend xmr-stak-c ${CMAKE_DL_LIBS} xmr-stak-asm)
 
 # compile CUDA backend
 if(CUDA_FOUND)
