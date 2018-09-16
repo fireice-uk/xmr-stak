@@ -13,13 +13,15 @@ R"===(
  * mem_chunk     - range 0 to 18: set the number of elements (16byte) per chunk
  *                 this value is only used if 'strided_index' == 2
  *                 element count is computed with the equation: 2 to the power of 'mem_chunk' e.g. 4 means a chunk of 16 elements(256byte)
+ * unroll        - allow to control how often the POW main loop is unrolled; valid range [0;128]
  * comp_mode     - Compatibility enable/disable the automatic guard around compute kernel which allows
  *                 to use a intensity which is not the multiple of the worksize.
  *                 If you set false and the intensity is not multiple of the worksize the miner can crash:
  *                 in this case set the intensity to a multiple of the worksize or activate comp_mode.
  * "gpu_threads_conf" :
  * [
- *	{ "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false, "strided_index" : true, "mem_chunk" : 2, "comp_mode" : true },
+ *	{ "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false, 
+ *    "strided_index" : true, "mem_chunk" : 2, "unroll" : 8, "comp_mode" : true },
  * ],
  * If you do not wish to mine with your AMD GPU(s) then use:
  * "gpu_threads_conf" :

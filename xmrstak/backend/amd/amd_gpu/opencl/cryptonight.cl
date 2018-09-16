@@ -671,7 +671,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 	{
 		ulong idx0 = a[0] & MASK;
 
-		#pragma unroll 8
+		#pragma unroll CN_UNROLL
 		for(int i = 0; i < ITERATIONS; ++i)
 		{
 			ulong c[2];

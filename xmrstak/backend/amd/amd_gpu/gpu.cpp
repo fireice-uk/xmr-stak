@@ -405,6 +405,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		options += " -DCOMP_MODE=" + std::to_string(ctx->compMode ? 1u : 0u);
 		options += " -DMEMORY=" + std::to_string(hashMemSize);
 		options += " -DALGO=" + std::to_string(miner_algo[ii]);
+		options += " -DCN_UNROLL=" + std::to_string(ctx->unroll);
 
 		/* create a hash for the compile time cache
 		 * used data:
