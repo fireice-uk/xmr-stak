@@ -786,6 +786,7 @@ int main(int argc, char *argv[])
 	printer::inst()->print_str("'h' - hashrate\n");
 	printer::inst()->print_str("'r' - results\n");
 	printer::inst()->print_str("'c' - connection\n");
+	printer::inst()->print_str("'p' - reload pools\n");
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_msg(L0, "Mining coin: %s", jconf::inst()->GetMiningCoin().c_str());
 
@@ -813,6 +814,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'c':
 			executor::inst()->push_event(ex_event(EV_USR_CONNSTAT));
+			break;
+		case 'p':
+			executor::inst()->push_event(ex_event(EV_USR_POOLRELOAD));
 			break;
 		default:
 			break;
