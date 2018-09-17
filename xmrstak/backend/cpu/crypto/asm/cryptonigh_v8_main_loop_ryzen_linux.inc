@@ -45,8 +45,8 @@
 	movq	xmm0, rcx
 	punpcklqdq xmm4, xmm0
 
-	ALIGN 64
-$main_loop_ryzen:
+	ALIGN 8
+main_loop_ryzen:
 	movdqa	xmm5, XMMWORD PTR [r10+rbx]
 	movq	xmm0, r11
 	movq	xmm6, r8
@@ -103,10 +103,10 @@ $main_loop_ryzen:
 	sqrtsd	xmm1, xmm0
 	movq	rdi, xmm1
 	test	rdi, 524287
-	je	$sqrt_fixup_ryzen
+	je	sqrt_fixup_ryzen
 	shr	rdi, 19
 
-$sqrt_fixup_ryzen_ret:
+sqrt_fixup_ryzen_ret:
 	mov	rax, rsi
 	mul	r14
 
@@ -136,7 +136,7 @@ $sqrt_fixup_ryzen_ret:
 	and	r10d, 2097136
 	movdqa	xmm3, xmm5
 	dec	ebp
-	jne	$main_loop_ryzen
+	jne	main_loop_ryzen
 
 	ldmxcsr DWORD PTR [rsp]
 	movaps	xmm6, XMMWORD PTR [rsp+48]
@@ -152,23 +152,23 @@ $sqrt_fixup_ryzen_ret:
 	pop	r13
 	pop	r12
 	pop	rdi
-	jmp $cnv2_main_loop_ryzen_endp
+	jmp cnv2_main_loop_ryzen_endp
 
-$sqrt_fixup_ryzen:
+sqrt_fixup_ryzen:
 	movq r9, xmm2
 	dec	rdi
-	movq	rdx, 4389456576511
+	movq rdx, 4389456576511
 	mov	rax, rdi
 	shr	rdi, 19
 	shr	rax, 20
 	mov	rcx, rdi
 	sub	rcx, rax
 	sub	rcx, rdx
-	movq	rdx, -4389456576512
+	movq rdx, -4389456576512
 	add	rax, rdx
 	imul	rcx, rax
 	sub	rcx, r9
 	adc	rdi, 0
-	jmp	$sqrt_fixup_ryzen_ret
+	jmp	sqrt_fixup_ryzen_ret
 
-$cnv2_main_loop_ryzen_endp:
+cnv2_main_loop_ryzen_endp:
