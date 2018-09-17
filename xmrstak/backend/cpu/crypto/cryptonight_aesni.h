@@ -435,7 +435,9 @@ inline uint64_t int_sqrt33_1_double_precision(const uint64_t n0)
 
 	uint64_t x2 = (s - (1022ULL << 32)) * (r - s - (1022ULL << 32) + 1);
 
-#if defined _MSC_VER || (__GNUC__ >= 7)
+#ifdef __INTEL_COMPILER
+	_addcarry_u64(_subborrow_u64(0, x2, n0, (unsigned __int64*)&x2), r, 0, (unsigned __int64*)&r);
+#elif defined(_MSC_VER) || (__GNUC__ >= 7)
 	_addcarry_u64(_subborrow_u64(0, x2, n0, (unsigned long long int*)&x2), r, 0, (unsigned long long int*)&r);
 #else
 	// GCC versions prior to 7 don't generate correct assembly for _subborrow_u64 -> _addcarry_u64 sequence

@@ -157,14 +157,14 @@ $sqrt_fixup_ivybridge_ret:
 
 $sqrt_fixup_ivybridge:
 	dec	 rdx
-	mov	 r13, -4389456576512
+	movq	 r13, -4389456576512
 	mov	 rax, rdx
 	shr	 rdx, 19
 	shr	 rax, 20
 	mov	 rcx, rdx
 	sub	 rcx, rax
 	add	 rax, r13
-	mov r13, 4389456576511
+	movq	 r13, 4389456576511
 	sub	 rcx, r13
 	mov	 r13d, -2147483647
 	imul	 rcx, rax
