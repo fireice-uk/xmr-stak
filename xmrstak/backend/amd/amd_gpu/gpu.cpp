@@ -17,6 +17,7 @@
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/picosha2/picosha2.hpp"
 #include "xmrstak/params.hpp"
+#include "xmrstak/version.hpp"
 
 #include <stdio.h>
 #include <string.h>
@@ -375,6 +376,13 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
+	std::vector<char> openCLDriverVer(1024);
+	if(ret = clGetDeviceInfo(ctx->DeviceID, CL_DRIVER_VERSION, openCLDriverVer.size(), openCLDriverVer.data(), NULL) != CL_SUCCESS)
+	{
+		printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DRIVER_VERSION for device %u.", err_to_str(ret),ctx->deviceIdx );
+		return ERR_OCL_API;
+	}
+
 	xmrstak_algo miner_algo[2] = {
 		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo(),
 		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot()
@@ -402,6 +410,9 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		std::string src_str(source_code);
 		src_str += options;
 		src_str += devNameVec.data();
+		src_str += get_version_str();
+		src_str += openCLDriverVer.data();
+
 		std::string hash_hex_str;
 		picosha2::hash256_hex_string(src_str, hash_hex_str);
 
