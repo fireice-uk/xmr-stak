@@ -10,8 +10,8 @@ R"===(
  * no_prefetch    - Some systems can gain up to extra 5% here, but sometimes it will have no difference or make
  *                  things slower.
  *
- * asm            - Allow to switch to a assembler version of cryptonight_v8; allowed value [auto, intel, ryzen]
- *                    - auto: used the default implementation (no assembler version)
+ * asm            - Allow to switch to a assembler version of cryptonight_v8; allowed value [off, intel, ryzen]
+ *                    - off: used the default implementation (no assembler version)
  *                    - intel: supports Intel Ivy Bridge (Xeon v2, Core i7/i5/i3 3xxx, Pentium G2xxx, Celeron G1xxx)
  *                    - ryzen: AMD Ryzen (1xxx and 2xxx series)
  *
@@ -26,8 +26,8 @@ R"===(
  * A filled out configuration should look like this:
  * "cpu_threads_conf" :
  * [
- *      { "low_power_mode" : false, "no_prefetch" : true, "asm" : "auto", "affine_to_cpu" : 0 },
- *      { "low_power_mode" : false, "no_prefetch" : true, "asm" : "auto", "affine_to_cpu" : 1 },
+ *      { "low_power_mode" : false, "no_prefetch" : true, "asm" : "off", "affine_to_cpu" : 0 },
+ *      { "low_power_mode" : false, "no_prefetch" : true, "asm" : "off", "affine_to_cpu" : 1 },
  * ],
  * If you do not wish to mine with your CPU(s) then use:
  * "cpu_threads_conf" :
