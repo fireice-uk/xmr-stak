@@ -9,6 +9,7 @@ R"===(
  *                 2 = chunked memory, chunk size is controlled by 'mem_chunk'
  *                     required: intensity must be a multiple of worksize
  *                 1 or true  = use 16byte contiguous memory per thread, the next memory block has offset of intensity blocks
+ *                             (not allowed for cryptonight_v8 ans monero8)
  *                 0 or false = use a contiguous block of memory per thread
  * mem_chunk     - range 0 to 18: set the number of elements (16byte) per chunk
  *                 this value is only used if 'strided_index' == 2

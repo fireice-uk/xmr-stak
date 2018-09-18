@@ -60,6 +60,7 @@ If your prefered coin is not listed, you can choose one of the following algorit
     - cryptonight_masari
     - cryptonight_v7
     - cryptonight_v7_stellite
+    - cryptonight_v8
 - 4MiB scratchpad memory
     - cryptonight_haven
     - cryptonight_heavy

@@ -27,7 +27,8 @@ POOLCONF],
  *    haven (automatic switch with block version 3 to cryptonight_haven)
  *    intense
  *    masari
- *    monero7 (use this for Monero's new PoW)
+ *    monero7
+ *    monero8 (use this to support Monero's Oct 2018 fork)
  *    qrl - Quantum Resistant Ledger
  *    ryo
  *    turtlecoin
@@ -41,6 +42,7 @@ POOLCONF],
  *    # 2MiB scratchpad memory
  *    cryptonight
  *    cryptonight_v7
+ *    cryptonight_v8
  *    # 4MiB scratchpad memory
  *    cyrptonight_bittube2
  *    cryptonight_haven

@@ -105,6 +105,7 @@ xmrstak::coin_selection coins[] = {
 	{ "haven",               {cryptonight_haven, cryptonight_heavy, 3u},   {cryptonight_heavy, cryptonight_heavy, 0u},   nullptr },
 	{ "intense",             {cryptonight_monero, cryptonight, 4u},        {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
 	{ "masari",              {cryptonight_masari, cryptonight_monero, 7u},   {cryptonight_monero, cryptonight_monero, 0u},nullptr },
+	{ "monero7",             {cryptonight_monero, cryptonight_monero, 0u}, {cryptonight_monero, cryptonight_monero, 0u}, "pool.usxmrpool.com:3333" },
 	{ "monero8",             {cryptonight_monero_v8, cryptonight_monero, 8u}, {cryptonight_monero_v8, cryptonight_monero, 8u}, "pool.usxmrpool.com:3333" },
 	{ "qrl",             	 {cryptonight_monero, cryptonight_monero, 0u}, {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
 	{ "ryo",                 {cryptonight_heavy, cryptonight_heavy, 0u},   {cryptonight_heavy, cryptonight_heavy, 0u},   nullptr },
