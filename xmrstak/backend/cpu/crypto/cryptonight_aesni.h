@@ -923,8 +923,8 @@ struct Cryptonight_hash<5>
 	}
 };
 
-extern "C" void cryptonigh_v8_mainloop_ivybridge_asm(cryptonight_ctx* ctx0);
-extern "C" void cryptonigh_v8_mainloop_ryzen_asm(cryptonight_ctx* ctx0);
+extern "C" void cryptonight_v8_mainloop_ivybridge_asm(cryptonight_ctx* ctx0);
+extern "C" void cryptonight_v8_mainloop_ryzen_asm(cryptonight_ctx* ctx0);
 
 template<xmrstak_algo ALGO, int asm_version>
 void cryptonight_hash_v2_asm(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
@@ -935,9 +935,9 @@ void cryptonight_hash_v2_asm(const void* input, size_t len, void* output, crypto
 	cn_explode_scratchpad<MEM, false, false, ALGO>((__m128i*)ctx[0]->hash_state, (__m128i*)ctx[0]->long_state);
 
 	if (asm_version == 1)
-		cryptonigh_v8_mainloop_ivybridge_asm(ctx[0]);
+		cryptonight_v8_mainloop_ivybridge_asm(ctx[0]);
 	else
-		cryptonigh_v8_mainloop_ryzen_asm(ctx[0]);
+		cryptonight_v8_mainloop_ryzen_asm(ctx[0]);
 
 	cn_implode_scratchpad<MEM, false, false, ALGO>((__m128i*)ctx[0]->long_state, (__m128i*)ctx[0]->hash_state);
 	keccakf((uint64_t*)ctx[0]->hash_state, 24);

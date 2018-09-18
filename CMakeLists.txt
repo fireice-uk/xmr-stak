@@ -448,18 +448,18 @@ endif()
 if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
     # asm optimized monero v8 code
     enable_language(ASM_MASM)
-    set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cryptonigh_v8_main_loop.asm" PROPERTY ASM_MASM)
+    set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.asm" PROPERTY ASM_MASM)
     add_library(xmr-stak-asm
         STATIC
-        "xmrstak/backend/cpu/crypto/asm/cryptonigh_v8_main_loop.asm"
+        "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.asm"
     )
 else()
     # asm optimized monero v8 code
     enable_language(ASM)
-    set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cryptonigh_v8_main_loop.S" PROPERTY C)
+    set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S" PROPERTY C)
     add_library(xmr-stak-asm
         STATIC
-        "xmrstak/backend/cpu/crypto/asm/cryptonigh_v8_main_loop.S"
+        "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S"
     )
 endif()
 
