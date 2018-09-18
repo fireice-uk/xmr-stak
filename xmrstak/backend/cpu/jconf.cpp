@@ -114,7 +114,7 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	aff = GetObjectMember(oThdConf, "affine_to_cpu");
 	asm_version = GetObjectMember(oThdConf, "asm");
 
-	if(mode == nullptr || no_prefetch == nullptr || aff == nullptr)
+	if(mode == nullptr || no_prefetch == nullptr || aff == nullptr || asm_version == nullptr)
 		return false;
 
 	if(!mode->IsBool() && !mode->IsNumber())
