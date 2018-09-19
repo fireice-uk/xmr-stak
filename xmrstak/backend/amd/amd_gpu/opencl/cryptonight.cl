@@ -482,9 +482,14 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 		State[10] = input[10];
 
 		((uint *)State)[9] &= 0x00FFFFFFU;
-		((uint *)State)[9] |= ((get_global_id(0)) & 0xFF) << 24;
+		((uint *)State)[9] |= (((uint)get_global_id(0)) & 0xFF) << 24;
 		((uint *)State)[10] &= 0xFF000000U;
-		((uint *)State)[10] |= ((get_global_id(0) >> 8));
+		/* explicit cast to `uint` is required because some OpenCL implementations (e.g. NVIDIA)
+		 * handle get_global_id and get_global_offset as signed long long int and add
+		 * 0xFFFFFFFF... to `get_global_id` if we set on host side a 32bit offset where the first bit is `1`
+		 * (even if it is correct casted to unsigned on the host)
+		 */
+		((uint *)State)[10] |= (((uint)get_global_id(0) >> 8));
 
 		for(int i = 11; i < 25; ++i) State[i] = 0x00UL;
 
@@ -605,7 +610,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 		tweak1_2 = as_uint2(input[4]);
 		tweak1_2.s0 >>= 24;
 		tweak1_2.s0 |= tweak1_2.s1 << 8;
-		tweak1_2.s1 = get_global_id(0);
+		tweak1_2.s1 = (uint)get_global_id(0);
 		tweak1_2 ^= as_uint2(states[24]);
 #endif
 	}
@@ -918,7 +923,7 @@ __kernel void Skein(__global ulong *states, __global uint *BranchBuf, __global u
 		{
 			ulong outIdx = atomic_inc(output + 0xFF);
 			if(outIdx < 0xFF)
-				output[outIdx] = BranchBuf[idx] + get_global_offset(0);
+				output[outIdx] = BranchBuf[idx] + (uint)get_global_offset(0);
 		}
 	}
 	mem_fence(CLK_GLOBAL_MEM_FENCE);
@@ -994,7 +999,7 @@ __kernel void JH(__global ulong *states, __global uint *BranchBuf, __global uint
 		{
 			ulong outIdx = atomic_inc(output + 0xFF);
 			if(outIdx < 0xFF)
-				output[outIdx] = BranchBuf[idx] + get_global_offset(0);
+				output[outIdx] = BranchBuf[idx] + (uint)get_global_offset(0);
 		}
 	}
 }
@@ -1072,7 +1077,7 @@ __kernel void Blake(__global ulong *states, __global uint *BranchBuf, __global u
 		{
 			ulong outIdx = atomic_inc(output + 0xFF);
 			if(outIdx < 0xFF)
-				output[outIdx] = BranchBuf[idx] + get_global_offset(0);
+				output[outIdx] = BranchBuf[idx] + (uint)get_global_offset(0);
 		}
 	}
 }
@@ -1133,7 +1138,7 @@ __kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global
 		{
 			ulong outIdx = atomic_inc(output + 0xFF);
 			if(outIdx < 0xFF)
-				output[outIdx] = BranchBuf[idx] + get_global_offset(0);
+				output[outIdx] = BranchBuf[idx] + (uint)get_global_offset(0);
 		}
 	}
 }
