@@ -388,11 +388,16 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		int threadMemMask = cn_select_mask(miner_algo[ii]);
 		int hashIterations = cn_select_iter(miner_algo[ii]);
 
-		char options[512];
-		snprintf(options, sizeof(options),
-			"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d -DMEM_CHUNK_EXPONENT=%d  -DCOMP_MODE=%d -DMEMORY=%llu -DALGO=%d",
-		hashIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex, int(1u<<ctx->memChunk), ctx->compMode ? 1 : 0,
-			int_port(hashMemSize), int(miner_algo[ii]));
+		std::string options;
+		options += " -DITERATIONS=" + std::to_string(hashIterations);
+		options += " -DMASK=" + std::to_string(threadMemMask);
+		options += " -DWORKSIZE=" + std::to_string(ctx->workSize);
+		options += " -DSTRIDED_INDEX=" + std::to_string(ctx->stridedIndex);
+		options += " -DMEM_CHUNK_EXPONENT=" + std::to_string(1u << ctx->memChunk);
+		options += " -DCOMP_MODE=" + std::to_string(ctx->compMode ? 1u : 0u);
+		options += " -DMEMORY=" + std::to_string(hashMemSize);
+		options += " -DALGO=" + std::to_string(miner_algo[ii]);
+
 		/* create a hash for the compile time cache
 		 * used data:
 		 *   - source code
@@ -418,7 +423,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 				return ERR_OCL_API;
 			}
 
-			ret = clBuildProgram(ctx->Program[ii], 1, &ctx->DeviceID, options, NULL, NULL);
+			ret = clBuildProgram(ctx->Program[ii], 1, &ctx->DeviceID, options.c_str(), NULL, NULL);
 			if(ret != CL_SUCCESS)
 			{
 				size_t len;
