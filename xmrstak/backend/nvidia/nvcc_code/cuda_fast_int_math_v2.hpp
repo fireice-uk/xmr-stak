@@ -71,11 +71,11 @@ __device__ __forceinline__ uint64_t fast_div_v2(const uint32_t *RCP, uint64_t a,
 	q[1] = (k < a) ? 1 : 0;
 
 	const int64_t tmp = a - *((uint64_t*)(q)) * b;
-	const bool overshoot = (tmp < 0);
-	const bool undershoot = (tmp >= b);
+	const uint32_t overshoot = (tmp < 0) ? 1u : 0U;
+	const uint32_t undershoot = (tmp >= b) ? 1u : 0U;
 
-	q[0] += (undershoot ? 1U : 0U) - (overshoot ? 1U : 0U);
-	q[1] = (uint32_t)(tmp) + (overshoot ? b : 0U) - (undershoot ? b : 0U);
+	q[0] += undershoot - overshoot;
+	q[1] = (uint32_t)(tmp) + (overshoot == 1 ? b : 0U) - (undershoot ? b : 0U);
 
 	return *((uint64_t*)(q));
 }

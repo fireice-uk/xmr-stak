@@ -215,10 +215,15 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 	__shared__ uint32_t sharedMemory[1024];
 
 	cn_aes_gpu_init( sharedMemory );
-	__shared__ uint32_t RCP[256];
-	for (int i = threadIdx.x; i < 256; i += blockDim.x)
+	uint32_t* RCP;
+	if(ALGO == cryptonight_monero_v8)
 	{
-		RCP[i] = RCP_C[i];
+		__shared__ uint32_t RCP_shared[256];
+		for (int i = threadIdx.x; i < 256; i += blockDim.x)
+		{
+			RCP_shared[i] = RCP_C[i];
+		}
+		RCP = RCP_shared;
 	}
 
 
@@ -268,14 +273,15 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 		}
 	}
 
-	uint32_t bx1, division_result, sqrt_result;
+	uint32_t bx1, sqrt_result;
+	uint64_t division_result;
 	if(ALGO == cryptonight_monero_v8)
 	{
 		d[1] = (d_ctx_b + thread * 12)[sub];
 		bx1 = (d_ctx_b + thread * 12 + 4)[sub];
 
 		// must be valid only for `sub < 2`
-		division_result = (d_ctx_b + thread * 12 + 4 * 2)[sub % 2];
+		division_result = ((uint64_t*)(d_ctx_b + thread * 12 + 4 * 2))[0];
 		sqrt_result = (d_ctx_b + thread * 12 + 4 * 2 + 2)[0];
 	}
 	else
@@ -415,21 +421,17 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 			{
 				// Use division and square root results from the _previous_ iteration to hide the latency
 				const uint64_t cx0 = shuffle64<4>(sPtr, sub, d[x], 0, 1);
-
-				uint64_t division_result_64 = shuffle64<4>(sPtr,sub, division_result, 0, 1);
-				((uint32_t*)&division_result_64)[1] ^= sqrt_result;
+				((uint32_t*)&division_result)[1] ^= sqrt_result;
 		
 				if(sub < 2)
-					*((uint64_t*)yy) ^= division_result_64;
+					*((uint64_t*)yy) ^= division_result;
 
 				const uint32_t dd = (static_cast<uint32_t>(cx0) + (sqrt_result << 1)) | 0x80000001UL;
 				const uint64_t cx1 = shuffle64<4>(sPtr, sub, d[x], 2, 3);
-				const uint64_t division_result_tmp = fast_div_v2(RCP, cx1, dd);
-
-				division_result = ((uint32_t*)&division_result_tmp)[sub % 2];
-								
+				division_result = fast_div_v2(RCP, cx1, dd);
+			
 				// Use division_result as an input for the square root to prevent parallel implementation in hardware
-				sqrt_result = fast_sqrt_v2(cx0 + division_result_tmp);
+				sqrt_result = fast_sqrt_v2(cx0 + division_result);
 			}
 
 			uint32_t zz[2];
