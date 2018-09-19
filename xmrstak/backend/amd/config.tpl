@@ -9,12 +9,12 @@ R"===(
  *                 2 = chunked memory, chunk size is controlled by 'mem_chunk'
  *                     required: intensity must be a multiple of worksize
  *                 1 or true  = use 16byte contiguous memory per thread, the next memory block has offset of intensity blocks
- *                             (not allowed for cryptonight_v8 ans monero8)
+ *                             (not allowed for cryptonight_v8 and monero8)
  *                 0 or false = use a contiguous block of memory per thread
  * mem_chunk     - range 0 to 18: set the number of elements (16byte) per chunk
  *                 this value is only used if 'strided_index' == 2
  *                 element count is computed with the equation: 2 to the power of 'mem_chunk' e.g. 4 means a chunk of 16 elements(256byte)
- * unroll        - allow to control how often the POW main loop is unrolled; valid range [0;128]
+ * unroll        - allow to control how often the POW main loop is unrolled; valid range [0;128) - for most OpenCL implementations it must be a power of two.
  * comp_mode     - Compatibility enable/disable the automatic guard around compute kernel which allows
  *                 to use a intensity which is not the multiple of the worksize.
  *                 If you set false and the intensity is not multiple of the worksize the miner can crash:

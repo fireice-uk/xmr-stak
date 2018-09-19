@@ -453,7 +453,7 @@ template<size_t N>
 minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetch, xmrstak_algo algo, const std::string& asm_version_str)
 {
 	static_assert(N >= 1, "number of threads must be >= 1" );
-	
+
 	// check for asm optimized version for cryptonight_v8
 	if(N == 1 && algo == cryptonight_monero_v8 && bHaveAes)
 	{

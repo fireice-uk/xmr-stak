@@ -718,7 +718,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #elif(ALGO==11)
 			SCRATCHPAD_CHUNK(0) = b_x[0] ^ ((uint4 *)c)[0];
 #	ifdef __NV_CL_C_VERSION
-			// flush shuffeled data
+			// flush shuffled data
 			SCRATCHPAD_CHUNK_GLOBAL = *scratchpad_line;
  			idx0 = c[0] & MASK;
  			idxS = idx0 & 0x30;
@@ -786,7 +786,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 // cryptonight_monero_v8
 #if (ALGO == 11)
 #	if defined(__NV_CL_C_VERSION)
-			// flush shuffeled data
+			// flush shuffled data
 			SCRATCHPAD_CHUNK_GLOBAL = *scratchpad_line;
 #	endif
 			b_x[1] = b_x[0];

@@ -441,8 +441,8 @@ inline uint64_t int_sqrt33_1_double_precision(const uint64_t n0)
 	_addcarry_u64(_subborrow_u64(0, x2, n0, (unsigned long long int*)&x2), r, 0, (unsigned long long int*)&r);
 #else
 	// GCC versions prior to 7 don't generate correct assembly for _subborrow_u64 -> _addcarry_u64 sequence
- 	// Fallback to simpler code
- 	if (x2 < n0) ++r;
+	// Fallback to simpler code
+	if (x2 < n0) ++r;
 #endif
 	return r;
 }
@@ -733,7 +733,7 @@ inline void set_float_rounding_mode()
 /** add append n to all arguments and keeps n as first argument
  *
  * @param n number which is appended to the arguments (expect the first argument n)
- * 
+ *
  * @code{.cpp}
  * CN_ENUM_2(1, foo, bar)
  * // is transformed to

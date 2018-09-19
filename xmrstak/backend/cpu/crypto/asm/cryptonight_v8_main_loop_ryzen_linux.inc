@@ -157,14 +157,14 @@ sqrt_fixup_ryzen_ret:
 sqrt_fixup_ryzen:
 	movq r9, xmm2
 	dec	rdi
-	movq rdx, 4389456576511
+	mov	edx, -1022
+ 	shl	rdx, 32
 	mov	rax, rdi
 	shr	rdi, 19
 	shr	rax, 20
 	mov	rcx, rdi
 	sub	rcx, rax
-	sub	rcx, rdx
-	movq rdx, -4389456576512
+	lea	rcx, [rcx+rdx+1]
 	add	rax, rdx
 	imul	rcx, rax
 	sub	rcx, r9
