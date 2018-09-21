@@ -99,8 +99,9 @@ __device__ __forceinline__ uint32_t fast_sqrt_v2(const uint64_t n1)
 	const uint32_t b = result & 1;
 
 	const uint64_t x2 = (uint64_t)(s) * (s + b) + ((uint64_t)(result) << 32) - n1;
-	if ((int64_t)(x2 + b) > 0) --result;
-	if ((int64_t)(x2 + 0x100000000UL + s) < 0) ++result;
+	const int32_t overshoot = ((int64_t)(x2 + b) > 0) ? -1 : 0;
+	const int32_t undershoot = ((int64_t)(x2 + 0x100000000UL + s) < 0) ? 1 : 0;
+	result += (overshoot+undershoot);
 
 	return result;
 }
