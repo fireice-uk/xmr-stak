@@ -445,6 +445,26 @@ if(CMAKE_LINK_STATIC)
     endif()
 endif()
 
+if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
+    # asm optimized monero v8 code
+    enable_language(ASM_MASM)
+    set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.asm" PROPERTY ASM_MASM)
+    add_library(xmr-stak-asm
+        STATIC
+        "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.asm"
+    )
+else()
+    # asm optimized monero v8 code
+    enable_language(ASM)
+    set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S" PROPERTY C)
+    add_library(xmr-stak-asm
+        STATIC
+        "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S"
+    )
+endif()
+
+set_property(TARGET xmr-stak-asm PROPERTY LINKER_LANGUAGE C)
+
 # compile C files
 file(GLOB SRCFILES_C "xmrstak/backend/cpu/crypto/*.c")
 
@@ -456,7 +476,7 @@ set_property(TARGET xmr-stak-c PROPERTY C_STANDARD 99)
 if(MICROHTTPD_ENABLE)
     target_link_libraries(xmr-stak-c ${MHTD})
 endif()
-target_link_libraries(xmr-stak-c ${LIBS})
+target_link_libraries(xmr-stak-c ${LIBS} xmr-stak-asm)
 
 # compile generic backend files
 file(GLOB BACKEND_CPP
@@ -472,7 +492,7 @@ add_library(xmr-stak-backend
     STATIC
     ${BACKEND_CPP}
 )
-target_link_libraries(xmr-stak-backend xmr-stak-c ${CMAKE_DL_LIBS})
+target_link_libraries(xmr-stak-backend xmr-stak-c ${CMAKE_DL_LIBS} xmr-stak-asm)
 
 # compile CUDA backend
 if(CUDA_FOUND)
@@ -499,7 +519,7 @@ if(CUDA_FOUND)
         )
     endif()
     target_link_libraries(xmrstak_cuda_backend ${CUDA_LIBRARIES})
-    target_link_libraries(xmrstak_cuda_backend xmr-stak-backend)
+    target_link_libraries(xmrstak_cuda_backend xmr-stak-backend xmr-stak-asm)
 endif()
 
 # compile AMD backend
@@ -512,7 +532,7 @@ if(OpenCL_FOUND)
         ${OPENCLSRCFILES}
     )
     target_link_libraries(xmrstak_opencl_backend ${OpenCL_LIBRARY} )
-    target_link_libraries(xmrstak_opencl_backend xmr-stak-backend)
+    target_link_libraries(xmrstak_opencl_backend xmr-stak-backend xmr-stak-asm)
 endif()
 
 # compile final binary
@@ -528,7 +548,7 @@ endif()
 set(EXECUTABLE_OUTPUT_PATH "bin" CACHE STRING "Path to place executables relative to ${CMAKE_INSTALL_PREFIX}")
 set(LIBRARY_OUTPUT_PATH "bin" CACHE STRING "Path to place libraries relative to ${CMAKE_INSTALL_PREFIX}")
 
-target_link_libraries(xmr-stak ${LIBS} xmr-stak-c xmr-stak-backend)
+target_link_libraries(xmr-stak ${LIBS} xmr-stak-c xmr-stak-backend xmr-stak-asm)
 
 ################################################################################
 # Install

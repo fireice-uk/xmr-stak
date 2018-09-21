@@ -99,6 +99,7 @@ bool minethd::init_gpus()
 		vGpuData[i].stridedIndex = cfg.stridedIndex;
 		vGpuData[i].memChunk = cfg.memChunk;
 		vGpuData[i].compMode = cfg.compMode;
+		vGpuData[i].unroll = cfg.unroll;
 	}
 
 	return InitOpenCL(vGpuData.data(), n, jconf::inst()->GetPlatformIdx()) == ERR_SUCCESS;

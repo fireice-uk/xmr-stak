@@ -16,6 +16,7 @@ enum xmrstak_algo
 	cryptonight_masari = 8, //equal to cryptonight_monero but with less iterations, used by masari
 	cryptonight_haven = 9, // equal to cryptonight_heavy with a small tweak
 	cryptonight_bittube2 = 10, // derived from cryptonight_heavy with own aes-round implementation and minor other tweaks
+	cryptonight_monero_v8 = 11
 };
 
 // define aeon settings
@@ -46,6 +47,9 @@ template<>
 inline constexpr size_t cn_select_memory<cryptonight_monero>() { return CRYPTONIGHT_MEMORY; }
 
 template<>
+inline constexpr size_t cn_select_memory<cryptonight_monero_v8>() { return CRYPTONIGHT_MEMORY; }
+
+template<>
 inline constexpr size_t cn_select_memory<cryptonight_heavy>() { return CRYPTONIGHT_HEAVY_MEMORY; }
 
 template<>
@@ -72,6 +76,7 @@ inline size_t cn_select_memory(xmrstak_algo algo)
 	{
 	case cryptonight_stellite:
 	case cryptonight_monero:
+	case cryptonight_monero_v8:
 	case cryptonight_masari:
 	case cryptonight:
 		return CRYPTONIGHT_MEMORY;
@@ -101,6 +106,9 @@ template<>
 inline constexpr uint32_t cn_select_mask<cryptonight_monero>() { return CRYPTONIGHT_MASK; }
 
 template<>
+inline constexpr uint32_t cn_select_mask<cryptonight_monero_v8>() { return CRYPTONIGHT_MASK; }
+
+template<>
 inline constexpr uint32_t cn_select_mask<cryptonight_heavy>() { return CRYPTONIGHT_HEAVY_MASK; }
 
 template<>
@@ -127,6 +135,7 @@ inline size_t cn_select_mask(xmrstak_algo algo)
 	{
 	case cryptonight_stellite:
 	case cryptonight_monero:
+	case cryptonight_monero_v8:
 	case cryptonight_masari:
 	case cryptonight:
 		return CRYPTONIGHT_MASK;
@@ -156,6 +165,9 @@ template<>
 inline constexpr uint32_t cn_select_iter<cryptonight_monero>() { return CRYPTONIGHT_ITER; }
 
 template<>
+inline constexpr uint32_t cn_select_iter<cryptonight_monero_v8>() { return CRYPTONIGHT_ITER; }
+
+template<>
 inline constexpr uint32_t cn_select_iter<cryptonight_heavy>() { return CRYPTONIGHT_HEAVY_ITER; }
 
 template<>
@@ -182,6 +194,7 @@ inline size_t cn_select_iter(xmrstak_algo algo)
 	{
 	case cryptonight_stellite:
 	case cryptonight_monero:
+	case cryptonight_monero_v8:
 	case cryptonight:
 		return CRYPTONIGHT_ITER;
 	case cryptonight_ipbc:

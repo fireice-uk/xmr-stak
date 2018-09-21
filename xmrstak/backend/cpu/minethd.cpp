@@ -104,7 +104,7 @@ bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 #endif
 }
 
-minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity)
+minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity, const std::string& asm_version)
 {
 	this->backendType = iBackend::CPU;
 	oWork = pWork;
@@ -113,6 +113,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch,
 	iJobNo = 0;
 	bNoPrefetch = no_prefetch;
 	this->affinity = affinity;
+	asm_version_str = asm_version;
 
 	std::unique_lock<std::mutex> lck(thd_aff_set);
 	std::future<void> order_guard = order_fix.get_future();
@@ -305,6 +306,16 @@ bool minethd::self_test()
 			hashf("This is a test This is a test This is a test", 44, out, ctx);
 			bResult = bResult &&  memcmp(out, "\x1\x57\xc5\xee\x18\x8b\xbe\xc8\x97\x52\x85\xa3\x6\x4e\xe9\x20\x65\x21\x76\x72\xfd\x69\xa1\xae\xbd\x7\x66\xc7\xb5\x6e\xe0\xbd", 32) == 0;
 		}
+		else if(algo == cryptonight_monero_v8)
+		{
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_monero_v8);
+			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			bResult = memcmp(out, "\x4c\xf1\xff\x9c\xa4\x6e\xb4\x33\xb3\x6c\xd9\xf7\x0e\x02\xb1\x4c\xc0\x6b\xfd\x18\xca\x77\xfa\x9c\xca\xaf\xd1\xfd\x96\xc6\x74\xb0", 32) == 0;
+
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_monero_v8);
+			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			bResult &= memcmp(out, "\x4c\xf1\xff\x9c\xa4\x6e\xb4\x33\xb3\x6c\xd9\xf7\x0e\x02\xb1\x4c\xc0\x6b\xfd\x18\xca\x77\xfa\x9c\xca\xaf\xd1\xfd\x96\xc6\x74\xb0", 32) == 0;
+		}
 		else if(algo == cryptonight_aeon)
 		{
 			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_aeon);
@@ -431,7 +442,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		else
 			printer::inst()->print_msg(L1, "Starting %dx thread, no affinity.", cfg.iMultiway);
 
-		minethd* thd = new minethd(pWork, i + threadOffset, cfg.iMultiway, cfg.bNoPrefetch, cfg.iCpuAff);
+		minethd* thd = new minethd(pWork, i + threadOffset, cfg.iMultiway, cfg.bNoPrefetch, cfg.iCpuAff, cfg.asm_version_str);
 		pvThreads.push_back(thd);
 	}
 
@@ -439,9 +450,31 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 }
 
 template<size_t N>
-minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetch, xmrstak_algo algo)
+minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetch, xmrstak_algo algo, const std::string& asm_version_str)
 {
 	static_assert(N >= 1, "number of threads must be >= 1" );
+
+	// check for asm optimized version for cryptonight_v8
+	if(N == 1 && algo == cryptonight_monero_v8 && bHaveAes)
+	{
+		if(asm_version_str != "off")
+		{
+			if(asm_version_str == "intel")
+			{
+				// Intel Ivy Bridge (Xeon v2, Core i7/i5/i3 3xxx, Pentium G2xxx, Celeron G1xxx)
+				return cryptonight_hash_v2_asm<cryptonight_monero_v8, 1>;
+			}
+			if(asm_version_str == "ryzen")
+			{
+				// AMD Ryzen (1xxx and 2xxx series)
+				return cryptonight_hash_v2_asm<cryptonight_monero_v8, 2>;
+			}
+			else
+			{
+				printer::inst()->print_msg(L1, "Assembler %s unknown, fallback to non asm version of cryptonight_v8", asm_version_str.c_str());
+			}
+		}
+	}
 	// We have two independent flag bits in the functions
 	// therefore we will build a binary digit and select the
 	// function as a two digit binary
@@ -478,6 +511,9 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		break;
 	case cryptonight_bittube2:
 		algv = 9;
+		break;
+	case cryptonight_monero_v8:
+		algv = 10;
 		break;
 	default:
 		algv = 2;
@@ -533,7 +569,12 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		Cryptonight_hash<N>::template hash<cryptonight_bittube2, false, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_bittube2, true, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_bittube2, false, true>,
-		Cryptonight_hash<N>::template hash<cryptonight_bittube2, true, true>
+		Cryptonight_hash<N>::template hash<cryptonight_bittube2, true, true>,
+
+		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, false, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, true, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, false, true>,
+		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, true, true>
 	};
 
 	std::bitset<2> digit;
@@ -618,7 +659,7 @@ void minethd::multiway_work_main()
 
 	// start with root algorithm and switch later if fork version is reached
 	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
-	cn_hash_fun hash_fun_multi = func_multi_selector<N>(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
+	cn_hash_fun hash_fun_multi = func_multi_selector<N>(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
 	uint8_t version = 0;
 	size_t lastPoolId = 0;
 
@@ -653,12 +694,12 @@ void minethd::multiway_work_main()
 			if(new_version >= coinDesc.GetMiningForkVersion())
 			{
 				miner_algo = coinDesc.GetMiningAlgo();
-				hash_fun_multi = func_multi_selector<N>(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
+				hash_fun_multi = func_multi_selector<N>(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
 			}
 			else
 			{
 				miner_algo = coinDesc.GetMiningAlgoRoot();
-				hash_fun_multi = func_multi_selector<N>(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo);
+				hash_fun_multi = func_multi_selector<N>(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
 			}
 			lastPoolId = oWork.iPoolId;
 			version = new_version;
