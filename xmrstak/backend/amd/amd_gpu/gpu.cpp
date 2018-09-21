@@ -611,27 +611,6 @@ const char* const attributeNames[] = {
 
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
 
-void PrintDeviceInfo(cl_device_id device)
-{
-	char queryBuffer[1024];
-	int queryInt;
-	cl_int clError;
-	clError = clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(queryBuffer), &queryBuffer, NULL);
-	printf("    CL_DEVICE_NAME: %s\n", queryBuffer);
-	queryBuffer[0] = '\0';
-	clError = clGetDeviceInfo(device, CL_DEVICE_VENDOR, sizeof(queryBuffer), &queryBuffer, NULL);
-	printf("    CL_DEVICE_VENDOR: %s\n", queryBuffer);
-	queryBuffer[0] = '\0';
-	clError = clGetDeviceInfo(device, CL_DRIVER_VERSION, sizeof(queryBuffer), &queryBuffer, NULL);
-	printf("    CL_DRIVER_VERSION: %s\n", queryBuffer);
-	queryBuffer[0] = '\0';
-	clError = clGetDeviceInfo(device, CL_DEVICE_VERSION, sizeof(queryBuffer), &queryBuffer, NULL);
-	printf("    CL_DEVICE_VERSION: %s\n", queryBuffer);
-	queryBuffer[0] = '\0';
-	clError = clGetDeviceInfo(device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &queryInt, NULL);
-	printf("    CL_DEVICE_MAX_COMPUTE_UNITS: %d\n", queryInt);
-}
-
 uint32_t getNumPlatforms()
 {
 	cl_uint num_platforms = 0;
