@@ -88,7 +88,7 @@ constexpr size_t iConfigCnt = (sizeof(oConfigValues)/sizeof(oConfigValues[0]));
 xmrstak::coin_selection coins[] = {
 	// name, userpool, devpool, default_pool_suggestion
 	{ "aeon7",               {cryptonight_aeon, cryptonight_lite, 7u},     {cryptonight_aeon, cryptonight_lite, 7u},     "mine.aeon-pool.com:5555" },
-	{ "bbscoin",             {cryptonight_lite, cryptonight_monero, 4u}, {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
+	{ "bbscoin",             {cryptonight_aeon, cryptonight_monero, 4u}, {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
 	{ "bittube",             {cryptonight_bittube2, cryptonight_bittube2, 0}, {cryptonight_heavy, cryptonight_heavy, 0u},"mining.bit.tube:13333"},
 	{ "cryptonight",         {cryptonight_monero, cryptonight, 255u},      {cryptonight_monero, cryptonight_monero, 0u}, nullptr },
 	{ "cryptonight_bittube2",{cryptonight_bittube2, cryptonight_bittube2, 0}, {cryptonight_heavy, cryptonight_heavy, 0u},nullptr},
