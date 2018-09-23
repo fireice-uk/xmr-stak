@@ -113,17 +113,21 @@ sqrt_fixup_ivybridge_ret:
 	mov	 r9, r10
 	mov	 rax, rdi
 	mul	 rbp
+        movq xmm0, rax
+ 	movq xmm1, rdx
+ 	punpcklqdq xmm1, xmm0
 
 	xor	 r9, 16
 	mov	 rcx, r10
 	xor	 rcx, 32
 	xor	 r10, 48
-	add	 r8, rdx
-	add	 r11, rax
-	movdqu	 xmm0, XMMWORD PTR [r10+rbx]
 	movdqu	 xmm2, XMMWORD PTR [r9+rbx]
+        pxor xmm2, xmm1
+ 	movdqu	 xmm0, XMMWORD PTR [r10+rbx]
 	paddq	 xmm0, xmm5
 	movdqu	 xmm1, XMMWORD PTR [rcx+rbx]
+        xor rdx, [rcx+rbx]
+ 	xor rax, [rcx+rbx+8]
 	paddq	 xmm2, xmm4
 	paddq	 xmm1, xmm7
 	movdqa	 xmm5, xmm4
@@ -131,6 +135,8 @@ sqrt_fixup_ivybridge_ret:
 	movdqa	 xmm4, xmm6
 	movdqu	 XMMWORD PTR [rcx+rbx], xmm2
 	movdqu	 XMMWORD PTR [r10+rbx], xmm1
+        add	 r8, rdx
+ 	add	 r11, rax
 	mov	 QWORD PTR [r14], r8
 	xor	 r8, rdi
 	mov	 r10, r8

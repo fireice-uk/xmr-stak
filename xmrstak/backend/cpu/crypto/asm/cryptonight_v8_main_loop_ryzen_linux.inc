@@ -109,14 +109,20 @@ main_loop_ryzen:
 sqrt_fixup_ryzen_ret:
 	mov	rax, rsi
 	mul	r14
+        movq xmm1, rax
+ 	movq xmm0, rdx
+ 	punpcklqdq xmm0, xmm1
 
 	mov	r9d, r10d
 	mov	ecx, r10d
 	xor	r9d, 16
 	xor	ecx, 32
 	xor	r10d, 48
-	movdqa	xmm0, XMMWORD PTR [r10+rbx]
-	movdqa	xmm2, XMMWORD PTR [r9+rbx]
+	xor rdx, [rcx+rbx]
+ 	xor rax, [rcx+rbx+8]
+ 	movdqa	xmm2, XMMWORD PTR [r9+rbx]
+ 	pxor xmm2, xmm0
+ 	movdqa	xmm0, XMMWORD PTR [r10+rbx]
 	movdqa	xmm1, XMMWORD PTR [rcx+rbx]
 	paddq	xmm0, xmm4
 	paddq	xmm2, xmm3
