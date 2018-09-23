@@ -132,7 +132,7 @@ extern const char sHtmlCommonHeader [] =
 	"<body>"
 	"<div class='all'>"
 	"<div class='version'>%s</div>"
-	"<div class='header'><span style='color: rgb(255, 160, 0)'>XMR</span>-Stak Monero Miner</div>"
+	"<div class='header'><span style='color: rgb(255, 160, 0)'>XMR</span>-Stak %s Miner</div>"
 
 	"<div class='flex-container'>"
 		"<div class='links flex-item'>"
@@ -157,7 +157,7 @@ extern const char sHtmlHashrateBodyHigh [] =
 		"<tr><th>Thread ID</th><th>10s</th><th>60s</th><th>15m</th><th rowspan='%u'>H/s</td></tr>";
 
 extern const char sHtmlHashrateTableRow [] =
-	"<tr><th>%u</th><td>%s</td><td>%s</td><td>%s</td></tr>";
+	"<tr><th>%s</th><td>%s</td><td>%s</td><td>%s</td></tr>";
 
 extern const char sHtmlHashrateBodyLow [] =
 		"<tr><th>Totals:</th><td>%s</td><td>%s</td><td>%s</td></tr>"
@@ -168,6 +168,7 @@ extern const char sHtmlHashrateBodyLow [] =
 extern const char sHtmlConnectionBodyHigh [] =
 	"<div class='data'>"
 	"<table>"
+		"<tr><th>Rig ID</th><td>%s</td></tr>"
 		"<tr><th>Pool address</th><td>%s</td></tr>"
 		"<tr><th>Connected since</th><td>%s</td></tr>"
 		"<tr><th>Pool ping time</th><td>%u ms</td></tr>"
@@ -185,6 +186,7 @@ extern const char sHtmlConnectionBodyLow [] =
 extern const char sHtmlResultBodyHigh [] =
 	"<div class='data'>"
 	"<table>"
+		"<tr><th>Coin type</th><td>%s</td></tr>"
 		"<tr><th>Difficulty</th><td>%u</td></tr>"
 		"<tr><th>Good results</th><td>%u / %u (%.1f %%)</td></tr>"
 		"<tr><th>Avg result time</th><td>%.1f sec</td></tr>"

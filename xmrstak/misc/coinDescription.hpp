@@ -3,7 +3,6 @@
 #include "xmrstak/backend/cryptonight.hpp"
 
 #include <stdlib.h>
-#include <string>
 
 
 namespace xmrstak
@@ -23,6 +22,8 @@ namespace xmrstak
 		inline xmrstak_algo GetMiningAlgo() const { return algo; }
 		inline xmrstak_algo GetMiningAlgoRoot() const { return algo_root; }
 		inline uint8_t GetMiningForkVersion() const { return fork_version; }
+		inline std::string GetMiningAlgoName() const { return cn_algo_name(algo); }
+		inline std::string GetMiningAlgoRootName() const { return cn_algo_name(algo_root); }
 	};
 
 	struct coin_selection

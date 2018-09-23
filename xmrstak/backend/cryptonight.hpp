@@ -2,7 +2,9 @@
 #include <stddef.h>
 #include <inttypes.h>
 #include <type_traits>
+#include <string>
 
+// NOTE: when changing this enum, check the cn_algo_name() below for any mismatch
 enum xmrstak_algo
 {
 	invalid_algo = 0,
@@ -19,6 +21,63 @@ enum xmrstak_algo
 	cryptonight_monero_v8 = 11,
 	cryptonight_superfast = 12
 };
+
+/** get simplified/pretty coin name from xmrstak_algo value
+ *
+ * @param algo_id Any value, preferably from enum xmrstak_algo above unless you enjoy (unknown)
+ */
+inline std::string cn_algo_name(xmrstak_algo algo)
+{
+	std::string algo_name;
+	switch(algo)
+	{
+	// CN (-Normal) and relatives
+	case cryptonight:
+		algo_name = "CryptoNight";
+		break;
+	case cryptonight_monero:
+	case cryptonight_monero_v8:
+		algo_name = "Monero";
+		break;
+	case cryptonight_stellite:
+		algo_name = "Stellite";
+		break;
+	case cryptonight_masari:
+		algo_name = "Masari";
+		break;
+	case cryptonight_superfast:
+		algo_name = "CN-SuperFast";
+		break;
+
+	// CN-Lite and relatives
+	case cryptonight_lite:
+		algo_name = "CN-Lite";
+		break;
+	case cryptonight_aeon:
+		algo_name = "AEON";
+		break;
+	case cryptonight_ipbc:
+		algo_name = "BitTube/IPBC";
+		break;
+
+	// CN-Heavy and relatives
+	case cryptonight_heavy:
+		algo_name = "CN-Heavy";
+		break;
+	case cryptonight_haven:
+		algo_name = "Haven";
+		break;
+	case cryptonight_bittube2:
+		algo_name = "BitTube2";
+		break;
+
+	// here for completeness, should not happen
+	case invalid_algo:
+	default:
+		algo_name = "(unknown)";
+	}
+	return algo_name;
+}
 
 // define aeon settings
 constexpr size_t CRYPTONIGHT_LITE_MEMORY = 1 * 1024 * 1024;

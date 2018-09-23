@@ -884,6 +884,10 @@ void executor::result_report(std::string& out)
 		iTotalRes += vMineResults[i].count;
 
 	out.append("RESULT REPORT\n");
+	out.append("Coin Type        : ").
+		append(jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoName()).
+		append(" [").append(jconf::inst()->GetMiningCoin()).append("]\n");
+	out.append("Difficulty       : ").append(std::to_string(iPoolDiff)).append(1, '\n');
 	if(iTotalRes == 0)
 	{
 		out.append("You haven't found any results yet.\n");
@@ -898,7 +902,6 @@ void executor::result_report(std::string& out)
 
 	snprintf(num, sizeof(num), " (%.1f %%)\n", 100.0 * iGoodRes / iTotalRes);
 
-	out.append("Difficulty       : ").append(std::to_string(iPoolDiff)).append(1, '\n');
 	out.append("Good results     : ").append(std::to_string(iGoodRes)).append(" / ").
 		append(std::to_string(iTotalRes)).append(num);
 
@@ -945,6 +948,7 @@ void executor::connection_report(std::string& out)
 		pool = pick_pool_by_id(last_usr_pool_id);
 
 	out.append("CONNECTION REPORT\n");
+	out.append("Rig ID          : ").append(pool != nullptr ? pool->get_rigid() : "").append(1, '\n');
 	out.append("Pool address    : ").append(pool != nullptr ? pool->get_pool_addr() : "<not connected>").append(1, '\n');
 	if(pool != nullptr && pool->is_running() && pool->is_logged_in())
 		out.append("Connected since : ").append(time_format(date, sizeof(date), tPoolConnTime)).append(1, '\n');
@@ -1009,7 +1013,8 @@ void executor::http_hashrate_report(std::string& out)
 
 	out.reserve(4096);
 
-	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Hashrate Report", ver_html, "Hashrate Report");
+	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Hashrate Report", ver_html,
+			jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoName().c_str(),"Hashrate Report");
 	out.append(buffer);
 
 	bool have_motd = false;
@@ -1040,9 +1045,27 @@ void executor::http_hashrate_report(std::string& out)
 	out.append(buffer);
 
 	double fTotal[3] = { 0.0, 0.0, 0.0};
+	auto bTypePrev = static_cast<xmrstak::iBackend::BackendType>(0);
+	std::string name;
+	size_t j = 0;
 	for(size_t i=0; i < nthd; i++)
 	{
 		double fHps[3];
+		char csThreadTag[25];
+		auto bType = static_cast<xmrstak::iBackend::BackendType>(pvThreads->at(i)->backendType);
+		if(bTypePrev == bType)
+			j++;
+		else
+		{
+			j = 0;
+			bTypePrev = bType;
+			name = xmrstak::iBackend::getName(bType);
+			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+		}
+		snprintf(csThreadTag, sizeof(csThreadTag),
+			(99 < nthd) ? "[%s.%03u]:%03u" : ((9 < nthd) ? "[%s.%02u]:%02u" : "[%s.%u]:%u"),
+			name.c_str(), (unsigned int)(j), (unsigned int)i
+		);
 
 		fHps[0] = telem->calc_telemetry_data(10000, i);
 		fHps[1] = telem->calc_telemetry_data(60000, i);
@@ -1057,7 +1080,7 @@ void executor::http_hashrate_report(std::string& out)
 		fTotal[1] += fHps[1];
 		fTotal[2] += fHps[2];
 
-		snprintf(buffer, sizeof(buffer), sHtmlHashrateTableRow, (unsigned int)i, num_a, num_b, num_c);
+		snprintf(buffer, sizeof(buffer), sHtmlHashrateTableRow, csThreadTag, num_a, num_b, num_c);
 		out.append(buffer);
 	}
 
@@ -1078,7 +1101,8 @@ void executor::http_result_report(std::string& out)
 
 	out.reserve(4096);
 
-	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Result Report", ver_html,  "Result Report");
+	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Result Report", ver_html,
+			jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoName().c_str(),"Result Report");
 	out.append(buffer);
 
 	size_t iGoodRes = vMineResults[0].count, iTotalRes = iGoodRes;
@@ -1100,6 +1124,7 @@ void executor::http_result_report(std::string& out)
 	}
 
 	snprintf(buffer, sizeof(buffer), sHtmlResultBodyHigh,
+		(jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoName() + " [" + jconf::inst()->GetMiningCoin() + "]").c_str(),
 		iPoolDiff, iGoodRes, iTotalRes, fGoodResPrc, fAvgResTime, iPoolHashes,
 		int_port(iTopDiff[0]), int_port(iTopDiff[1]), int_port(iTopDiff[2]), int_port(iTopDiff[3]),
 		int_port(iTopDiff[4]), int_port(iTopDiff[5]), int_port(iTopDiff[6]), int_port(iTopDiff[7]),
@@ -1124,7 +1149,8 @@ void executor::http_connection_report(std::string& out)
 
 	out.reserve(4096);
 
-	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Connection Report", ver_html,  "Connection Report");
+	snprintf(buffer, sizeof(buffer), sHtmlCommonHeader, "Connection Report", ver_html,
+			jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoName().c_str(),"Connection Report");
 	out.append(buffer);
 
 	jpsock* pool = pick_pool_by_id(current_pool_id);
@@ -1145,6 +1171,7 @@ void executor::http_connection_report(std::string& out)
 	}
 
 	snprintf(buffer, sizeof(buffer), sHtmlConnectionBodyHigh,
+		pool != nullptr ? pool->get_rigid() : "",
 		pool != nullptr ? pool->get_pool_addr() : "not connected",
 		cdate, ping_time);
 	out.append(buffer);
