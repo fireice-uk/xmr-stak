@@ -44,6 +44,7 @@
 #include <functional>
 #include <assert.h>
 #include <time.h>
+#include <regex>
 
 
 #ifdef _WIN32
@@ -1254,9 +1255,11 @@ void executor::http_json_report(std::string& out)
 		using namespace std::chrono;
 		if(i != 0) cn_error.append(1, ',');
 
+		std::string logMsg(std::regex_replace(vSocketLog[i].msg, std::regex("\n\r"), " "));
+
 		snprintf(buffer, sizeof(buffer), sJsonApiConnectionError,
 			int_port(duration_cast<seconds>(vMineResults[i].time.time_since_epoch()).count()),
-			vSocketLog[i].msg.c_str());
+			logMsg.c_str());
 		cn_error.append(buffer);
 	}
 
