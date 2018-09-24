@@ -1255,7 +1255,7 @@ void executor::http_json_report(std::string& out)
 		if(i != 0) cn_error.append(1, ',');
 
 		snprintf(buffer, sizeof(buffer), sJsonApiConnectionError,
-			int_port(duration_cast<seconds>(vMineResults[i].time.time_since_epoch()).count()),
+			int_port(duration_cast<seconds>(vSocketLog[i].time.time_since_epoch()).count()),
 			vSocketLog[i].msg.c_str());
 		cn_error.append(buffer);
 	}
