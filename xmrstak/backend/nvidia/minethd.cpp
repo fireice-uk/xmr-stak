@@ -145,11 +145,6 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 	std::vector<iBackend*>* pvThreads = new std::vector<iBackend*>();
 
 	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
-	if(miner_algo == cryptonight_monero_v8)
-	{
-		std::cerr<<"ERROR: The CUDA backend is currently not supporting cryptonight_v8, please use `--openCLVendor NVIDIA` instead."<<std::endl;
-		return pvThreads;
-	}
 
 	if(!configEditor::file_exist(params::inst().configFileNVIDIA))
 	{

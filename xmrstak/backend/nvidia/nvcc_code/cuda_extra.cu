@@ -283,13 +283,9 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 		break;
 
 	};
-	const int gpuArch = ctx->device_arch[0] * 10 + ctx->device_arch[1];
 
-	/* Disable L1 cache for GPUs before Volta.
-	 * L1 speed is increased and latency reduced with Volta.
-	 */
-	if(gpuArch < 70)
-		CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
+	// prefer shared memory over L1 cache
+	CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferShared));
 
 	size_t hashMemSize = std::max(
 		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
@@ -691,6 +687,25 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			ctx->device_threads = 64;
 		}
 
+		// check if cryptonight_monero_v8 is selected for the user pool
+		bool useCryptonight_v8 =
+			::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_monero_v8 ||
+			::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot() == cryptonight_monero_v8;
+
+		// overwrite default config if cryptonight_monero_v8 is mined
+		if(useCryptonight_v8)
+		{
+			// 4 based on my test maybe it must be adjusted later
+			size_t threads = 4;
+			// 8 is chosen by checking the occupancy calculator
+			size_t blockOptimal = 8 * ctx->device_mpcount;
+
+			if(blockOptimal * threads * hashMemSize < limitedMemory)
+			{
+				ctx->device_threads = threads;
+				ctx->device_blocks = blockOptimal;
+			}
+		}
 	}
 	printf("device init succeeded\n");
 
