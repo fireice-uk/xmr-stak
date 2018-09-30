@@ -49,6 +49,7 @@ telemetry::telemetry(size_t iThd)
 
 double telemetry::calc_telemetry_data(size_t iLastMillisec, size_t iThread)
 {
+	std::unique_lock<std::mutex> lk(mtx);
 	uint64_t iTimeNow = get_timestamp_ms();
 
 	uint64_t iEarliestHashCnt = 0;
@@ -98,6 +99,7 @@ double telemetry::calc_telemetry_data(size_t iLastMillisec, size_t iThread)
 
 void telemetry::push_perf_value(size_t iThd, uint64_t iHashCount, uint64_t iTimestamp)
 {
+	std::unique_lock<std::mutex> lk(mtx);
 	size_t iTop = iBucketTop[iThd];
 	ppHashCounts[iThd][iTop] = iHashCount;
 	ppTimestamps[iThd][iTop] = iTimestamp;
