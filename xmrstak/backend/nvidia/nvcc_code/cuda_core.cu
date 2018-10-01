@@ -210,7 +210,7 @@ struct u64 : public uint2
 
 	__forceinline__ __device__ u64(){}
 
-	__forceinline__ __device__ u64( const uint x0, const uint x1)
+	__forceinline__ __device__ u64( const uint32_t x0, const uint32_t x1)
 	{
 		uint2::x = x0;
 		uint2::y = x1;
