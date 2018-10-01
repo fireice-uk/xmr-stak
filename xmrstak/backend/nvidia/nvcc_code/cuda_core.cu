@@ -7,6 +7,8 @@
 #include <cuda_runtime.h>
 
 #include "xmrstak/jconf.hpp"
+#include "xmrstak/backend/nvidia/nvcc_code/cuda_fast_int_math_v2.hpp"
+
 
 #ifdef _WIN32
 #include <windows.h>
@@ -194,6 +196,15 @@ __forceinline__ __device__ uint32_t shuffle(volatile uint32_t* ptr,const uint32_
 #endif
 }
 
+template<size_t group_n>
+__forceinline__ __device__ uint64_t shuffle64(volatile uint32_t* ptr,const uint32_t sub,const int val,const uint32_t src, const uint32_t src2)
+{
+	uint64_t tmp;
+	((uint32_t*)&tmp)[0] = shuffle<group_n>(ptr, sub, val, src);
+	((uint32_t*)&tmp)[1] = shuffle<group_n>(ptr, sub, val, src2);
+	return tmp;
+}
+
 template<size_t ITERATIONS, uint32_t MEMORY, uint32_t MASK, xmrstak_algo ALGO>
 #ifdef XMR_STAK_THREADS
 __launch_bounds__( XMR_STAK_THREADS * 4 )
@@ -204,6 +215,17 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 	__shared__ uint32_t sharedMemory[1024];
 
 	cn_aes_gpu_init( sharedMemory );
+	uint32_t* RCP;
+	if(ALGO == cryptonight_monero_v8)
+	{
+		__shared__ uint32_t RCP_shared[256];
+		for (int i = threadIdx.x; i < 256; i += blockDim.x)
+		{
+			RCP_shared[i] = RCP_C[i];
+		}
+		RCP = RCP_shared;
+	}
+
 
 	__syncthreads( );
 
@@ -250,7 +272,20 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 			idx0 = *(d_ctx_b + threads * 4 + thread);
 		}
 	}
-	d[1] = (d_ctx_b + thread * 4)[sub];
+
+	uint32_t bx1, sqrt_result;
+	uint64_t division_result;
+	if(ALGO == cryptonight_monero_v8)
+	{
+		d[1] = (d_ctx_b + thread * 12)[sub];
+		bx1 = (d_ctx_b + thread * 12 + 4)[sub];
+
+		// must be valid only for `sub < 2`
+		division_result = ((uint64_t*)(d_ctx_b + thread * 12 + 4 * 2))[0];
+		sqrt_result = (d_ctx_b + thread * 12 + 4 * 2 + 2)[0];
+	}
+	else
+		d[1] = (d_ctx_b + thread * 4)[sub];
 
 	#pragma unroll 2
 	for ( i = start; i < end; ++i )
@@ -259,7 +294,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 		for ( int x = 0; x < 2; ++x )
 		{
 			j = ( ( idx0 & MASK ) >> 2 ) + sub;
-
+			
 			if(ALGO == cryptonight_bittube2)
 			{
 				uint32_t k[4];
@@ -290,6 +325,57 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 					}
 				}
 			}
+			else if(ALGO == cryptonight_monero_v8)
+			{
+
+				const uint4 chunk = *( (uint4*)((uint64_t)(long_state + (j & 0xFFFFFFFC)) ^ (sub<<4)) );
+				uint4 chunk0{};
+				chunk0.x = shuffle<4>(sPtr,sub, ((uint32_t*)&chunk)[0], 0);
+				chunk0.y = shuffle<4>(sPtr,sub, ((uint32_t*)&chunk)[1], 0);
+				chunk0.z = shuffle<4>(sPtr,sub, ((uint32_t*)&chunk)[2], 0);
+				chunk0.w = shuffle<4>(sPtr,sub, ((uint32_t*)&chunk)[3], 0);
+
+				const uint32_t x_0 = ((uint32_t*)&chunk0)[sub];
+				const uint32_t x_1 = ((uint32_t*)&chunk0)[(sub + 1) % 4];
+				const uint32_t x_2 = ((uint32_t*)&chunk0)[(sub + 2) % 4];
+				const uint32_t x_3 = ((uint32_t*)&chunk0)[(sub + 3) % 4];
+				d[x] = a ^
+					t_fn0( x_0 & 0xff ) ^
+					t_fn1( (x_1 >> 8) & 0xff ) ^
+					t_fn2( (x_2 >> 16) & 0xff ) ^
+					t_fn3( ( x_3 >> 24 ) );
+
+				uint4 value;
+				const uint64_t tmp10 = shuffle64<4>(sPtr,sub, d[(x + 1) % 2], 0 , 1);
+				if(sub == 1)
+					((uint64_t*)&value)[0] = tmp10;
+				const uint64_t tmp20 = shuffle64<4>(sPtr,sub, d[(x + 1) % 2], 2 , 3);
+				if(sub == 1)
+					((uint64_t*)&value)[1] = tmp20;
+				const uint64_t tmp11 = shuffle64<4>(sPtr,sub, a, 0 , 1);
+				if(sub == 2)
+					((uint64_t*)&value)[0] = tmp11;
+				const uint64_t tmp21 = shuffle64<4>(sPtr,sub, a, 2 , 3);
+				if(sub == 2)
+					((uint64_t*)&value)[1] = tmp21;
+				const uint64_t tmp12 = shuffle64<4>(sPtr,sub, bx1, 0 , 1);
+				if(sub == 3)
+					((uint64_t*)&value)[0] = tmp12;
+				const uint64_t tmp22 = shuffle64<4>(sPtr,sub, bx1, 2 , 3);
+				if(sub == 3)
+					((uint64_t*)&value)[1] = tmp22;
+
+				if(sub > 0)
+				{
+					uint4 store{};
+					((uint64_t*)&store)[0] = ((uint64_t*)&chunk)[0] + ((uint64_t*)&value)[0];
+					((uint64_t*)&store)[1] = ((uint64_t*)&chunk)[1] + ((uint64_t*)&value)[1];
+
+					const int dest = sub + 1;
+					const int dest2 = dest == 4 ? 1 : dest;
+					*( (uint4*)((uint64_t)(long_state + (j & 0xFFFFFFFC)) ^ (dest2<<4)) ) = store;
+				}
+			}
 			else
 			{
 				const uint32_t x_0 = loadGlobal32<uint32_t>( long_state + j );
@@ -302,7 +388,6 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 					t_fn2( (x_2 >> 16) & 0xff ) ^
 					t_fn3( ( x_3 >> 24 ) );
 			}
-
 			//XOR_BLOCKS_DST(c, b, &long_state[j]);
 			t1[0] = shuffle<4>(sPtr,sub, d[x], 0);
 
@@ -331,10 +416,62 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 
 			uint32_t yy[2];
 			*( (uint64_t*) yy ) = loadGlobal64<uint64_t>( ( (uint64_t *) long_state )+( j >> 1 ) );
+
+			if(ALGO == cryptonight_monero_v8 )
+			{
+				// Use division and square root results from the _previous_ iteration to hide the latency
+				const uint64_t cx0 = shuffle64<4>(sPtr, sub, d[x], 0, 1);
+				((uint32_t*)&division_result)[1] ^= sqrt_result;
+		
+				if(sub < 2)
+					*((uint64_t*)yy) ^= division_result;
+
+				const uint32_t dd = (static_cast<uint32_t>(cx0) + (sqrt_result << 1)) | 0x80000001UL;
+				const uint64_t cx1 = shuffle64<4>(sPtr, sub, d[x], 2, 3);
+				division_result = fast_div_v2(RCP, cx1, dd);
+			
+				// Use division_result as an input for the square root to prevent parallel implementation in hardware
+				sqrt_result = fast_sqrt_v2(cx0 + division_result);
+			}
+
 			uint32_t zz[2];
 			zz[0] = shuffle<4>(sPtr,sub, yy[0], 0);
 			zz[1] = shuffle<4>(sPtr,sub, yy[1], 0);
+			// Shuffle the other 3x16 byte chunks in the current 64-byte cache line
+			if(ALGO == cryptonight_monero_v8)
+			{
+				uint4 value;
+				const uint64_t tmp10 = shuffle64<4>(sPtr,sub, d[(x + 1) % 2], 0 , 1);
+				if(sub == 1)
+					((uint64_t*)&value)[0] = tmp10;
+				const uint64_t tmp20 = shuffle64<4>(sPtr,sub, d[(x + 1) % 2], 2 , 3);
+				if(sub == 1)
+					((uint64_t*)&value)[1] = tmp20;
+				const uint64_t tmp11 = shuffle64<4>(sPtr,sub, a, 0 , 1);
+				if(sub == 2)
+					((uint64_t*)&value)[0] = tmp11;
+				const uint64_t tmp21 = shuffle64<4>(sPtr,sub, a, 2 , 3);
+				if(sub == 2)
+					((uint64_t*)&value)[1] = tmp21;
+				const uint64_t tmp12 = shuffle64<4>(sPtr,sub, bx1, 0 , 1);
+				if(sub == 3)
+					((uint64_t*)&value)[0] = tmp12;
+				const uint64_t tmp22 = shuffle64<4>(sPtr,sub, bx1, 2 , 3);
+				if(sub == 3)
+					((uint64_t*)&value)[1] = tmp22;
+				if(sub > 0)
+				{
+					const uint4 chunk = *( (uint4*)((uint64_t)(long_state + (j & 0xFFFFFFFC)) ^ (sub<<4)) );
+					uint4 store{};
+					((uint64_t*)&store)[0] = ((uint64_t*)&chunk)[0] + ((uint64_t*)&value)[0];
+					((uint64_t*)&store)[1] = ((uint64_t*)&chunk)[1] + ((uint64_t*)&value)[1];
 
+					const int dest = sub + 1;
+					const int dest2 = dest == 4 ? 1 : dest;
+					*( (uint4*)((uint64_t)(long_state + (j & 0xFFFFFFFC)) ^ (dest2<<4)) ) = store;
+				}
+			}
+			
 			t1[1] = shuffle<4>(sPtr,sub, d[x], 1);
 			#pragma unroll
 			for ( k = 0; k < 2; k++ )
@@ -384,13 +521,31 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
 
 				idx0 = (~d) ^ q;
 			}
+			if(ALGO == cryptonight_monero_v8)
+			{
+				bx1 = d[(x + 1) % 2];
+			}
 		}
 	}
 
 	if ( bfactor > 0 )
 	{
 		(d_ctx_a + thread * 4)[sub] = a;
-		(d_ctx_b + thread * 4)[sub] = d[1];
+		if(ALGO == cryptonight_monero_v8)
+		{
+			(d_ctx_b + thread * 12)[sub] = d[1];
+			(d_ctx_b + thread * 12 + 4)[sub] = bx1;
+
+			if(sub < 2)
+			{
+				// must be valid only for `sub < 2`
+				(d_ctx_b + thread * 12 + 4 * 2)[sub % 2] = division_result;
+				(d_ctx_b + thread * 12 + 4 * 2 + 2)[sub % 2] = sqrt_result;
+			}
+		}
+		else
+			(d_ctx_b + thread * 4)[sub] = d[1];
+			
 		if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2)
 			if(sub&1)
 				*(d_ctx_b + threads * 4 + thread) = idx0;
@@ -529,10 +684,13 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 
 void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t startNonce)
 {
-
 	if(miner_algo == cryptonight_monero)
 	{
 		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero>(ctx, startNonce);
+	}
+	else if(miner_algo == cryptonight_monero_v8)
+	{
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero_v8>(ctx, startNonce);
 	}
 	else if(miner_algo == cryptonight_heavy)
 	{
@@ -564,11 +722,10 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t 
 	}
 	else if(miner_algo == cryptonight_haven)
 	{
-	  cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_haven>(ctx, startNonce);
+		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_haven>(ctx, startNonce);
 	}
 	else if(miner_algo == cryptonight_bittube2)
 	{
-	  cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_bittube2>(ctx, startNonce);
+		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_bittube2>(ctx, startNonce);
 	}
-
 }

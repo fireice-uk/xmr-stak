@@ -17,6 +17,7 @@
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/picosha2/picosha2.hpp"
 #include "xmrstak/params.hpp"
+#include "xmrstak/version.hpp"
 
 #include <stdio.h>
 #include <string.h>
@@ -375,6 +376,13 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
+	std::vector<char> openCLDriverVer(1024);
+	if(ret = clGetDeviceInfo(ctx->DeviceID, CL_DRIVER_VERSION, openCLDriverVer.size(), openCLDriverVer.data(), NULL) != CL_SUCCESS)
+	{
+		printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DRIVER_VERSION for device %u.", err_to_str(ret),ctx->deviceIdx );
+		return ERR_OCL_API;
+	}
+
 	xmrstak_algo miner_algo[2] = {
 		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo(),
 		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot()
@@ -388,11 +396,17 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		int threadMemMask = cn_select_mask(miner_algo[ii]);
 		int hashIterations = cn_select_iter(miner_algo[ii]);
 
-		char options[512];
-		snprintf(options, sizeof(options),
-			"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d -DMEM_CHUNK_EXPONENT=%d  -DCOMP_MODE=%d -DMEMORY=%llu -DALGO=%d",
-		hashIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex, int(1u<<ctx->memChunk), ctx->compMode ? 1 : 0,
-			int_port(hashMemSize), int(miner_algo[ii]));
+		std::string options;
+		options += " -DITERATIONS=" + std::to_string(hashIterations);
+		options += " -DMASK=" + std::to_string(threadMemMask);
+		options += " -DWORKSIZE=" + std::to_string(ctx->workSize);
+		options += " -DSTRIDED_INDEX=" + std::to_string(ctx->stridedIndex);
+		options += " -DMEM_CHUNK_EXPONENT=" + std::to_string(1u << ctx->memChunk);
+		options += " -DCOMP_MODE=" + std::to_string(ctx->compMode ? 1u : 0u);
+		options += " -DMEMORY=" + std::to_string(hashMemSize);
+		options += " -DALGO=" + std::to_string(miner_algo[ii]);
+		options += " -DCN_UNROLL=" + std::to_string(ctx->unroll);
+
 		/* create a hash for the compile time cache
 		 * used data:
 		 *   - source code
@@ -402,6 +416,9 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		std::string src_str(source_code);
 		src_str += options;
 		src_str += devNameVec.data();
+		src_str += get_version_str();
+		src_str += openCLDriverVer.data();
+
 		std::string hash_hex_str;
 		picosha2::hash256_hex_string(src_str, hash_hex_str);
 
@@ -418,7 +435,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 				return ERR_OCL_API;
 			}
 
-			ret = clBuildProgram(ctx->Program[ii], 1, &ctx->DeviceID, options, NULL, NULL);
+			ret = clBuildProgram(ctx->Program[ii], 1, &ctx->DeviceID, options.c_str(), NULL, NULL);
 			if(ret != CL_SUCCESS)
 			{
 				size_t len;
@@ -885,6 +902,9 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 
 	//char* source_code = LoadTextFile(sSourcePath);
 
+	const char *fastIntMathV2CL =
+			#include "./opencl/fast_int_math_v2.cl"
+	;
 	const char *cryptonightCL =
 			#include "./opencl/cryptonight.cl"
 	;
@@ -905,6 +925,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	;
 
 	std::string source_code(cryptonightCL);
+	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_FAST_INT_MATH_V2"), fastIntMathV2CL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_WOLF_AES"), wolfAesCL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_WOLF_SKEIN"), wolfSkeinCL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_JH"), jhCL);
@@ -914,14 +935,35 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	// create a directory  for the OpenCL compile cache
 	create_directory(get_home() + "/.openclcache");
 
+	// check if cryptonight_monero_v8 is selected for the user or dev pool
+	bool useCryptonight_v8 =
+		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_monero_v8 ||
+		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot() == cryptonight_monero_v8 ||
+		::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgo() == cryptonight_monero_v8 ||
+		::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgoRoot() == cryptonight_monero_v8;
+
 	for(int i = 0; i < num_gpus; ++i)
 	{
+		const std::string backendName = xmrstak::params::inst().openCLVendor;
 		if(ctx[i].stridedIndex == 2 && (ctx[i].rawIntensity % ctx[i].workSize) != 0)
 		{
 			size_t reduced_intensity = (ctx[i].rawIntensity / ctx[i].workSize) * ctx[i].workSize;
 			ctx[i].rawIntensity = reduced_intensity;
-			const std::string backendName = xmrstak::params::inst().openCLVendor;
 			printer::inst()->print_msg(L0, "WARNING %s: gpu %d intensity is not a multiple of 'worksize', auto reduce intensity to %d", backendName.c_str(), ctx[i].deviceIdx, int(reduced_intensity));
+		}
+
+		if(useCryptonight_v8)
+		{
+			if(ctx[i].stridedIndex == 1)
+			{
+				printer::inst()->print_msg(L0, "ERROR %s: gpu %d stridedIndex is not allowed to be `true` or `1` for the selected currency", backendName.c_str(), ctx[i].deviceIdx);
+				return ERR_STUPID_PARAMS;
+			}
+			if(ctx[i].stridedIndex == 2 && ctx[i].memChunk < 2)
+			{
+				printer::inst()->print_msg(L0, "ERROR %s: gpu %d memChunk bust be >= 2 for the selected currency", backendName.c_str(), ctx[i].deviceIdx);
+				return ERR_STUPID_PARAMS;
+			}
 		}
 
 		if((ret = InitOpenCLGpu(opencl_ctx, &ctx[i], source_code.c_str())) != ERR_SUCCESS)
