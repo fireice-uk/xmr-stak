@@ -455,24 +455,27 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 	static_assert(N >= 1, "number of threads must be >= 1" );
 
 	// check for asm optimized version for cryptonight_v8
-	if(N == 1 && algo == cryptonight_monero_v8 && bHaveAes)
+	if(N <= 2 && algo == cryptonight_monero_v8 && bHaveAes)
 	{
 		if(asm_version_str != "off")
 		{
+			if(asm_version_str != "intel" && asm_version_str != "ryzen")
+				printer::inst()->print_msg(L1, "Assembler %s unknown, fallback to non asm version of cryptonight_v8", asm_version_str.c_str());
+
 			if(asm_version_str == "intel")
 			{
 				// Intel Ivy Bridge (Xeon v2, Core i7/i5/i3 3xxx, Pentium G2xxx, Celeron G1xxx)
-				return cryptonight_hash_v2_asm<cryptonight_monero_v8, 1>;
+				if(N == 1)
+					return Cryptonight_hash_asm<1u, 0u>::template hash<cryptonight_monero_v8>;
+				else if(N == 2)
+					return Cryptonight_hash_asm<2u, 0u>::template hash<cryptonight_monero_v8>;
 			}
-			if(asm_version_str == "ryzen")
+			// supports only 1 thread per hash
+			if(N == 1 && asm_version_str == "ryzen")
 			{
 				// AMD Ryzen (1xxx and 2xxx series)
-				return cryptonight_hash_v2_asm<cryptonight_monero_v8, 2>;
-			}
-			else
-			{
-				printer::inst()->print_msg(L1, "Assembler %s unknown, fallback to non asm version of cryptonight_v8", asm_version_str.c_str());
-			}
+				return Cryptonight_hash_asm<1u, 1u>::template hash<cryptonight_monero_v8>;
+			}		
 		}
 	}
 	// We have two independent flag bits in the functions

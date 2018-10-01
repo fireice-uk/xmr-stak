@@ -940,21 +940,63 @@ struct Cryptonight_hash<5>
 
 extern "C" void cryptonight_v8_mainloop_ivybridge_asm(cryptonight_ctx* ctx0);
 extern "C" void cryptonight_v8_mainloop_ryzen_asm(cryptonight_ctx* ctx0);
+extern "C" void cryptonight_v8_double_mainloop_sandybridge_asm(cryptonight_ctx* ctx0, cryptonight_ctx* ctx1);
 
-template<xmrstak_algo ALGO, int asm_version>
-void cryptonight_hash_v2_asm(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+
+template< size_t N, size_t asm_version>
+struct Cryptonight_hash_asm;
+
+template<size_t asm_version>
+struct Cryptonight_hash_asm<1, asm_version>
 {
-	constexpr size_t MEM = cn_select_memory<ALGO>();
+	static constexpr size_t N = 1;
 
-	keccak((const uint8_t *)input, len, ctx[0]->hash_state, 200);
-	cn_explode_scratchpad<MEM, false, false, ALGO>((__m128i*)ctx[0]->hash_state, (__m128i*)ctx[0]->long_state);
+	template<xmrstak_algo ALGO>
+	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+	{
+		constexpr size_t MEM = cn_select_memory<ALGO>();
 
-	if (asm_version == 1)
-		cryptonight_v8_mainloop_ivybridge_asm(ctx[0]);
-	else
-		cryptonight_v8_mainloop_ryzen_asm(ctx[0]);
+		keccak((const uint8_t *)input, len, ctx[0]->hash_state, 200);
+		cn_explode_scratchpad<MEM, false, false, ALGO>((__m128i*)ctx[0]->hash_state, (__m128i*)ctx[0]->long_state);
 
-	cn_implode_scratchpad<MEM, false, false, ALGO>((__m128i*)ctx[0]->long_state, (__m128i*)ctx[0]->hash_state);
-	keccakf((uint64_t*)ctx[0]->hash_state, 24);
-	extra_hashes[ctx[0]->hash_state[0] & 3](ctx[0]->hash_state, 200, (char*)output);
-}
+		if(asm_version == 0)
+			cryptonight_v8_mainloop_ivybridge_asm(ctx[0]);
+		else if(asm_version == 1)
+			cryptonight_v8_mainloop_ryzen_asm(ctx[0]);
+
+		cn_implode_scratchpad<MEM, false, false, ALGO>((__m128i*)ctx[0]->long_state, (__m128i*)ctx[0]->hash_state);
+		keccakf((uint64_t*)ctx[0]->hash_state, 24);
+		extra_hashes[ctx[0]->hash_state[0] & 3](ctx[0]->hash_state, 200, (char*)output);
+	}
+};
+
+// double hash only for intel
+template< >
+struct Cryptonight_hash_asm<2, 0>
+{
+	static constexpr size_t N = 2;
+
+	template<xmrstak_algo ALGO>
+	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+	{
+		constexpr size_t MEM = cn_select_memory<ALGO>();
+
+		for(size_t i = 0; i < N; ++i)
+		{
+			keccak((const uint8_t *)input + len * i, len, ctx[i]->hash_state, 200);
+			/* Optim - 99% time boundary */
+			cn_explode_scratchpad<MEM, false, false, ALGO>((__m128i*)ctx[i]->hash_state, (__m128i*)ctx[i]->long_state);
+		}
+
+		cryptonight_v8_double_mainloop_sandybridge_asm(ctx[0], ctx[1]);
+
+		for(size_t i = 0; i < N; ++i)
+		{
+			/* Optim - 90% time boundary */
+			cn_implode_scratchpad<MEM, false, false, ALGO>((__m128i*)ctx[i]->long_state, (__m128i*)ctx[i]->hash_state);
+			/* Optim - 99% time boundary */
+			keccakf((uint64_t*)ctx[i]->hash_state, 24);
+			extra_hashes[ctx[i]->hash_state[0] & 3](ctx[i]->hash_state, 200, (char*)output + 32 * i);
+		}
+	}
+};
