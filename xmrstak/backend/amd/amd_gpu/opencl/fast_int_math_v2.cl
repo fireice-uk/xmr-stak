@@ -81,34 +81,6 @@ inline uint2 fast_div_v2(const __local uint *RCP, ulong a, uint b)
 	);
 }
 
-inline void fast_div_full_q(const __local uint *RCP, ulong a, uint b, ulong *q, uint *r)
-{
-	const uint rcp = get_reciprocal((const __local uchar *)RCP, b);
-	const ulong k = mul_hi(as_uint2(a).s0, rcp) + ((ulong)(as_uint2(a).s1) * rcp) + a;
-
-	((uint*)q)[0] = as_uint2(k).s1;
-	((uint*)q)[1] = (k < a) ? 1 : 0;
-
-	long tmp = a - (*q) * b;
-
-	const bool overshoot = (tmp < 0);
-	const bool undershoot = (tmp >= b);
-
-	if (overshoot)
-	{
-		--(*q);
-		tmp += b;
-	}
-
-	if (undershoot)
-	{
-		++(*q);
-		tmp -= b;
-	}
-
-	*r = tmp;
-}
-
 inline uint fast_sqrt_v2(const ulong n1)
 {
 	float x = as_float((as_uint2(n1).s1 >> 9) + ((64U + 127U) << 23));
