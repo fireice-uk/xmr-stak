@@ -48,10 +48,10 @@
 	punpcklqdq xmm4, xmm0
 	movd	 xmm0, rcx
 	punpcklqdq xmm5, xmm0
+	movdqu	 xmm6, XMMWORD PTR [r10+rbx]
 
 	ALIGN 8
 main_loop_ivybridge:
-	movdqu	 xmm6, XMMWORD PTR [r10+rbx]
 	lea	 rdx, QWORD PTR [r10+rbx]
 	mov	 ecx, r10d
 	mov	 eax, r10d
@@ -63,28 +63,30 @@ main_loop_ivybridge:
 	movd	 xmm7, r8
 	punpcklqdq xmm7, xmm0
 	aesenc	 xmm6, xmm7
+	movd	 rbp, xmm6
+	mov	 r9, rbp
+	and	 r9d, 2097136
+	movdqu	 xmm2, XMMWORD PTR [rcx+rbx]
 	movdqu	 xmm1, XMMWORD PTR [rax+rbx]
 	movdqu	 xmm0, XMMWORD PTR [r10+rbx]
 	paddq	 xmm1, xmm7
-	movdqu	 xmm2, XMMWORD PTR [rcx+rbx]
 	paddq	 xmm0, xmm5
 	paddq	 xmm2, xmm4
 	movdqu	 XMMWORD PTR [rcx+rbx], xmm0
-	movd	 rcx, xmm3
 	movdqu	 XMMWORD PTR [rax+rbx], xmm2
-	mov	 rax, rcx
 	movdqu	 XMMWORD PTR [r10+rbx], xmm1
+	mov r10, r9
+	xor r10d, 32
+	movd	 rcx, xmm3
+	mov	 rax, rcx
 	shl	 rax, 32
 	xor	 rdi, rax
-	movd	 rbp, xmm6
 	movdqa	 xmm0, xmm6
 	pxor	 xmm0, xmm4
-	mov	 r10, rbp
-	and	 r10d, 2097136
 	movdqu	 XMMWORD PTR [rdx], xmm0
-	xor	 rdi, QWORD PTR [r10+rbx]
-	lea	 r14, QWORD PTR [r10+rbx]
-	mov	 r12, QWORD PTR [r10+rbx+8]
+	xor	 rdi, QWORD PTR [r9+rbx]
+	lea	 r14, QWORD PTR [r9+rbx]
+	mov	 r12, QWORD PTR [r14+8]
 	xor	 edx, edx
 	lea	 r9d, DWORD PTR [ecx+ecx]
 	add	 r9d, ebp
@@ -93,6 +95,7 @@ main_loop_ivybridge:
 	or	 r9d, r13d
 	movd	 rax, xmm0
 	div	 r9
+	xorps xmm3, xmm3
 	mov	 eax, eax
 	shl	 rdx, 32
 	add	 rdx, rax
@@ -103,25 +106,35 @@ main_loop_ivybridge:
 	movd	 xmm0, rax
 	paddq	 xmm0, xmm8
 	sqrtsd	 xmm3, xmm0
+	psubq	 xmm3, XMMWORD PTR [rsp+16]
 	movd	 rdx, xmm3
-	test	 rdx, 524287
+	test	 edx, 524287
 	je	 sqrt_fixup_ivybridge
 	psrlq	 xmm3, 19
 	psubq	 xmm3, XMMWORD PTR [rsp+16]
 sqrt_fixup_ivybridge_ret:
 
-	mov	 r9, r10
+	mov	 ecx, r10d
 	mov	 rax, rdi
 	mul	 rbp
-
-	xor	 r9, 16
-	mov	 rcx, r10
-	xor	 rcx, 32
-	xor	 r10, 48
+	movd xmm2, rdx
+	xor rdx, [rcx+rbx]
 	add	 r8, rdx
+	mov	 QWORD PTR [r14], r8
+	xor	 r8, rdi
+	mov edi, r8d
+	and edi, 2097136
+	movd xmm0, rax
+	xor rax, [rcx+rbx+8]
 	add	 r11, rax
+	mov	 QWORD PTR [r14+8], r11
+	punpcklqdq xmm2, xmm0
+
+	mov	 r9d, r10d
+	xor	 r9d, 48
+	xor	 r10d, 16
+	pxor	 xmm2, XMMWORD PTR [r9+rbx]
 	movdqu	 xmm0, XMMWORD PTR [r10+rbx]
-	movdqu	 xmm2, XMMWORD PTR [r9+rbx]
 	paddq	 xmm0, xmm5
 	movdqu	 xmm1, XMMWORD PTR [rcx+rbx]
 	paddq	 xmm2, xmm4
@@ -131,11 +144,8 @@ sqrt_fixup_ivybridge_ret:
 	movdqa	 xmm4, xmm6
 	movdqu	 XMMWORD PTR [rcx+rbx], xmm2
 	movdqu	 XMMWORD PTR [r10+rbx], xmm1
-	mov	 QWORD PTR [r14], r8
-	xor	 r8, rdi
-	mov	 r10, r8
-	mov	 QWORD PTR [r14+8], r11
-	and	 r10d, 2097136
+	movdqu xmm6, [rdi+rbx]
+	mov	 r10d, edi
 	xor	 r11, r12
 	dec rsi
 	jne	 main_loop_ivybridge
@@ -157,14 +167,15 @@ sqrt_fixup_ivybridge_ret:
 
 sqrt_fixup_ivybridge:
 	dec	 rdx
-	mov  r13, -4389456576512
+	mov r13d, -1022
+	shl r13, 32
 	mov	 rax, rdx
 	shr	 rdx, 19
 	shr	 rax, 20
 	mov	 rcx, rdx
 	sub	 rcx, rax
 	add	 rax, r13
-	mov  r13, 4389456576511
+	not r13
 	sub	 rcx, r13
 	mov	 r13d, -2147483647
 	imul	 rcx, rax

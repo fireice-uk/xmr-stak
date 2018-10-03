@@ -748,19 +748,23 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
  			// Use division_result as an input for the square root to prevent parallel implementation in hardware
 			sqrt_result = fast_sqrt_v2(c[0] + as_ulong(division_result));
 #endif
+			ulong2 result_mul;
+			result_mul.s0 = mul_hi(c[0], as_ulong2(tmp).s0);
+			result_mul.s1 = c[0] * as_ulong2(tmp).s0;
 // cryptonight_monero_v8
 #if(ALGO==11)
 			{
-				ulong2 chunk1 = as_ulong2(SCRATCHPAD_CHUNK(1));
+				ulong2 chunk1 = as_ulong2(SCRATCHPAD_CHUNK(1)) ^ result_mul;
 				ulong2 chunk2 = as_ulong2(SCRATCHPAD_CHUNK(2));
+				result_mul ^= chunk2;
 				ulong2 chunk3 = as_ulong2(SCRATCHPAD_CHUNK(3));
 				SCRATCHPAD_CHUNK(1) = as_uint4(chunk3 + ((ulong2 *)(b_x + 1))[0]);
 				SCRATCHPAD_CHUNK(2) = as_uint4(chunk1 + ((ulong2 *)b_x)[0]);
 				SCRATCHPAD_CHUNK(3) = as_uint4(chunk2 + ((ulong2 *)a)[0]);
 			}
 #endif
-			a[1] += c[0] * as_ulong2(tmp).s0;
-			a[0] += mul_hi(c[0], as_ulong2(tmp).s0);
+			a[1] += result_mul.s1;
+			a[0] += result_mul.s0;
 
 // cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2
 #if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10)
