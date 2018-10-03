@@ -100,6 +100,11 @@ if(CUDA_ENABLE)
                 list(APPEND DEFAULT_CUDA_ARCH "70")
             endif()
         endif()
+        # add Turing support for CUDA >= 10.0
+        if(NOT CUDA_VERSION VERSION_LESS 10.0)
+            list(APPEND DEFAULT_CUDA_ARCH "75")
+        endif()
+
         set(CUDA_ARCH "${DEFAULT_CUDA_ARCH}" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
 
         # generate comma separated list with architectures
@@ -186,7 +191,10 @@ if(CUDA_ENABLE)
             endif()
 
             if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND
-                (CUDA_VERSION VERSION_EQUAL 9.0 OR CUDA_VERSION VERSION_EQUAL 9.1 OR CUDA_VERSION VERSION_EQUAL 9.2)
+                (CUDA_VERSION VERSION_EQUAL 9.0 OR
+                CUDA_VERSION VERSION_EQUAL 9.1 OR
+                CUDA_VERSION VERSION_EQUAL 9.2 OR
+                CUDA_VERSION VERSION_EQUAL 10.0)
             )
                 # workaround find_package(CUDA) is using the wrong path to the CXX host compiler
                 # overwrite the CUDA host compiler variable with the used CXX MSVC
