@@ -569,7 +569,7 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 #else
 #	define SCRATCHPAD_CHUNK(N) (Scratchpad[IDX(((idx0) >> 4) ^ N)])
 #endif
-	
+
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
 __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states, ulong Threads
 // cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2
@@ -581,7 +581,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 	ulong a[2];
 
 // cryptonight_monero_v8
-#if(ALGO==11)		
+#if(ALGO==11)
 	ulong b[4];
 	uint4 b_x[2];
 // NVIDIA
@@ -813,7 +813,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			*((__global long*)(Scratchpad + (IDX((idx0) >> 4)))) = n ^ q;
 			idx0 = ((~d) ^ q) & MASK;
 #endif
-		
+
 		}
 	}
 	mem_fence(CLK_GLOBAL_MEM_FENCE);

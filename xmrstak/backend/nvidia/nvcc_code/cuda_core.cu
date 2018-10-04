@@ -287,7 +287,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
     volatile uint32_t* sPtr = NULL;
 	// 8 x 64bit values
 	u64* myChunks = (u64*)(chunkMem + (threadIdx.x >> 1) * 8);
-	
+
 #endif
 
 	__syncthreads( );
@@ -344,10 +344,10 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 			t_fn0( cx.x & 0xff ) ^ t_fn1( (cx.y >> 8) & 0xff ) ^ t_fn2( (cx2.x >> 16) & 0xff ) ^ t_fn3( (cx2.y >> 24 ) ),
 			t_fn0( cx.y & 0xff ) ^ t_fn1( (cx2.x >> 8) & 0xff ) ^ t_fn2( (cx2.y >> 16) & 0xff ) ^ t_fn3( (cx.x >> 24 ) )
 		);
-	
+
 		if(ALGO == cryptonight_monero_v8)
 		{
-			
+
 			const u64 chunk1 = myChunks[ idx1 ^ 2 + sub ];
 			const u64 chunk2 = myChunks[ idx1 ^ 4 + sub ];
 			const u64 chunk3 = myChunks[ idx1 ^ 6 + sub ];
@@ -376,7 +376,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 
 		if(ALGO != cryptonight_monero_v8)
 			bx0 = cx_aes;
-		
+
 		uint64_t cx_mul;
 		((uint32_t*)&cx_mul)[0] = shuffle<2>(sPtr, sub, cx_aes.x , 0);
 		((uint32_t*)&cx_mul)[1] = shuffle<2>(sPtr, sub, cx_aes.y , 0);
@@ -400,7 +400,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 				__syncthreads( );
 #endif
 		uint64_t c = ((uint64_t*)myChunks)[ idx1 + sub ];
-	
+
 		{
 			uint64_t cl = ((uint64_t*)myChunks)[ idx1 ];
 			// sub 0 -> hi, sub 1 -> lo
@@ -426,7 +426,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 		{
 			bx1 = bx0;
 			bx0 = cx_aes;
-		} 
+		}
 		myChunks[ idx1 + sub ] = ax0;
 		for(int x = 0; x < 8; x += 2)
 		{
@@ -864,5 +864,5 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t 
 	{
 	  cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_bittube2>(ctx, startNonce);
 	}
-	
+
 }
