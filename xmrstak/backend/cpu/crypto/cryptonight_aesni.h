@@ -797,7 +797,7 @@ template< >
 struct Cryptonight_hash<1>
 {
 	static constexpr size_t N = 1;
-	
+
 	template<xmrstak_algo ALGO, bool SOFT_AES, bool PREFETCH>
 	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
 	{

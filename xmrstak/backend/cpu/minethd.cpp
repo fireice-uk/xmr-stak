@@ -475,7 +475,7 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 			{
 				// AMD Ryzen (1xxx and 2xxx series)
 				return Cryptonight_hash_asm<1u, 1u>::template hash<cryptonight_monero_v8>;
-			}		
+			}
 		}
 	}
 	// We have two independent flag bits in the functions

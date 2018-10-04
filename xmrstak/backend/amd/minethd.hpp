@@ -31,7 +31,7 @@ private:
 	void work_main();
 
 	uint64_t iJobNo;
-	
+
 	miner_work oWork;
 
 	std::promise<void> order_fix;

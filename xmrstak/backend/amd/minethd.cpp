@@ -236,7 +236,7 @@ void minethd::work_main()
 				if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo)
 					break;
 			}
-			
+
 
 			cl_uint results[0x100];
 			memset(results,0,sizeof(cl_uint)*(0x100));
