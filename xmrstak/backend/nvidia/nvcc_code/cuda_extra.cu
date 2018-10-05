@@ -692,8 +692,8 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_monero_v8 ||
 			::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot() == cryptonight_monero_v8;
 
-		// overwrite default config if cryptonight_monero_v8 is mined
-		if(useCryptonight_v8)
+		// overwrite default config if cryptonight_monero_v8 is mined and GPU has at least compute capability 5.0
+		if(useCryptonight_v8 && gpuArch >= 50)
 		{
 			// 4 based on my test maybe it must be adjusted later
 			size_t threads = 4;
