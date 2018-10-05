@@ -329,11 +329,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 	{
 		ptr0 = (u64 *)&l0[idx0 & MASK & 0x1FFFC0];
 
-		#pragma unroll 4
-		for(int x = 0; x < 8; x += 2)
-		{
-			myChunks[x + sub] = ptr0[ x + sub ];
-		}
+		((ulong4*)myChunks)[sub] = ((ulong4*)ptr0)[sub];
 
 		uint32_t idx1 = (idx0 & 0x30) >> 3;
 
@@ -362,17 +358,13 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 		}
 
 		myChunks[ idx1 + sub ] = cx_aes ^ bx0;
-		for(int x = 0; x < 8; x += 2)
-			ptr0[ x + sub ] = myChunks[x + sub];
+		((ulong4*)ptr0)[sub] = ((ulong4*)myChunks)[sub];
 
 		idx0 = shuffle<2>(sPtr, sub, cx_aes.x, 0);
 		idx1 = (idx0 & 0x30) >> 3;
 		ptr0 = (u64 *)&l0[idx0 & MASK & 0x1FFFC0];
-		#pragma unroll 4
-		for(int x = 0; x < 8; x += 2)
-		{
-			myChunks[x + sub] = ptr0[ x + sub ];
-		}
+
+		((ulong4*)myChunks)[sub] = ((ulong4*)ptr0)[sub];
 
 		if(ALGO != cryptonight_monero_v8)
 			bx0 = cx_aes;
@@ -428,10 +420,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 			bx0 = cx_aes;
 		}
 		myChunks[ idx1 + sub ] = ax0;
-		for(int x = 0; x < 8; x += 2)
-		{
-			ptr0[ x + sub ] = myChunks[x + sub];
-		}
+		((ulong4*)ptr0)[sub] = ((ulong4*)myChunks)[sub];
 		ax0 ^= c;
 		idx0 = shuffle<2>(sPtr, sub, ax0.x, 0);
 	}
