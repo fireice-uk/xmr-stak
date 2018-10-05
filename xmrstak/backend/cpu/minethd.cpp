@@ -27,6 +27,7 @@
 #include "xmrstak/backend/iBackend.hpp"
 #include "xmrstak/backend/globalStates.hpp"
 #include "xmrstak/misc/configEditor.hpp"
+#include "xmrstak/backend/cpu/cpuType.hpp"
 #include "xmrstak/params.hpp"
 #include "jconf.hpp"
 
@@ -449,35 +450,33 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 	return pvThreads;
 }
 
+/** get the supported asm name
+ *
+ * @return asm type based on the number of hashes per thread the internal
+ *             evaluated cpu type
+ */
+static std::string getAsmName(const uint32_t num_hashes)
+{
+	std::string asm_type = "off";
+	if(num_hashes == 0)
+		return asm_type;
+
+	auto cpu_model = getModel();
+
+	if(cpu_model.avx && cpu_model.aes)
+	{
+		if(cpu_model.type_name.find("Intel") != std::string::npos)
+			asm_type = "intel_avx";
+		else if(cpu_model.type_name.find("AMD") != std::string::npos && num_hashes == 1)
+			asm_type = "amd_avx";
+	}
+}
+
 template<size_t N>
 minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetch, xmrstak_algo algo, const std::string& asm_version_str)
 {
 	static_assert(N >= 1, "number of threads must be >= 1" );
 
-	// check for asm optimized version for cryptonight_v8
-	if(N <= 2 && algo == cryptonight_monero_v8 && bHaveAes)
-	{
-		if(asm_version_str != "off")
-		{
-			if(asm_version_str != "intel" && asm_version_str != "ryzen")
-				printer::inst()->print_msg(L1, "Assembler %s unknown, fallback to non asm version of cryptonight_v8", asm_version_str.c_str());
-
-			if(asm_version_str == "intel")
-			{
-				// Intel Ivy Bridge (Xeon v2, Core i7/i5/i3 3xxx, Pentium G2xxx, Celeron G1xxx)
-				if(N == 1)
-					return Cryptonight_hash_asm<1u, 0u>::template hash<cryptonight_monero_v8>;
-				else if(N == 2)
-					return Cryptonight_hash_asm<2u, 0u>::template hash<cryptonight_monero_v8>;
-			}
-			// supports only 1 thread per hash
-			if(N == 1 && asm_version_str == "ryzen")
-			{
-				// AMD Ryzen (1xxx and 2xxx series)
-				return Cryptonight_hash_asm<1u, 1u>::template hash<cryptonight_monero_v8>;
-			}
-		}
-	}
 	// We have two independent flag bits in the functions
 	// therefore we will build a binary digit and select the
 	// function as a two digit binary
@@ -584,7 +583,39 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 	digit.set(0, !bHaveAes);
 	digit.set(1, !bNoPrefetch);
 
-	return func_table[ algv << 2 | digit.to_ulong() ];
+	auto selected_function = func_table[ algv << 2 | digit.to_ulong() ];
+
+
+        // check for asm optimized version for cryptonight_v8
+        if(N <= 2 && algo == cryptonight_monero_v8 && bHaveAes)
+        {
+                std::string selected_asm = asm_version_str;
+                if(selected_asm == "auto")
+                        selected_asm = cpu::getAsmName(N);
+
+                if(selected_asm != "off")
+                {
+                        if(selected_asm == "intel_avx")
+                        {
+                                // Intel Ivy Bridge (Xeon v2, Core i7/i5/i3 3xxx, Pentium G2xxx, Celeron G1xxx)
+                                if(N == 1)
+                                        selected_function = Cryptonight_hash_asm<1u, 0u>::template hash<cryptonight_monero_v8>;
+                                else if(N == 2)
+                                        selected_function = Cryptonight_hash_asm<2u, 0u>::template hash<cryptonight_monero_v8>;
+                        }
+                        // supports only 1 thread per hash
+                        if(N == 1 && selected_asm == "amd_avx")
+                        {
+                                // AMD Ryzen (1xxx and 2xxx series)
+                                selected_function = Cryptonight_hash_asm<1u, 1u>::template hash<cryptonight_monero_v8>;
+                        }
+                        if(asm_version_str == "auto" && (selected_asm != "intel_avx" || selected_asm != "amd_avx"))
+                                printer::inst()->print_msg(L3, "Switch to assembler version for '%s' cpu's", selected_asm.c_str());
+						else if(selected_asm != "intel_avx" || selected_asm != "amd_avx") // unknown asm type
+                                printer::inst()->print_msg(L1, "Assembler '%s' unknown, fallback to non asm version of cryptonight_v8", selected_asm.c_str());
+                }
+        }
+	return selected_function;
 }
 
 minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, xmrstak_algo algo)
