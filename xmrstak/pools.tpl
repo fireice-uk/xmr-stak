@@ -28,8 +28,7 @@ POOLCONF],
  *    haven (automatic switch with block version 3 to cryptonight_haven)
  *    intense
  *    masari
- *    monero7
- *    monero8 (use this to support Monero's Oct 2018 fork)
+ *    monero (use this to support Monero's Oct 2018 fork)
  *    qrl - Quantum Resistant Ledger
  *    ryo
  *    turtlecoin
