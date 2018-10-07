@@ -396,12 +396,26 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		int threadMemMask = cn_select_mask(miner_algo[ii]);
 		int hashIterations = cn_select_iter(miner_algo[ii]);
 
+		size_t mem_chunk_exp = 1u << ctx->memChunk;
+		size_t strided_index = ctx->stridedIndex;
+		/* Adjust the config settings to a valid combination
+		 * this is required if the dev pool is mining monero
+		 * but the user tuned there settings for another currency
+		 */
+		if(miner_algo[ii] == cryptonight_monero_v8)
+		{
+			if(ctx->memChunk < 2)
+				mem_chunk_exp = 1u << 2;
+			if(strided_index == 1)
+				strided_index = 0;
+		}
+
 		std::string options;
 		options += " -DITERATIONS=" + std::to_string(hashIterations);
 		options += " -DMASK=" + std::to_string(threadMemMask);
 		options += " -DWORKSIZE=" + std::to_string(ctx->workSize);
-		options += " -DSTRIDED_INDEX=" + std::to_string(ctx->stridedIndex);
-		options += " -DMEM_CHUNK_EXPONENT=" + std::to_string(1u << ctx->memChunk);
+		options += " -DSTRIDED_INDEX=" + std::to_string(strided_index);
+		options += " -DMEM_CHUNK_EXPONENT=" + std::to_string(mem_chunk_exp);
 		options += " -DCOMP_MODE=" + std::to_string(ctx->compMode ? 1u : 0u);
 		options += " -DMEMORY=" + std::to_string(hashMemSize);
 		options += " -DALGO=" + std::to_string(miner_algo[ii]);
@@ -929,20 +943,6 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 			size_t reduced_intensity = (ctx[i].rawIntensity / ctx[i].workSize) * ctx[i].workSize;
 			ctx[i].rawIntensity = reduced_intensity;
 			printer::inst()->print_msg(L0, "WARNING %s: gpu %d intensity is not a multiple of 'worksize', auto reduce intensity to %d", backendName.c_str(), ctx[i].deviceIdx, int(reduced_intensity));
-		}
-
-		if(useCryptonight_v8)
-		{
-			if(ctx[i].stridedIndex == 1)
-			{
-				printer::inst()->print_msg(L0, "ERROR %s: gpu %d stridedIndex is not allowed to be `true` or `1` for the selected currency", backendName.c_str(), ctx[i].deviceIdx);
-				return ERR_STUPID_PARAMS;
-			}
-			if(ctx[i].stridedIndex == 2 && ctx[i].memChunk < 2)
-			{
-				printer::inst()->print_msg(L0, "ERROR %s: gpu %d memChunk bust be >= 2 for the selected currency", backendName.c_str(), ctx[i].deviceIdx);
-				return ERR_STUPID_PARAMS;
-			}
 		}
 
 		if((ret = InitOpenCLGpu(opencl_ctx, &ctx[i], source_code.c_str())) != ERR_SUCCESS)
