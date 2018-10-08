@@ -226,6 +226,7 @@ bool minethd::self_test()
 	{
 		if ((ctx[i] = minethd_alloc_ctx()) == nullptr)
 		{
+			printer::inst()->print_msg(L0, "ERROR: miner was not able to allocate memory.");
 			for (int j = 0; j < i; j++)
 				cryptonight_free_ctx(ctx[j]);
 			return false;
@@ -683,6 +684,13 @@ void minethd::multiway_work_main()
 	for (size_t i = 0; i < N; i++)
 	{
 		ctx[i] = minethd_alloc_ctx();
+		if(ctx[i] == nullptr)
+		{
+			printer::inst()->print_msg(L0, "ERROR: miner was not able to allocate memory.");
+			for (int j = 0; j < i; j++)
+				cryptonight_free_ctx(ctx[j]);
+			win_exit(1);
+		}
 		piHashVal[i] = (uint64_t*)(bHashOut + 32 * i + 24);
 		piNonce[i] = (i == 0) ? (uint32_t*)(bWorkBlob + 39) : nullptr;
 	}
