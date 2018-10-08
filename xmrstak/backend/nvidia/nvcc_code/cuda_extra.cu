@@ -415,7 +415,11 @@ extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, 
 	}
 
 	CUDA_CHECK(ctx->device_id, cudaMemcpy( rescount, ctx->d_result_count, sizeof (uint32_t ), cudaMemcpyDeviceToHost ));
-	CUDA_CHECK(ctx->device_id, cudaMemcpy( resnonce, ctx->d_result_nonce, 10 * sizeof (uint32_t ), cudaMemcpyDeviceToHost ));
+	CUDA_CHECK_MSG(
+		ctx->device_id,
+		"\n**suggestion: Try to increase the attribute 'bfactor' in the NVIDIA config file.**",
+		cudaMemcpy( resnonce, ctx->d_result_nonce, 10 * sizeof (uint32_t ), cudaMemcpyDeviceToHost )
+	);
 
 	/* There is only a 32bit limit for the counter on the device side
 	 * therefore this value can be greater than 10, in that case limit rescount
