@@ -807,51 +807,26 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 	}
 }
 
+typedef void (*cuda_hash_fn)(nvid_ctx* ctx, uint32_t nonce);
+
 void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t startNonce)
 {
-	if(miner_algo == cryptonight_monero)
-	{
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero>(ctx, startNonce);
-	}
-	else if(miner_algo == cryptonight_monero_v8)
-	{
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero_v8>(ctx, startNonce);
-	}
-	else if(miner_algo == cryptonight_heavy)
-	{
-		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_heavy>(ctx, startNonce);
-	}
-	else if(miner_algo == cryptonight)
-	{
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight>(ctx, startNonce);
-	}
-	else if(miner_algo == cryptonight_lite)
-	{
-		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_lite>(ctx, startNonce);
-	}
-	else if(miner_algo == cryptonight_aeon)
-	{
-		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_aeon>(ctx, startNonce);
-	}
-	else if(miner_algo == cryptonight_ipbc)
-	{
-		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_ipbc>(ctx, startNonce);
-	}
-	else if(miner_algo == cryptonight_stellite)
-	{
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_stellite>(ctx, startNonce);
-	}
-	else if(miner_algo == cryptonight_masari)
-	{
-		cryptonight_core_gpu_hash<CRYPTONIGHT_MASARI_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_masari>(ctx, startNonce);
-	}
-	else if(miner_algo == cryptonight_haven)
-	{
-	  cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_haven>(ctx, startNonce);
-	}
-	else if(miner_algo == cryptonight_bittube2)
-	{
-	  cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_bittube2>(ctx, startNonce);
-	}
+	if(miner_algo == invalid_algo) return;
+	
+	static const cuda_hash_fn func_table[] = {
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_lite>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_heavy>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_aeon>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_ipbc>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_stellite>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_MASARI_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_masari>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_haven>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_bittube2>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero_v8>
+	};
 
+	cuda_hash_fn selected_function = func_table[ miner_algo - 1u ];
+	selected_function(ctx, startNonce);
 }
