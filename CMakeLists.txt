@@ -39,7 +39,13 @@ set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "${BUILD_TYPE}")
 set(XMR-STAK_COMPILE "native" CACHE STRING "select CPU compute architecture")
 set_property(CACHE XMR-STAK_COMPILE PROPERTY STRINGS "native;generic")
 if(XMR-STAK_COMPILE STREQUAL "native")
-    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+        #intentionally appending due to how MSVC collects options
+        # this forces these three flags to override any previous
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Ox /GL /EHsc")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Ox /GL /EHsc")
+    else()
+        # GCC and all other compilers
         set(CMAKE_CXX_FLAGS "-march=native -mtune=native ${CMAKE_CXX_FLAGS}")
         set(CMAKE_C_FLAGS "-march=native -mtune=native ${CMAKE_C_FLAGS}")
     endif()
@@ -147,9 +153,11 @@ if(CUDA_ENABLE)
                 set(CLANG_BUILD_FLAGS "${CLANG_BUILD_FLAGS} --cuda-gpu-arch=sm_${CUDA_ARCH_ELEM}")
             endforeach()
         elseif(CUDA_COMPILER STREQUAL "nvcc")
-            # add c++11 for cuda
-            if(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
-                set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11")
+            if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+                # add c++11 for cuda, except Windows
+                if(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
+                    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11")
+                endif()
             endif()
 
             # avoid that nvcc in CUDA 8 complains about sm_20 pending removal
@@ -425,6 +433,10 @@ include_directories(BEFORE .)
 set (CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    # optimize linking
+    set(CMAKE_STATIC_LINKER_FLAGS_RELEASE "${CMAKE_STATIC_LINKER_FLAGS_RELEASE} /LTCG")
+    set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /LTCG /INCREMENTAL:NO /OPT:REF")
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LTCG /INCREMENTAL:NO /OPT:REF")
     # remove warnings that f_open() is not save and f_open_s should be used
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
     # disable min define to allow usage of std::min
@@ -588,3 +600,4 @@ else()
     # this rule is used if the install prefix is the build directory
     install(CODE "MESSAGE(\"xmr-stak installed to folder 'bin'\")")
 endif()
+# vim: et sw=4 sts=4 ts=4:
