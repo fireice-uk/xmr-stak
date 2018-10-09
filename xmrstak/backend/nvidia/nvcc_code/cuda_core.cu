@@ -278,15 +278,15 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 	}
 
 #if( __CUDA_ARCH__ < 300 )
-	extern __shared__ u64 externShared[];
+	extern __shared__ uint64_t externShared[];
 	// 8 x 64bit values
-	u64* myChunks = (u64*)(externShared + (threadIdx.x >> 1) * 8);
+	volatile uint64_t* myChunks = (volatile uint64_t*)(externShared + (threadIdx.x >> 1) * 8);
     volatile uint32_t* sPtr = (volatile uint32_t*)(externShared + (blockDim.x >> 1) * 8)  + (threadIdx.x & 0xFFFFFFFE);
 #else
-	extern __shared__ u64 chunkMem[];
+	extern __shared__ uint64_t chunkMem[];
     volatile uint32_t* sPtr = NULL;
 	// 8 x 64bit values
-	u64* myChunks = (u64*)(chunkMem + (threadIdx.x >> 1) * 8);
+	volatile uint64_t* myChunks = (volatile uint64_t*)(chunkMem + (threadIdx.x >> 1) * 8);
 
 #endif
 
@@ -301,25 +301,25 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 
 	uint8_t *l0 = (uint8_t*)&d_long_state[(IndexType) thread * MEMORY];
 
-	u64 ax0 = ((u64*)(d_ctx_a + thread * 4))[sub];
-	u64 bx0;
-	uint32_t idx0 = shuffle<2>(sPtr, sub, ax0.x, 0);
+	uint64_t ax0 = ((uint64_t*)(d_ctx_a + thread * 4))[sub];
+	uint64_t bx0;
+	uint32_t idx0 = shuffle<2>(sPtr, sub, static_cast<uint32_t>(ax0), 0);
 
-	u64* ptr0;
+	uint64_t* ptr0;
 
-	u64 bx1;
+	uint64_t bx1;
 	uint32_t sqrt_result;
 	uint64_t division_result;
 	if(ALGO == cryptonight_monero_v8)
 	{
-		bx0 = ((u64*)(d_ctx_b + thread * 12))[sub];
-		bx1 = ((u64*)(d_ctx_b + thread * 12 + 4))[sub];
+		bx0 = ((uint64_t*)(d_ctx_b + thread * 12))[sub];
+		bx1 = ((uint64_t*)(d_ctx_b + thread * 12 + 4))[sub];
 
 		division_result = ((uint64_t*)(d_ctx_b + thread * 12 + 4 * 2))[0];
 		sqrt_result = (d_ctx_b + thread * 12 + 4 * 2 + 2)[0];
 	}
 	else
-		 bx0 = ((u64*)(d_ctx_b + thread * 4))[sub];
+		 bx0 = ((uint64_t*)(d_ctx_b + thread * 4))[sub];
 
 	const int batchsize = (ITERATIONS * 2) >> ( 1 + bfactor );
 	const int start = partidx * batchsize;
@@ -327,7 +327,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 
 	for(int i = start; i < end; ++i)
 	{
-		ptr0 = (u64 *)&l0[idx0 & MASK & 0x1FFFC0];
+		ptr0 = (uint64_t *)&l0[idx0 & MASK & 0x1FFFC0];
 
 		((ulong4*)myChunks)[sub] = ((ulong4*)ptr0)[sub];
 
@@ -344,9 +344,9 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 		if(ALGO == cryptonight_monero_v8)
 		{
 
-			const u64 chunk1 = myChunks[ idx1 ^ 2 + sub ];
-			const u64 chunk2 = myChunks[ idx1 ^ 4 + sub ];
-			const u64 chunk3 = myChunks[ idx1 ^ 6 + sub ];
+			const uint64_t chunk1 = myChunks[ idx1 ^ 2 + sub ];
+			const uint64_t chunk2 = myChunks[ idx1 ^ 4 + sub ];
+			const uint64_t chunk3 = myChunks[ idx1 ^ 6 + sub ];
 #if (__CUDACC_VER_MAJOR__ >= 9)
 			__syncwarp();
 #else
@@ -362,7 +362,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 
 		idx0 = shuffle<2>(sPtr, sub, cx_aes.x, 0);
 		idx1 = (idx0 & 0x30) >> 3;
-		ptr0 = (u64 *)&l0[idx0 & MASK & 0x1FFFC0];
+		ptr0 = (uint64_t *)&l0[idx0 & MASK & 0x1FFFC0];
 
 		((ulong4*)myChunks)[sub] = ((ulong4*)ptr0)[sub];
 
@@ -399,10 +399,10 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 			uint64_t res = sub == 0 ? __umul64hi( cx_mul, cl ) : cx_mul * cl;
 			if(ALGO == cryptonight_monero_v8)
 			{
-				const u64 chunk1 = myChunks[ idx1 ^ 2 + sub ] ^ res;
-				u64 chunk2 = myChunks[ idx1 ^ 4 + sub ];
+				const uint64_t chunk1 = myChunks[ idx1 ^ 2 + sub ] ^ res;
+				uint64_t chunk2 = myChunks[ idx1 ^ 4 + sub ];
 				res ^= ((uint64_t*)&chunk2)[0];
-				const u64 chunk3 = myChunks[ idx1 ^ 6 + sub ];
+				const uint64_t chunk3 = myChunks[ idx1 ^ 6 + sub ];
 #if (__CUDACC_VER_MAJOR__ >= 9)
 				__syncwarp();
 #else
@@ -422,16 +422,16 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 		myChunks[ idx1 + sub ] = ax0;
 		((ulong4*)ptr0)[sub] = ((ulong4*)myChunks)[sub];
 		ax0 ^= c;
-		idx0 = shuffle<2>(sPtr, sub, ax0.x, 0);
+		idx0 = shuffle<2>(sPtr, sub, static_cast<uint32_t>(ax0), 0);
 	}
 
 	if ( bfactor > 0 )
 	{
-		((u64*)(d_ctx_a + thread * 4))[sub] = ax0;
+		((uint64_t*)(d_ctx_a + thread * 4))[sub] = ax0;
 		if(ALGO == cryptonight_monero_v8)
 		{
-			((u64*)(d_ctx_b + thread * 12))[sub] = bx0;
-			((u64*)(d_ctx_b + thread * 12 + 4))[sub] = bx1;
+			((uint64_t*)(d_ctx_b + thread * 12))[sub] = bx0;
+			((uint64_t*)(d_ctx_b + thread * 12 + 4))[sub] = bx1;
 
 			if(sub == 1)
 			{
@@ -441,7 +441,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 			}
 		}
 		else
-			((u64*)(d_ctx_b + thread * 12))[sub] = bx0;
+			((uint64_t*)(d_ctx_b + thread * 12))[sub] = bx0;
 	}
 }
 
