@@ -46,8 +46,11 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 - [Intense](https://intensecoin.com)
 - [Masari](https://getmasari.org)
 - [QRL](https://theqrl.org)
-- [Ryo](https://ryo-currency.com)
+- **[Ryo](https://ryo-currency.com) - Upcoming xmr-stak-gui is sponsored by Ryo**
 - [TurtleCoin](https://turtlecoin.lol)
+
+Ryo currency is a way for us to implement the ideas that we were unable to in
+Monero. See [here](https://github.com/fireice-uk/cryptonote-speedup-demo/) for details.
 
 If your prefered coin is not listed, you can choose one of the following algorithms:
 
