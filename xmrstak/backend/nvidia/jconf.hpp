@@ -29,6 +29,7 @@ public:
 		bool bNoPrefetch;
 		int32_t cpu_aff;
 		int syncMode;
+		bool compMode;
 
 		long long iCpuAff;
 	};
