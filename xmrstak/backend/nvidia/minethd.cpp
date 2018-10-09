@@ -200,128 +200,150 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 
 void minethd::work_main()
 {
-	if(affinity >= 0) //-1 means no affinity
-		bindMemoryToNUMANode(affinity);
-
-	if(cuda_get_deviceinfo(&ctx) != 0 || cryptonight_extra_cpu_init(&ctx) != 1)
+	cryptonight_ctx* cpu_ctx = nullptr;
+	try
 	{
-		printer::inst()->print_msg(L0, "Setup failed for GPU %d. Exiting.\n", (int)iThreadNo);
-		std::exit(0);
-	}
+		if(affinity >= 0) //-1 means no affinity
+			bindMemoryToNUMANode(affinity);
 
-	// numa memory bind and gpu memory is initialized
-	numa_promise.set_value();
-
-	std::this_thread::yield();
-	// wait until all NVIDIA devices are initialized
-	thread_work_guard.wait();
-
-	uint64_t iCount = 0;
-	cryptonight_ctx* cpu_ctx;
-	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
-
-	// start with root algorithm and switch later if fork version is reached
-	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
-	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
-
-	uint32_t iNonce;
-
-	uint8_t version = 0;
-	size_t lastPoolId = 0;
-
-	while (bQuit == 0)
-	{
-		if (oWork.bStall)
+		if(cuda_get_deviceinfo(&ctx) != 0 || cryptonight_extra_cpu_init(&ctx) != 1)
 		{
-			/* We are stalled here because the executor didn't find a job for us yet,
-			 * either because of network latency, or a socket problem. Since we are
-			 * raison d'etre of this software it us sensible to just wait until we have something
-			 */
-
-			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-			globalStates::inst().consume_work(oWork, iJobNo);
-			continue;
+			printer::inst()->print_msg(L0, "Setup failed for GPU %d. Exiting.\n", (int)iThreadNo);
+			std::exit(0);
 		}
-		uint8_t new_version = oWork.getVersion();
-		if(new_version != version || oWork.iPoolId != lastPoolId)
+
+		// numa memory bind and gpu memory is initialized
+		numa_promise.set_value();
+
+		std::this_thread::yield();
+		// wait until all NVIDIA devices are initialized
+		thread_work_guard.wait();
+
+		uint64_t iCount = 0;
+		
+		cpu_ctx = cpu::minethd::minethd_alloc_ctx();
+
+		// start with root algorithm and switch later if fork version is reached
+		auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
+		cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
+
+		uint32_t iNonce;
+
+		uint8_t version = 0;
+		size_t lastPoolId = 0;
+
+		while (!bQuit)
 		{
-			coinDescription coinDesc = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(oWork.iPoolId);
-			if(new_version >= coinDesc.GetMiningForkVersion())
+			if (oWork.bStall)
 			{
-				miner_algo = coinDesc.GetMiningAlgo();
-				hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
+				/* We are stalled here because the executor didn't find a job for us yet,
+				 * either because of network latency, or a socket problem. Since we are
+				 * raison d'etre of this software it us sensible to just wait until we have something
+				 */
+
+				while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+					std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+				globalStates::inst().consume_work(oWork, iJobNo);
+				continue;
 			}
 			else
+				globalStates::inst().consume_work(oWork, iJobNo);
+
+
+			uint8_t new_version = oWork.getVersion();
+			if(new_version != version || oWork.iPoolId != lastPoolId)
 			{
-				miner_algo = coinDesc.GetMiningAlgoRoot();
-				hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
-			}
-			lastPoolId = oWork.iPoolId;
-			version = new_version;
-		}
-
-		cryptonight_extra_cpu_set_data(&ctx, oWork.bWorkBlob, oWork.iWorkSize);
-
-		uint32_t h_per_round = ctx.device_blocks * ctx.device_threads;
-		size_t round_ctr = 0;
-
-		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
-
-		if(oWork.bNiceHash)
-			iNonce = *(uint32_t*)(oWork.bWorkBlob + 39);
-
-		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
-		{
-			//Allocate a new nonce every 16 rounds
-			if((round_ctr++ & 0xF) == 0)
-			{
-				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, h_per_round * 16);
-				// check if the job is still valid, there is a small possibility that the job is switched
-				if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo)
-					break;
-			}
-
-			uint32_t foundNonce[10];
-			uint32_t foundCount;
-
-			cryptonight_extra_cpu_prepare(&ctx, iNonce, miner_algo);
-
-			cryptonight_core_cpu_hash(&ctx, miner_algo, iNonce);
-
-			cryptonight_extra_cpu_final(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, miner_algo);
-
-			for(size_t i = 0; i < foundCount; i++)
-			{
-
-				uint8_t	bWorkBlob[112];
-				uint8_t	bResult[32];
-
-				memcpy(bWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
-				memset(bResult, 0, sizeof(job_result::bResult));
-
-				*(uint32_t*)(bWorkBlob + 39) = foundNonce[i];
-
-				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, &cpu_ctx);
-				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
-					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, foundNonce[i], bResult, iThreadNo, miner_algo), oWork.iPoolId));
+				coinDescription coinDesc = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(oWork.iPoolId);
+				if(new_version >= coinDesc.GetMiningForkVersion())
+				{
+					miner_algo = coinDesc.GetMiningAlgo();
+					hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
+				}
 				else
-					executor::inst()->push_event(ex_event("NVIDIA Invalid Result", ctx.device_id, oWork.iPoolId));
+				{
+					miner_algo = coinDesc.GetMiningAlgoRoot();
+					hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
+				}
+				lastPoolId = oWork.iPoolId;
+				version = new_version;
 			}
 
-			iCount += h_per_round;
-			iNonce += h_per_round;
+			cryptonight_extra_cpu_set_data(&ctx, oWork.bWorkBlob, oWork.iWorkSize);
 
-			using namespace std::chrono;
-			uint64_t iStamp = get_timestamp_ms();
-			iHashCount.store(iCount, std::memory_order_relaxed);
-			iTimestamp.store(iStamp, std::memory_order_relaxed);
-			std::this_thread::yield();
+			uint32_t h_per_round = ctx.device_blocks * ctx.device_threads;
+			size_t round_ctr = 0;
+
+			assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
+
+			if(oWork.bNiceHash)
+				iNonce = *(uint32_t*)(oWork.bWorkBlob + 39);
+
+			while(!bQuit && globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			{
+				//Allocate a new nonce every 16 rounds
+				if((round_ctr++ & 0xF) == 0)
+				{
+					globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, h_per_round * 16);
+					// check if the job is still valid, there is a small possibility that the job is switched
+					if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo)
+						break;
+				}
+
+				uint32_t foundNonce[10];
+				uint32_t foundCount;
+
+				cryptonight_extra_cpu_prepare(&ctx, iNonce, miner_algo);
+
+				cryptonight_core_cpu_hash(&ctx, miner_algo, iNonce);
+
+				cryptonight_extra_cpu_final(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, miner_algo);
+
+				for(size_t i = 0; i < foundCount; i++)
+				{
+
+					uint8_t	bWorkBlob[112];
+					uint8_t	bResult[32];
+
+					memcpy(bWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
+					memset(bResult, 0, sizeof(job_result::bResult));
+
+					*(uint32_t*)(bWorkBlob + 39) = foundNonce[i];
+
+					hash_fun(bWorkBlob, oWork.iWorkSize, bResult, &cpu_ctx);
+					if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
+						executor::inst()->push_event(ex_event(job_result(oWork.sJobID, foundNonce[i], bResult, iThreadNo, miner_algo), oWork.iPoolId));
+					else
+						executor::inst()->push_event(ex_event("NVIDIA Invalid Result", ctx.device_id, oWork.iPoolId));
+				}
+
+				iCount += h_per_round;
+				iNonce += h_per_round;
+
+				using namespace std::chrono;
+				uint64_t iStamp = get_timestamp_ms();
+				iHashCount.store(iCount, std::memory_order_relaxed);
+				iTimestamp.store(iStamp, std::memory_order_relaxed);
+				std::this_thread::yield();
+			}
 		}
-
-		globalStates::inst().consume_work(oWork, iJobNo);
 	}
+	catch(...)
+	{
+		win_exit(1);
+	}
+
+	try
+	{
+		cryptonight_free_ctx(cpu_ctx);
+		cryptonight_extra_cpu_finalize(&ctx);
+	}
+	catch(...)
+	{
+		win_exit(1);
+	}
+
+	shutdownFinished = true;
 }
 
 } // namespace xmrstak

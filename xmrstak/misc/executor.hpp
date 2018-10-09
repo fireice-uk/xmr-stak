@@ -42,8 +42,13 @@ public:
 
 	inline void push_event(ex_event&& ev) { oEventQ.push(std::move(ev)); }
 	void push_timed_event(ex_event&& ev, size_t sec);
+	void shutdown();
+	bool isShutdownFinished();
+
 
 private:
+	bool bQuit = false;
+	bool shutdownFinished = false;
 	struct timed_event
 	{
 		ex_event event;

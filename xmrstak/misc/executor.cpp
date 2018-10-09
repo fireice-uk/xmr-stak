@@ -63,7 +63,7 @@ void executor::push_timed_event(ex_event&& ev, size_t sec)
 void executor::ex_clock_thd()
 {
 	size_t tick = 0;
-	while (true)
+	while(!bQuit)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(size_t(iTickTime)));
 
@@ -601,7 +601,7 @@ void executor::ex_main()
 		push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 
 	size_t cnt = 0;
-	while (true)
+	while(!bQuit)
 	{
 		ev = oEventQ.pop();
 		switch (ev.iName)
@@ -677,6 +677,9 @@ void executor::ex_main()
 			print_report(EV_USR_HASHRATE);
 			push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 			break;
+		case EV_USR_SHUTDOWN:
+			shutdown();
+			break;
 
 		case EV_INVALID_VAL:
 		default:
@@ -684,6 +687,8 @@ void executor::ex_main()
 			break;
 		}
 	}
+	// wait until thread is finished
+	clock_thd.join();
 }
 
 inline const char* hps_format(double h, char* buf, size_t l)
@@ -995,6 +1000,45 @@ void executor::print_report(ex_event_name ev)
 	}
 
 	printer::inst()->print_str(out.c_str());
+}
+
+void executor::shutdown()
+{
+	// if shutdown is called the first time
+	if(!bQuit)
+	{
+		bQuit = true;
+		std::cout<<"Shutdown miner, this takes up to 15 sec ..."<<std::endl;
+		// notify all backend threads
+		for(auto& backend : *pvThreads)
+			backend->shutdown();
+
+		bool canClose = true;
+		size_t round = 0u;
+		do
+		{
+			canClose = true;
+			for(auto& backend : *pvThreads)
+			{
+				if(!backend->isShutdownFinished())
+				{
+					canClose = false;
+					break;
+				}
+			}
+			
+			if(!canClose)
+				std::this_thread::sleep_for(std::chrono::milliseconds(500u));
+			++round;
+		}
+		while(!canClose && round < 30); // wait max 15 sec
+		shutdownFinished = true;
+	}
+}
+
+bool executor::isShutdownFinished()
+{
+	return shutdownFinished;
 }
 
 void executor::http_hashrate_report(std::string& out)

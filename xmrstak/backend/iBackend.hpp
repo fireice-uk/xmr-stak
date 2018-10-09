@@ -41,9 +41,21 @@ namespace xmrstak
 		std::atomic<uint64_t> iTimestamp;
 		uint32_t iThreadNo;
 		BackendType backendType = UNKNOWN;
+		volatile bool bQuit = false;
+		volatile bool shutdownFinished = false;
 
 		iBackend() : iHashCount(0), iTimestamp(0)
 		{
+		}
+
+		void shutdown()
+		{
+			bQuit = true;
+		}
+
+		bool isShutdownFinished()
+		{
+			return shutdownFinished;
 		}
 	};
 
