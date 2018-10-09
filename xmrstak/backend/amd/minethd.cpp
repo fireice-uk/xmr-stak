@@ -174,6 +174,11 @@ void minethd::work_main()
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
 
+	if(cpu_ctx == nullptr)
+	{
+		printer::inst()->print_msg(L0, "ERROR: miner was not able to allocate memory, miner will be stopped.");
+		win_exit(1);
+	}
 	// start with root algorithm and switch later if fork version is reached
 	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
 	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
