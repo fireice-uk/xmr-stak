@@ -45,7 +45,6 @@
 #include <assert.h>
 #include <time.h>
 
-
 #ifdef _WIN32
 #define strncasecmp _strnicmp
 #endif // _WIN32
@@ -488,7 +487,7 @@ inline void disable_sigpipe() {}
 #endif
 
 void executor::ex_main()
-{
+{	
 	disable_sigpipe();
 
 	assert(1000 % iTickTime == 0);
@@ -599,7 +598,7 @@ void executor::ex_main()
 	// If the user requested it, start the autohash printer
 	if(jconf::inst()->GetVerboseLevel() >= 4)
 		push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
-
+	
 	size_t cnt = 0;
 	while(!bQuit)
 	{

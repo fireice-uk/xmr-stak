@@ -607,7 +607,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	return 0;
 }
 
-size_t FinalizeOpenCL(GpuContext* ctx)
+void FinalizeOpenCL(GpuContext* ctx)
 {
 	xmrstak_algo miner_algo[2] = {
 		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo(),

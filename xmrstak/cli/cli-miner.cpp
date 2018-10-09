@@ -55,6 +55,14 @@
 #	include "xmrstak/misc/uac.hpp"
 #endif // _WIN32
 
+#include <csignal>
+
+// exit miner if we receive a signal e.g. CTRL+C
+void signal_handler(int signal)
+{
+	executor::inst()->shutdown();
+}
+
 int do_benchmark(int block_version, int wait_sec, int work_sec);
 
 void help()
@@ -747,6 +755,10 @@ int main(int argc, char *argv[])
 	if(strlen(jconf::inst()->GetOutputFile()) != 0)
 		printer::inst()->open_logfile(jconf::inst()->GetOutputFile());
 
+	std::signal(SIGINT, signal_handler);
+	std::signal(SIGABRT, signal_handler);
+	std::signal(SIGTERM, signal_handler);
+
 	if (!BackendConnector::self_test())
 	{
 		printer::inst()->print_msg(L0, "Self test not passed!");
@@ -814,7 +826,6 @@ int main(int argc, char *argv[])
 	while(!forceQuit && !exec->isShutdownFinished())
 	{
 		key = get_key();
-
 		switch(key)
 		{
 		case 'h':
