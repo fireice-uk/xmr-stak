@@ -5,6 +5,7 @@
 * [Usage on Windows](#usage-on-windows)
 * [Usage on Linux](#usage-on-linux)
 * [Command Line Options](#command-line-options)
+* [Use different backends](#use-different-backends)
 * [HTML and JSON API report configuraton](#html-and-json-api-report-configuraton)
 
 ## Configurations
@@ -33,6 +34,33 @@ Note: If the pool is ignoring the option `rig_id` in `pools.txt` to name your wo
 
 The miner allow to overwrite some of the settings via command line options.
 Run `xmr-stak --help` to show all available command line options.
+
+## Use Different Backends
+
+On linux and OSX please add `./` before the binary name `xmr-stak`.
+
+### CPU Only:
+```
+xmr-stak --noAMD --noNVIDIA
+```
+
+### NVIDIA/AMD Only:
+
+The miner will automatically detect if CUDA (for NVIDIA GPUs) or OpenCL (for AMD GPUs) is available.
+
+```
+xmr-stak --noCPU
+```
+**CUDA** is currently not supported. I am currently try to get some performance out it.
+
+### NVIDIA via OpenCL
+
+It is possible to use the OpenCl backend which is originally created for AMD GPUs with NVIDIA GPus.
+Some NVIDIA GPUs can reach better performance with this backend.
+
+```
+xmr-stak --openCLVendor NVIDIA --noNVIDIA
+```
 
 ## Docker image usage
 
