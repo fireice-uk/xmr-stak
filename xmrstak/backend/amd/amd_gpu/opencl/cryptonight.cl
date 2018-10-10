@@ -35,8 +35,8 @@ R"===(
 inline uint2 amd_bitalign( const uint2 src0, const uint2 src1, const uint src2)
 {
 	uint2 result;
-	result.s0 =  (uint) (((((long)src0.s0) << 32) | (long)src1.s0) >> (src2));
-	result.s1 =  (uint) (((((long)src0.s1) << 32) | (long)src1.s1) >> (src2));
+	result.s0 =  (uint) (((((ulong)src0.s0) << 32) | (ulong)src1.s0) >> (src2));
+	result.s1 =  (uint) (((((ulong)src0.s1) << 32) | (ulong)src1.s1) >> (src2));
 	return result;
 }
 #endif
