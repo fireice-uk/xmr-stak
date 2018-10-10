@@ -123,7 +123,7 @@ bool jconf::GetGPUThreadConfig(size_t id, thd_cfg &cfg)
 	if(!oThdConf.IsObject())
 		return false;
 
-	const Value *gid, *blocks, *threads, *bfactor, *bsleep, *aff, *syncMode, *compMode;
+	const Value *gid, *blocks, *threads, *bfactor, *bsleep, *aff, *syncMode, *memMode;
 	gid = GetObjectMember(oThdConf, "index");
 	blocks = GetObjectMember(oThdConf, "blocks");
 	threads = GetObjectMember(oThdConf, "threads");
@@ -131,11 +131,11 @@ bool jconf::GetGPUThreadConfig(size_t id, thd_cfg &cfg)
 	bsleep = GetObjectMember(oThdConf, "bsleep");
 	aff = GetObjectMember(oThdConf, "affine_to_cpu");
 	syncMode = GetObjectMember(oThdConf, "sync_mode");
-	compMode = GetObjectMember(oThdConf, "comp_mode");
+	memMode = GetObjectMember(oThdConf, "mem_mode");
 
 	if(gid == nullptr || blocks == nullptr || threads == nullptr ||
 		bfactor == nullptr || bsleep == nullptr || aff == nullptr || syncMode == nullptr ||
-		compMode == nullptr)
+		memMode == nullptr)
 	{
 		return false;
 	}
@@ -160,12 +160,15 @@ bool jconf::GetGPUThreadConfig(size_t id, thd_cfg &cfg)
 
 	if(!syncMode->IsNumber() || syncMode->GetInt() < 0 || syncMode->GetInt() > 3)
 	{
-		printer::inst()->print_msg(L0, "Error NVIDIA: sync_mode out of range or no number. ( range: 0 <= sync_mode < 4.)");
+		printer::inst()->print_msg(L0, "Error NVIDIA: sync_mode out of range or not a number. ( range: 0 <= sync_mode < 4.)");
 		return false;
 	}
 
-	if(!compMode->IsBool())
+	if(!memMode->IsNumber() || memMode->GetInt() < 0 || memMode->GetInt() > 1)
+	{
+		printer::inst()->print_msg(L0, "Error NVIDIA: mem_mode out of range or not a number. (range: 0 or 1)");
 		return false;
+	}
 
 
 	cfg.id = gid->GetInt();
@@ -174,7 +177,7 @@ bool jconf::GetGPUThreadConfig(size_t id, thd_cfg &cfg)
 	cfg.bfactor = bfactor->GetInt();
 	cfg.bsleep = bsleep->GetInt();
 	cfg.syncMode = syncMode->GetInt();
-	cfg.compMode = compMode->GetBool();
+	cfg.memMode = memMode->GetInt();
 	
 	if(aff->IsNumber())
 		cfg.cpu_aff = aff->GetInt();
