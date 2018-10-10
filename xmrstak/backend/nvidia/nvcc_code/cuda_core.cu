@@ -343,7 +343,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 			}
 		}
 		else
-			((ulong4*)myChunks)[sub] = ((ulong4*)ptr0)[sub];
+			((ulonglong4*)myChunks)[sub] = ((ulonglong4*)ptr0)[sub];
 
 		uint32_t idx1 = (idx0 & 0x30) >> 3;
 
@@ -381,7 +381,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 			}
 		}
 		else
-			((ulong4*)ptr0)[sub] = ((ulong4*)myChunks)[sub];
+			((ulonglong4*)ptr0)[sub] = ((ulonglong4*)myChunks)[sub];
 
 		idx0 = shuffle<2>(sPtr, sub, cx_aes.x, 0);
 		idx1 = (idx0 & 0x30) >> 3;
@@ -396,7 +396,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 			}
 		}
 		else
-			((ulong4*)myChunks)[sub] = ((ulong4*)ptr0)[sub];
+			((ulonglong4*)myChunks)[sub] = ((ulonglong4*)ptr0)[sub];
 
 		if(ALGO != cryptonight_monero_v8)
 			bx0 = cx_aes;
@@ -461,7 +461,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 			}
 		}
 		else
-			((ulong4*)ptr0)[sub] = ((ulong4*)myChunks)[sub];
+			((ulonglong4*)ptr0)[sub] = ((ulonglong4*)myChunks)[sub];
 		ax0 ^= c;
 		idx0 = shuffle<2>(sPtr, sub, static_cast<uint32_t>(ax0), 0);
 	}
