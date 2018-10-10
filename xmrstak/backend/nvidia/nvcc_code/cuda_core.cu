@@ -271,17 +271,6 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 
 	cn_aes_gpu_init( sharedMemory );
 
-	uint32_t* RCP;
-	if(ALGO == cryptonight_monero_v8)
-	{
-		__shared__ uint32_t RCP_shared[256];
-		for (int i = threadIdx.x; i < 256; i += blockDim.x)
-		{
-			RCP_shared[i] = RCP_C[i];
-		}
-		RCP = RCP_shared;
-	}
-
 #if( __CUDA_ARCH__ < 300 )
 	extern __shared__ uint64_t externShared[];
 	// 8 x 64bit values
@@ -413,7 +402,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 			((uint64_t*)myChunks)[ idx1 ] ^= division_result;
 
 			const uint32_t dd = (static_cast<uint32_t>(cx_mul) + (sqrt_result << 1)) | 0x80000001UL;
-			division_result = fast_div_v2(RCP, cx_aes, dd);
+			division_result = fast_div_v2(cx_aes, dd);
 
 			// Use division_result as an input for the square root to prevent parallel implementation in hardware
 			sqrt_result = fast_sqrt_v2(cx_mul + division_result);
