@@ -257,10 +257,10 @@ struct u64 : public uint2
 
 /** cryptonight with two threads per hash
  *
- * @tparam COMP_MODE if true than 64bit memory transfers per thread will be used to store/load data within shared memory
- *                   else 128bit operations will be used
+ * @tparam MEM_MODE if `0` than 64bit memory transfers per thread will be used to store/load data within shared memory
+ *                   else if `1` 256bit operations will be used
  */
-template<size_t ITERATIONS, uint32_t MEMORY, uint32_t MASK, xmrstak_algo ALGO, bool COMP_MODE>
+template<size_t ITERATIONS, uint32_t MEMORY, uint32_t MASK, xmrstak_algo ALGO, uint32_t MEM_MODE>
 #ifdef XMR_STAK_THREADS
 __launch_bounds__( XMR_STAK_THREADS * 2 )
 #endif
@@ -334,7 +334,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 	{
 		ptr0 = (uint64_t *)&l0[idx0 & MASK & 0x1FFFC0];
 
-		if(COMP_MODE)
+		if(MEM_MODE == 0)
 		{
 			#pragma unroll 4
 			for(int x = 0; x < 8; x += 2)
@@ -372,7 +372,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 		}
 
 		myChunks[ idx1 + sub ] = cx_aes ^ bx0;
-		if(COMP_MODE)
+		if(MEM_MODE == 0)
 		{
 			#pragma unroll 4
 			for(int x = 0; x < 8; x += 2)
@@ -387,7 +387,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 		idx1 = (idx0 & 0x30) >> 3;
 		ptr0 = (uint64_t *)&l0[idx0 & MASK & 0x1FFFC0];
 
-		if(COMP_MODE)
+		if(MEM_MODE == 0)
 		{
 			#pragma unroll 4
 			for(int x = 0; x < 8; x += 2)
@@ -452,7 +452,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 			bx0 = cx_aes;
 		}
 		myChunks[ idx1 + sub ] = ax0;
-		if(COMP_MODE)
+		if(MEM_MODE == 0)
 		{
 			#pragma unroll 4
 			for(int x = 0; x < 8; x += 2)
@@ -740,7 +740,7 @@ __global__ void cryptonight_core_gpu_phase3( int threads, int bfactor, int parti
 	MEMCPY8( d_ctx_state + thread * 50 + sub + 16, text, 2 );
 }
 
-template<size_t ITERATIONS, uint32_t MASK, uint32_t MEMORY, xmrstak_algo ALGO, bool COMP_MODE>
+template<size_t ITERATIONS, uint32_t MASK, uint32_t MEMORY, xmrstak_algo ALGO, uint32_t MEM_MODE>
 void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 {
 	dim3 grid( ctx->device_blocks );
@@ -782,7 +782,7 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 			CUDA_CHECK_MSG_KERNEL(
 				ctx->device_id,
 				"\n**suggestion: Try to increase the value of the attribute 'bfactor' or \nreduce 'threads' in the NVIDIA config file.**",
-				cryptonight_core_gpu_phase2_double<ITERATIONS,MEMORY,MASK,ALGO, COMP_MODE><<<
+				cryptonight_core_gpu_phase2_double<ITERATIONS,MEMORY,MASK,ALGO, MEM_MODE><<<
 					grid,
 					block2,
 					sizeof(uint64_t) * block2.x * 8 +
@@ -855,42 +855,42 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t 
 	if(miner_algo == invalid_algo) return;
 	
 	static const cuda_hash_fn func_table[] = {
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight, false>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight, true>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight, 0>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_lite, false>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_lite, true>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_lite, 0>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_lite, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero, false>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero, true>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero, 0>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_heavy, false>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_heavy, true>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_heavy, 0>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_heavy, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_aeon, false>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_aeon, true>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_aeon, 0>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_aeon, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_ipbc, false>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_ipbc, true>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_ipbc, 0>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_ipbc, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_stellite, false>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_stellite, true>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_stellite, 0>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_stellite, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_MASARI_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_masari, false>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_MASARI_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_masari, true>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_MASARI_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_masari, 0>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_MASARI_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_masari, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_haven, false>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_haven, true>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_haven, 0>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_haven, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_bittube2, false>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_bittube2, true>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_bittube2, 0>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_bittube2, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero_v8, false>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero_v8, true>
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero_v8, 0>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero_v8, 1>
 	};
 
 	std::bitset<1> digit;
-	digit.set(0, ctx->compMode);
+	digit.set(0, ctx->memMode == 1);
 
 	cuda_hash_fn selected_function = func_table[ ((miner_algo - 1u) << 1) | digit.to_ulong() ];
 	selected_function(ctx, startNonce);
