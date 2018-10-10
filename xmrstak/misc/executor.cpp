@@ -1008,21 +1008,28 @@ void executor::shutdown()
 	{
 		bQuit = true;
 		std::cout<<"Shutdown miner, this takes up to 15 sec ..."<<std::endl;
-		// notify all backend threads
-		for(auto& backend : *pvThreads)
-			backend->shutdown();
+
+		if(pvThreads != nullptr)
+		{
+			// notify all backend threads
+			for(auto& backend : *pvThreads)
+				backend->shutdown();
+		}
 
 		bool canClose = true;
 		size_t round = 0u;
 		do
 		{
 			canClose = true;
-			for(auto& backend : *pvThreads)
+			if(pvThreads != nullptr)
 			{
-				if(!backend->isShutdownFinished())
+				for(auto& backend : *pvThreads)
 				{
-					canClose = false;
-					break;
+					if(!backend->isShutdownFinished())
+					{
+						canClose = false;
+						break;
+					}
 				}
 			}
 			

@@ -82,7 +82,7 @@ private:
 	thdq<ex_event> oEventQ;
 
 	xmrstak::telemetry* telem;
-	std::vector<xmrstak::iBackend*>* pvThreads;
+	std::vector<xmrstak::iBackend*>* pvThreads = nullptr;
 
 	size_t current_pool_id = invalid_pool_id;
 	size_t last_usr_pool_id = invalid_pool_id;
