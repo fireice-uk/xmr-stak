@@ -165,6 +165,10 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 		std::cout<<"WARNING: NVIDIA no device found"<<std::endl;
 		return pvThreads;
 	}
+	else
+	{
+		std::cout<<"NVIDIA: found "<< deviceCount <<" potential device's"<<std::endl;
+	}
 
 	size_t i, n = jconf::inst()->GetGPUThreadCount();
 	pvThreads->reserve(n);
