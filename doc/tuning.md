@@ -9,6 +9,7 @@
 * [AMD Backend](#amd-backend)
   * [Choose `intensity` and `worksize`](#choose-intensity-and-worksize)
   * [Add more GPUs](#add-more-gpus)
+  * [Two Threads per GPU](two-threads-per-gpu)
   * [disable comp_mode](#disable-comp_mode)
   * [change the scratchpad memory pattern](change-the-scratchpad-memory-pattern)
   * [Increase Memory Pool](#increase-memory-pool)
@@ -55,10 +56,10 @@ To add a new GPU you need to add a new config set to `gpu_threads_conf`.
 "gpu_threads_conf" :
 [
     { "index" : 0, "threads" : 17, "blocks" : 60, "bfactor" : 0, "bsleep" :  0,
-      "affine_to_cpu" : false, "sync_mode" : 3,
+      "affine_to_cpu" : false, "sync_mode" : 3, "mem_mode" : 1,
     },
     { "index" : 1, "threads" : 17, "blocks" : 60, "bfactor" : 0, "bsleep" :  0,
-      "affine_to_cpu" : false, "sync_mode" : 3,
+      "affine_to_cpu" : false, "sync_mode" : 3, "mem_mode" : 1,
     },
 ],
 ```
@@ -82,11 +83,37 @@ If you are unsure of either GPU or platform index value, you can use `clinfo` to
 ```
 "gpu_threads_conf" :
 [
-    { "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false,
-      "strided_index" : true, "mem_chunk" : 2, "comp_mode" : true
+    {
+      "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false,
+      "strided_index" : true, "mem_chunk" : 2, "unroll" : 8, "comp_mode" : true
     },
-    { "index" : 1, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false,
-      "strided_index" : true, "mem_chunk" : 2, "comp_mode" : true
+    {
+      "index" : 1, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false,
+      "strided_index" : true, "mem_chunk" : 2, "unroll" : 8, "comp_mode" : true
+    },
+],
+
+"platform_index" : 0,
+```
+
+### Two Threads per GPU
+
+Some GPUs like AMD Vega can mine faster if two threads are using the same GPU.
+Use the auto generated config as base and repeat the config entry for a GPU.
+If the attribute `index` is used twice than two threads will use one GPU.
+Take care that the required memory usage on the GPU will also double.
+Therefore adjust your intensity by hand.
+
+```
+"gpu_threads_conf" :
+[
+    {
+      "index" : 0, "intensity" : 768, "worksize" : 8, "affine_to_cpu" : false,
+      "strided_index" : true, "mem_chunk" : 2, "unroll" : 8, "comp_mode" : true
+    },
+    {
+      "index" : 0, "intensity" : 768, "worksize" : 8, "affine_to_cpu" : false,
+      "strided_index" : true, "mem_chunk" : 2, "unroll" : 8, "comp_mode" : true
     },
 ],
 

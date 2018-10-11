@@ -61,7 +61,7 @@ class RWLock
 		std::unique_lock<std::mutex> lck(mtx_);
 		if (status_ == -1) {
 			status_ = 0;
-		} 
+		}
 		else
 		{
 			status_ -= 1;
@@ -72,7 +72,7 @@ class RWLock
 			{
 				write_cv_.notify_one();
 			}
-		} 
+		}
 		else
 		{
 			read_cv_.notify_all();

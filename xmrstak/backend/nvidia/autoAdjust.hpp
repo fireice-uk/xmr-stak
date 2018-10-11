@@ -96,6 +96,7 @@ private:
 					"    \"threads\" : " + std::to_string(ctx.device_threads) + ", \"blocks\" : " + std::to_string(ctx.device_blocks) + ",\n" +
 					"    \"bfactor\" : " + std::to_string(ctx.device_bfactor) + ", \"bsleep\" :  " + std::to_string(ctx.device_bsleep) + ",\n" +
 					"    \"affine_to_cpu\" : false, \"sync_mode\" : 3,\n" +
+					"    \"mem_mode\" : 1,\n" +
 					"  },\n";
 			}
 		}

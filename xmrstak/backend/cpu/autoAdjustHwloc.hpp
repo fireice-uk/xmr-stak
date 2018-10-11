@@ -70,7 +70,7 @@ public:
 			{
 				conf += std::string("    { \"low_power_mode\" : ");
 				conf += std::string((id & 0x8000000) != 0 ? "true" : "false");
-				conf += std::string(", \"no_prefetch\" : true, \"affine_to_cpu\" : ");
+				conf += std::string(", \"no_prefetch\" : true, \"asm\" : \"auto\", \"affine_to_cpu\" : ");
 				conf += std::to_string(id & 0x7FFFFFF);
 				conf += std::string(" },\n");
 			}
@@ -78,7 +78,8 @@ public:
 		catch(const std::runtime_error& err)
 		{
 			// \todo add fallback to default auto adjust
-			conf += std::string("    { \"low_power_mode\" : false, \"no_prefetch\" : true, \"affine_to_cpu\" : false },\n");
+			conf += std::string("    { \"low_power_mode\" : false");
+			conf += std::string(", \"no_prefetch\" : true, \"asm\" : \"off\", \"affine_to_cpu\" : false },\n");
 			printer::inst()->print_msg(L0, "Autoconf FAILED: %s. Create config for a single thread.", err.what());
 		}
 

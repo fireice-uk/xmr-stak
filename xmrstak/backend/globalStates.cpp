@@ -39,7 +39,7 @@ void globalStates::consume_work( miner_work& threadWork, uint64_t& currentJobId)
 
 	threadWork = oGlobalWork;
 	currentJobId = iGlobalJobNo.load(std::memory_order_relaxed);
-	
+
 	jobLock.UnLock();
 }
 
@@ -51,7 +51,7 @@ void globalStates::switch_work(miner_work& pWork, pool_data& dat)
 	 * To avoid duplicated shared this must be done before the nonce is exchanged.
 	 */
 	iGlobalJobNo++;
-	
+
 	size_t xid = dat.pool_id;
 	dat.pool_id = pool_id;
 	pool_id = xid;
@@ -62,7 +62,7 @@ void globalStates::switch_work(miner_work& pWork, pool_data& dat)
 	 */
 	dat.iSavedNonce = iGlobalNonce.exchange(dat.iSavedNonce, std::memory_order_relaxed);
 	oGlobalWork = pWork;
-	
+
 	jobLock.UnLock();
 }
 
