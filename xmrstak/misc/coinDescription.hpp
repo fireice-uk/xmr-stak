@@ -10,9 +10,9 @@ namespace xmrstak
 {
 	struct coinDescription
 	{
-		xmrstak_algo algo;
-		xmrstak_algo algo_root;
-		uint8_t fork_version;
+		xmrstak_algo algo = xmrstak_algo::invalid_algo;
+		xmrstak_algo algo_root = xmrstak_algo::invalid_algo;
+		uint8_t fork_version = 0u;
 
 		coinDescription() = default;
 
