@@ -928,13 +928,6 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	// create a directory  for the OpenCL compile cache
 	create_directory(get_home() + "/.openclcache");
 
-	// check if cryptonight_monero_v8 is selected for the user or dev pool
-	bool useCryptonight_v8 =
-		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_monero_v8 ||
-		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot() == cryptonight_monero_v8 ||
-		::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgo() == cryptonight_monero_v8 ||
-		::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgoRoot() == cryptonight_monero_v8;
-
 	for(int i = 0; i < num_gpus; ++i)
 	{
 		const std::string backendName = xmrstak::params::inst().openCLVendor;
