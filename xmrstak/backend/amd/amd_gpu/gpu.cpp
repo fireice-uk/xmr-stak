@@ -420,6 +420,11 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		options += " -DMEMORY=" + std::to_string(hashMemSize);
 		options += " -DALGO=" + std::to_string(miner_algo[ii]);
 		options += " -DCN_UNROLL=" + std::to_string(ctx->unroll);
+		/* AMD driver output is something like: `1445.5 (VM)`
+		 * and is mapped to `14` only. The value is only used for a compiler
+		 * workaround.
+		 */
+		options += " -DOPENCL_DRIVER_MAJOR=" + std::to_string(std::stoi(openCLDriverVer.data()) / 100);
 
 		/* create a hash for the compile time cache
 		 * used data:
