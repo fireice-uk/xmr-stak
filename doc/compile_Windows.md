@@ -30,7 +30,12 @@
     - CUDA/Runtime
     - Driver components
 
-### AMD APP SDK 3.0 (only needed for AMD GPUs)
+### AMD DRIVER/APP SDK 3.0 (only needed for AMD GPUs)
+
+- Download & install the AMD driver: https://www.amd.com/en/support
+
+**ATTENTION** Many windows driver 18.5+ creating invalid shares.
+If you have an issue with `invalid shares` please downgrade your driver.
 
 - Download and install the latest version from http://amd-dev.wpengine.netdna-cdn.com/app-sdk/installers/APPSDKInstaller/3.0.130.135-GA/full/AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe
   (do not wonder why it is a link to a netdna-cdn.com but AMD has removed the SDK downloads, see https://community.amd.com/thread/222855)
