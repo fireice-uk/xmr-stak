@@ -2,6 +2,10 @@ R"===(
 /*
  * @author SChernykh
  */
+
+// cryptonight_monero_v8
+#if(ALGO==11)
+
 static const __constant uint RCP_C[256] =
 {
 	0xfe01be73u,0xfd07ff01u,0xfa118c5au,0xf924fb13u,0xf630cddbu,0xf558f73cu,0xf25f2934u,0xf1a3f37bu,
@@ -68,9 +72,21 @@ inline uint2 fast_div_v2(const __local uint *RCP, ulong a, uint b)
 	const ulong k = mul_hi(as_uint2(a).s0, r) + ((ulong)(r) * as_uint2(a).s1) + a;
 
 	ulong q;
-	((uint*)&q)[0] = as_uint2(k).s1;;
-	((uint*)&q)[1] = (k < a) ? 1 : 0;
+	((uint*)&q)[0] = as_uint2(k).s1;
 
+#if defined(cl_amd_device_attribute_query) && (OPENCL_DRIVER_MAJOR == 14)
+	/* The AMD driver 14.XX is not able to compile `(k < a)`
+	 * https://github.com/fireice-uk/xmr-stak/issues/1922
+	 * This is a workaround for the broken compiler.
+	 */
+	 ulong whyAMDwhy;
+	((uint*)&whyAMDwhy)[0] = as_uint2(k).s0;
+	((uint*)&whyAMDwhy)[1] = as_uint2(k).s1;
+	((uint*)&q)[1] = (whyAMDwhy < a) ? 1U : 0U;
+#else
+	((uint*)&q)[1] = (k < a) ? 1U : 0U;
+#endif
+	
 	const long tmp = a - q * b;
 	const bool overshoot = (tmp < 0);
 	const bool undershoot = (tmp >= b);
@@ -105,4 +121,7 @@ inline uint fast_sqrt_v2(const ulong n1)
 
 	return result;
 }
+
+#endif
+
 )==="
