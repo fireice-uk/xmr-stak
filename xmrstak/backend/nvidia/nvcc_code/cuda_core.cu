@@ -734,7 +734,7 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 {
 	dim3 grid( ctx->device_blocks );
 	dim3 block( ctx->device_threads );
-	dim3 block2( ctx->device_threads << 2 );
+	dim3 block2( ctx->device_threads << 1 );
 	dim3 block4( ctx->device_threads << 2 );
 	dim3 block8( ctx->device_threads << 3 );
 
