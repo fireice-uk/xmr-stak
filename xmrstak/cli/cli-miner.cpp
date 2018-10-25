@@ -42,7 +42,6 @@
 #include <string>
 #include <iostream>
 #include <time.h>
-#include <iostream>
 
 #ifndef CONF_NO_TLS
 #include <openssl/ssl.h>
@@ -437,13 +436,13 @@ int main(int argc, char *argv[])
 		if(opName.compare("-v") == 0 || opName.compare("--version") == 0)
 		{
 			std::cout<< "Version: " << get_version_str_short() << std::endl;
-			win_exit();
+			win_exit(0);
 			return 0;
 		}
 		else if(opName.compare("-V") == 0 || opName.compare("--version-long") == 0)
 		{
 			std::cout<< "Version: " << get_version_str() << std::endl;
-			win_exit();
+			win_exit(0);
 			return 0;
 		}
 		else if(opName.compare("--noCPU") == 0)
@@ -806,7 +805,8 @@ int main(int argc, char *argv[])
 	if(params::inst().benchmark_block_version >= 0)
 	{
 		printer::inst()->print_str("!!!! Doing only a benchmark and exiting. To mine, remove the '--benchmark' option. !!!!\n");
-		return do_benchmark(params::inst().benchmark_block_version, params::inst().benchmark_wait_sec, params::inst().benchmark_work_sec);
+		win_exit(do_benchmark(params::inst().benchmark_block_version, params::inst().benchmark_wait_sec, params::inst().benchmark_work_sec));
+		return 1;
 	}
 
 	executor::inst()->ex_start(jconf::inst()->DaemonMode());
@@ -861,6 +861,12 @@ int do_benchmark(int block_version, int wait_sec, int work_sec)
 
 	printer::inst()->print_msg(L0, "Wait %d sec until all backends are initialized",wait_sec);
 	std::this_thread::sleep_for(std::chrono::seconds(wait_sec));
+
+	if(pvThreads->size()==0)
+	{
+		printer::inst()->print_msg(L1, "ERROR: No miner backend enabled.");
+		return 1;
+	}
 
 	/* AMD and NVIDIA is currently only supporting work sizes up to 84byte
 	 * \todo fix this issue

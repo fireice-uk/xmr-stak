@@ -78,10 +78,10 @@ After the configuration you need to compile the miner, follow the guide for your
     export CXX=/usr/bin/clang++
     cmake .. -DCUDA_COMPILER=clang
 ```
-- `XMR-STAK_LARGEGRID` use `32` or `64` bit integer for on device indices
+- `CUDA_LARGEGRID` use `32` or `64` bit integer for on device indices
   - default is enabled
-  - on old GPUs it can increase the hash rate if disabled: `cmake .. -DXMR-STAK_LARGEGRID=OFF`
+  - on old GPUs it can increase the hash rate if disabled: `cmake .. -DCUDA_LARGEGRID=OFF`
   - if disabled it is not allowed to use more than `1000` threads on the device
-- `XMR-STAK_THREADS` give the compiler information which value for `threads` is used at runtime
+- `CUDA_THREADS_MAX` give the compiler information which value for `threads` is used at runtime
   - default is `0` (compile time optimization)
-  - if the miner is compiled and used at runtime with the some value it can increase the hash rate: `cmake .. -DXMR-STAK_THREADS=32`
+  - if the miner is compiled and used at runtime with the some value it can increase the hash rate: `cmake .. -DCUDA_THREADS_MAX=32`

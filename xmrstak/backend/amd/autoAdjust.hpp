@@ -50,7 +50,7 @@ public:
 
 		if(platformIndex == -1)
 		{
-			printer::inst()->print_msg(L0,"WARNING: No AMD OpenCL platform found. Possible driver issues or wrong vendor driver.");
+			printer::inst()->print_msg(L0,"WARNING: No OpenCL platform found. Possible driver issues or wrong vendor driver.");
 			return false;
 		}
 
@@ -61,7 +61,7 @@ public:
 
 		if(deviceCount == 0)
 		{
-			printer::inst()->print_msg(L0,"WARNING: No AMD device found.");
+			printer::inst()->print_msg(L0,"WARNING: No OpenCL device found.");
 			return false;
 		}
 

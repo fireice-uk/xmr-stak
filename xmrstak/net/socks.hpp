@@ -2,7 +2,7 @@
 
 #ifdef _WIN32
 #ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0601  /* Windows 7 */
+#define _WIN32_WINNT _WIN32_WINNT_WIN7
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>

@@ -1,33 +1,211 @@
-# image
-image: Visual Studio 2015
+# image, platform, configuration
+image:
+- Visual Studio 2017
+platform:
+- x64
+configuration:
+- Release
 
-# build platform
-platform: x64
+environment:
+  global:
+    #setup global source, build, deps, bin paths
+    XMR_SRC: c:\xmr-stak
+    XMR_BLD: $(XMR_SRC)\build
+    XMR_DEP: $(XMR_BLD)\dep
+    XMR_BIN: $(XMR_BLD)\bin
+    # preload various CUDA toolkit paths
+    NVKIT: $(ProgramFiles)\NVIDIA GPU Computing Toolkit
+    CUDA_PATH_V8_0: $(NVKIT)\CUDA\v8.0
+    CUDA_PATH_V9_0: $(NVKIT)\CUDA\v9.0
+    CUDA_PATH_V9_1: $(NVKIT)\CUDA\v9.1
+    CUDA_PATH_V9_2: $(NVKIT)\CUDA\v9.2
+    CUDA_PATH_V10_0: $(NVKIT)\CUDA\v10.0
+    # for test phase
+    XMRSTAK_NOWAIT: 1
+    ARCHLIST: 30;999;21;75;1.5;69
+    # for build phase / default to latest VS2017 with tools 14.11 (compatible with the most CUDA versions)
+    VS15DIR: C:\Program Files (x86)\Microsoft Visual Studio\2017\Community
+    VS14DIR: C:\Program Files (x86)\Microsoft Visual Studio 14.0
+    V140MSB: C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140
+    V141MSB: $(VS15DIR)\Common7\IDE\VC\VCTargets
+    G_ARG: Visual Studio 14 2015 Win64
+    TOOLSET: v140
+    VCVARSV: 14.0
+    XMR_DEP_VER: $(XMR_DEP)\$(TOOLSET)
+    CMAKE_PREFIX_PATH: $(XMR_DEP_VER)\hwloc;$(XMR_DEP_VER)\libmicrohttpd;$(XMR_DEP_VER)\openssl
+  matrix:
+    - cuda: 8.0
+    - cuda: 9.0
+    - cuda: 9.1
+    - cuda: 9.2
+    - cuda: 10.0
+matrix:
+  fast_finish: true
 
-# clone directory
-clone_folder: c:\xmr-stak
+clone_folder: $(XMR_SRC)
 
 install:
-  - mkdir c:\xmr-stak-dep
-  - curl -sL https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip -o xmr-stak-dep.zip
-  - 7z x xmr-stak-dep.zip -o"c:\xmr-stak-dep" -y > nul
-  - appveyor DownloadFile  https://developer.nvidia.com/compute/cuda/8.0/prod/local_installers/cuda_8.0.44_windows-exe -FileName cuda_8.0.44_windows.exe
-  - cuda_8.0.44_windows.exe -s compiler_8.0 cudart_8.0
-  - set PATH=%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v8.0\bin;%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v8.0\libnvvp;%PATH%
-  - nvcc -V
+- mkdir "%XMR_BLD%"
+- mkdir "%XMR_DEP%"
+- set INCLUDE=
+- set LIBPATH=
+- set LIB=
 
 build_script:
-  - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsMSBuildCmd.bat"
-  - cd c:\xmr-stak
-  - mkdir build
-  - cd build
-  - set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc;C:\xmr-stak-dep\libmicrohttpd;C:\xmr-stak-dep\openssl;
-  - cmake -G "Visual Studio 14 2015 Win64" -T v140,host=x64 .. -DCUDA_ARCH=30
-  - cmake --build . --config Release --target install
+- rem this triggers non-MSBuild mode but gets overridden by matrix below
+
+for:
+-
+  matrix:
+    only:
+    - cuda: 8.0
+  environment:
+    CUDA_PATH: $(CUDA_PATH_V8_0)
+    PATH: $(CUDA_PATH)\bin;$(CUDA_PATH)\libnvvp;$(PATH)
+  build_script:
+  - call "%VS14DIR%\Common7\Tools\VsMSBuildCmd.bat"
+  - call "%VS14DIR%\VC\vcvarsall.bat" x64 8.1
+  - cd "%XMR_DEP%"
+  # install nvcc
+  - appveyor DownloadFile https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_win10-exe -FileName cuda80.exe
+  - cuda80.exe -s compiler_8.0
+  - nvcc -V
+  # install manually just the integration parts MSBuild needs
+  # if done normally it drags in profilers and NVTX and the driver etc which fails
+  - 7z x -y -ocudapkg cuda80.exe CUDAVisualStudioIntegration/extras/visual_studio_integration > nul
+  - copy cudapkg\CUDAVisualStudioIntegration\extras\visual_studio_integration\MSBuildExtensions\* "%V140MSB%\BuildCustomizations"
+  # xmr-stak-dep for v140
+  - appveyor DownloadFile https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip
+  - 7z x xmr-stak-dep.zip -o"%TOOLSET%" -y > nul
+  - cd "%XMR_BLD%"
+  - cmake -G "%G_ARG%" -T %TOOLSET%,host=x64,cuda=%cuda% -DCUDA_ARCH=%ARCHLIST% -DCUDA_SHOW_REGISTER=ON "%XMR_SRC%"
+  - cmake --build "%XMR_BLD%" --config %CONFIGURATION% --target install
+
+-
+  matrix:
+    only:
+    - cuda: 9.0
+  environment:
+    CUDA_PATH: $(CUDA_PATH_V9_0)
+    PATH: $(CUDA_PATH)\bin;$(CUDA_PATH)\libnvvp;$(PATH)
+  build_script:
+  - call "%VS14DIR%\Common7\Tools\VsMSBuildCmd.bat"
+  - call "%VS14DIR%\VC\vcvarsall.bat" x64 8.1
+  - cd "%XMR_DEP%"
+  # install nvcc
+  - appveyor DownloadFile https://developer.nvidia.com/compute/cuda/9.0/Prod/local_installers/cuda_9.0.176_win10-exe -FileName cuda90.exe
+  - cuda90.exe -s compiler_9.0
+  - nvcc -V
+  # install nvcc update from patch3
+  - appveyor DownloadFile https://developer.nvidia.com/compute/cuda/9.0/Prod/patches/3/cuda_9.0.176.3_windows-exe -FileName cuda90p3.exe
+  - cuda90p3.exe -s compiler_9.0
+  - nvcc -V
+  # install manually just the integration parts MSBuild needs
+  # if done normally it drags in profilers and NVTX and the driver etc which fails
+  - 7z x -y -ocudapkg cuda90.exe CUDAVisualStudioIntegration/extras/visual_studio_integration > nul
+  - copy cudapkg\CUDAVisualStudioIntegration\extras\visual_studio_integration\MSBuildExtensions\* "%V140MSB%\BuildCustomizations"
+  # xmr-stak-dep for v140
+  - appveyor DownloadFile https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip
+  - 7z x xmr-stak-dep.zip -o"%TOOLSET%" -y > nul
+  - cd "%XMR_BLD%"
+  - cmake -G "%G_ARG%" -T %TOOLSET%,host=x64,cuda=%cuda% -DCUDA_ARCH=%ARCHLIST% -DCUDA_SHOW_REGISTER=ON "%XMR_SRC%"
+  - cmake --build "%XMR_BLD%" --config %CONFIGURATION% --target install
+
+-
+  matrix:
+    only:
+    - cuda: 9.1
+  environment:
+    CUDA_PATH: $(CUDA_PATH_V9_1)
+    PATH: $(CUDA_PATH)\bin;$(CUDA_PATH)\libnvvp;$(PATH)
+  build_script:
+  - call "%VS14DIR%\Common7\Tools\VsMSBuildCmd.bat"
+  - call "%VS14DIR%\VC\vcvarsall.bat" x64 8.1
+  - cd "%XMR_DEP%"
+  # install nvcc
+  - appveyor DownloadFile https://developer.nvidia.com/compute/cuda/9.1/Prod/local_installers/cuda_9.1.85_win10 -FileName cuda91.exe
+  - cuda91 -s nvcc_9.1
+  - nvcc -V
+  # install nvcc update from patch2
+  - appveyor DownloadFile https://developer.nvidia.com/compute/cuda/9.1/Prod/patches/2/cuda_9.1.85.2_windows -FileName cuda91p2.exe
+  - cuda91p2 -s nvcc_9.1
+  - nvcc -V
+  # install manually just the integration parts MSBuild needs
+  # if done normally it drags in profilers and NVTX and the driver etc which fails
+  - 7z x -y -ocudapkg cuda91.exe CUDAVisualStudioIntegration/extras/visual_studio_integration > nul
+  - copy cudapkg\CUDAVisualStudioIntegration\extras\visual_studio_integration\MSBuildExtensions\* "%V140MSB%\BuildCustomizations"
+  # xmr-stak-dep for v140
+  - appveyor DownloadFile https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip
+  - 7z x xmr-stak-dep.zip -o"%TOOLSET%" -y > nul
+  - cd "%XMR_BLD%"
+  - cmake -G "%G_ARG%" -T %TOOLSET%,host=x64,cuda=%cuda% -DCUDA_ARCH=%ARCHLIST% -DCUDA_SHOW_REGISTER=ON "%XMR_SRC%"
+  - cmake --build "%XMR_BLD%" --config %CONFIGURATION% --target install
+
+-
+  matrix:
+    only:
+    - cuda: 9.2
+  environment:
+    CUDA_PATH: $(CUDA_PATH_V9_2)
+    PATH: $(CUDA_PATH)\bin;$(CUDA_PATH)\libnvvp;$(PATH)
+  build_script:
+  - call "%VS14DIR%\Common7\Tools\VsMSBuildCmd.bat"
+  - call "%VS14DIR%\VC\vcvarsall.bat" x64 8.1
+  - cd "%XMR_DEP%"
+  # install nvcc
+  - appveyor DownloadFile https://developer.nvidia.com/compute/cuda/9.2/Prod2/local_installers2/cuda_9.2.148_win10 -FileName cuda92.exe
+  - cuda92 -s nvcc_9.2
+  - nvcc -V
+  # install manually just the integration parts MSBuild needs
+  # if done normally it drags in profilers and NVTX and the driver etc which fails
+  - 7z x -y -ocudapkg cuda92.exe CUDAVisualStudioIntegration/extras/visual_studio_integration > nul
+  - copy cudapkg\CUDAVisualStudioIntegration\extras\visual_studio_integration\MSBuildExtensions\* "%V140MSB%\BuildCustomizations"
+  # xmr-stak-dep for v140
+  - appveyor DownloadFile https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip
+  - 7z x xmr-stak-dep.zip -o"%TOOLSET%" -y > nul
+  - cd "%XMR_BLD%"
+  - cmake -G "%G_ARG%" -T %TOOLSET%,host=x64,cuda=%cuda% -DCUDA_ARCH=%ARCHLIST% -DCUDA_SHOW_REGISTER=ON "%XMR_SRC%"
+  - cmake --build "%XMR_BLD%" --config %CONFIGURATION% --target install
+
+-
+  matrix:
+    only:
+    - cuda: 10.0
+  environment:
+    G_ARG: Visual Studio 15 2017 Win64
+    TOOLSET: v141
+    VCVARSV: 14.15
+    XMR_DEP_VER: $(XMR_DEP)\$(TOOLSET)
+    CMAKE_PREFIX_PATH: $(XMR_DEP_VER)\hwloc;$(XMR_DEP_VER)\libmicrohttpd;$(XMR_DEP_VER)\openssl
+    CUDA_PATH: $(CUDA_PATH_V10_0)
+    PATH: $(CUDA_PATH)\bin;$(CUDA_PATH)\libnvvp;$(PATH)
+  build_script:
+  - call "%VS15DIR%\VC\Auxiliary\Build\vcvars64.bat" x64 -vcvars_ver=%VCVARSV%
+  - cd "%XMR_DEP%"
+  # install nvcc
+  - appveyor DownloadFile https://developer.nvidia.com/compute/cuda/10.0/Prod/local_installers/cuda_10.0.130_411.31_win10 -FileName cuda100.exe
+  - cuda100 -s nvcc_10.0
+  - nvcc -V
+  # install manually just the integration parts MSBuild needs
+  # if done normally it drags in profilers and NVTX and the driver etc which fails
+  - 7z x -y -ocudapkg cuda100.exe CUDAVisualStudioIntegration/extras/visual_studio_integration > nul
+  - copy cudapkg\CUDAVisualStudioIntegration\extras\visual_studio_integration\MSBuildExtensions\* "%V141MSB%\BuildCustomizations"
+  # xmr-stak-dep for v141
+  - appveyor DownloadFile https://github.com/fireice-uk/xmr-stak-dep/releases/download/v2/xmr-stak-dep.zip
+  - 7z x xmr-stak-dep.zip -y > nul
+  - move /y xmr-stak-dep %TOOLSET%
+  - cd "%XMR_BLD%"
+  - cmake -G "%G_ARG%" -T %TOOLSET%,host=x64,cuda=%cuda% -DCUDA_ARCH=%ARCHLIST% -DCUDA_SHOW_REGISTER=ON "%XMR_SRC%"
+  - cmake --build "%XMR_BLD%" --config %CONFIGURATION% --target install
 
 test_script:
-  - cd c:\xmr-stak\build\bin\Release
-  - dir
-  - copy C:\xmr-stak-dep\openssl\bin\* .
-  - set XMRSTAK_NOWAIT=1
-  - xmr-stak.exe --help --noUAC
+- cd "%XMR_BIN%\%CONFIGURATION%"
+- copy "%XMR_DEP_VER%\openssl\bin\*.dll" .
+- del "*.lib" "*.exp"
+- dir
+- xmr-stak --noUAC --version-long
+- xmr-stak --noUAC --help
+# bench CPU v7+v8 / let other backends naturally fail the first time to make sure dll chain works
+- xmr-stak --noUAC --httpd 0 --url test:3333 -u test -p x -r test --currency cryptonight_v7 --benchmark 7 --benchwait 4 --benchwork 20
+- xmr-stak --noUAC --noAMD --noNVIDIA --currency cryptonight_v8 --benchmark 8 --benchwait 4 --benchwork 20
+- type "*.txt"

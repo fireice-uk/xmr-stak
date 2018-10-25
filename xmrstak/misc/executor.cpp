@@ -518,7 +518,7 @@ void executor::ex_main()
 #ifdef CONF_NO_TLS
 		if(cfg.tls)
 		{
-			printer::inst()->print_msg(L1, "ERROR: No miner was compiled without TLS support.");
+			printer::inst()->print_msg(L1, "ERROR: Miner was compiled without TLS support, can't use SSL pools.");
 			win_exit();
 		}
 #endif

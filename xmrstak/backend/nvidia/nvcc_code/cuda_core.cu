@@ -64,7 +64,7 @@ extern "C" void compat_usleep(uint64_t waitTime)
 /* sm_2X is limited to 2GB due to the small TLB
  * therefore we never use 64bit indices
  */
-#if defined(XMR_STAK_LARGEGRID) && (__CUDA_ARCH__ >= 300)
+#if defined(CUDA_LARGEGRID) && (__CUDA_ARCH__ >= 300)
 typedef uint64_t IndexType;
 #else
 typedef int IndexType;
@@ -261,8 +261,8 @@ struct u64 : public uint2
  *                   else if `1` 256bit operations will be used
  */
 template<size_t ITERATIONS, uint32_t MEMORY, uint32_t MASK, xmrstak_algo ALGO, uint32_t MEM_MODE>
-#ifdef XMR_STAK_THREADS
-__launch_bounds__( XMR_STAK_THREADS * 2 )
+#ifdef CUDA_THREADS_MAX
+__launch_bounds__( CUDA_THREADS_MAX * 2 )
 #endif
 __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b, uint32_t * d_ctx_state,
 		uint32_t startNonce, uint32_t * __restrict__ d_input )
@@ -476,8 +476,8 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 }
 
 template<size_t ITERATIONS, uint32_t MEMORY, uint32_t MASK, xmrstak_algo ALGO>
-#ifdef XMR_STAK_THREADS
-__launch_bounds__( XMR_STAK_THREADS * 4 )
+#ifdef CUDA_THREADS_MAX
+__launch_bounds__( CUDA_THREADS_MAX * 4 )
 #endif
 __global__ void cryptonight_core_gpu_phase2_quad( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b, uint32_t * d_ctx_state,
 		uint32_t startNonce, uint32_t * __restrict__ d_input )
