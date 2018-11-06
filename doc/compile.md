@@ -85,3 +85,44 @@ After the configuration you need to compile the miner, follow the guide for your
 - `XMR-STAK_THREADS` give the compiler information which value for `threads` is used at runtime
   - default is `0` (compile time optimization)
   - if the miner is compiled and used at runtime with the some value it can increase the hash rate: `cmake .. -DXMR-STAK_THREADS=32`
+
+#### CUDA Runtime versus CUDA SDK
+nVidia packages the CUDA **runtime** with the GPU drivers, and the CUDA **SDK** should match.
+While it is possible to compile with old SDK and then run on newer runtime/driver, in most cases it does not work well.
+
+SDK usually bundles a driver that supports the particular CUDA version, but it is always best to get (usually newer)
+drivers from the official site.
+
+For Example: Built with 8.0 SDK running on a 9.2 driver crashes randomly on some GPUs, however worked fine on most 9.1
+drivers.  Backward compatibility "should" work, but in reality there are many cases where it does not (YMMV)
+
+**NOTE**: The inverse case, installing CUDA 10.0 SDK on a system with older driver
+does not magically add CUDA 10.0 support to the old driver. You must build with
+CUDA SDK to match that driver runtime (check driver release notes PDF under 'supported technologies' list within the
+first several pages) - *OR* - upgrade the driver to minimum `411.63` to have the CUDA 10.0 runtime
+(unless, Fermi... they can't use CUDA 9.x or 10.0, even though newer drivers still run their *graphics* parts)
+
+Other gotchas based on GPU family:
+* Anything less than Fermi will never work
+* Fermi (arch 2x) was removed after CUDA 8.0
+* Volta (arch 7x) was added in CUDA 9.0
+* Turing (arch 75) was added in CUDA 10.0
+
+Here is a rough table of driver revisions and CUDA runtime contained:
+
+| CUDA | Driver min | Driver max | notes
+| ----:| ----------:| ----------:| -----
+| 10.0 | 411.63     | (current)  |
+|  9.2 | 397.93     | 399.24     |
+|  9.1 | 388.71     | 397.64     |
+|  9.0 | 387.92     | 388.59     | Fermi removed (must use CUDA == 8.0)
+|  8.0 | 372.70     | 386.28     | except 372.95 has CUDA7.5 
+|  7.5 |            |            | *Don't bother, won't compile anymore*
+
+nVidia generally uses the same version numbering on all OS, the above was however based
+on Windows Driver Release Notes
+nVidia always puts the runtime-included CUDA version in the release notes PDF for whatever driver, doesn't hurt to
+double check your specific one.
+
+For better navigation of CUDA version matching, xmr-stak will display both version numbers during CUDA detection phases
+such as `[9.2/10.0]` which is the compiled (SDK) version and the current (driver) runtime version.
