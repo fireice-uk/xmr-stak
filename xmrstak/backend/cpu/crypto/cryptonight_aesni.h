@@ -789,6 +789,7 @@ inline void set_float_rounding_mode()
 #define REPEAT_3(n, f, ...) CN_EXEC(f, CN_ENUM_ ## n(0, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(1, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(2, __VA_ARGS__))
 #define REPEAT_4(n, f, ...) CN_EXEC(f, CN_ENUM_ ## n(0, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(1, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(2, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(3, __VA_ARGS__))
 #define REPEAT_5(n, f, ...) CN_EXEC(f, CN_ENUM_ ## n(0, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(1, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(2, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(3, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(4, __VA_ARGS__))
+#define REPEAT_6(n, f, ...) CN_EXEC(f, CN_ENUM_ ## n(0, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(1, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(2, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(3, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(4, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(5, __VA_ARGS__))
 
 template< size_t N>
 struct Cryptonight_hash;
@@ -935,6 +936,36 @@ struct Cryptonight_hash<5>
 		}
 
 		REPEAT_5(0, CN_FINALIZE);
+	}
+};
+
+
+template< >
+struct Cryptonight_hash<6>
+{
+	static constexpr size_t N = 6;
+
+	template<xmrstak_algo ALGO, bool SOFT_AES, bool PREFETCH>
+	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+	{
+		constexpr size_t MASK = cn_select_mask<ALGO>();
+		constexpr size_t ITERATIONS = cn_select_iter<ALGO>();
+		constexpr size_t MEM = cn_select_memory<ALGO>();
+
+		CN_INIT_SINGLE;
+		REPEAT_6(9, CN_INIT, monero_const, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm);
+
+		// Optim - 90% time boundary
+		for(size_t i = 0; i < ITERATIONS; i++)
+		{
+			REPEAT_6(8, CN_STEP1, monero_const, l0, ax0, bx0, idx0, ptr0, cx, bx1);
+			REPEAT_6(7, CN_STEP2, monero_const, l0, ax0, bx0, idx0, ptr0, cx);
+			REPEAT_6(15, CN_STEP3, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm);
+			REPEAT_6(11, CN_STEP4, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0);
+			REPEAT_6(6, CN_STEP5, monero_const, l0, ax0, bx0, idx0, ptr0);
+		}
+
+		REPEAT_6(0, CN_FINALIZE);
 	}
 };
 

@@ -183,7 +183,7 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 	return nullptr; //Should never happen
 }
 
-static constexpr size_t MAX_N = 5;
+static constexpr size_t MAX_N = 6;
 bool minethd::self_test()
 {
 	alloc_msg msg = { 0 };
