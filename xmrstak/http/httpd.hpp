@@ -1,6 +1,9 @@
 #pragma once
 
 #include <stdlib.h>
+#ifdef __CYGWIN__
+#include <sys/select.h>
+#endif
 
 struct MHD_Daemon;
 struct MHD_Connection;

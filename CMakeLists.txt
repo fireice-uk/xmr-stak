@@ -1,6 +1,5 @@
-project(xmr-stak)
-
 cmake_minimum_required(VERSION 3.4.0)
+project(xmr-stak)
 
 # enforce C++11
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -444,8 +443,13 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "-Wl,-z,noexecstack ${CMAKE_CXX_FLAGS}")
-    set(CMAKE_C_FLAGS "-Wl,-z,noexecstack ${CMAKE_C_FLAGS}")
+    if(CMAKE_RC_COMPILER MATCHES "windres") # lame hack to detect Cygwin
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -U_WIN32 -U__USE_W32_SOCKETS -D_POSIX_C_SOURCE=200112")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -U_WIN32 -U__USE_W32_SOCKETS -D_POSIX_C_SOURCE=200112")
+    else()
+        set(CMAKE_CXX_FLAGS "-Wl,-z,noexecstack ${CMAKE_CXX_FLAGS}")
+        set(CMAKE_C_FLAGS "-Wl,-z,noexecstack ${CMAKE_C_FLAGS}")
+    endif()
 endif()
 
 # activate static libgcc and libstdc++ linking

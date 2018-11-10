@@ -46,6 +46,9 @@
 #include <time.h>
 
 
+#ifdef __CYGWIN__
+#include <strings.h>
+#endif //__CYGWIN__
 #ifdef _WIN32
 #define strncasecmp _strnicmp
 #endif // _WIN32
@@ -470,7 +473,7 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 	}
 }
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__CYGWIN__)
 
 #include <signal.h>
 void disable_sigpipe()

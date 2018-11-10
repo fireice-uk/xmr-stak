@@ -23,6 +23,9 @@
 
 #ifndef CONF_NO_HTTPD
 
+#ifdef __CYGWIN__
+#include <strings.h>
+#endif
 
 #include "httpd.hpp"
 #include "webdesign.hpp"
