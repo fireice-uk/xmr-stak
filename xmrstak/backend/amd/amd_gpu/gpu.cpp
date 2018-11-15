@@ -903,6 +903,9 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	const char *fastIntMathV2CL =
 			#include "./opencl/fast_int_math_v2.cl"
 	;
+    const char *fastDivHeavyCL =
+        #include "./opencl/fast_div_heavy.cl"
+    ;
 	const char *cryptonightCL =
 			#include "./opencl/cryptonight.cl"
 	;
@@ -924,6 +927,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 
 	std::string source_code(cryptonightCL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_FAST_INT_MATH_V2"), fastIntMathV2CL);
+    source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_FAST_DIV_HEAVY"), fastDivHeavyCL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_WOLF_AES"), wolfAesCL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_WOLF_SKEIN"), wolfSkeinCL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_JH"), jhCL);
