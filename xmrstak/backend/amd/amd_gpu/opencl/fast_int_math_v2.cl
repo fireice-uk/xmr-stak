@@ -125,4 +125,3 @@ inline uint fast_sqrt_v2(const ulong n1)
 #endif
 
 )==="
-        
