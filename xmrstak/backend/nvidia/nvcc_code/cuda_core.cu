@@ -9,6 +9,7 @@
 
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/backend/nvidia/nvcc_code/cuda_fast_int_math_v2.hpp"
+#include "xmrstak/backend/nvidia/nvcc_code/cuda_fast_div_heavy.hpp"
 
 
 #ifdef _WIN32
@@ -647,7 +648,7 @@ __global__ void cryptonight_core_gpu_phase2_quad( int threads, int bfactor, int 
 			{
 				int64_t n = loadGlobal64<uint64_t>( ( (uint64_t *) long_state ) + (( idx0 & MASK ) >> 3));
 				int32_t d = loadGlobal32<uint32_t>( (uint32_t*)(( (uint64_t *) long_state ) + (( idx0 & MASK) >> 3) + 1u ));
-				int64_t q = n / (d | 0x5);
+				int64_t q = fast_div_heavy(n, (d | 0x5));
 
 				if(sub&1)
 					storeGlobal64<uint64_t>( ( (uint64_t *) long_state ) + (( idx0 & MASK ) >> 3), n ^ q );
@@ -658,7 +659,7 @@ __global__ void cryptonight_core_gpu_phase2_quad( int threads, int bfactor, int 
 			{
 				int64_t n = loadGlobal64<uint64_t>( ( (uint64_t *) long_state ) + (( idx0 & MASK ) >> 3));
 				int32_t d = loadGlobal32<uint32_t>( (uint32_t*)(( (uint64_t *) long_state ) + (( idx0 & MASK) >> 3) + 1u ));
-				int64_t q = n / (d | 0x5);
+				int64_t q = fast_div_heavy(n, (d | 0x5));
 
 				if(sub&1)
 					storeGlobal64<uint64_t>( ( (uint64_t *) long_state ) + (( idx0 & MASK ) >> 3), n ^ q );
@@ -840,9 +841,9 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t startNonce)
 {
 	typedef void (*cuda_hash_fn)(nvid_ctx* ctx, uint32_t nonce);
-	
+
 	if(miner_algo == invalid_algo) return;
-	
+
 	static const cuda_hash_fn func_table[] = {
 		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight, 0>,
 		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight, 1>,
