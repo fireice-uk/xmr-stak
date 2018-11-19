@@ -74,42 +74,49 @@ static const __constant uint AES0_C[256] =
 
 #define BYTE(x, y)	(amd_bfe((x), (y) << 3U, 8U))
 
-inline uint4 AES_Round_bittube2(const __local uint *AES0, const __local uint *AES1, const __local uint *AES2, const __local uint *AES3, uint4 x, uint4 k)
-{
-	x = ~x;
-	k.s0 ^= AES0[BYTE(x.s0, 0)] ^ AES1[BYTE(x.s1, 1)] ^ AES2[BYTE(x.s2, 2)] ^ AES3[BYTE(x.s3, 3)];
-	x.s0 ^= k.s0;
-	k.s1 ^= AES0[BYTE(x.s1, 0)] ^ AES1[BYTE(x.s2, 1)] ^ AES2[BYTE(x.s3, 2)] ^ AES3[BYTE(x.s0, 3)];
-	x.s1 ^= k.s1;
-	k.s2 ^= AES0[BYTE(x.s2, 0)] ^ AES1[BYTE(x.s3, 1)] ^ AES2[BYTE(x.s0, 2)] ^ AES3[BYTE(x.s1, 3)];
-	x.s2 ^= k.s2;
-	k.s3 ^= AES0[BYTE(x.s3, 0)] ^ AES1[BYTE(x.s0, 1)] ^ AES2[BYTE(x.s1, 2)] ^ AES3[BYTE(x.s2, 3)];
-	return k;
-}
-
 uint4 AES_Round(const __local uint *AES0, const __local uint *AES1, const __local uint *AES2, const __local uint *AES3, const uint4 X, uint4 key)
 {
 	key.s0 ^= AES0[BYTE(X.s0, 0)];
-    key.s1 ^= AES0[BYTE(X.s1, 0)];
-    key.s2 ^= AES0[BYTE(X.s2, 0)];
-    key.s3 ^= AES0[BYTE(X.s3, 0)];
+	key.s1 ^= AES0[BYTE(X.s1, 0)];
+	key.s2 ^= AES0[BYTE(X.s2, 0)];
+	key.s3 ^= AES0[BYTE(X.s3, 0)];
 
 	key.s0 ^= AES2[BYTE(X.s2, 2)];
-    key.s1 ^= AES2[BYTE(X.s3, 2)];
-    key.s2 ^= AES2[BYTE(X.s0, 2)];
-    key.s3 ^= AES2[BYTE(X.s1, 2)];
+	key.s1 ^= AES2[BYTE(X.s3, 2)];
+	key.s2 ^= AES2[BYTE(X.s0, 2)];
+	key.s3 ^= AES2[BYTE(X.s1, 2)];
 
 	key.s0 ^= AES1[BYTE(X.s1, 1)];
-    key.s1 ^= AES1[BYTE(X.s2, 1)];
-    key.s2 ^= AES1[BYTE(X.s3, 1)];
-    key.s3 ^= AES1[BYTE(X.s0, 1)];
+	key.s1 ^= AES1[BYTE(X.s2, 1)];
+	key.s2 ^= AES1[BYTE(X.s3, 1)];
+	key.s3 ^= AES1[BYTE(X.s0, 1)];
 
 	key.s0 ^= AES3[BYTE(X.s3, 3)];
-    key.s1 ^= AES3[BYTE(X.s0, 3)];
-    key.s2 ^= AES3[BYTE(X.s1, 3)];
-    key.s3 ^= AES3[BYTE(X.s2, 3)];
+	key.s1 ^= AES3[BYTE(X.s0, 3)];
+	key.s2 ^= AES3[BYTE(X.s1, 3)];
+	key.s3 ^= AES3[BYTE(X.s2, 3)];
 
-    return key;
+	return key;
+}
+
+uint4 AES_Round2(const __local uint *AES0, const __local uint *AES1, const uint4 X, uint4 key)
+{
+	key.s0 ^= AES0[BYTE(X.s0, 0)];
+	key.s1 ^= AES0[BYTE(X.s1, 0)];
+	key.s2 ^= AES0[BYTE(X.s2, 0)];
+	key.s3 ^= AES0[BYTE(X.s3, 0)];
+
+	key.s0 ^= rotate(AES0[BYTE(X.s2, 2)] ^ AES1[BYTE(X.s3, 3)], 16u);
+	key.s1 ^= rotate(AES0[BYTE(X.s3, 2)] ^ AES1[BYTE(X.s0, 3)], 16u);
+	key.s2 ^= rotate(AES0[BYTE(X.s0, 2)] ^ AES1[BYTE(X.s1, 3)], 16u);
+	key.s3 ^= rotate(AES0[BYTE(X.s1, 2)] ^ AES1[BYTE(X.s2, 3)], 16u);
+
+	key.s0 ^= AES1[BYTE(X.s1, 1)];
+	key.s1 ^= AES1[BYTE(X.s2, 1)];
+	key.s2 ^= AES1[BYTE(X.s3, 1)];
+	key.s3 ^= AES1[BYTE(X.s0, 1)];
+
+	return key;
 }
 
 #endif
