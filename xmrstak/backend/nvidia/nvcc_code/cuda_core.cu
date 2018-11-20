@@ -122,6 +122,11 @@ __device__ __forceinline__ void storeGlobal64( T* addr, T const & val )
 #endif
 }
 
+__device__ __forceinline__ uint32_t rotate16( const uint32_t n )
+{
+	return (n >> 16u) | (n << 16u);
+}
+
 template<size_t ITERATIONS, uint32_t MEMORY>
 __global__ void cryptonight_core_gpu_phase1( int threads, int bfactor, int partidx, uint32_t * __restrict__ long_state, uint32_t * __restrict__ ctx_state2, uint32_t * __restrict__ ctx_key1 )
 {
@@ -268,9 +273,9 @@ __launch_bounds__( XMR_STAK_THREADS * 2 )
 __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b, uint32_t * d_ctx_state,
 		uint32_t startNonce, uint32_t * __restrict__ d_input )
 {
-	__shared__ uint32_t sharedMemory[1024];
+	__shared__ uint32_t sharedMemory[512];
 
-	cn_aes_gpu_init( sharedMemory );
+	cn_aes_gpu_init_half( sharedMemory );
 
 #if( __CUDA_ARCH__ < 300 )
 	extern __shared__ uint64_t externShared[];
@@ -341,8 +346,8 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 		const u64 cx2 = myChunks[ idx1 + ((sub + 1) & 1) ];
 
 		u64 cx_aes = ax0 ^ u64(
-			t_fn0( cx.x & 0xff ) ^ t_fn1( (cx.y >> 8) & 0xff ) ^ t_fn2( (cx2.x >> 16) & 0xff ) ^ t_fn3( (cx2.y >> 24 ) ),
-			t_fn0( cx.y & 0xff ) ^ t_fn1( (cx2.x >> 8) & 0xff ) ^ t_fn2( (cx2.y >> 16) & 0xff ) ^ t_fn3( (cx.x >> 24 ) )
+			t_fn0( cx.x & 0xff ) ^ t_fn1( (cx.y >> 8) & 0xff ) ^ rotate16(t_fn0( (cx2.x >> 16) & 0xff ) ^ t_fn1( (cx2.y >> 24 ) )),
+			t_fn0( cx.y & 0xff ) ^ t_fn1( (cx2.x >> 8) & 0xff ) ^ rotate16(t_fn0( (cx2.y >> 16) & 0xff ) ^ t_fn1( (cx.x >> 24 ) ))
 		);
 
 		if(ALGO == cryptonight_monero_v8)
