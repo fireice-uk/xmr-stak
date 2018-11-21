@@ -365,7 +365,7 @@ R"===(
 #if(STRIDED_INDEX==0)
 #   define IDX(x)	(x)
 #elif(STRIDED_INDEX==1)
-#   define IDX(x)	((x) * (Threads))
+#	define IDX(x)   (mul24(((uint)(x)), Threads))
 #elif(STRIDED_INDEX==2)
 #   define IDX(x)	(((x) % MEM_CHUNK) + ((x) / MEM_CHUNK) * WORKSIZE * MEM_CHUNK)
 #endif
@@ -861,7 +861,7 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
         #pragma unroll 2
         for(int i = 0, i1 = get_local_id(1); i < (MEMORY >> 7); ++i, i1 = (i1 + 16) % (MEMORY >> 4))
         {
-            text ^= Scratchpad[IDX(i1)];
+            text ^= Scratchpad[IDX((uint)i1)];
             barrier(CLK_LOCAL_MEM_FENCE);
             text ^= *xin2_load;
 
@@ -871,7 +871,7 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
             *xin1_store = text;
 
-            text ^= Scratchpad[IDX(i1 + 8)];
+            text ^= Scratchpad[IDX((uint)i1 + 8u)];
             barrier(CLK_LOCAL_MEM_FENCE);
             text ^= *xin1_load;
 
@@ -888,7 +888,7 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #else
         #pragma unroll 2
         for (int i = 0; i < (MEMORY >> 7); ++i) {
-            text ^= Scratchpad[IDX((i << 3) + get_local_id(1))];
+            text ^= Scratchpad[IDX((uint)((i << 3) + get_local_id(1)))];
 
             #pragma unroll 10
             for(int j = 0; j < 10; ++j)
