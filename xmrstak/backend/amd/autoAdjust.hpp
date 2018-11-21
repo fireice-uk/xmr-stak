@@ -134,6 +134,13 @@ private:
 				::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgo() == cryptonight_monero_v8 ||
 				::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgoRoot() == cryptonight_monero_v8;
 
+			// true for all cryptonight_heavy derivates since we check the user and dev pool
+			bool useCryptonight_heavy =
+				::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_heavy ||
+				::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot() == cryptonight_heavy ||
+				::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgo() == cryptonight_heavy ||
+				::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgoRoot() == cryptonight_heavy;
+
 			// set strided index to default
 			ctx.stridedIndex = 1;
 
@@ -144,6 +151,8 @@ private:
 			// use chunked (4x16byte) scratchpad for all backends. Default `mem_chunk` is `2`
 			if(useCryptonight_v8)
 				ctx.stridedIndex = 2;
+			else if(useCryptonight_heavy)
+				ctx.stridedIndex = 3;
 
 			// increase all intensity limits by two for aeon
 			if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_lite)

@@ -368,13 +368,13 @@ R"===(
 #   define IDX(x)	((x) * (Threads))
 #elif(STRIDED_INDEX==2)
 #   define IDX(x)	(((x) % MEM_CHUNK) + ((x) / MEM_CHUNK) * WORKSIZE * MEM_CHUNK)
+#elif(STRIDED_INDEX==3)
+#	define IDX(x)   ((x) * WORKSIZE)
 #endif
 
 inline uint getIdx()
 {
-#if(STRIDED_INDEX==0 || STRIDED_INDEX==1 || STRIDED_INDEX==2)
     return get_global_id(0) - get_global_offset(0);
-#endif
 }
 
 #define mix_and_propagate(xin) (xin)[(get_local_id(1)) % 8][get_local_id(0)] ^ (xin)[(get_local_id(1) + 1) % 8][get_local_id(0)]
@@ -419,6 +419,8 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 		Scratchpad += gIdx;
 #elif(STRIDED_INDEX==2)
         Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + MEM_CHUNK * (gIdx % WORKSIZE);
+#elif(STRIDED_INDEX==3)
+		Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + (gIdx % WORKSIZE);
 #endif
 
         if (get_local_id(1) == 0)
@@ -601,6 +603,8 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 		Scratchpad += gIdx;
 #elif(STRIDED_INDEX==2)
         Scratchpad += get_group_id(0) * (MEMORY >> 4) * WORKSIZE + MEM_CHUNK * get_local_id(0);
+#elif(STRIDED_INDEX==3)
+		Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + (gIdx % WORKSIZE);
 #endif
 
         a[0] = states[0] ^ states[4];
@@ -824,6 +828,8 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 		Scratchpad += gIdx;
 #elif(STRIDED_INDEX==2)
         Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + MEM_CHUNK * (gIdx % WORKSIZE);
+#elif(STRIDED_INDEX==3)
+		Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + (gIdx % WORKSIZE);
 #endif
 
         #if defined(__Tahiti__) || defined(__Pitcairn__)
