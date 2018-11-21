@@ -401,7 +401,7 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
         AES2[i] = rotate(tmp, 16U);
         AES3[i] = rotate(tmp, 24U);
     }
-        
+
     __local ulong State_buf[8 * 25];
 
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -416,7 +416,7 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 #if(STRIDED_INDEX==0)
         Scratchpad += gIdx * (MEMORY >> 4);
 #elif(STRIDED_INDEX==1)
-        Scratchpad += gIdx;
+		Scratchpad += gIdx;
 #elif(STRIDED_INDEX==2)
         Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + MEM_CHUNK * (gIdx % WORKSIZE);
 #endif
@@ -474,12 +474,12 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
     }
 
     mem_fence(CLK_LOCAL_MEM_FENCE);
-        
+
 // cryptonight_heavy || cryptonight_haven || cryptonight_bittube2
 #if (ALGO == 4 || ALGO == 9 || ALGO == 10)
     __local uint4 xin[8][8];
     {
-        
+
 
         /* Also left over threads perform this loop.
          * The left over thread results will be ignored
@@ -530,7 +530,7 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 
 )==="
 R"===(
-        
+
 // cryptonight_monero_v8 && NVIDIA
 #if(ALGO==11 && defined(__NV_CL_C_VERSION))
 #	define SCRATCHPAD_CHUNK(N) (*(__local uint4*)((__local uchar*)(scratchpad_line) + (idxS ^ (N << 4))))
@@ -598,7 +598,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #if(STRIDED_INDEX==0)
         Scratchpad += gIdx * (MEMORY >> 4);
 #elif(STRIDED_INDEX==1)
-        Scratchpad += gIdx;
+		Scratchpad += gIdx;
 #elif(STRIDED_INDEX==2)
         Scratchpad += get_group_id(0) * (MEMORY >> 4) * WORKSIZE + MEM_CHUNK * get_local_id(0);
 #endif
@@ -628,7 +628,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 		tweak1_2 ^= as_uint2(states[24]);
 #endif
     }
-    
+
     mem_fence(CLK_LOCAL_MEM_FENCE);
 
 #if(COMP_MODE==1)
@@ -659,11 +659,11 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 // cryptonight_monero_v8
 #if(ALGO==11)
         {
-				ulong2 chunk1 = as_ulong2(SCRATCHPAD_CHUNK(1));
-				ulong2 chunk2 = as_ulong2(SCRATCHPAD_CHUNK(2));
-				ulong2 chunk3 = as_ulong2(SCRATCHPAD_CHUNK(3));
-				SCRATCHPAD_CHUNK(1) = as_uint4(chunk3 + ((ulong2 *)(b_x + 1))[0]);
-				SCRATCHPAD_CHUNK(2) = as_uint4(chunk1 + ((ulong2 *)b_x)[0]);
+			ulong2 chunk1 = as_ulong2(SCRATCHPAD_CHUNK(1));
+			ulong2 chunk2 = as_ulong2(SCRATCHPAD_CHUNK(2));
+			ulong2 chunk3 = as_ulong2(SCRATCHPAD_CHUNK(3));
+			SCRATCHPAD_CHUNK(1) = as_uint4(chunk3 + ((ulong2 *)(b_x + 1))[0]);
+			SCRATCHPAD_CHUNK(2) = as_uint4(chunk1 + ((ulong2 *)b_x)[0]);
             SCRATCHPAD_CHUNK(3) = as_uint4(chunk2 + ((ulong2 *)a)[0]);
         }
 #endif
@@ -714,25 +714,23 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			division_result = fast_div_v2(RCP, c[1], d);
  			// Use division_result as an input for the square root to prevent parallel implementation in hardware
 			sqrt_result = fast_sqrt_v2(c[0] + as_ulong(division_result));
-#endif
+
 			ulong2 result_mul;
 			result_mul.s0 = mul_hi(c[0], as_ulong2(tmp).s0);
 			result_mul.s1 = c[0] * as_ulong2(tmp).s0;
-// cryptonight_monero_v8
-#if(ALGO==11)
-        {
-				ulong2 chunk1 = as_ulong2(SCRATCHPAD_CHUNK(1)) ^ result_mul;
-				ulong2 chunk2 = as_ulong2(SCRATCHPAD_CHUNK(2));
-				result_mul ^= chunk2;
-				ulong2 chunk3 = as_ulong2(SCRATCHPAD_CHUNK(3));
-				SCRATCHPAD_CHUNK(1) = as_uint4(chunk3 + ((ulong2 *)(b_x + 1))[0]);
-				SCRATCHPAD_CHUNK(2) = as_uint4(chunk1 + ((ulong2 *)b_x)[0]);
-            SCRATCHPAD_CHUNK(3) = as_uint4(chunk2 + ((ulong2 *)a)[0]);
-        }
-#endif
-			a[1] += result_mul.s1;
+			ulong2 chunk1 = as_ulong2(SCRATCHPAD_CHUNK(1)) ^ result_mul;
+			ulong2 chunk2 = as_ulong2(SCRATCHPAD_CHUNK(2));
+			result_mul ^= chunk2;
+			ulong2 chunk3 = as_ulong2(SCRATCHPAD_CHUNK(3));
+			SCRATCHPAD_CHUNK(1) = as_uint4(chunk3 + ((ulong2 *)(b_x + 1))[0]);
+			SCRATCHPAD_CHUNK(2) = as_uint4(chunk1 + ((ulong2 *)b_x)[0]);
+			SCRATCHPAD_CHUNK(3) = as_uint4(chunk2 + ((ulong2 *)a)[0]);
 			a[0] += result_mul.s0;
-
+			a[1] += result_mul.s1;
+#else
+			a[1] += c[0] * as_ulong2(tmp).s0;
+			a[0] += mul_hi(c[0], as_ulong2(tmp).s0);
+#endif
 // cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2
 #if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10)
 
@@ -740,7 +738,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #	if(ALGO == 6 || ALGO == 10)
 			uint2 ipbc_tmp = tweak1_2 ^ ((uint2 *)&(a[0]))[0];
 			((uint2 *)&(a[1]))[0] ^= ipbc_tmp;
-        SCRATCHPAD_CHUNK(0) = ((uint4 *)a)[0];
+			SCRATCHPAD_CHUNK(0) = ((uint4 *)a)[0];
 			((uint2 *)&(a[1]))[0] ^= ipbc_tmp;
 #	else
 			((uint2 *)&(a[1]))[0] ^= tweak1_2;
@@ -753,7 +751,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #endif
 
         ((uint4 *)a)[0] ^= tmp;
-    
+
 // cryptonight_monero_v8
 #if (ALGO == 11)
 #	if defined(__NV_CL_C_VERSION)
@@ -769,7 +767,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #if (ALGO == 4 || ALGO == 10)
 			long n = *((__global long*)(Scratchpad + (IDX((idx0) >> 4))));
 			int d = ((__global int*)(Scratchpad + (IDX((idx0) >> 4))))[2];
-                long q = fast_div_heavy(n, d | 0x5);
+            long q = fast_div_heavy(n, d | 0x5);
 			*((__global long*)(Scratchpad + (IDX((idx0) >> 4)))) = n ^ q;
 			idx0 = (d ^ q) & MASK;
 // cryptonight_haven
@@ -813,7 +811,7 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
     __local uint4 xin1[8][8];
     __local uint4 xin2[8][8];
 #endif
-        
+
 #if(COMP_MODE==1)
     // do not use early return here
     if(gIdx < Threads)
@@ -823,7 +821,7 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #if(STRIDED_INDEX==0)
         Scratchpad += gIdx * (MEMORY >> 4);
 #elif(STRIDED_INDEX==1)
-        Scratchpad += gIdx;
+		Scratchpad += gIdx;
 #elif(STRIDED_INDEX==2)
         Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + MEM_CHUNK * (gIdx % WORKSIZE);
 #endif
