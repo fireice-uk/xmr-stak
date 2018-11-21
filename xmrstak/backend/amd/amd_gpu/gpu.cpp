@@ -43,7 +43,6 @@
 #endif
 
 
-
 #ifdef _WIN32
 #include <windows.h>
 #include <Shlobj.h>
@@ -412,12 +411,12 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 
 		std::string options;
 		options += " -DITERATIONS=" + std::to_string(hashIterations);
-		options += " -DMASK=" + std::to_string(threadMemMask);
-		options += " -DWORKSIZE=" + std::to_string(ctx->workSize);
+		options += " -DMASK=" + std::to_string(threadMemMask) + "U";
+		options += " -DWORKSIZE=" + std::to_string(ctx->workSize) + "U";
 		options += " -DSTRIDED_INDEX=" + std::to_string(strided_index);
-		options += " -DMEM_CHUNK_EXPONENT=" + std::to_string(mem_chunk_exp);
+		options += " -DMEM_CHUNK_EXPONENT=" + std::to_string(mem_chunk_exp) + "U";
 		options += " -DCOMP_MODE=" + std::to_string(ctx->compMode ? 1u : 0u);
-		options += " -DMEMORY=" + std::to_string(hashMemSize);
+		options += " -DMEMORY=" + std::to_string(hashMemSize) + "LLU";
 		options += " -DALGO=" + std::to_string(miner_algo[ii]);
 		options += " -DCN_UNROLL=" + std::to_string(ctx->unroll);
 		/* AMD driver output is something like: `1445.5 (VM)`

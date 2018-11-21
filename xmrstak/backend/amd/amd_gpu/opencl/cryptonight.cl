@@ -636,7 +636,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 	if(gIdx < Threads)
 #endif
     {
-		ulong idx0 = a[0] & MASK;
+		uint idx0 = as_uint2(a[0]).s0 & MASK;
 
 		#pragma unroll CN_UNROLL
     for(int i = 0; i < ITERATIONS; ++i)
@@ -644,7 +644,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			ulong c[2];
 // cryptonight_monero_v8 && NVIDIA
 #if(ALGO==11 && defined(__NV_CL_C_VERSION))
-			ulong idxS = idx0 & 0x30;
+			uint idxS = idx0 & 0x30U;
  			*scratchpad_line = SCRATCHPAD_CHUNK_GLOBAL;
 #endif
 
@@ -680,23 +680,23 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #	endif
 			b_x[0].s2 ^= ((table >> index) & 0x30U) << 24;
 			SCRATCHPAD_CHUNK(0) = b_x[0];
-			idx0 = c[0] & MASK;
+			idx0 = as_uint2(c[0]).s0 & MASK;
 // cryptonight_monero_v8
 #elif(ALGO==11)
 			SCRATCHPAD_CHUNK(0) = b_x[0] ^ ((uint4 *)c)[0];
 #	ifdef __NV_CL_C_VERSION
 			// flush shuffled data
 			SCRATCHPAD_CHUNK_GLOBAL = *scratchpad_line;
- 			idx0 = c[0] & MASK;
+ 			idx0 = as_uint2(c[0]).s0 & MASK;
  			idxS = idx0 & 0x30;
  			*scratchpad_line = SCRATCHPAD_CHUNK_GLOBAL;
 #	else
-			idx0 = c[0] & MASK;
+			idx0 = as_uint2(c[0]).s0 & MASK;
 #	endif
 #else
 			b_x[0] ^= ((uint4 *)c)[0];
 			SCRATCHPAD_CHUNK(0) = b_x[0];
-			idx0 = c[0] & MASK;
+			idx0 = as_uint2(c[0]).s0 & MASK;
 #endif
 			uint4 tmp;
 			tmp = SCRATCHPAD_CHUNK(0);
@@ -763,7 +763,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			b_x[1] = b_x[0];
 #endif
 			b_x[0] = ((uint4 *)c)[0];
-			idx0 = a[0] & MASK;
+			idx0 = as_uint2(a[0]).s0 & MASK;
 
 // cryptonight_heavy || cryptonight_bittube2
 #if (ALGO == 4 || ALGO == 10)
@@ -771,14 +771,14 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			int d = ((__global int*)(Scratchpad + (IDX((idx0) >> 4))))[2];
                 long q = fast_div_heavy(n, d | 0x5);
 			*((__global long*)(Scratchpad + (IDX((idx0) >> 4)))) = n ^ q;
-			idx0 = (d ^ q) & MASK;
+			idx0 = (d ^ as_int2(q).s0) & MASK;
 // cryptonight_haven
 #elif (ALGO == 9)
 			long n = *((__global long*)(Scratchpad + (IDX((idx0) >> 4))));
 			int d = ((__global int*)(Scratchpad + (IDX((idx0) >> 4))))[2];
 			long q = fast_div_heavy(n, d | 0x5);
 			*((__global long*)(Scratchpad + (IDX((idx0) >> 4)))) = n ^ q;
-			idx0 = ((~d) ^ q) & MASK;
+			idx0 = ((~d) ^ as_int2(q).s0) & MASK;
 #endif
 
     }
