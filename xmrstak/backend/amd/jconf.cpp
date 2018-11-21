@@ -137,9 +137,9 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	else
 		cfg.stridedIndex = (int)stridedIndex->GetInt64();
 
-	if(cfg.stridedIndex > 2)
+	if(cfg.stridedIndex > 3)
 	{
-		printer::inst()->print_msg(L0, "ERROR: strided_index must be smaller than 2");
+		printer::inst()->print_msg(L0, "ERROR: strided_index must be smaller than 3");
 		return false;
 	}
 
