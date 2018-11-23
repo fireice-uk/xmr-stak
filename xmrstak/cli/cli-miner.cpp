@@ -55,6 +55,14 @@
 #	include "xmrstak/misc/uac.hpp"
 #endif // _WIN32
 
+#include <csignal>
+
+// exit miner if we receive a signal e.g. CTRL+C
+void signal_handler(int signal)
+{
+	executor::inst()->shutdown();
+}
+
 int do_benchmark(int block_version, int wait_sec, int work_sec);
 
 void help()
@@ -747,6 +755,10 @@ int main(int argc, char *argv[])
 	if(strlen(jconf::inst()->GetOutputFile()) != 0)
 		printer::inst()->open_logfile(jconf::inst()->GetOutputFile());
 
+	std::signal(SIGINT, signal_handler);
+	std::signal(SIGABRT, signal_handler);
+	std::signal(SIGTERM, signal_handler);
+
 	if (!BackendConnector::self_test())
 	{
 		printer::inst()->print_msg(L0, "Self test not passed!");
@@ -788,6 +800,7 @@ int main(int argc, char *argv[])
 	printer::inst()->print_str("'h' - hashrate\n");
 	printer::inst()->print_str("'r' - results\n");
 	printer::inst()->print_str("'c' - connection\n");
+	printer::inst()->print_str("'q' - shutdown/exit\n");
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_str("Upcoming xmr-stak-gui is sponsored by:\n");
 	printer::inst()->print_str("   #####   ______               ____\n");
@@ -809,24 +822,37 @@ int main(int argc, char *argv[])
 		return do_benchmark(params::inst().benchmark_block_version, params::inst().benchmark_wait_sec, params::inst().benchmark_work_sec);
 	}
 
-	executor::inst()->ex_start(jconf::inst()->DaemonMode());
+	auto exec = executor::inst();
+	exec->ex_start(jconf::inst()->DaemonMode());
+	if(jconf::inst()->DaemonMode())
+	{
+		executor::inst()->shutdown();
+		return 0;
+	}
 
 	uint64_t lastTime = get_timestamp_ms();
 	int key;
-	while(true)
+	bool stopMiner = false;
+
+	
+	bool forceQuit = false;
+	while(!forceQuit && !exec->isShutdownFinished())
 	{
 		key = get_key();
-
 		switch(key)
 		{
 		case 'h':
-			executor::inst()->push_event(ex_event(EV_USR_HASHRATE));
+			exec->push_event(ex_event(EV_USR_HASHRATE));
 			break;
 		case 'r':
-			executor::inst()->push_event(ex_event(EV_USR_RESULTS));
+			exec->push_event(ex_event(EV_USR_RESULTS));
 			break;
 		case 'c':
-			executor::inst()->push_event(ex_event(EV_USR_CONNSTAT));
+			exec->push_event(ex_event(EV_USR_CONNSTAT));
+			break;
+		case 'q':
+			exec->push_event(ex_event(EV_USR_SHUTDOWN));
+			forceQuit = true;
 			break;
 		default:
 			break;
@@ -839,7 +865,8 @@ int main(int argc, char *argv[])
 			std::this_thread::sleep_for(std::chrono::milliseconds(500 - (currentTime - lastTime)));
 		lastTime = currentTime;
 	}
-
+	
+	exec->shutdown();
 	return 0;
 }
 

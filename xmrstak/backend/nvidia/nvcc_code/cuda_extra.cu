@@ -331,6 +331,22 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	return 1;
 }
 
+extern "C" void cryptonight_extra_cpu_finalize(nvid_ctx *ctx)
+{
+	CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_state));
+	CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_state2));
+	CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_key1));
+	CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_key2));
+	CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_text));
+	CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_a));
+	CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_ctx_b));
+	CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_input));
+	CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_result_count));
+	CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_result_nonce));
+	CUDA_CHECK(ctx->device_id, cudaFree(ctx->d_long_state));
+	CUDA_CHECK(ctx->device_id, cudaDeviceReset());
+}
+
 extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, xmrstak_algo miner_algo)
 {
 	int threadsperblock = 128;

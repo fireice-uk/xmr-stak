@@ -22,6 +22,7 @@
   */
 
 #include "xmrstak/misc/console.hpp"
+#include "xmrstak/misc/executor.hpp"
 
 #include <time.h>
 #include <stdio.h>
@@ -212,6 +213,7 @@ void printer::print_str(const char* str)
 #ifdef _WIN32
 void win_exit(int code)
 {
+	executor::inst()->shutdown();
 	size_t envSize = 0;
 	getenv_s(&envSize, nullptr, 0, "XMRSTAK_NOWAIT");
 	if(envSize == 0)
@@ -225,6 +227,7 @@ void win_exit(int code)
 #else
 void win_exit(int code)
 {
+	executor::inst()->shutdown();
 	std::exit(code);
 }
 #endif // _WIN32

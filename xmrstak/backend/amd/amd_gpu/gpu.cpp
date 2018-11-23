@@ -611,6 +611,36 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	return 0;
 }
 
+void FinalizeOpenCL(GpuContext* ctx)
+{
+	xmrstak_algo miner_algo[2] = {
+		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo(),
+		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot()
+	};
+	int num_algos = miner_algo[0] == miner_algo[1] ? 1 : 2;
+
+	for(int ii = 0; ii < num_algos; ++ii)
+	{
+		if(ii == 0)
+			for(int i = 0; i < 7; ++i)
+				clReleaseKernel(ctx->Kernels[ii][i]);
+		else
+			for(int i = 0; i < 3; ++i)
+				clReleaseKernel(ctx->Kernels[ii][i]);
+	}
+
+	for(size_t i = 0; i < 6; ++i)
+		clReleaseMemObject(ctx->ExtraBuffers[i]);
+	clReleaseMemObject(ctx->InputBuffer);
+	clReleaseMemObject(ctx->OutputBuffer);
+	
+	for(size_t i = 0; i < 2; ++i)
+		clReleaseProgram(ctx->Program[i]);
+
+	clReleaseCommandQueue(ctx->CommandQueues);
+	clReleaseDevice(ctx->DeviceID);
+}
+
 const cl_platform_info attributeTypes[5] = {
 	CL_PLATFORM_NAME,
 	CL_PLATFORM_VENDOR,

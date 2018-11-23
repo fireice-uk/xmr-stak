@@ -52,8 +52,6 @@ private:
 	int64_t affinity;
 
 	nvid_ctx ctx;
-
-	bool bQuit;
 };
 
 } // namespace nvidia

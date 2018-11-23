@@ -666,26 +666,30 @@ void minethd::prep_multiway_work(uint8_t *bWorkBlob, uint32_t **piNonce)
 template<uint32_t N>
 void minethd::multiway_work_main()
 {
-	if(affinity >= 0) //-1 means no affinity
-		bindMemoryToNUMANode(affinity);
-
-	order_fix.set_value();
-	std::unique_lock<std::mutex> lck(thd_aff_set);
-	lck.release();
-	std::this_thread::yield();
-
 	cryptonight_ctx *ctx[MAX_N];
-	uint64_t iCount = 0;
-	uint64_t *piHashVal[MAX_N];
-	uint32_t *piNonce[MAX_N];
-	uint8_t bHashOut[MAX_N * 32];
-	uint8_t bWorkBlob[sizeof(miner_work::bWorkBlob) * MAX_N];
-	uint32_t iNonce;
-	job_result res;
-
-	for (size_t i = 0; i < N; i++)
+	for(size_t i = 0; i < MAX_N; ++i)
+		ctx[i] = nullptr;
+	try
 	{
-		ctx[i] = minethd_alloc_ctx();
+		if(affinity >= 0) //-1 means no affinity
+			bindMemoryToNUMANode(affinity);
+		order_fix.set_value();
+		std::unique_lock<std::mutex> lck(thd_aff_set);
+		lck.release();
+		std::this_thread::yield();
+
+		
+		uint64_t iCount = 0;
+		uint64_t *piHashVal[MAX_N];
+		uint32_t *piNonce[MAX_N];
+		uint8_t bHashOut[MAX_N * 32];
+		uint8_t bWorkBlob[sizeof(miner_work::bWorkBlob) * MAX_N];
+		uint32_t iNonce;
+		job_result res;
+
+		for (size_t i = 0; i < N; i++)
+		{
+			ctx[i] = minethd_alloc_ctx();
 		if(ctx[i] == nullptr)
 		{
 			printer::inst()->print_msg(L0, "ERROR: miner was not able to allocate memory.");
@@ -693,107 +697,124 @@ void minethd::multiway_work_main()
 				cryptonight_free_ctx(ctx[j]);
 			win_exit(1);
 		}
-		piHashVal[i] = (uint64_t*)(bHashOut + 32 * i + 24);
-		piNonce[i] = (i == 0) ? (uint32_t*)(bWorkBlob + 39) : nullptr;
-	}
-
-	if(!oWork.bStall)
-		prep_multiway_work<N>(bWorkBlob, piNonce);
-
-	globalStates::inst().iConsumeCnt++;
-
-	// start with root algorithm and switch later if fork version is reached
-	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
-	cn_hash_fun hash_fun_multi = func_multi_selector<N>(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
-	uint8_t version = 0;
-	size_t lastPoolId = 0;
-
-	while (bQuit == 0)
-	{
-		if (oWork.bStall)
-		{
-			/*	We are stalled here because the executor didn't find a job for us yet,
-			either because of network latency, or a socket problem. Since we are
-			raison d'etre of this software it us sensible to just wait until we have something*/
-
-			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-			globalStates::inst().consume_work(oWork, iJobNo);
-			prep_multiway_work<N>(bWorkBlob, piNonce);
-			continue;
+			piHashVal[i] = (uint64_t*)(bHashOut + 32 * i + 24);
+			piNonce[i] = (i == 0) ? (uint32_t*)(bWorkBlob + 39) : nullptr;
 		}
 
-		constexpr uint32_t nonce_chunk = 4096;
-		int64_t nonce_ctr = 0;
+		if(!oWork.bStall)
+			prep_multiway_work<N>(bWorkBlob, piNonce);
 
-		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
+		globalStates::inst().iConsumeCnt++;
 
-		if(oWork.bNiceHash)
-			iNonce = *piNonce[0];
+		// start with root algorithm and switch later if fork version is reached
+		auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
+		cn_hash_fun hash_fun_multi = func_multi_selector<N>(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
+		uint8_t version = 0;
+		size_t lastPoolId = 0;
 
-		uint8_t new_version = oWork.getVersion();
-		if(new_version != version || oWork.iPoolId != lastPoolId)
+		while(!bQuit)
 		{
-			coinDescription coinDesc = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(oWork.iPoolId);
-			if(new_version >= coinDesc.GetMiningForkVersion())
+			if (oWork.bStall)
 			{
-				miner_algo = coinDesc.GetMiningAlgo();
-				hash_fun_multi = func_multi_selector<N>(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
+				/*	We are stalled here because the executor didn't find a job for us yet,
+				either because of network latency, or a socket problem. Since we are
+				raison d'etre of this software it us sensible to just wait until we have something*/
+
+				while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+					std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+				globalStates::inst().consume_work(oWork, iJobNo);
+				prep_multiway_work<N>(bWorkBlob, piNonce);
+				continue;
 			}
 			else
 			{
-				miner_algo = coinDesc.GetMiningAlgoRoot();
-				hash_fun_multi = func_multi_selector<N>(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
-			}
-			lastPoolId = oWork.iPoolId;
-			version = new_version;
-		}
-
-		while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
-		{
-			if ((iCount++ & 0x7) == 0)  //Store stats every 8*N hashes
-			{
-				uint64_t iStamp = get_timestamp_ms();
-				iHashCount.store(iCount * N, std::memory_order_relaxed);
-				iTimestamp.store(iStamp, std::memory_order_relaxed);
+				globalStates::inst().consume_work(oWork, iJobNo);
+				prep_multiway_work<N>(bWorkBlob, piNonce);
 			}
 
-			nonce_ctr -= N;
-			if(nonce_ctr <= 0)
+			constexpr uint32_t nonce_chunk = 4096;
+			int64_t nonce_ctr = 0;
+
+			assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
+
+			if(oWork.bNiceHash)
+				iNonce = *piNonce[0];
+
+			uint8_t new_version = oWork.getVersion();
+			if(new_version != version || oWork.iPoolId != lastPoolId)
 			{
-				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, nonce_chunk);
-				nonce_ctr = nonce_chunk;
-				// check if the job is still valid, there is a small posibility that the job is switched
-				if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo)
-					break;
-			}
-
-			for (size_t i = 0; i < N; i++)
-				*piNonce[i] = iNonce++;
-
-			hash_fun_multi(bWorkBlob, oWork.iWorkSize, bHashOut, ctx);
-
-			for (size_t i = 0; i < N; i++)
-			{
-				if (*piHashVal[i] < oWork.iTarget)
+				coinDescription coinDesc = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(oWork.iPoolId);
+				if(new_version >= coinDesc.GetMiningForkVersion())
 				{
-					executor::inst()->push_event(
-						ex_event(job_result(oWork.sJobID, iNonce - N + i, bHashOut + 32 * i, iThreadNo, miner_algo),
-						oWork.iPoolId)
-					);
+					miner_algo = coinDesc.GetMiningAlgo();
+					hash_fun_multi = func_multi_selector<N>(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
 				}
+				else
+				{
+					miner_algo = coinDesc.GetMiningAlgoRoot();
+					hash_fun_multi = func_multi_selector<N>(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
+				}
+				lastPoolId = oWork.iPoolId;
+				version = new_version;
 			}
 
-			std::this_thread::yield();
+			while(!bQuit && globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			{
+				if ((iCount++ & 0x7) == 0)  //Store stats every 8*N hashes
+				{
+					uint64_t iStamp = get_timestamp_ms();
+					iHashCount.store(iCount * N, std::memory_order_relaxed);
+					iTimestamp.store(iStamp, std::memory_order_relaxed);
+				}
+
+				nonce_ctr -= N;
+				if(nonce_ctr <= 0)
+				{
+					globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, nonce_chunk);
+					nonce_ctr = nonce_chunk;
+					// check if the job is still valid, there is a small posibility that the job is switched
+					if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo)
+						break;
+				}
+
+				for (size_t i = 0; i < N; i++)
+					*piNonce[i] = iNonce++;
+
+				hash_fun_multi(bWorkBlob, oWork.iWorkSize, bHashOut, ctx);
+
+				for (size_t i = 0; i < N; i++)
+				{
+					if (*piHashVal[i] < oWork.iTarget)
+					{
+						executor::inst()->push_event(
+							ex_event(job_result(oWork.sJobID, iNonce - N + i, bHashOut + 32 * i, iThreadNo, miner_algo),
+							oWork.iPoolId)
+						);
+					}
+				}
+
+				std::this_thread::yield();
+			}
 		}
 
-		globalStates::inst().consume_work(oWork, iJobNo);
-		prep_multiway_work<N>(bWorkBlob, piNonce);
+	}
+	catch(...)
+	{
+		win_exit(1);
 	}
 
-	for (int i = 0; i < N; i++)
-		cryptonight_free_ctx(ctx[i]);
+	try
+	{
+		for (int i = 0; i < N; i++)
+			cryptonight_free_ctx(ctx[i]);
+	}
+	catch(...)
+	{
+		win_exit(1);
+	}
+	shutdownFinished = true;
+
 }
 
 } // namespace cpu

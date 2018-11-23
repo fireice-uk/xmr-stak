@@ -58,7 +58,6 @@ private:
 	std::thread oWorkThd;
 	int64_t affinity;
 
-	bool bQuit;
 	bool bNoPrefetch;
 	std::string asm_version_str = "off";
 };

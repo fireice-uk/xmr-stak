@@ -42,8 +42,13 @@ public:
 
 	inline void push_event(ex_event&& ev) { oEventQ.push(std::move(ev)); }
 	void push_timed_event(ex_event&& ev, size_t sec);
+	void shutdown();
+	bool isShutdownFinished();
+
 
 private:
+	bool bQuit = false;
+	bool shutdownFinished = false;
 	struct timed_event
 	{
 		ex_event event;
@@ -77,7 +82,7 @@ private:
 	thdq<ex_event> oEventQ;
 
 	xmrstak::telemetry* telem;
-	std::vector<xmrstak::iBackend*>* pvThreads;
+	std::vector<xmrstak::iBackend*>* pvThreads = nullptr;
 
 	size_t current_pool_id = invalid_pool_id;
 	size_t last_usr_pool_id = invalid_pool_id;
