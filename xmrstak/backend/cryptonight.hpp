@@ -17,8 +17,8 @@ enum xmrstak_algo
 	cryptonight_haven = 9, // equal to cryptonight_heavy with a small tweak
 	cryptonight_bittube2 = 10, // derived from cryptonight_heavy with own aes-round implementation and minor other tweaks
 	cryptonight_monero_v8 = 11,
-	cryptonight_electronero = 12, //equal to cryptonight_monero but with less iterations, used by electronero
-	cryptonight_pulse = 13 //equal to cryptonight_electronero, used by electronero pulse
+	cryptonight_electronero = 13, //equal to cryptonight_monero but with less iterations, used by electronero
+	cryptonight_pulse = 14 //equal to cryptonight_electronero, used by electronero pulse
 };
 
 // define aeon settings
