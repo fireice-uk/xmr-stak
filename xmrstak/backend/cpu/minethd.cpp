@@ -541,10 +541,10 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		algv = 10;
 		break;
 	case cryptonight_electronero:
-		algv = 11;
+		algv = 12;
 		break;
 	case cryptonight_pulse:
-		algv = 12;
+		algv = 13;
 		break;
 	default:
 		algv = 2;
