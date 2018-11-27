@@ -18,6 +18,7 @@
 #include "xmrstak/picosha2/picosha2.hpp"
 #include "xmrstak/params.hpp"
 #include "xmrstak/version.hpp"
+#include "xmrstak/net/msgstruct.hpp"
 
 #include <stdio.h>
 #include <string.h>
@@ -34,6 +35,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <thread>
 
 #if defined _MSC_VER
 #include <direct.h>
@@ -730,11 +732,21 @@ std::vector<GpuContext> getAMDDevices(int index)
 				continue;
 			}
 
+			std::vector<char> openCLDriverVer(1024);
+			if((clStatus = clGetDeviceInfo(device_list[k], CL_DRIVER_VERSION, openCLDriverVer.size(), openCLDriverVer.data(), NULL)) != CL_SUCCESS)
+			{
+				printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DRIVER_VERSION for device %u.", err_to_str(clStatus), k);
+				continue;
+			}
+
+			bool isHSAOpenCL = std::string(openCLDriverVer.data()).find("HSA") != std::string::npos;
+
 			// if environment variable GPU_SINGLE_ALLOC_PERCENT is not set we can not allocate the full memory
 			ctx.deviceIdx = k;
 			ctx.freeMem = std::min(ctx.freeMem, maxMem);
 			ctx.name = std::string(devNameVec.data());
 			ctx.DeviceID = device_list[k];
+			ctx.interleave = 40;
 			printer::inst()->print_msg(L0,"Found OpenCL GPU %s.",ctx.name.c_str());
 			ctxVec.push_back(ctx);
 		}
@@ -936,8 +948,27 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	// create a directory  for the OpenCL compile cache
 	create_directory(get_home() + "/.openclcache");
 
+	std::vector<std::shared_ptr<InterleaveData>> interleaveData(num_gpus, nullptr);
+
 	for(int i = 0; i < num_gpus; ++i)
 	{
+		const size_t devIdx = ctx[i].deviceIdx;
+		if(interleaveData.size() <= devIdx)
+		{
+			interleaveData.resize(devIdx + 1u, nullptr);
+		}
+		if(!interleaveData[devIdx])
+		{
+			interleaveData[devIdx].reset(new InterleaveData{});
+			interleaveData[devIdx]->lastRunTimeStamp = get_timestamp_ms();
+
+		}
+		ctx[i].idWorkerOnDevice=interleaveData[devIdx]->numThreadsOnGPU;
+		++interleaveData[devIdx]->numThreadsOnGPU;
+		ctx[i].interleaveData = interleaveData[devIdx];
+		ctx[i].interleaveData->adjustThreshold = static_cast<double>(ctx[i].interleave)/100.0;
+		ctx[i].interleaveData->startAdjustThreshold = ctx[i].interleaveData->adjustThreshold;
+
 		const std::string backendName = xmrstak::params::inst().openCLVendor;
 		if( (ctx[i].stridedIndex == 2 || ctx[i].stridedIndex == 3) && (ctx[i].rawIntensity % ctx[i].workSize) != 0)
 		{
@@ -1124,6 +1155,91 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 	}
 
 	return ERR_SUCCESS;
+}
+
+void updateTimings(GpuContext* ctx, const uint64_t t)
+{
+    // averagingBias = 1.0 - only the last delta time is taken into account
+    // averagingBias = 0.5 - the last delta time has the same weight as all the previous ones combined
+    // averagingBias = 0.1 - the last delta time has 10% weight of all the previous ones combined
+    const double averagingBias = 0.1;
+
+    {
+		int64_t t2 = get_timestamp_ms();
+		std::lock_guard<std::mutex> g(ctx->interleaveData->mutex);
+		// 20000 mean that something went wrong an we reset the average
+		if(ctx->interleaveData->avgKernelRuntime == 0.0 || ctx->interleaveData->avgKernelRuntime > 20000.0)
+			ctx->interleaveData->avgKernelRuntime = (t2 - t);
+		else
+			ctx->interleaveData->avgKernelRuntime = ctx->interleaveData->avgKernelRuntime * (1.0 - averagingBias) + (t2 - t) * averagingBias;
+    }
+}
+
+uint64_t interleaveAdjustDelay(GpuContext* ctx)
+{
+	uint64_t t0 = get_timestamp_ms();
+
+	if(ctx->interleaveData->numThreadsOnGPU > 1 && ctx->interleaveData->adjustThreshold > 0.0)
+    {
+		t0 = get_timestamp_ms();
+		std::unique_lock<std::mutex> g(ctx->interleaveData->mutex);
+
+		int64_t delay = 0;
+        double dt = 0.0;
+
+		if(t0 > ctx->interleaveData->lastRunTimeStamp)
+			dt = static_cast<double>(t0 - ctx->interleaveData->lastRunTimeStamp);
+
+		const double avgRuntime = ctx->interleaveData->avgKernelRuntime;
+		const double optimalTimeOffset = avgRuntime * ctx->interleaveData->adjustThreshold;
+
+		// threshold where the the auto adjustment is disabled
+		constexpr uint32_t maxDelay = 10;
+		constexpr double maxAutoAdjust = 0.05;
+
+		if((dt > 0) && (dt < optimalTimeOffset))
+		{
+            delay = static_cast<int64_t>((optimalTimeOffset  - dt));
+			if(ctx->lastDelay == delay && delay > maxDelay)
+				ctx->interleaveData->adjustThreshold -= 0.001;
+			// if the delay doubled than increase the adjustThreshold
+			else if(delay > 1 && ctx->lastDelay * 2 < delay)
+				ctx->interleaveData->adjustThreshold += 0.001;
+			ctx->lastDelay = delay;
+
+			// this is std::clamp which is available in c++17
+			ctx->interleaveData->adjustThreshold = std::max(
+				std::max(ctx->interleaveData->adjustThreshold, ctx->interleaveData->startAdjustThreshold - maxAutoAdjust),
+				std::min(ctx->interleaveData->adjustThreshold, ctx->interleaveData->startAdjustThreshold + maxAutoAdjust)
+			);
+			// avoid that the auto adjustment is disable interleaving
+			ctx->interleaveData->adjustThreshold = std::max(
+				ctx->interleaveData->adjustThreshold,
+				0.001
+			);
+		}
+		delay = std::max(int64_t(0), delay);
+
+		ctx->interleaveData->lastRunTimeStamp = t0 + delay;
+
+		g.unlock();
+		if(delay > 0)
+		{
+			// do not notify the user anymore if we reach a good delay
+			if(delay > maxDelay)
+				printer::inst()->print_msg(L1,"OpenCL Interleave %u|%u: %u/%.2lf ms - %.1lf",
+					ctx->deviceIdx,
+					ctx->idWorkerOnDevice,
+					static_cast<uint32_t>(delay),
+					avgRuntime,
+					ctx->interleaveData->adjustThreshold * 100.
+				);
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+		}
+    }
+
+    return t0;
 }
 
 size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo)

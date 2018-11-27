@@ -100,6 +100,7 @@ bool minethd::init_gpus()
 		vGpuData[i].memChunk = cfg.memChunk;
 		vGpuData[i].compMode = cfg.compMode;
 		vGpuData[i].unroll = cfg.unroll;
+		vGpuData[i].interleave = cfg.interleave;
 	}
 
 	return InitOpenCL(vGpuData.data(), n, jconf::inst()->GetPlatformIdx()) == ERR_SUCCESS;
@@ -242,6 +243,7 @@ void minethd::work_main()
 					break;
 			}
 
+			uint64_t t0 = interleaveAdjustDelay(pGpuCtx);
 
 			cl_uint results[0x100];
 			memset(results,0,sizeof(cl_uint)*(0x100));
@@ -269,6 +271,9 @@ void minethd::work_main()
 			uint64_t iStamp = get_timestamp_ms();
 			iHashCount.store(iCount, std::memory_order_relaxed);
 			iTimestamp.store(iStamp, std::memory_order_relaxed);
+
+			updateTimings(pGpuCtx, t0);
+
 			std::this_thread::yield();
 		}
 
