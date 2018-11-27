@@ -41,6 +41,8 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 - [Aeon](http://www.aeon.cash)
 - [BBSCoin](https://www.bbscoin.xyz)
 - [BitTube](https://coin.bit.tube/)
+- [Electronero](https://electronero.org/)
+- [Electronero Pulse](https://electroneropulse.org/)
 - [Graft](https://www.graft.network)
 - [Haven](https://havenprotocol.com)
 - [Intense](https://intensecoin.com)

@@ -475,7 +475,7 @@ inline void cryptonight_monero_tweak(uint64_t* mem_out, __m128i tmp)
 
 	uint8_t x = static_cast<uint8_t>(vh >> 24);
 	static const uint16_t table = 0x7531;
-	if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
+	if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2 || ALGO == cryptonight_electronero || ALGO == cryptonight_pulse)
 	{
 		const uint8_t index = (((x >> 3) & 6) | (x & 1)) << 1;
 		vh ^= ((table >> index) & 0x3) << 28;
@@ -596,7 +596,7 @@ inline void set_float_rounding_mode()
 	}
 
 #define CN_INIT_SINGLE \
-	if((ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2) && len < 43) \
+	if((ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2 || ALGO == cryptonight_electronero || ALGO == cryptonight_pulse) && len < 43) \
 	{ \
 		memset(output, 0, 32 * N); \
 		return; \
@@ -605,7 +605,7 @@ inline void set_float_rounding_mode()
 #define CN_INIT(n, monero_const, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm) \
 	keccak((const uint8_t *)input + len * n, len, ctx[n]->hash_state, 200); \
 	uint64_t monero_const; \
-	if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2) \
+	if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2 || ALGO == cryptonight_electronero || ALGO == cryptonight_pulse) \
 	{ \
 		monero_const =  *reinterpret_cast<const uint64_t*>(reinterpret_cast<const uint8_t*>(input) + len * n + 35); \
 		monero_const ^=  *(reinterpret_cast<const uint64_t*>(ctx[n]->hash_state) + 24); \
@@ -655,7 +655,7 @@ inline void set_float_rounding_mode()
 	CN_MONERO_V8_SHUFFLE_0(n, l0, idx0, ax0, bx0, bx1)
 
 #define CN_STEP2(n, monero_const, l0, ax0, bx0, idx0, ptr0, cx) \
-	if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2) \
+	if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2 || ALGO == cryptonight_electronero || ALGO == cryptonight_pulse) \
 		cryptonight_monero_tweak<ALGO>((uint64_t*)ptr0, _mm_xor_si128(bx0, cx)); \
 	else \
 		_mm_store_si128((__m128i *)ptr0, _mm_xor_si128(bx0, cx)); \
@@ -691,7 +691,7 @@ inline void set_float_rounding_mode()
 		_mm_prefetch((const char*)ptr0, _MM_HINT_T0)
 
 #define CN_STEP4(n, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0) \
-	if (ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2) \
+	if (ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2 || ALGO == cryptonight_electronero || ALGO == cryptonight_pulse) \
 	{ \
 		if (ALGO == cryptonight_ipbc || ALGO == cryptonight_bittube2) \
 			((uint64_t*)ptr0)[1] = ah0 ^ monero_const ^ ((uint64_t*)ptr0)[0]; \

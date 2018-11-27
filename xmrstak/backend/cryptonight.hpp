@@ -16,7 +16,9 @@ enum xmrstak_algo
 	cryptonight_masari = 8, //equal to cryptonight_monero but with less iterations, used by masari
 	cryptonight_haven = 9, // equal to cryptonight_heavy with a small tweak
 	cryptonight_bittube2 = 10, // derived from cryptonight_heavy with own aes-round implementation and minor other tweaks
-	cryptonight_monero_v8 = 11
+	cryptonight_monero_v8 = 11,
+	cryptonight_electronero = 12, //equal to cryptonight_monero but with less iterations, used by electronero
+	cryptonight_pulse = 13 //equal to cryptonight_electronero, used by electronero pulse
 };
 
 // define aeon settings
@@ -33,6 +35,10 @@ constexpr uint32_t CRYPTONIGHT_HEAVY_MASK = 0x3FFFF0;
 constexpr uint32_t CRYPTONIGHT_HEAVY_ITER = 0x40000;
 
 constexpr uint32_t CRYPTONIGHT_MASARI_ITER = 0x40000;
+
+constexpr uint32_t CRYPTONIGHT_ELECTRONERO_ITER = 0x40000;
+
+constexpr uint32_t CRYPTONIGHT_PULSE_ITER = 0x40000;
 
 template<xmrstak_algo ALGO>
 inline constexpr size_t cn_select_memory() { return 0; }
@@ -70,10 +76,18 @@ inline constexpr size_t cn_select_memory<cryptonight_haven>() { return CRYPTONIG
 template<>
 inline constexpr size_t cn_select_memory<cryptonight_bittube2>() { return CRYPTONIGHT_HEAVY_MEMORY; }
 
+template<>
+inline constexpr size_t cn_select_memory<cryptonight_electronero>() { return CRYPTONIGHT_MEMORY; }
+
+template<>
+inline constexpr size_t cn_select_memory<cryptonight_pulse>() { return CRYPTONIGHT_MEMORY; }
+
 inline size_t cn_select_memory(xmrstak_algo algo)
 {
 	switch(algo)
 	{
+	case cryptonight_electronero:
+	case cryptonight_pulse:
 	case cryptonight_stellite:
 	case cryptonight_monero:
 	case cryptonight_monero_v8:
@@ -129,10 +143,18 @@ inline constexpr uint32_t cn_select_mask<cryptonight_haven>() { return CRYPTONIG
 template<>
 inline constexpr uint32_t cn_select_mask<cryptonight_bittube2>() { return CRYPTONIGHT_HEAVY_MASK; }
 
+template<>
+inline constexpr uint32_t cn_select_mask<cryptonight_electronero>() { return CRYPTONIGHT_MASK; }
+
+template<>
+inline constexpr uint32_t cn_select_mask<cryptonight_pulse>() { return CRYPTONIGHT_MASK; }
+
 inline size_t cn_select_mask(xmrstak_algo algo)
 {
 	switch(algo)
 	{
+	case cryptonight_electronero:
+	case cryptonight_pulse:
 	case cryptonight_stellite:
 	case cryptonight_monero:
 	case cryptonight_monero_v8:
@@ -188,10 +210,18 @@ inline constexpr uint32_t cn_select_iter<cryptonight_haven>() { return CRYPTONIG
 template<>
 inline constexpr uint32_t cn_select_iter<cryptonight_bittube2>() { return CRYPTONIGHT_HEAVY_ITER; }
 
+template<>
+inline constexpr uint32_t cn_select_iter<cryptonight_electronero>() { return CRYPTONIGHT_ELECTRONERO_ITER; }
+
+template<>
+inline constexpr uint32_t cn_select_iter<cryptonight_pulse>() { return CRYPTONIGHT_PULSE_ITER; }
+
 inline size_t cn_select_iter(xmrstak_algo algo)
 {
 	switch(algo)
 	{
+	case cryptonight_electronero:
+	case cryptonight_pulse:
 	case cryptonight_stellite:
 	case cryptonight_monero:
 	case cryptonight_monero_v8:

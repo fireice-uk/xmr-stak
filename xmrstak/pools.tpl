@@ -24,6 +24,8 @@ POOLCONF],
  *    aeon7 (use this for Aeon's new PoW)
  *    bbscoin (automatic switch with block version 3 to cryptonight_v7)
  *    bittube (uses cryptonight_bittube2 algorithm)
+ *    electronero - Electroneum hard fork
+ *    electronero pulse - Electronero hard fork 
  *    graft
  *    haven (automatic switch with block version 3 to cryptonight_haven)
  *    intense

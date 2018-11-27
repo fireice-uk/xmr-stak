@@ -395,6 +395,26 @@ bool minethd::self_test()
 			hashf("\x85\x19\xe0\x39\x17\x2b\x0d\x70\xe5\xca\x7b\x33\x83\xd6\xb3\x16\x73\x15\xa4\x22\x74\x7b\x73\xf0\x19\xcf\x95\x28\xf0\xfd\xe3\x41\xfd\x0f\x2a\x63\x03\x0b\xa6\x45\x05\x25\xcf\x6d\xe3\x18\x37\x66\x9a\xf6\xf1\xdf\x81\x31\xfa\xf5\x0a\xaa\xb8\xd3\xa7\x40\x55\x89", 64, out, ctx);
 			bResult = bResult && memcmp(out, "\x90\xdc\x65\x53\x8d\xb0\x00\xea\xa2\x52\xcd\xd4\x1c\x17\x7a\x64\xfe\xff\x95\x36\xe7\x71\x68\x35\xd4\xcf\x5c\x73\x56\xb1\x2f\xcd", 32) == 0;
 		}
+		else if(algo == cryptonight_electronero)
+		{
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_electronero);
+			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			bResult = bResult &&  memcmp(out, "\xbf\x5f\xd\xf3\x5a\x65\x7c\x89\xb0\x41\xcf\xf0\xd\x46\x6a\xb6\x30\xf9\x77\x7f\xd9\xc6\x3\xd7\x3b\xd8\xf1\xb5\x4b\x49\xed\x28", 32) == 0;
+
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_electronero);
+			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			bResult = bResult &&  memcmp(out, "\xbf\x5f\xd\xf3\x5a\x65\x7c\x89\xb0\x41\xcf\xf0\xd\x46\x6a\xb6\x30\xf9\x77\x7f\xd9\xc6\x3\xd7\x3b\xd8\xf1\xb5\x4b\x49\xed\x28", 32) == 0;
+		}
+		else if(algo == cryptonight_pulse)
+		{
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_pulse);
+			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			bResult = bResult &&  memcmp(out, "\xbf\x5f\xd\xf3\x5a\x65\x7c\x89\xb0\x41\xcf\xf0\xd\x46\x6a\xb6\x30\xf9\x77\x7f\xd9\xc6\x3\xd7\x3b\xd8\xf1\xb5\x4b\x49\xed\x28", 32) == 0;
+
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_pulse);
+			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			bResult = bResult &&  memcmp(out, "\xbf\x5f\xd\xf3\x5a\x65\x7c\x89\xb0\x41\xcf\xf0\xd\x46\x6a\xb6\x30\xf9\x77\x7f\xd9\xc6\x3\xd7\x3b\xd8\xf1\xb5\x4b\x49\xed\x28", 32) == 0;
+		}
 
 		if(!bResult)
 			printer::inst()->print_msg(L0,
@@ -520,6 +540,12 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 	case cryptonight_monero_v8:
 		algv = 10;
 		break;
+	case cryptonight_electronero:
+		algv = 11;
+		break;
+	case cryptonight_pulse:
+		algv = 12;
+		break;
 	default:
 		algv = 2;
 		break;
@@ -579,7 +605,17 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, false, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, true, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, false, true>,
-		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, true, true>
+		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, true, true>,
+		
+		Cryptonight_hash<N>::template hash<cryptonight_electronero, false, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_electronero, true, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_electronero, false, true>,
+		Cryptonight_hash<N>::template hash<cryptonight_electronero, true, true>,
+		
+		Cryptonight_hash<N>::template hash<cryptonight_pulse, false, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_pulse, true, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_pulse, false, true>,
+		Cryptonight_hash<N>::template hash<cryptonight_pulse, true, true>
 	};
 
 	std::bitset<2> digit;
