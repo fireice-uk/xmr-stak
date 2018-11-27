@@ -544,7 +544,7 @@ R"===(
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
 __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states, uint Threads
 // cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2  || cryptonight_electronero  || cryptonight_pulse
-#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10 || ALGO == 11 || ALGO == 12)
+#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10 || ALGO == 12 || ALGO == 13)
 , __global ulong *input
 #endif
 )
@@ -587,7 +587,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
     barrier(CLK_LOCAL_MEM_FENCE);
 // cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2 || cryptonight_electronero || cryptonight_pulse
-#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10 || ALGO == 11 || ALGO == 12)
+#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10 || ALGO == 12 || ALGO == 13)
     uint2 tweak1_2;
 #endif
 
@@ -624,7 +624,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 		sqrt_result = as_uint2(states[13]).s0;
 #endif
 // cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2 || cryptonight_electronero || cryptonight_pulse
-#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10 || ALGO == 11 || ALGO == 12)
+#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10 || ALGO == 12 || ALGO == 13)
 		tweak1_2 = as_uint2(input[4]);
 		tweak1_2.s0 >>= 24;
 		tweak1_2.s0 |= tweak1_2.s1 << 8;
@@ -673,7 +673,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #endif
 
 // cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2 || cryptonight_electronero || cryptonight_pulse
-#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10 || ALGO == 11 || ALGO == 12)
+#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10 || ALGO == 12 || ALGO == 13)
 			uint table = 0x75310U;
 			b_x[0] ^= ((uint4 *)c)[0];
 // cryptonight_stellite
@@ -736,7 +736,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			a[0] += mul_hi(c[0], as_ulong2(tmp).s0);
 #endif
 // cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2 || cryptonight_electronero || cryptonight_pulse
-#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10 || ALGO == 11 || ALGO == 12)
+#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10 || ALGO == 12 || ALGO == 13)
 
 // cryptonight_ipbc || cryptonight_bittube2
 #	if(ALGO == 6 || ALGO == 10)
