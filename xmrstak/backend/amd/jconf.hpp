@@ -27,6 +27,7 @@ public:
 		size_t w_size;
 		long long cpu_aff;
 		int stridedIndex;
+		int interleave = 40;
 		int memChunk;
 		int unroll;
 		bool compMode;

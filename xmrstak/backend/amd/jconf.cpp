@@ -106,7 +106,7 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	if(!oThdConf.IsObject())
 		return false;
 
-	const Value *idx, *intensity, *w_size, *aff, *stridedIndex, *memChunk, *unroll, *compMode;
+	const Value *idx, *intensity, *w_size, *aff, *stridedIndex, *memChunk, *unroll, *compMode, *interleave;
 	idx = GetObjectMember(oThdConf, "index");
 	intensity = GetObjectMember(oThdConf, "intensity");
 	w_size = GetObjectMember(oThdConf, "worksize");
@@ -115,10 +115,29 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	memChunk = GetObjectMember(oThdConf, "mem_chunk");
 	unroll = GetObjectMember(oThdConf, "unroll");
 	compMode = GetObjectMember(oThdConf, "comp_mode");
+	interleave = GetObjectMember(oThdConf, "interleave");
 
 	if(idx == nullptr || intensity == nullptr || w_size == nullptr || aff == nullptr || memChunk == nullptr ||
 		stridedIndex == nullptr || unroll == nullptr || compMode == nullptr)
 		return false;
+
+	// interleave is optional
+	if(interleave == nullptr)
+		cfg.interleave = 50;
+	else if(!interleave->IsUint64())
+	{
+		printer::inst()->print_msg(L0, "ERROR: interleave must be a number");
+		return false;
+	}
+	else if((int)interleave->GetInt64() < 0 || (int)interleave->GetInt64() > 100)
+	{
+		printer::inst()->print_msg(L0, "ERROR: interleave must be in range [0;100]");
+		return false;
+	}
+	else
+	{
+		cfg.interleave = (int)interleave->GetInt64();
+	}
 
 	if(!idx->IsUint64() || !intensity->IsUint64() || !w_size->IsUint64())
 		return false;

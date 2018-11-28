@@ -181,7 +181,7 @@ private:
 				conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
 					"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
 					"    \"affine_to_cpu\" : false, \"strided_index\" : " + std::to_string(ctx.stridedIndex) + ", \"mem_chunk\" : 2,\n"
-					"    \"unroll\" : 8, \"comp_mode\" : true\n" +
+					"    \"unroll\" : 8, \"comp_mode\" : true, \"interleave\" : " + std::to_string(ctx.interleave) + "\n" +
 					"  },\n";
 			}
 			else
