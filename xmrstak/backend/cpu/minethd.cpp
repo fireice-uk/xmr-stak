@@ -395,6 +395,13 @@ bool minethd::self_test()
 			hashf("\x85\x19\xe0\x39\x17\x2b\x0d\x70\xe5\xca\x7b\x33\x83\xd6\xb3\x16\x73\x15\xa4\x22\x74\x7b\x73\xf0\x19\xcf\x95\x28\xf0\xfd\xe3\x41\xfd\x0f\x2a\x63\x03\x0b\xa6\x45\x05\x25\xcf\x6d\xe3\x18\x37\x66\x9a\xf6\xf1\xdf\x81\x31\xfa\xf5\x0a\xaa\xb8\xd3\xa7\x40\x55\x89", 64, out, ctx);
 			bResult = bResult && memcmp(out, "\x90\xdc\x65\x53\x8d\xb0\x00\xea\xa2\x52\xcd\xd4\x1c\x17\x7a\x64\xfe\xff\x95\x36\xe7\x71\x68\x35\xd4\xcf\x5c\x73\x56\xb1\x2f\xcd", 32) == 0;
 		}
+    else if(algo == cryptonight_superfast)
+		{
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_superfast);
+			hashf("\x03\x05\xa0\xdb\xd6\xbf\x05\xcf\x16\xe5\x03\xf3\xa6\x6f\x78\x00\x7c\xbf\x34\x14\x43\x32\xec\xbf\xc2\x2e\xd9\x5c\x87\x00\x38\x3b\x30\x9a\xce\x19\x23\xa0\x96\x4b\x00\x00\x00\x08\xba\x93\x9a\x62\x72\x4c\x0d\x75\x81\xfc\xe5\x76\x1e\x9d\x8a\x0e\x6a\x1c\x3f\x92\x4f\xdd\x84\x93\xd1\x11\x56\x49\xc0\x5e\xb6\x01", 76, out, ctx);
+			bResult = bResult &&  memcmp(out, "\x40\x86\x5a\xa8\x87\x41\xec\x1d\xcc\xbd\x2b\xc6\xff\x36\xb9\x4d\x54\x71\x58\xdb\x94\x69\x8e\x3c\xa0\x3d\xe4\x81\x9a\x65\x9f\xef", 32) == 0;
+		}
+
 
 		if(!bResult)
 			printer::inst()->print_msg(L0,
@@ -520,6 +527,9 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 	case cryptonight_monero_v8:
 		algv = 10;
 		break;
+	case cryptonight_superfast:
+		algv = 11;
+		break;
 	default:
 		algv = 2;
 		break;
@@ -579,7 +589,12 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, false, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, true, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, false, true>,
-		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, true, true>
+		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, true, true>,
+    
+		Cryptonight_hash<N>::template hash<cryptonight_superfast, false, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_superfast, true, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_superfast, false, true>,
+		Cryptonight_hash<N>::template hash<cryptonight_superfast, true, true>
 	};
 
 	std::bitset<2> digit;

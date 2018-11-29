@@ -24,6 +24,7 @@ POOLCONF],
  *    aeon7 (use this for Aeon's new PoW)
  *    bbscoin (automatic switch with block version 3 to cryptonight_v7)
  *    bittube (uses cryptonight_bittube2 algorithm)
+ *    freehaven
  *    graft
  *    haven (automatic switch with block version 3 to cryptonight_haven)
  *    intense
@@ -41,6 +42,7 @@ POOLCONF],
  *    cryptonight_lite_v7_xor (algorithm used by ipbc)
  *    # 2MiB scratchpad memory
  *    cryptonight
+ *    cryptonight_superfast
  *    cryptonight_v7
  *    cryptonight_v8
  *    # 4MiB scratchpad memory
