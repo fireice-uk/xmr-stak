@@ -42,6 +42,9 @@ static const __constant uint RCP_C[256] =
 	0x38c62ffu,0x41a841ebu,0x286478bu,0x41244166u,0x1823b84u,0x40a140e2u,0x803883u,0x401C4060u,
 };
 
+// Rocm produce invalid results if get_reciprocal without lookup table is used
+#ifdef __clang__
+
 inline uint get_reciprocal(const __local uchar *RCP, uint a)
 {
 	const uint index1 = (a & 0x7F000000U) >> 21;
@@ -66,9 +69,33 @@ inline uint get_reciprocal(const __local uchar *RCP, uint a)
 	return as_uint2(k).s1 + (b ? r : 0);
 }
 
+#else
+
+inline uint get_reciprocal(uint a)
+{
+    const float a_hi = as_float((a >> 8) + ((126U + 31U) << 23));
+    const float a_lo = convert_float_rte(a & 0xFF);
+    const float r = native_recip(a_hi);
+    const float r_scaled = as_float(as_uint(r) + (64U << 23));
+    const float h = fma(a_lo, r, fma(a_hi, r, -1.0f));
+    return (as_uint(r) << 9) - convert_int_rte(h * r_scaled);
+}
+
+#endif
+
+#ifdef __clang__
+
 inline uint2 fast_div_v2(const __local uint *RCP, ulong a, uint b)
 {
-    const uint r = get_reciprocal((const __local uchar *)RCP, b);
+	const uint r = get_reciprocal((const __local uchar *)RCP, b);
+
+#else
+
+inline uint2 fast_div_v2(ulong a, uint b)
+{
+	const uint r = get_reciprocal(b);
+
+#endif
 
     const ulong k = mul_hi(as_uint2(a).s0, r) + ((ulong)(r) * as_uint2(a).s1) + a;
     const uint q = as_uint2(k).s1;
