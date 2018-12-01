@@ -567,7 +567,10 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
 // cryptonight_monero_v8
 #if(ALGO==11)
+#	ifdef __clang__
     __local uint RCP[256];
+#	endif
+
 	uint2 division_result;
 	uint sqrt_result;
 #endif
@@ -579,7 +582,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
         AES0[i] = tmp;
         AES1[i] = rotate(tmp, 8U);
 // cryptonight_monero_v8
-#if(ALGO==11)
+#if(ALGO==11 && defined(__clang__))
 		RCP[i] = RCP_C[i];
 #endif
     }
@@ -714,7 +717,13 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			const uint d = (((uint *)c)[0] + (sqrt_result << 1)) | 0x80000001UL;
  			// Quotient may be as large as (2^64 - 1)/(2^31 + 1) = 8589934588 = 2^33 - 4
 			// We drop the highest bit to fit both quotient and remainder in 32 bits
+
+#	ifdef __clang__
 			division_result = fast_div_v2(RCP, c[1], d);
+#	else
+			division_result = fast_div_v2(c[1], d);
+#	endif
+
  			// Use division_result as an input for the square root to prevent parallel implementation in hardware
 			sqrt_result = fast_sqrt_v2(c[0] + as_ulong(division_result));
 
