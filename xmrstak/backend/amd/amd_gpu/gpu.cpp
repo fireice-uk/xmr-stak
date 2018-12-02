@@ -1202,7 +1202,7 @@ uint64_t interleaveAdjustDelay(GpuContext* ctx)
 
 		if((dt > 0) && (dt < optimalTimeOffset))
 		{
-            delay = static_cast<int64_t>((optimalTimeOffset  - dt));
+			delay = static_cast<int64_t>((optimalTimeOffset  - dt));
 			if(ctx->lastDelay == delay && delay > maxDelay)
 				ctx->interleaveData->adjustThreshold -= 0.001;
 			// if the delay doubled than increase the adjustThreshold
@@ -1211,10 +1211,9 @@ uint64_t interleaveAdjustDelay(GpuContext* ctx)
 			ctx->lastDelay = delay;
 
 			// this is std::clamp which is available in c++17
-			ctx->interleaveData->adjustThreshold = std::max(
-				std::max(ctx->interleaveData->adjustThreshold, ctx->interleaveData->startAdjustThreshold - maxAutoAdjust),
-				std::min(ctx->interleaveData->adjustThreshold, ctx->interleaveData->startAdjustThreshold + maxAutoAdjust)
-			);
+			ctx->interleaveData->adjustThreshold = std::max(ctx->interleaveData->adjustThreshold, ctx->interleaveData->startAdjustThreshold - maxAutoAdjust);
+			ctx->interleaveData->adjustThreshold = std::min(ctx->interleaveData->adjustThreshold, ctx->interleaveData->startAdjustThreshold + maxAutoAdjust);
+
 			// avoid that the auto adjustment is disable interleaving
 			ctx->interleaveData->adjustThreshold = std::max(
 				ctx->interleaveData->adjustThreshold,
