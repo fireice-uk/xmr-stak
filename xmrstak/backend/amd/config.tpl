@@ -43,6 +43,16 @@ GPUCONFIG
 ],
 
 /*
+ * number of rounds per intensity performed to find the best intensity settings
+ *
+ * WARNING: experimental option
+ *
+ * 0 = disable auto tuning
+ * 10 or higher = recommended value if you not already know the best intensity
+ */
+"auto_tune" : 0,
+
+/*
  * Platform index. This will be 0 unless you have different OpenCL platform - eg. AMD and Intel.
  */
 "platform_index" : PLATFORMINDEX,

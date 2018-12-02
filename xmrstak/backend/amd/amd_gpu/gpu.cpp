@@ -303,6 +303,12 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
+	if((ret = clGetDeviceInfo(ctx->DeviceID, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &(ctx->computeUnits), NULL)) != CL_SUCCESS)
+	{
+		printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DEVICE_MAX_COMPUTE_UNITS for device %u.", err_to_str(ret), (uint32_t)ctx->deviceIdx);
+		return ERR_OCL_API;
+	}
+
 	ctx->InputBuffer = clCreateBuffer(opencl_ctx, CL_MEM_READ_ONLY, 88, NULL, &ret);
 	if(ret != CL_SUCCESS)
 	{
@@ -1159,35 +1165,38 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 	return ERR_SUCCESS;
 }
 
-void updateTimings(GpuContext* ctx, const uint64_t t)
+uint64_t updateTimings(GpuContext* ctx, const uint64_t t)
 {
-    // averagingBias = 1.0 - only the last delta time is taken into account
-    // averagingBias = 0.5 - the last delta time has the same weight as all the previous ones combined
-    // averagingBias = 0.1 - the last delta time has 10% weight of all the previous ones combined
-    const double averagingBias = 0.1;
+	// averagingBias = 1.0 - only the last delta time is taken into account
+	// averagingBias = 0.5 - the last delta time has the same weight as all the previous ones combined
+	// averagingBias = 0.1 - the last delta time has 10% weight of all the previous ones combined
+	const double averagingBias = 0.1;
 
-    {
-		int64_t t2 = get_timestamp_ms();
+	int64_t t2 = get_timestamp_ms();
+	uint64_t runtime = (t2 - t);
+	{
+
 		std::lock_guard<std::mutex> g(ctx->interleaveData->mutex);
 		// 20000 mean that something went wrong an we reset the average
 		if(ctx->interleaveData->avgKernelRuntime == 0.0 || ctx->interleaveData->avgKernelRuntime > 20000.0)
-			ctx->interleaveData->avgKernelRuntime = (t2 - t);
+			ctx->interleaveData->avgKernelRuntime = runtime;
 		else
-			ctx->interleaveData->avgKernelRuntime = ctx->interleaveData->avgKernelRuntime * (1.0 - averagingBias) + (t2 - t) * averagingBias;
-    }
+			ctx->interleaveData->avgKernelRuntime = ctx->interleaveData->avgKernelRuntime * (1.0 - averagingBias) + (runtime) * averagingBias;
+	}
+	return runtime;
 }
 
-uint64_t interleaveAdjustDelay(GpuContext* ctx)
+uint64_t interleaveAdjustDelay(GpuContext* ctx, const bool enableAutoAdjustment)
 {
 	uint64_t t0 = get_timestamp_ms();
 
 	if(ctx->interleaveData->numThreadsOnGPU > 1 && ctx->interleaveData->adjustThreshold > 0.0)
-    {
+	{
 		t0 = get_timestamp_ms();
 		std::unique_lock<std::mutex> g(ctx->interleaveData->mutex);
 
 		int64_t delay = 0;
-        double dt = 0.0;
+		double dt = 0.0;
 
 		if(t0 > ctx->interleaveData->lastRunTimeStamp)
 			dt = static_cast<double>(t0 - ctx->interleaveData->lastRunTimeStamp);
@@ -1202,11 +1211,15 @@ uint64_t interleaveAdjustDelay(GpuContext* ctx)
 		if((dt > 0) && (dt < optimalTimeOffset))
 		{
 			delay = static_cast<int64_t>((optimalTimeOffset  - dt));
-			if(ctx->lastDelay == delay && delay > maxDelay)
-				ctx->interleaveData->adjustThreshold -= 0.001;
-			// if the delay doubled than increase the adjustThreshold
-			else if(delay > 1 && ctx->lastDelay * 2 < delay)
-				ctx->interleaveData->adjustThreshold += 0.001;
+
+			if(enableAutoAdjustment)
+			{
+				if(ctx->lastDelay == delay && delay > maxDelay)
+					ctx->interleaveData->adjustThreshold -= 0.001;
+				// if the delay doubled than increase the adjustThreshold
+				else if(delay > 1 && ctx->lastDelay * 2 < delay)
+					ctx->interleaveData->adjustThreshold += 0.001;
+			}
 			ctx->lastDelay = delay;
 
 			// this is std::clamp which is available in c++17
@@ -1238,9 +1251,9 @@ uint64_t interleaveAdjustDelay(GpuContext* ctx)
 
 			std::this_thread::sleep_for(std::chrono::milliseconds(delay));
 		}
-    }
+	}
 
-    return t0;
+	return t0;
 }
 
 size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo)

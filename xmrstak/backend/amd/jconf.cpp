@@ -65,6 +65,19 @@ configVal oConfigValues[] = {
 
 constexpr size_t iConfigCnt = (sizeof(oConfigValues)/sizeof(oConfigValues[0]));
 
+
+enum optionalConfigEnum { iAutoTune };
+
+struct optionalConfigVal {
+	optionalConfigEnum iName;
+	const char* sName;
+	Type iType;
+};
+
+optionalConfigVal oOptionalConfigValues[] = {
+	{ iAutoTune, "auto_tune", kNumberType }
+};
+
 inline bool checkType(Type have, Type want)
 {
 	if(want == have)
@@ -196,6 +209,20 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 size_t jconf::GetPlatformIdx()
 {
 	return prv->configValues[iPlatformIdx]->GetUint64();
+}
+
+size_t jconf::GetAutoTune()
+{
+	const Value* value = GetObjectMember(prv->jsonDoc, oOptionalConfigValues[iAutoTune].sName);
+	if( value != nullptr && value->IsUint64())
+	{
+		return value->GetUint64();
+	}
+	else
+	{
+		printer::inst()->print_msg(L0, "WARNING: OpenCL optional option 'auto-tune' not available");
+	}
+	return 0;
 }
 
 size_t jconf::GetThreadCount()

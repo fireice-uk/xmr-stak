@@ -36,6 +36,7 @@ public:
 	size_t GetThreadCount();
 	bool GetThreadConfig(size_t id, thd_cfg &cfg);
 
+	size_t GetAutoTune();
 	size_t GetPlatformIdx();
 
 private:
