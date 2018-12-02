@@ -703,9 +703,9 @@ std::vector<GpuContext> getAMDDevices(int index)
 		{
 			GpuContext ctx;
 			std::vector<char> devNameVec(1024);
-			size_t maxMem;
-			if( devVendor.find("NVIDIA Corporation") != std::string::npos)
-				ctx.isNVIDIA = true;
+
+			ctx.isNVIDIA = isNVIDIADevice;
+			ctx.isAMD = isAMDDevice;
 
 			if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &(ctx.computeUnits), NULL)) != CL_SUCCESS)
 			{
@@ -713,7 +713,7 @@ std::vector<GpuContext> getAMDDevices(int index)
 				continue;
 			}
 
-			if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(size_t), &(maxMem), NULL)) != CL_SUCCESS)
+			if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(size_t), &(ctx.maxMemPerAlloc), NULL)) != CL_SUCCESS)
 			{
 				printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DEVICE_MAX_MEM_ALLOC_SIZE for device %u.", err_to_str(clStatus), k);
 				continue;
@@ -726,8 +726,8 @@ std::vector<GpuContext> getAMDDevices(int index)
 			}
 
 			// the allocation for NVIDIA OpenCL is not limited to 1/4 of the GPU memory per allocation
-			if(ctx.isNVIDIA)
-				maxMem = ctx.freeMem;
+			if(isNVIDIADevice)
+				ctx.maxMemPerAlloc = ctx.freeMem;
 
 			if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_NAME, devNameVec.size(), devNameVec.data(), NULL)) != CL_SUCCESS)
 			{
@@ -746,7 +746,6 @@ std::vector<GpuContext> getAMDDevices(int index)
 
 			// if environment variable GPU_SINGLE_ALLOC_PERCENT is not set we can not allocate the full memory
 			ctx.deviceIdx = k;
-			ctx.freeMem = std::min(ctx.freeMem, maxMem);
 			ctx.name = std::string(devNameVec.data());
 			ctx.DeviceID = device_list[k];
 			ctx.interleave = 40;
