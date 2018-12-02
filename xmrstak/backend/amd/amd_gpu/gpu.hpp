@@ -40,6 +40,7 @@ struct GpuContext
 	int memChunk;
 	int unroll = 0;
 	bool isNVIDIA = false;
+	bool isAMD = false;
 	int compMode;
 
 	/*Output vars*/
@@ -51,6 +52,7 @@ struct GpuContext
 	cl_program Program[2];
 	cl_kernel Kernels[2][8];
 	size_t freeMem;
+	size_t maxMemPerAlloc;
 	int computeUnits;
 	std::string name;
 	std::shared_ptr<InterleaveData> interleaveData;
