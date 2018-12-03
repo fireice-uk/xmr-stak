@@ -135,21 +135,22 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 		return false;
 
 	// interleave is optional
-	if(interleave == nullptr)
-		cfg.interleave = 50;
-	else if(!interleave->IsUint64())
+	if(interleave != nullptr)
 	{
-		printer::inst()->print_msg(L0, "ERROR: interleave must be a number");
-		return false;
-	}
-	else if((int)interleave->GetInt64() < 0 || (int)interleave->GetInt64() > 100)
-	{
-		printer::inst()->print_msg(L0, "ERROR: interleave must be in range [0;100]");
-		return false;
-	}
-	else
-	{
-		cfg.interleave = (int)interleave->GetInt64();
+		if(!interleave->IsInt())
+		{
+			printer::inst()->print_msg(L0, "ERROR: interleave must be a number");
+			return false;
+		}
+		else if(interleave->GetInt() < 0 || interleave->GetInt() > 100)
+		{
+			printer::inst()->print_msg(L0, "ERROR: interleave must be in range [0;100]");
+			return false;
+		}
+		else
+		{
+			cfg.interleave = interleave->GetInt();
+		}
 	}
 
 	if(!idx->IsUint64() || !intensity->IsUint64() || !w_size->IsUint64())
