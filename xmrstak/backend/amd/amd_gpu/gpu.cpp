@@ -18,6 +18,7 @@
 #include "xmrstak/picosha2/picosha2.hpp"
 #include "xmrstak/params.hpp"
 #include "xmrstak/version.hpp"
+#include "xmrstak/net/msgstruct.hpp"
 
 #include <stdio.h>
 #include <string.h>
@@ -34,6 +35,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <thread>
 
 #if defined _MSC_VER
 #include <direct.h>
@@ -41,7 +43,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #endif
-
 
 
 #ifdef _WIN32
@@ -302,6 +303,12 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
+	if((ret = clGetDeviceInfo(ctx->DeviceID, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &(ctx->computeUnits), NULL)) != CL_SUCCESS)
+	{
+		printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DEVICE_MAX_COMPUTE_UNITS for device %u.", err_to_str(ret), (uint32_t)ctx->deviceIdx);
+		return ERR_OCL_API;
+	}
+
 	ctx->InputBuffer = clCreateBuffer(opencl_ctx, CL_MEM_READ_ONLY, 88, NULL, &ret);
 	if(ret != CL_SUCCESS)
 	{
@@ -410,14 +417,17 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 				strided_index = 0;
 		}
 
+		// if intensity is a multiple of worksize than comp mode is not needed
+		int needCompMode = ctx->compMode && ctx->rawIntensity % ctx->workSize != 0 ? 1 : 0;
+
 		std::string options;
 		options += " -DITERATIONS=" + std::to_string(hashIterations);
-		options += " -DMASK=" + std::to_string(threadMemMask);
-		options += " -DWORKSIZE=" + std::to_string(ctx->workSize);
+		options += " -DMASK=" + std::to_string(threadMemMask) + "U";
+		options += " -DWORKSIZE=" + std::to_string(ctx->workSize) + "U";
 		options += " -DSTRIDED_INDEX=" + std::to_string(strided_index);
-		options += " -DMEM_CHUNK_EXPONENT=" + std::to_string(mem_chunk_exp);
-		options += " -DCOMP_MODE=" + std::to_string(ctx->compMode ? 1u : 0u);
-		options += " -DMEMORY=" + std::to_string(hashMemSize);
+		options += " -DMEM_CHUNK_EXPONENT=" + std::to_string(mem_chunk_exp) + "U";
+		options += " -DCOMP_MODE=" + std::to_string(needCompMode);
+		options += " -DMEMORY=" + std::to_string(hashMemSize) + "LU";
 		options += " -DALGO=" + std::to_string(miner_algo[ii]);
 		options += " -DCN_UNROLL=" + std::to_string(ctx->unroll);
 		/* AMD driver output is something like: `1445.5 (VM)`
@@ -699,9 +709,9 @@ std::vector<GpuContext> getAMDDevices(int index)
 		{
 			GpuContext ctx;
 			std::vector<char> devNameVec(1024);
-			size_t maxMem;
-			if( devVendor.find("NVIDIA Corporation") != std::string::npos)
-				ctx.isNVIDIA = true;
+
+			ctx.isNVIDIA = isNVIDIADevice;
+			ctx.isAMD = isAMDDevice;
 
 			if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &(ctx.computeUnits), NULL)) != CL_SUCCESS)
 			{
@@ -709,7 +719,7 @@ std::vector<GpuContext> getAMDDevices(int index)
 				continue;
 			}
 
-			if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(size_t), &(maxMem), NULL)) != CL_SUCCESS)
+			if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(size_t), &(ctx.maxMemPerAlloc), NULL)) != CL_SUCCESS)
 			{
 				printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DEVICE_MAX_MEM_ALLOC_SIZE for device %u.", err_to_str(clStatus), k);
 				continue;
@@ -722,8 +732,8 @@ std::vector<GpuContext> getAMDDevices(int index)
 			}
 
 			// the allocation for NVIDIA OpenCL is not limited to 1/4 of the GPU memory per allocation
-			if(ctx.isNVIDIA)
-				maxMem = ctx.freeMem;
+			if(isNVIDIADevice)
+				ctx.maxMemPerAlloc = ctx.freeMem;
 
 			if((clStatus = clGetDeviceInfo(device_list[k], CL_DEVICE_NAME, devNameVec.size(), devNameVec.data(), NULL)) != CL_SUCCESS)
 			{
@@ -731,11 +741,20 @@ std::vector<GpuContext> getAMDDevices(int index)
 				continue;
 			}
 
+			std::vector<char> openCLDriverVer(1024);
+			if((clStatus = clGetDeviceInfo(device_list[k], CL_DRIVER_VERSION, openCLDriverVer.size(), openCLDriverVer.data(), NULL)) != CL_SUCCESS)
+			{
+				printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DRIVER_VERSION for device %u.", err_to_str(clStatus), k);
+				continue;
+			}
+
+			bool isHSAOpenCL = std::string(openCLDriverVer.data()).find("HSA") != std::string::npos;
+
 			// if environment variable GPU_SINGLE_ALLOC_PERCENT is not set we can not allocate the full memory
 			ctx.deviceIdx = k;
-			ctx.freeMem = std::min(ctx.freeMem, maxMem);
 			ctx.name = std::string(devNameVec.data());
 			ctx.DeviceID = device_list[k];
+			ctx.interleave = 40;
 			printer::inst()->print_msg(L0,"Found OpenCL GPU %s.",ctx.name.c_str());
 			ctxVec.push_back(ctx);
 		}
@@ -937,10 +956,29 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	// create a directory  for the OpenCL compile cache
 	create_directory(get_home() + "/.openclcache");
 
+	std::vector<std::shared_ptr<InterleaveData>> interleaveData(num_gpus, nullptr);
+
 	for(int i = 0; i < num_gpus; ++i)
 	{
+		const size_t devIdx = ctx[i].deviceIdx;
+		if(interleaveData.size() <= devIdx)
+		{
+			interleaveData.resize(devIdx + 1u, nullptr);
+		}
+		if(!interleaveData[devIdx])
+		{
+			interleaveData[devIdx].reset(new InterleaveData{});
+			interleaveData[devIdx]->lastRunTimeStamp = get_timestamp_ms();
+
+		}
+		ctx[i].idWorkerOnDevice=interleaveData[devIdx]->numThreadsOnGPU;
+		++interleaveData[devIdx]->numThreadsOnGPU;
+		ctx[i].interleaveData = interleaveData[devIdx];
+		ctx[i].interleaveData->adjustThreshold = static_cast<double>(ctx[i].interleave)/100.0;
+		ctx[i].interleaveData->startAdjustThreshold = ctx[i].interleaveData->adjustThreshold;
+
 		const std::string backendName = xmrstak::params::inst().openCLVendor;
-		if(ctx[i].stridedIndex == 2 && (ctx[i].rawIntensity % ctx[i].workSize) != 0)
+		if( (ctx[i].stridedIndex == 2 || ctx[i].stridedIndex == 3) && (ctx[i].rawIntensity % ctx[i].workSize) != 0)
 		{
 			size_t reduced_intensity = (ctx[i].rawIntensity / ctx[i].workSize) * ctx[i].workSize;
 			ctx[i].rawIntensity = reduced_intensity;
@@ -1116,9 +1154,106 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 			printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel %d, argument %d.", err_to_str(ret), i + 3, 3);
 			return ERR_OCL_API;
 		}
+
+		if((clSetKernelArg(ctx->Kernels[kernel_storage][i + 3], 4, sizeof(cl_uint), &numThreads)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel %d, argument %d.", err_to_str(ret), i + 3, 4);
+			return(ERR_OCL_API);
+		}
 	}
 
 	return ERR_SUCCESS;
+}
+
+uint64_t updateTimings(GpuContext* ctx, const uint64_t t)
+{
+	// averagingBias = 1.0 - only the last delta time is taken into account
+	// averagingBias = 0.5 - the last delta time has the same weight as all the previous ones combined
+	// averagingBias = 0.1 - the last delta time has 10% weight of all the previous ones combined
+	const double averagingBias = 0.1;
+
+	int64_t t2 = get_timestamp_ms();
+	uint64_t runtime = (t2 - t);
+	{
+
+		std::lock_guard<std::mutex> g(ctx->interleaveData->mutex);
+		// 20000 mean that something went wrong an we reset the average
+		if(ctx->interleaveData->avgKernelRuntime == 0.0 || ctx->interleaveData->avgKernelRuntime > 20000.0)
+			ctx->interleaveData->avgKernelRuntime = runtime;
+		else
+			ctx->interleaveData->avgKernelRuntime = ctx->interleaveData->avgKernelRuntime * (1.0 - averagingBias) + (runtime) * averagingBias;
+	}
+	return runtime;
+}
+
+uint64_t interleaveAdjustDelay(GpuContext* ctx, const bool enableAutoAdjustment)
+{
+	uint64_t t0 = get_timestamp_ms();
+
+	if(ctx->interleaveData->numThreadsOnGPU > 1 && ctx->interleaveData->adjustThreshold > 0.0)
+	{
+		t0 = get_timestamp_ms();
+		std::unique_lock<std::mutex> g(ctx->interleaveData->mutex);
+
+		int64_t delay = 0;
+		double dt = 0.0;
+
+		if(t0 > ctx->interleaveData->lastRunTimeStamp)
+			dt = static_cast<double>(t0 - ctx->interleaveData->lastRunTimeStamp);
+
+		const double avgRuntime = ctx->interleaveData->avgKernelRuntime;
+		const double optimalTimeOffset = avgRuntime * ctx->interleaveData->adjustThreshold;
+
+		// threshold where the the auto adjustment is disabled
+		constexpr uint32_t maxDelay = 10;
+		constexpr double maxAutoAdjust = 0.05;
+
+		if((dt > 0) && (dt < optimalTimeOffset))
+		{
+			delay = static_cast<int64_t>((optimalTimeOffset  - dt));
+
+			if(enableAutoAdjustment)
+			{
+				if(ctx->lastDelay == delay && delay > maxDelay)
+					ctx->interleaveData->adjustThreshold -= 0.001;
+				// if the delay doubled than increase the adjustThreshold
+				else if(delay > 1 && ctx->lastDelay * 2 < delay)
+					ctx->interleaveData->adjustThreshold += 0.001;
+			}
+			ctx->lastDelay = delay;
+
+			// this is std::clamp which is available in c++17
+			ctx->interleaveData->adjustThreshold = std::max(ctx->interleaveData->adjustThreshold, ctx->interleaveData->startAdjustThreshold - maxAutoAdjust);
+			ctx->interleaveData->adjustThreshold = std::min(ctx->interleaveData->adjustThreshold, ctx->interleaveData->startAdjustThreshold + maxAutoAdjust);
+
+			// avoid that the auto adjustment is disable interleaving
+			ctx->interleaveData->adjustThreshold = std::max(
+				ctx->interleaveData->adjustThreshold,
+				0.001
+			);
+		}
+		delay = std::max(int64_t(0), delay);
+
+		ctx->interleaveData->lastRunTimeStamp = t0 + delay;
+
+		g.unlock();
+		if(delay > 0)
+		{
+			// do not notify the user anymore if we reach a good delay
+			if(delay > maxDelay)
+				printer::inst()->print_msg(L1,"OpenCL Interleave %u|%u: %u/%.2lf ms - %.1lf",
+					ctx->deviceIdx,
+					ctx->idWorkerOnDevice,
+					static_cast<uint32_t>(delay),
+					avgRuntime,
+					ctx->interleaveData->adjustThreshold * 100.
+				);
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+		}
+	}
+
+	return t0;
 }
 
 size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo)
@@ -1154,11 +1289,9 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo)
 
 	if((ret = clEnqueueWriteBuffer(ctx->CommandQueues, ctx->OutputBuffer, CL_FALSE, sizeof(cl_uint) * 0xFF, sizeof(cl_uint), &zero, 0, NULL, NULL)) != CL_SUCCESS)
 	{
-		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueReadBuffer to fetch results.", err_to_str(ret));
+		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueWriteBuffer to fetch results.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
-
-	clFinish(ctx->CommandQueues);
 
 	size_t Nonce[2] = {ctx->Nonce, 1}, gthreads[2] = { g_thd, 8 }, lthreads[2] = { 8, 8 };
 	if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, ctx->Kernels[kernel_storage][0], 2, Nonce, gthreads, lthreads, 0, NULL, NULL)) != CL_SUCCESS)
@@ -1181,64 +1314,23 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo)
 		return ERR_OCL_API;
 	}
 
-	if((ret = clEnqueueReadBuffer(ctx->CommandQueues, ctx->ExtraBuffers[2], CL_FALSE, sizeof(cl_uint) * g_intensity, sizeof(cl_uint), BranchNonces, 0, NULL, NULL)) != CL_SUCCESS)
-	{
-		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueReadBuffer to fetch results.", err_to_str(ret));
-		return ERR_OCL_API;
-	}
-
-	if((ret = clEnqueueReadBuffer(ctx->CommandQueues, ctx->ExtraBuffers[3], CL_FALSE, sizeof(cl_uint) * g_intensity, sizeof(cl_uint), BranchNonces + 1, 0, NULL, NULL)) != CL_SUCCESS)
-	{
-		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueReadBuffer to fetch results.", err_to_str(ret));
-		return ERR_OCL_API;
-	}
-
-	if((ret = clEnqueueReadBuffer(ctx->CommandQueues, ctx->ExtraBuffers[4], CL_FALSE, sizeof(cl_uint) * g_intensity, sizeof(cl_uint), BranchNonces + 2, 0, NULL, NULL)) != CL_SUCCESS)
-	{
-		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueReadBuffer to fetch results.", err_to_str(ret));
-		return ERR_OCL_API;
-	}
-
-	if((ret = clEnqueueReadBuffer(ctx->CommandQueues, ctx->ExtraBuffers[5], CL_FALSE, sizeof(cl_uint) * g_intensity, sizeof(cl_uint), BranchNonces + 3, 0, NULL, NULL)) != CL_SUCCESS)
-	{
-		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueReadBuffer to fetch results.", err_to_str(ret));
-		return ERR_OCL_API;
-	}
-
-	clFinish(ctx->CommandQueues);
-
 	for(int i = 0; i < 4; ++i)
 	{
-		if(BranchNonces[i])
+		size_t tmpNonce = ctx->Nonce;
+		if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, ctx->Kernels[kernel_storage][i + 3], 1, &tmpNonce, &g_thd, &w_size, 0, NULL, NULL)) != CL_SUCCESS)
 		{
-			// Threads
-            cl_uint numThreads = BranchNonces[i];
-			if((clSetKernelArg(ctx->Kernels[kernel_storage][i + 3], 4, sizeof(cl_uint), &numThreads)) != CL_SUCCESS)
-			{
-				printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel %d, argument %d.", err_to_str(ret), i + 3, 4);
-				return(ERR_OCL_API);
-			}
-
-			// round up to next multiple of w_size
-			BranchNonces[i] = ((BranchNonces[i] + w_size - 1u) / w_size) * w_size;
-			// number of global threads must be a multiple of the work group size (w_size)
-			assert(BranchNonces[i]%w_size == 0);
-			size_t tmpNonce = ctx->Nonce;
-			if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, ctx->Kernels[kernel_storage][i + 3], 1, &tmpNonce, BranchNonces + i, &w_size, 0, NULL, NULL)) != CL_SUCCESS)
-			{
-				printer::inst()->print_msg(L1,"Error %s when calling clEnqueueNDRangeKernel for kernel %d.", err_to_str(ret), i + 3);
-				return ERR_OCL_API;
-			}
+			printer::inst()->print_msg(L1,"Error %s when calling clEnqueueNDRangeKernel for kernel %d.", err_to_str(ret), i + 3);
+			return ERR_OCL_API;
 		}
 	}
 
+	// this call is blocking therefore the access to the results without cl_finish is fine
 	if((ret = clEnqueueReadBuffer(ctx->CommandQueues, ctx->OutputBuffer, CL_TRUE, 0, sizeof(cl_uint) * 0x100, HashOutput, 0, NULL, NULL)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueReadBuffer to fetch results.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
 
-	clFinish(ctx->CommandQueues);
 	auto & numHashValues = HashOutput[0xFF];
 	// avoid out of memory read, we have only storage for 0xFF results
 	if(numHashValues > 0xFF)

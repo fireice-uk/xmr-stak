@@ -65,6 +65,19 @@ configVal oConfigValues[] = {
 
 constexpr size_t iConfigCnt = (sizeof(oConfigValues)/sizeof(oConfigValues[0]));
 
+
+enum optionalConfigEnum { iAutoTune };
+
+struct optionalConfigVal {
+	optionalConfigEnum iName;
+	const char* sName;
+	Type iType;
+};
+
+optionalConfigVal oOptionalConfigValues[] = {
+	{ iAutoTune, "auto_tune", kNumberType }
+};
+
 inline bool checkType(Type have, Type want)
 {
 	if(want == have)
@@ -106,7 +119,7 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	if(!oThdConf.IsObject())
 		return false;
 
-	const Value *idx, *intensity, *w_size, *aff, *stridedIndex, *memChunk, *unroll, *compMode;
+	const Value *idx, *intensity, *w_size, *aff, *stridedIndex, *memChunk, *unroll, *compMode, *interleave;
 	idx = GetObjectMember(oThdConf, "index");
 	intensity = GetObjectMember(oThdConf, "intensity");
 	w_size = GetObjectMember(oThdConf, "worksize");
@@ -115,10 +128,30 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	memChunk = GetObjectMember(oThdConf, "mem_chunk");
 	unroll = GetObjectMember(oThdConf, "unroll");
 	compMode = GetObjectMember(oThdConf, "comp_mode");
+	interleave = GetObjectMember(oThdConf, "interleave");
 
 	if(idx == nullptr || intensity == nullptr || w_size == nullptr || aff == nullptr || memChunk == nullptr ||
 		stridedIndex == nullptr || unroll == nullptr || compMode == nullptr)
 		return false;
+
+	// interleave is optional
+	if(interleave != nullptr)
+	{
+		if(!interleave->IsInt())
+		{
+			printer::inst()->print_msg(L0, "ERROR: interleave must be a number");
+			return false;
+		}
+		else if(interleave->GetInt() < 0 || interleave->GetInt() > 100)
+		{
+			printer::inst()->print_msg(L0, "ERROR: interleave must be in range [0;100]");
+			return false;
+		}
+		else
+		{
+			cfg.interleave = interleave->GetInt();
+		}
+	}
 
 	if(!idx->IsUint64() || !intensity->IsUint64() || !w_size->IsUint64())
 		return false;
@@ -137,9 +170,9 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	else
 		cfg.stridedIndex = (int)stridedIndex->GetInt64();
 
-	if(cfg.stridedIndex > 2)
+	if(cfg.stridedIndex > 3)
 	{
-		printer::inst()->print_msg(L0, "ERROR: strided_index must be smaller than 2");
+		printer::inst()->print_msg(L0, "ERROR: strided_index must be smaller than 3");
 		return false;
 	}
 
@@ -177,6 +210,20 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 size_t jconf::GetPlatformIdx()
 {
 	return prv->configValues[iPlatformIdx]->GetUint64();
+}
+
+size_t jconf::GetAutoTune()
+{
+	const Value* value = GetObjectMember(prv->jsonDoc, oOptionalConfigValues[iAutoTune].sName);
+	if( value != nullptr && value->IsUint64())
+	{
+		return value->GetUint64();
+	}
+	else
+	{
+		printer::inst()->print_msg(L0, "WARNING: OpenCL optional option 'auto-tune' not available");
+	}
+	return 0;
 }
 
 size_t jconf::GetThreadCount()

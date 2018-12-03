@@ -58,6 +58,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::th
 	iTimestamp = 0;
 	pGpuCtx = ctx;
 	this->affinity = cfg.cpu_aff;
+	autoTune = jconf::inst()->GetAutoTune();
 
 	std::unique_lock<std::mutex> lck(thd_aff_set);
 	std::future<void> order_guard = order_fix.get_future();
@@ -100,6 +101,7 @@ bool minethd::init_gpus()
 		vGpuData[i].memChunk = cfg.memChunk;
 		vGpuData[i].compMode = cfg.compMode;
 		vGpuData[i].unroll = cfg.unroll;
+		vGpuData[i].interleave = cfg.interleave;
 	}
 
 	return InitOpenCL(vGpuData.data(), n, jconf::inst()->GetPlatformIdx()) == ERR_SUCCESS;
@@ -186,6 +188,19 @@ void minethd::work_main()
 	uint8_t version = 0;
 	size_t lastPoolId = 0;
 
+	pGpuCtx->maxRawIntensity = pGpuCtx->rawIntensity;
+
+	if(autoTune != 0)
+	{
+		pGpuCtx->rawIntensity = pGpuCtx->computeUnits * pGpuCtx->workSize;
+		pGpuCtx->rawIntensity = std::min(pGpuCtx->maxRawIntensity, pGpuCtx->rawIntensity);
+	}
+	// parameters needed for auto tuning
+	uint32_t cntTestRounds = 0;
+	uint64_t accRuntime = 0;
+	double bestHashrate = 0.0;
+	uint32_t bestIntensity = pGpuCtx->maxRawIntensity;
+
 	while (bQuit == 0)
 	{
 		if (oWork.bStall)
@@ -220,7 +235,6 @@ void minethd::work_main()
 			version = new_version;
 		}
 
-		uint32_t h_per_round = pGpuCtx->rawIntensity;
 		size_t round_ctr = 0;
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
@@ -236,12 +250,15 @@ void minethd::work_main()
 			//Allocate a new nonce every 16 rounds
 			if((round_ctr++ & 0xF) == 0)
 			{
-				globalStates::inst().calc_start_nonce(pGpuCtx->Nonce, oWork.bNiceHash, h_per_round * 16);
+				globalStates::inst().calc_start_nonce(pGpuCtx->Nonce, oWork.bNiceHash, pGpuCtx->rawIntensity * 16);
 				// check if the job is still valid, there is a small possibility that the job is switched
 				if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo)
 					break;
 			}
 
+			// if auto tuning is running we will not adjust the interleave interval
+			const bool adjustInterleave = autoTune == 0;
+			uint64_t t0 = interleaveAdjustDelay(pGpuCtx, adjustInterleave);
 
 			cl_uint results[0x100];
 			memset(results,0,sizeof(cl_uint)*(0x100));
@@ -269,6 +286,58 @@ void minethd::work_main()
 			uint64_t iStamp = get_timestamp_ms();
 			iHashCount.store(iCount, std::memory_order_relaxed);
 			iTimestamp.store(iStamp, std::memory_order_relaxed);
+
+			accRuntime += updateTimings(pGpuCtx, t0);
+
+			// tune intensity
+			if(autoTune != 0)
+			{
+				if(cntTestRounds++ == autoTune)
+				{
+					double avgHashrate = static_cast<double>(cntTestRounds * pGpuCtx->rawIntensity) / (static_cast<double>(accRuntime) / 1000.0);
+					if(avgHashrate > bestHashrate)
+					{
+						bestHashrate = avgHashrate;
+						bestIntensity = pGpuCtx->rawIntensity;
+					}
+
+					// increase always in workSize steps to avoid problems with the compatibility mode
+					pGpuCtx->rawIntensity += pGpuCtx->workSize;
+					// trigger that we query for new nonce's because the number of nonce previous allocated depends on the rawIntensity
+					round_ctr = 0x10;
+
+					if(pGpuCtx->rawIntensity > pGpuCtx->maxRawIntensity)
+					{
+						// lock intensity to the best values
+						autoTune = 0;
+						pGpuCtx->rawIntensity = bestIntensity;
+						printer::inst()->print_msg(L1,"OpenCL %u|%u: lock intensity at %u",
+							pGpuCtx->deviceIdx,
+							pGpuCtx->idWorkerOnDevice,
+							bestIntensity
+						);
+					}
+					else
+					{
+						printer::inst()->print_msg(L1,"OpenCL %u|%u: auto-tune validate intensity %u|%u",
+							pGpuCtx->deviceIdx,
+							pGpuCtx->idWorkerOnDevice,
+							pGpuCtx->rawIntensity,
+							bestIntensity
+						);
+					}
+					// update gpu with new intensity
+					XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo);
+				}
+				// use 3 rounds to warm up with the new intensity
+				else if(cntTestRounds == autoTune + 3)
+				{
+					// reset values for the next test period
+					cntTestRounds = 0;
+					accRuntime = 0;
+				}
+			}
+
 			std::this_thread::yield();
 		}
 

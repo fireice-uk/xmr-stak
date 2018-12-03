@@ -303,3 +303,9 @@ __device__ __forceinline__ static void cn_aes_gpu_init(uint32_t *sharedMemory)
 	for(int i = threadIdx.x; i < 1024; i += blockDim.x)
 		sharedMemory[i] = d_t_fn[i];
 }
+
+__device__ __forceinline__ static void cn_aes_gpu_init_half(uint32_t *sharedMemory)
+{
+        for(int i = threadIdx.x; i < 512; i += blockDim.x)
+                sharedMemory[i] = d_t_fn[i];
+}
