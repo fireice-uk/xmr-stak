@@ -66,6 +66,9 @@
 
 #endif //_WIN32
 
+// well quick way to expose this it will live somewhere in memory, defined in cli-miner.cpp
+extern bool benchmark_mode;
+
 namespace xmrstak
 {
 namespace cpu
@@ -446,6 +449,14 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 			printer::inst()->print_msg(L1, "Starting %dx thread, no affinity.", cfg.iMultiway);
 
 		minethd* thd = new minethd(pWork, i + threadOffset, cfg.iMultiway, cfg.bNoPrefetch, cfg.iCpuAff, cfg.asm_version_str);
+
+		// this might freeze the whole system
+#ifdef _WIN32
+		if (benchmark_mode) {
+			SetThreadPriority(thd->oWorkThd.native_handle(), THREAD_PRIORITY_HIGHEST);
+		}
+#endif // _WIN32
+
 		pvThreads.push_back(thd);
 	}
 
