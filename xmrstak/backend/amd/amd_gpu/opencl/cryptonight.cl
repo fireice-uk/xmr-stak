@@ -572,7 +572,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
 // cryptonight_monero_v8
 #if(ALGO==11)
-#	ifdef __clang__
+#	if defined(__clang__) && !defined(__NV_CL_C_VERSION)
     __local uint RCP[256];
 #	endif
 
@@ -587,7 +587,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
         AES0[i] = tmp;
         AES1[i] = rotate(tmp, 8U);
 // cryptonight_monero_v8
-#if(ALGO==11 && defined(__clang__))
+#if(ALGO==11 && (defined(__clang__) && !defined(__NV_CL_C_VERSION)))
 		RCP[i] = RCP_C[i];
 #endif
     }
@@ -723,7 +723,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
  			// Quotient may be as large as (2^64 - 1)/(2^31 + 1) = 8589934588 = 2^33 - 4
 			// We drop the highest bit to fit both quotient and remainder in 32 bits
 
-#	ifdef __clang__
+#	if defined(__clang__) && !defined(__NV_CL_C_VERSION)
 			division_result = fast_div_v2(RCP, c[1], d);
 #	else
 			division_result = fast_div_v2(c[1], d);

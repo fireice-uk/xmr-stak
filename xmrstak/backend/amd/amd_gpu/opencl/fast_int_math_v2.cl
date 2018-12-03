@@ -43,7 +43,7 @@ static const __constant uint RCP_C[256] =
 };
 
 // Rocm produce invalid results if get_reciprocal without lookup table is used
-#ifdef __clang__
+#if defined(__clang__) && !defined(__NV_CL_C_VERSION)
 
 inline uint get_reciprocal(const __local uchar *RCP, uint a)
 {
@@ -83,7 +83,7 @@ inline uint get_reciprocal(uint a)
 
 #endif
 
-#ifdef __clang__
+#if defined(__clang__) && !defined(__NV_CL_C_VERSION)
 
 inline uint2 fast_div_v2(const __local uint *RCP, ulong a, uint b)
 {
