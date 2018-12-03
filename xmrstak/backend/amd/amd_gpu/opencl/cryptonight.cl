@@ -426,8 +426,13 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
         if (get_local_id(1) == 0)
         {
             __local ulong* State = State_buf + get_local_id(0) * 25;
-
+// NVIDIA
+#ifdef __NV_CL_C_VERSION
+			for(uint i = 0; i < 8; ++i)
+				State[i] = input[i];
+#else
             ((__local ulong8 *)State)[0] = vload8(0, input);
+#endif
             State[8]  = input[8];
             State[9]  = input[9];
             State[10] = input[10];
@@ -477,7 +482,7 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 
     mem_fence(CLK_LOCAL_MEM_FENCE);
 
-// cryptonight_heavy || cryptonight_haven || cryptonight_bittube2 || cryptonight_superfast 
+// cryptonight_heavy || cryptonight_haven || cryptonight_bittube2 || cryptonight_superfast
 #if (ALGO == 4 || ALGO == 9 || ALGO == 10 || ALGO == 12)
     __local uint4 xin[8][8];
     {
@@ -567,7 +572,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
 // cryptonight_monero_v8
 #if(ALGO==11)
-#	ifdef __clang__
+#	if defined(__clang__) && !defined(__NV_CL_C_VERSION)
     __local uint RCP[256];
 #	endif
 
@@ -582,7 +587,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
         AES0[i] = tmp;
         AES1[i] = rotate(tmp, 8U);
 // cryptonight_monero_v8
-#if(ALGO==11 && defined(__clang__))
+#if(ALGO==11 && (defined(__clang__) && !defined(__NV_CL_C_VERSION)))
 		RCP[i] = RCP_C[i];
 #endif
     }
@@ -718,7 +723,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
  			// Quotient may be as large as (2^64 - 1)/(2^31 + 1) = 8589934588 = 2^33 - 4
 			// We drop the highest bit to fit both quotient and remainder in 32 bits
 
-#	ifdef __clang__
+#	if defined(__clang__) && !defined(__NV_CL_C_VERSION)
 			division_result = fast_div_v2(RCP, c[1], d);
 #	else
 			division_result = fast_div_v2(c[1], d);

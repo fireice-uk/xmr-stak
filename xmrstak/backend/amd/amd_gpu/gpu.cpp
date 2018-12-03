@@ -421,7 +421,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		options += " -DSTRIDED_INDEX=" + std::to_string(strided_index);
 		options += " -DMEM_CHUNK_EXPONENT=" + std::to_string(mem_chunk_exp) + "U";
 		options += " -DCOMP_MODE=" + std::to_string(needCompMode);
-		options += " -DMEMORY=" + std::to_string(hashMemSize) + "LLU";
+		options += " -DMEMORY=" + std::to_string(hashMemSize) + "LU";
 		options += " -DALGO=" + std::to_string(miner_algo[ii]);
 		options += " -DCN_UNROLL=" + std::to_string(ctx->unroll);
 		/* AMD driver output is something like: `1445.5 (VM)`
@@ -1276,7 +1276,7 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo)
 
 	if((ret = clEnqueueWriteBuffer(ctx->CommandQueues, ctx->OutputBuffer, CL_FALSE, sizeof(cl_uint) * 0xFF, sizeof(cl_uint), &zero, 0, NULL, NULL)) != CL_SUCCESS)
 	{
-		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueReadBuffer to fetch results.", err_to_str(ret));
+		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueWriteBuffer to fetch results.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
 
