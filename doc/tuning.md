@@ -148,6 +148,7 @@ description:
 `last delay` should gou slowly to 0.
 If it goes down and than jumps to a very large value multiple times within a minute you should reduce the intensity by 5.
 The `intensity value` will automatically go up and down within the range of +-5% to adjust kernel run-time fluctuations.
+Automatic adjustment is disabled as long as `auto-tuning` is active and will be started after it is finished. 
 If `last delay` goes down to 10ms and the messages stops and repeated from time to time with delays up to 15ms you will have already a good value.
 
 ### disable comp_mode

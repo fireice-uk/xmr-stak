@@ -39,6 +39,7 @@ private:
 
 	std::thread oWorkThd;
 	int64_t affinity;
+	uint32_t autoTune;
 
 	bool bQuit;
 	bool bNoPrefetch;
