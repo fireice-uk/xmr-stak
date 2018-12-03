@@ -2,10 +2,17 @@
 
 ## Install Dependencies
 
-### AMD APP SDK 3.0 (only needed to use AMD GPUs)
+### AMD Driver (only needed to use AMD GPUs)
 
-- download and install the latest version from https://www.dropbox.com/sh/mpg882ekirnsfa7/AADWz5X-TgVdsmWt0QwMgTWLa/AMD-APP-SDKInstaller-v3.0.130.136-GA-linux64.tar.bz2?dl=0
-  (do not wonder why it is a link to a dropbox but AMD has removed the SDK downloads, see https://community.amd.com/thread/228059)
+- the AMD APP SDK is not longer needed (all is included in the driver package)
+- download & unzip the AMD driver: https://www.amd.com/en/support
+- run `./amdgpu-pro-install --opencl=legacy,pal` from the unzipped folder
+- set the environment variable to opencl `export AMDAPPSDKROOT=/opt/amdgpu-pro/`
+
+**ATTENTION** The linux driver 18.3 creating invalid shares. 
+If you have an issue with `invalid shares` please downgrade your driver or switch to ROCm.
+
+For linux also the OpenSource driver ROCm 1.9.X+ is a well working alternative, see https://rocm.github.io/ROCmInstall.html
 
 ### Cuda 8.0+ (only needed to use NVIDIA GPUs)
 
@@ -104,6 +111,8 @@ In that case you can force CUDA to use an older compiler in the following way:
 ```
 cmake -DCUDA_HOST_COMPILER=/usr/bin/gcc-5 ..
 ```
+
+- You need 1 Gb RAM to compile (a bit less might be enough, 512 Mb isn't). 
 
 ### To do a generic and static build for a system without gcc 5.1+
 ```

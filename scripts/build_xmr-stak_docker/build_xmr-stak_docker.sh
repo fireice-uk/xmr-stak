@@ -18,7 +18,7 @@ chmod a+x cuda_*_linux-run
 ########################
 # Fedora 27
 ########################
-# CUDA is not going to work on Fedora 27 beacuse it's only support these distributions: http://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
+# CUDA is not going to work on Fedora 27 beacuse it only supports these distributions: http://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
 docker run --rm -it -v $PWD:/mnt fedora:27 /bin/bash -c "
 set -x ;
 dnf install -y -q cmake gcc-c++ hwloc-devel libmicrohttpd-devel libstdc++-static make openssl-devel;

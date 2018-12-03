@@ -71,17 +71,17 @@ int httpd::req_handler(void * cls,
 		if (username == NULL)
 		{
 			rsp = MHD_create_response_from_buffer(sHtmlAccessDeniedSize, (void*)sHtmlAccessDenied, MHD_RESPMEM_PERSISTENT);
-			ret = MHD_queue_auth_fail_response(connection, sHttpAuthRelam, sHttpAuthOpaque, rsp, MHD_NO);
+			ret = MHD_queue_auth_fail_response(connection, sHttpAuthRealm, sHttpAuthOpaque, rsp, MHD_NO);
 			MHD_destroy_response(rsp);
 			return ret;
 		}
 		free(username);
 
-		ret = MHD_digest_auth_check(connection, sHttpAuthRelam, jconf::inst()->GetHttpUsername(), jconf::inst()->GetHttpPassword(), 300);
+		ret = MHD_digest_auth_check(connection, sHttpAuthRealm, jconf::inst()->GetHttpUsername(), jconf::inst()->GetHttpPassword(), 300);
 		if (ret == MHD_INVALID_NONCE || ret == MHD_NO)
 		{
 			rsp = MHD_create_response_from_buffer(sHtmlAccessDeniedSize, (void*)sHtmlAccessDenied, MHD_RESPMEM_PERSISTENT);
-			ret = MHD_queue_auth_fail_response(connection, sHttpAuthRelam, sHttpAuthOpaque, rsp, (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO);
+			ret = MHD_queue_auth_fail_response(connection, sHttpAuthRealm, sHttpAuthOpaque, rsp, (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO);
 			MHD_destroy_response(rsp);
 			return ret;
 		}

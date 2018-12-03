@@ -24,14 +24,14 @@ public:
 	static bool init_gpus();
 
 private:
-	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx*);
+	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**);
 
 	minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::thd_cfg cfg);
 
 	void work_main();
 
 	uint64_t iJobNo;
-	
+
 	miner_work oWork;
 
 	std::promise<void> order_fix;

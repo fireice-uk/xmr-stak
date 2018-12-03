@@ -27,8 +27,11 @@ namespace xmrstak
 struct plugin
 {
 
-	plugin(const std::string backendName, const std::string libName) : fn_startBackend(nullptr), m_backendName(backendName)
+	plugin() = default;
+
+	void load(const std::string backendName, const std::string libName)
 	{
+		m_backendName = backendName;
 #ifdef WIN32
 		libBackend = LoadLibrary(TEXT((libName + ".dll").c_str()));
 		if(!libBackend)
@@ -81,32 +84,36 @@ struct plugin
 		if(fn_startBackend == nullptr)
 		{
 			std::vector<iBackend*>* pvThreads = new std::vector<iBackend*>();
-			std::cerr << "WARNING: " << m_backendName << " Backend disabled"<< std::endl;
 			return pvThreads;
 		}
 
 		return fn_startBackend(threadOffset, pWork, env);
 	}
 
+	void unload()
+	{
+		if(libBackend)
+		{
+#ifdef WIN32
+			FreeLibrary(libBackend);
+#else
+			dlclose(libBackend);
+#endif
+		}
+		fn_startBackend = nullptr;
+	}
+
 	std::string m_backendName;
 
 	typedef std::vector<iBackend*>* (*startBackend_t)(uint32_t threadOffset, miner_work& pWork, environment& env);
 
-	startBackend_t fn_startBackend;
+	startBackend_t fn_startBackend = nullptr;
 
 #ifdef WIN32
 	HINSTANCE libBackend;
 #else
-	void *libBackend;
+	void *libBackend = nullptr;
 #endif
-
-/* \todo add unload to destructor and change usage of plugin that libs kept open until the miner ends
-#ifdef WIN32
-	FreeLibrary(libBackend);
-#else
-	dlclose(libBackend);
-#endif
- * */
 };
 
 } // namespace xmrstak

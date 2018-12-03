@@ -99,6 +99,7 @@ bool minethd::init_gpus()
 		vGpuData[i].stridedIndex = cfg.stridedIndex;
 		vGpuData[i].memChunk = cfg.memChunk;
 		vGpuData[i].compMode = cfg.compMode;
+		vGpuData[i].unroll = cfg.unroll;
 	}
 
 	return InitOpenCL(vGpuData.data(), n, jconf::inst()->GetPlatformIdx()) == ERR_SUCCESS;
@@ -173,6 +174,11 @@ void minethd::work_main()
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
 
+	if(cpu_ctx == nullptr)
+	{
+		printer::inst()->print_msg(L0, "ERROR: miner was not able to allocate memory, miner will be stopped.");
+		win_exit(1);
+	}
 	// start with root algorithm and switch later if fork version is reached
 	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
 	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
@@ -235,7 +241,7 @@ void minethd::work_main()
 				if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo)
 					break;
 			}
-			
+
 
 			cl_uint results[0x100];
 			memset(results,0,sizeof(cl_uint)*(0x100));
@@ -252,9 +258,9 @@ void minethd::work_main()
 
 				*(uint32_t*)(bWorkBlob + 39) = results[i];
 
-				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, cpu_ctx);
+				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, &cpu_ctx);
 				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
-					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, results[i], bResult, iThreadNo), oWork.iPoolId));
+					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, results[i], bResult, iThreadNo, miner_algo), oWork.iPoolId));
 				else
 					executor::inst()->push_event(ex_event("AMD Invalid Result", pGpuCtx->deviceIdx, oWork.iPoolId));
 			}

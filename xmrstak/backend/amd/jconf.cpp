@@ -106,17 +106,18 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 	if(!oThdConf.IsObject())
 		return false;
 
-	const Value *idx, *intensity, *w_size, *aff, *stridedIndex, *memChunk, *compMode;
+	const Value *idx, *intensity, *w_size, *aff, *stridedIndex, *memChunk, *unroll, *compMode;
 	idx = GetObjectMember(oThdConf, "index");
 	intensity = GetObjectMember(oThdConf, "intensity");
 	w_size = GetObjectMember(oThdConf, "worksize");
 	aff = GetObjectMember(oThdConf, "affine_to_cpu");
 	stridedIndex = GetObjectMember(oThdConf, "strided_index");
 	memChunk = GetObjectMember(oThdConf, "mem_chunk");
+	unroll = GetObjectMember(oThdConf, "unroll");
 	compMode = GetObjectMember(oThdConf, "comp_mode");
 
 	if(idx == nullptr || intensity == nullptr || w_size == nullptr || aff == nullptr || memChunk == nullptr ||
-		stridedIndex == nullptr || compMode == nullptr)
+		stridedIndex == nullptr || unroll == nullptr || compMode == nullptr)
 		return false;
 
 	if(!idx->IsUint64() || !intensity->IsUint64() || !w_size->IsUint64())
@@ -142,13 +143,20 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 		return false;
 	}
 
-	cfg.memChunk = (int)memChunk->GetInt64();
-
-	if(!idx->IsUint64() || cfg.memChunk > 18 )
+	if(!memChunk->IsUint64() || (int)memChunk->GetInt64() > 18 )
 	{
 		printer::inst()->print_msg(L0, "ERROR: mem_chunk must be smaller than 18");
 		return false;
 	}
+
+	cfg.memChunk = (int)memChunk->GetInt64();
+
+	if(!unroll->IsUint64() || (int)unroll->GetInt64() >= 128 || (int)unroll->GetInt64() == 0)
+	{
+		printer::inst()->print_msg(L0, "ERROR: unroll must be smaller than 128 and not zero");
+		return false;
+	}
+	cfg.unroll = (int)unroll->GetInt64();
 
 	if(!compMode->IsBool())
 		return false;

@@ -78,6 +78,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 	ctx.device_bfactor = (int)cfg.bfactor;
 	ctx.device_bsleep = (int)cfg.bsleep;
 	ctx.syncMode = cfg.syncMode;
+	ctx.memMode = cfg.memMode;
 	this->affinity = cfg.cpu_aff;
 
 	std::future<void> numa_guard = numa_promise.get_future();
@@ -144,6 +145,8 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 {
 	std::vector<iBackend*>* pvThreads = new std::vector<iBackend*>();
 
+	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
+
 	if(!configEditor::file_exist(params::inst().configFileNVIDIA))
 	{
 		autoAdjust adjust;
@@ -161,6 +164,10 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 	{
 		std::cout<<"WARNING: NVIDIA no device found"<<std::endl;
 		return pvThreads;
+	}
+	else
+	{
+		std::cout<<"NVIDIA: found "<< deviceCount <<" potential device's"<<std::endl;
 	}
 
 	size_t i, n = jconf::inst()->GetGPUThreadCount();
@@ -275,7 +282,7 @@ void minethd::work_main()
 			if((round_ctr++ & 0xF) == 0)
 			{
 				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, h_per_round * 16);
-				// check if the job is still valid, there is a small posibility that the job is switched
+				// check if the job is still valid, there is a small possibility that the job is switched
 				if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo)
 					break;
 			}
@@ -300,9 +307,9 @@ void minethd::work_main()
 
 				*(uint32_t*)(bWorkBlob + 39) = foundNonce[i];
 
-				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, cpu_ctx);
+				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, &cpu_ctx);
 				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
-					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, foundNonce[i], bResult, iThreadNo), oWork.iPoolId));
+					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, foundNonce[i], bResult, iThreadNo, miner_algo), oWork.iPoolId));
 				else
 					executor::inst()->push_event(ex_event("NVIDIA Invalid Result", ctx.device_id, oWork.iPoolId));
 			}

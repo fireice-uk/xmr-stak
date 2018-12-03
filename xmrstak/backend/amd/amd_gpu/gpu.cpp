@@ -17,6 +17,7 @@
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/picosha2/picosha2.hpp"
 #include "xmrstak/params.hpp"
+#include "xmrstak/version.hpp"
 
 #include <stdio.h>
 #include <string.h>
@@ -375,6 +376,13 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
+	std::vector<char> openCLDriverVer(1024);
+	if((ret = clGetDeviceInfo(ctx->DeviceID, CL_DRIVER_VERSION, openCLDriverVer.size(), openCLDriverVer.data(), NULL)) != CL_SUCCESS)
+	{
+		printer::inst()->print_msg(L1,"WARNING: %s when calling clGetDeviceInfo to get CL_DRIVER_VERSION for device %u.", err_to_str(ret),ctx->deviceIdx );
+		return ERR_OCL_API;
+	}
+
 	xmrstak_algo miner_algo[2] = {
 		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo(),
 		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot()
@@ -388,11 +396,36 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		int threadMemMask = cn_select_mask(miner_algo[ii]);
 		int hashIterations = cn_select_iter(miner_algo[ii]);
 
-		char options[512];
-		snprintf(options, sizeof(options),
-			"-DITERATIONS=%d -DMASK=%d -DWORKSIZE=%llu -DSTRIDED_INDEX=%d -DMEM_CHUNK_EXPONENT=%d  -DCOMP_MODE=%d -DMEMORY=%llu -DALGO=%d",
-		hashIterations, threadMemMask, int_port(ctx->workSize), ctx->stridedIndex, int(1u<<ctx->memChunk), ctx->compMode ? 1 : 0,
-			int_port(hashMemSize), int(miner_algo[ii]));
+		size_t mem_chunk_exp = 1u << ctx->memChunk;
+		size_t strided_index = ctx->stridedIndex;
+		/* Adjust the config settings to a valid combination
+		 * this is required if the dev pool is mining monero
+		 * but the user tuned there settings for another currency
+		 */
+		if(miner_algo[ii] == cryptonight_monero_v8)
+		{
+			if(ctx->memChunk < 2)
+				mem_chunk_exp = 1u << 2;
+			if(strided_index == 1)
+				strided_index = 0;
+		}
+
+		std::string options;
+		options += " -DITERATIONS=" + std::to_string(hashIterations);
+		options += " -DMASK=" + std::to_string(threadMemMask);
+		options += " -DWORKSIZE=" + std::to_string(ctx->workSize);
+		options += " -DSTRIDED_INDEX=" + std::to_string(strided_index);
+		options += " -DMEM_CHUNK_EXPONENT=" + std::to_string(mem_chunk_exp);
+		options += " -DCOMP_MODE=" + std::to_string(ctx->compMode ? 1u : 0u);
+		options += " -DMEMORY=" + std::to_string(hashMemSize);
+		options += " -DALGO=" + std::to_string(miner_algo[ii]);
+		options += " -DCN_UNROLL=" + std::to_string(ctx->unroll);
+		/* AMD driver output is something like: `1445.5 (VM)`
+		 * and is mapped to `14` only. The value is only used for a compiler
+		 * workaround.
+		 */
+		options += " -DOPENCL_DRIVER_MAJOR=" + std::to_string(std::stoi(openCLDriverVer.data()) / 100);
+
 		/* create a hash for the compile time cache
 		 * used data:
 		 *   - source code
@@ -402,6 +435,9 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		std::string src_str(source_code);
 		src_str += options;
 		src_str += devNameVec.data();
+		src_str += get_version_str();
+		src_str += openCLDriverVer.data();
+
 		std::string hash_hex_str;
 		picosha2::hash256_hex_string(src_str, hash_hex_str);
 
@@ -418,7 +454,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 				return ERR_OCL_API;
 			}
 
-			ret = clBuildProgram(ctx->Program[ii], 1, &ctx->DeviceID, options, NULL, NULL);
+			ret = clBuildProgram(ctx->Program[ii], 1, &ctx->DeviceID, options.c_str(), NULL, NULL);
 			if(ret != CL_SUCCESS)
 			{
 				size_t len;
@@ -593,27 +629,6 @@ const char* const attributeNames[] = {
 };
 
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
-
-void PrintDeviceInfo(cl_device_id device)
-{
-	char queryBuffer[1024];
-	int queryInt;
-	cl_int clError;
-	clError = clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(queryBuffer), &queryBuffer, NULL);
-	printf("    CL_DEVICE_NAME: %s\n", queryBuffer);
-	queryBuffer[0] = '\0';
-	clError = clGetDeviceInfo(device, CL_DEVICE_VENDOR, sizeof(queryBuffer), &queryBuffer, NULL);
-	printf("    CL_DEVICE_VENDOR: %s\n", queryBuffer);
-	queryBuffer[0] = '\0';
-	clError = clGetDeviceInfo(device, CL_DRIVER_VERSION, sizeof(queryBuffer), &queryBuffer, NULL);
-	printf("    CL_DRIVER_VERSION: %s\n", queryBuffer);
-	queryBuffer[0] = '\0';
-	clError = clGetDeviceInfo(device, CL_DEVICE_VERSION, sizeof(queryBuffer), &queryBuffer, NULL);
-	printf("    CL_DEVICE_VERSION: %s\n", queryBuffer);
-	queryBuffer[0] = '\0';
-	clError = clGetDeviceInfo(device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &queryInt, NULL);
-	printf("    CL_DEVICE_MAX_COMPUTE_UNITS: %d\n", queryInt);
-}
 
 uint32_t getNumPlatforms()
 {
@@ -885,6 +900,12 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 
 	//char* source_code = LoadTextFile(sSourcePath);
 
+	const char *fastIntMathV2CL =
+			#include "./opencl/fast_int_math_v2.cl"
+	;
+    const char *fastDivHeavyCL =
+        #include "./opencl/fast_div_heavy.cl"
+    ;
 	const char *cryptonightCL =
 			#include "./opencl/cryptonight.cl"
 	;
@@ -905,6 +926,8 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	;
 
 	std::string source_code(cryptonightCL);
+	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_FAST_INT_MATH_V2"), fastIntMathV2CL);
+    source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_FAST_DIV_HEAVY"), fastDivHeavyCL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_WOLF_AES"), wolfAesCL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_WOLF_SKEIN"), wolfSkeinCL);
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_JH"), jhCL);
@@ -916,11 +939,11 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 
 	for(int i = 0; i < num_gpus; ++i)
 	{
+		const std::string backendName = xmrstak::params::inst().openCLVendor;
 		if(ctx[i].stridedIndex == 2 && (ctx[i].rawIntensity % ctx[i].workSize) != 0)
 		{
 			size_t reduced_intensity = (ctx[i].rawIntensity / ctx[i].workSize) * ctx[i].workSize;
 			ctx[i].rawIntensity = reduced_intensity;
-			const std::string backendName = xmrstak::params::inst().openCLVendor;
 			printer::inst()->print_msg(L0, "WARNING %s: gpu %d intensity is not a multiple of 'worksize', auto reduce intensity to %d", backendName.c_str(), ctx[i].deviceIdx, int(reduced_intensity));
 		}
 
@@ -946,7 +969,7 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 	input[input_len] = 0x01;
 	memset(input + input_len + 1, 0, 88 - input_len - 1);
 
-	size_t numThreads = ctx->rawIntensity;
+	cl_uint numThreads = ctx->rawIntensity;
 
 	if((ret = clEnqueueWriteBuffer(ctx->CommandQueues, ctx->InputBuffer, CL_TRUE, 0, 88, input, 0, NULL, NULL)) != CL_SUCCESS)
 	{
@@ -975,7 +998,7 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 	}
 
 	// Threads
-	if((ret = clSetKernelArg(ctx->Kernels[kernel_storage][0], 3, sizeof(cl_ulong), &numThreads)) != CL_SUCCESS)
+	if((ret = clSetKernelArg(ctx->Kernels[kernel_storage][0], 3, sizeof(cl_uint), &numThreads)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 0, argument 3.", err_to_str(ret));
 		return(ERR_OCL_API);
@@ -998,13 +1021,13 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 	}
 
 	// Threads
-	if((ret = clSetKernelArg(ctx->Kernels[kernel_storage][1], 2, sizeof(cl_ulong), &numThreads)) != CL_SUCCESS)
+	if((ret = clSetKernelArg(ctx->Kernels[kernel_storage][1], 2, sizeof(cl_uint), &numThreads)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 1, argument 2.", err_to_str(ret));
 		return(ERR_OCL_API);
 	}
 
-	if(miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon || miner_algo == cryptonight_ipbc || miner_algo == cryptonight_stellite || miner_algo == cryptonight_masari)
+	if(miner_algo == cryptonight_monero || miner_algo == cryptonight_aeon || miner_algo == cryptonight_ipbc || miner_algo == cryptonight_stellite || miner_algo == cryptonight_masari || miner_algo == cryptonight_bittube2)
 	{
 		// Input
 		if ((ret = clSetKernelArg(ctx->Kernels[kernel_storage][1], 3, sizeof(cl_mem), &ctx->InputBuffer)) != CL_SUCCESS)
@@ -1058,7 +1081,7 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 	}
 
 	// Threads
-	if((ret = clSetKernelArg(ctx->Kernels[kernel_storage][2], 6, sizeof(cl_ulong), &numThreads)) != CL_SUCCESS)
+	if((ret = clSetKernelArg(ctx->Kernels[kernel_storage][2], 6, sizeof(cl_uint), &numThreads)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 2, argument 6.", err_to_str(ret));
 		return(ERR_OCL_API);
@@ -1137,7 +1160,7 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo)
 
 	clFinish(ctx->CommandQueues);
 
-	size_t Nonce[2] = {ctx->Nonce, 1}, gthreads[2] = { g_thd, 8 }, lthreads[2] = { w_size, 8 };
+	size_t Nonce[2] = {ctx->Nonce, 1}, gthreads[2] = { g_thd, 8 }, lthreads[2] = { 8, 8 };
 	if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, ctx->Kernels[kernel_storage][0], 2, Nonce, gthreads, lthreads, 0, NULL, NULL)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueNDRangeKernel for kernel %d.", err_to_str(ret), 0);
@@ -1189,7 +1212,8 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo)
 		if(BranchNonces[i])
 		{
 			// Threads
-			if((clSetKernelArg(ctx->Kernels[kernel_storage][i + 3], 4, sizeof(cl_ulong), BranchNonces + i)) != CL_SUCCESS)
+            cl_uint numThreads = BranchNonces[i];
+			if((clSetKernelArg(ctx->Kernels[kernel_storage][i + 3], 4, sizeof(cl_uint), &numThreads)) != CL_SUCCESS)
 			{
 				printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel %d, argument %d.", err_to_str(ret), i + 3, 4);
 				return(ERR_OCL_API);
