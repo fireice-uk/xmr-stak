@@ -60,8 +60,8 @@ struct params
 	params() :
 		binaryName("xmr-stak"),
 		executablePrefix(""),
-		useAMD(false),
-		useNVIDIA(false),
+		useAMD(true),
+		useNVIDIA(true),
 		useCPU(true),
 		openCLVendor("AMD"),
 		configFile("config.txt"),
