@@ -662,7 +662,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			((uint4 *)c)[0] = SCRATCHPAD_CHUNK(0);
 // cryptonight_bittube2
 #if(ALGO == 10)
-			((uint4 *)c)[0] = AES_Round2(AES0, AES1, ~((uint4 *)c)[0], ((uint4 *)a)[0]);
+			((uint4 *)c)[0] = AES_Round2_bittube2(AES0, AES1, ~((uint4 *)c)[0], ((uint4 *)a)[0]);
 #else
 			((uint4 *)c)[0] = AES_Round2(AES0, AES1, ((uint4 *)c)[0], ((uint4 *)a)[0]);
 #endif
