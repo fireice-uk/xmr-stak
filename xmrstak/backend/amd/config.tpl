@@ -48,7 +48,7 @@ GPUCONFIG
  * WARNING: experimental option
  *
  * 0 = disable auto tuning
- * 10 or higher = recommended value if you not already know the best intensity
+ * 10 or higher = recommended value if you don't already know the best intensity
  */
 "auto_tune" : 0,
 

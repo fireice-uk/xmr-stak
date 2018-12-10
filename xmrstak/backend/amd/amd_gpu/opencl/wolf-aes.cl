@@ -119,6 +119,19 @@ uint4 AES_Round2(const __local uint *AES0, const __local uint *AES1, const uint4
 	return key;
 }
 
+uint4 AES_Round2_bittube2(const __local uint *AES0, const __local uint *AES1, uint4 X, uint4 key)
+{
+	key.s0 ^= AES0[BYTE(X.s0, 0)] ^ rotate(AES0[BYTE(X.s2, 2)] ^ AES1[BYTE(X.s3, 3)], 16u) ^ AES1[BYTE(X.s1, 1)];
+	X.s0 ^= key.s0;
+	key.s1 ^= AES0[BYTE(X.s1, 0)] ^ rotate(AES0[BYTE(X.s3, 2)] ^ AES1[BYTE(X.s0, 3)], 16u) ^  AES1[BYTE(X.s2, 1)];
+	X.s1 ^= key.s1;
+	key.s2 ^= AES0[BYTE(X.s2, 0)] ^ rotate(AES0[BYTE(X.s0, 2)] ^ AES1[BYTE(X.s1, 3)], 16u) ^ AES1[BYTE(X.s3, 1)];
+	X.s2 ^= key.s2;
+	key.s3 ^= AES0[BYTE(X.s3, 0)] ^ rotate(AES0[BYTE(X.s1, 2)] ^ AES1[BYTE(X.s2, 3)], 16u) ^ AES1[BYTE(X.s0, 1)];
+
+	return key;
+}
+
 #endif
 
 )==="
