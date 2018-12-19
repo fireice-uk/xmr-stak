@@ -1040,9 +1040,27 @@ void executor::http_hashrate_report(std::string& out)
 	out.append(buffer);
 
 	double fTotal[3] = { 0.0, 0.0, 0.0};
+	auto bTypePrev = static_cast<xmrstak::iBackend::BackendType>(0);
+	std::string name;
+	size_t j = 0;
 	for(size_t i=0; i < nthd; i++)
 	{
 		double fHps[3];
+		char csThreadTag[25];
+		auto bType = static_cast<xmrstak::iBackend::BackendType>(pvThreads->at(i)->backendType);
+		if(bTypePrev == bType)
+			j++;
+		else
+		{
+			j = 0;
+			bTypePrev = bType;
+			name = xmrstak::iBackend::getName(bType);
+			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+		}
+		snprintf(csThreadTag, sizeof(csThreadTag),
+			(99 < nthd) ? "[%s.%03u]:%03u" : ((9 < nthd) ? "[%s.%02u]:%02u" : "[%s.%u]:%u"),
+			name.c_str(), (unsigned int)(j), (unsigned int)i
+		);
 
 		fHps[0] = telem->calc_telemetry_data(10000, i);
 		fHps[1] = telem->calc_telemetry_data(60000, i);
@@ -1057,7 +1075,7 @@ void executor::http_hashrate_report(std::string& out)
 		fTotal[1] += fHps[1];
 		fTotal[2] += fHps[2];
 
-		snprintf(buffer, sizeof(buffer), sHtmlHashrateTableRow, (unsigned int)i, num_a, num_b, num_c);
+		snprintf(buffer, sizeof(buffer), sHtmlHashrateTableRow, csThreadTag, num_a, num_b, num_c);
 		out.append(buffer);
 	}
 
