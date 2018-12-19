@@ -185,6 +185,7 @@ extern const char sHtmlConnectionBodyLow [] =
 extern const char sHtmlResultBodyHigh [] =
 	"<div class='data'>"
 	"<table>"
+		"<tr><th>Currency</th><td>%s</td></tr>"
 		"<tr><th>Difficulty</th><td>%u</td></tr>"
 		"<tr><th>Good results</th><td>%u / %u (%.1f %%)</td></tr>"
 		"<tr><th>Avg result time</th><td>%.1f sec</td></tr>"
