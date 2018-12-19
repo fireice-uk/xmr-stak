@@ -168,6 +168,7 @@ extern const char sHtmlHashrateBodyLow [] =
 extern const char sHtmlConnectionBodyHigh [] =
 	"<div class='data'>"
 	"<table>"
+		"<tr><th>Rig ID</th><td>%s</td></tr>"
 		"<tr><th>Pool address</th><td>%s</td></tr>"
 		"<tr><th>Connected since</th><td>%s</td></tr>"
 		"<tr><th>Pool ping time</th><td>%u ms</td></tr>"
