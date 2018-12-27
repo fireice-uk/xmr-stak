@@ -33,6 +33,7 @@ POOLCONF],
  *    qrl - Quantum Resistant Ledger
  *    ryo
  *    turtlecoin
+ *    zelerius (automatic switch with block version 6 to cryptonight_v8)
  *
  * Native algorithms which not depends on any block versions:
  *

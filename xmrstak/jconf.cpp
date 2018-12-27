@@ -111,7 +111,8 @@ xmrstak::coin_selection coins[] = {
 	{ "qrl",             	 {cryptonight_monero_v8, cryptonight_monero, 255u},   {cryptonight_monero_v8, cryptonight_monero_v8, 0u}, nullptr },
 	{ "ryo",                 {cryptonight_heavy, cryptonight_heavy, 0u},          {cryptonight_heavy, cryptonight_heavy, 0u},   nullptr },
 	{ "stellite",            {cryptonight_monero_v8, cryptonight_stellite, 255u}, {cryptonight_monero_v8, cryptonight_monero_v8, 0u}, nullptr },
-	{ "turtlecoin",          {cryptonight_aeon, cryptonight_aeon, 0u},            {cryptonight_aeon, cryptonight_aeon, 0u},     nullptr }
+    { "turtlecoin",          {cryptonight_aeon, cryptonight_aeon, 0u},            {cryptonight_aeon, cryptonight_aeon, 0u},     nullptr },
+    { "zelerius",            {cryptonight_monero_v8, cryptonight_monero, 0u},     {cryptonight_monero_v8, cryptonight_monero_v8, 0u}, "pool.zelerius.org:3333" }
 };
 
 constexpr size_t coin_algo_size = (sizeof(coins)/sizeof(coins[0]));

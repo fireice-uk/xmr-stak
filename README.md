@@ -48,6 +48,7 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 - [QRL](https://theqrl.org)
 - **[Ryo](https://ryo-currency.com) - Upcoming xmr-stak-gui is sponsored by Ryo**
 - [TurtleCoin](https://turtlecoin.lol)
+- [Zelerius](https://zelerius.org)
 
 Ryo currency is a way for us to implement the ideas that we were unable to in
 Monero. See [here](https://github.com/fireice-uk/cryptonote-speedup-demo/) for details.
