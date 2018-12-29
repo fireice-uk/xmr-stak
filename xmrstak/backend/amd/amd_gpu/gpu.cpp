@@ -316,10 +316,13 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	size_t scratchPadSize = std::max(
-		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
-		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
-	);
+	auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
+
+	size_t scratchPadSize = 0;
+	for(const auto algo : neededAlgorithms)
+	{
+		scratchPadSize = std::max(scratchPadSize, cn_select_memory(algo));
+	}
 
 	size_t g_thd = ctx->rawIntensity;
 	ctx->ExtraBuffers[0] = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, scratchPadSize * g_thd, NULL, &ret);
@@ -390,22 +393,8 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	std::array<xmrstak_algo, 4> selectedAlgos = {
-	    ::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgo(),
-		::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgoRoot(),
-		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo(),
-		::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot()
-	};
-
-	for(int ii = 0; ii < selectedAlgos.size(); ++ii)
+	for(const auto miner_algo : neededAlgorithms)
 	{
-		xmrstak_algo miner_algo = selectedAlgos[ii];
-		bool alreadyCompiled = ctx->Program.find(miner_algo) != ctx->Program.end();
-		if(alreadyCompiled)
-		{
-			printer::inst()->print_msg(L1,"OpenCL device %u - Skip %u",ctx->deviceIdx, (uint32_t)miner_algo);
-			continue;
-		}
 		// scratchpad size for the selected mining algorithm
 		size_t hashMemSize = cn_select_memory(miner_algo);
 		int threadMemMask = cn_select_mask(miner_algo);

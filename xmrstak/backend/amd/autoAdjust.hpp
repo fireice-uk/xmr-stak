@@ -83,10 +83,13 @@ private:
 
 		constexpr size_t byteToMiB = 1024u * 1024u;
 
-		size_t hashMemSize = std::max(
-			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
-			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
-		);
+		auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
+
+		size_t hashMemSize = 0;
+		for(const auto algo : neededAlgorithms)
+		{
+			hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+		}
 
 		std::string conf;
 		for(auto& ctx : devVec)
@@ -128,18 +131,10 @@ private:
 			}
 
 			// check if cryptonight_monero_v8 is selected for the user or dev pool
-			bool useCryptonight_v8 =
-				::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_monero_v8 ||
-				::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot() == cryptonight_monero_v8 ||
-				::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgo() == cryptonight_monero_v8 ||
-				::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgoRoot() == cryptonight_monero_v8;
+			bool useCryptonight_v8 = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_monero_v8) != neededAlgorithms.end();
 
 			// true for all cryptonight_heavy derivates since we check the user and dev pool
-			bool useCryptonight_heavy =
-				::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_heavy ||
-				::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot() == cryptonight_heavy ||
-				::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgo() == cryptonight_heavy ||
-				::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgoRoot() == cryptonight_heavy;
+			bool useCryptonight_heavy = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_heavy) != neededAlgorithms.end();
 
 			// set strided index to default
 			ctx.stridedIndex = 1;
@@ -154,8 +149,8 @@ private:
 			else if(useCryptonight_heavy)
 				ctx.stridedIndex = 3;
 
-			// increase all intensity limits by two for aeon
-			if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_lite)
+			// increase all intensity limits by two if scratchpad is only 1 MiB
+			if(hashMemSize <= CRYPTONIGHT_LITE_MEMORY)
 				maxThreads *= 2u;
 
 			// keep 128MiB memory free (value is randomly chosen) from the max available memory

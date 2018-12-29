@@ -239,15 +239,17 @@ bool minethd::self_test()
 	cn_hash_fun hashf;
 	cn_hash_fun hashf_multi;
 
-	xmrstak_algo algo = xmrstak_algo::invalid_algo;
-
-	for(int algo_idx = 0; algo_idx < 2; ++algo_idx)
+	if(xmrstak_algo::invalid_algo == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgoRoot() ||
+		xmrstak_algo::invalid_algo == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
 	{
-		if(algo_idx == 0)
-			algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo();
-		else
-			algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
+		printer::inst()->print_msg(L0, "Root algorithm is not allowed to be invalid");
+		return false;
+	}
 
+	auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
+
+	for(const auto algo : neededAlgorithms)
+	{
 		if(algo == cryptonight)
 		{
 			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight);
@@ -590,7 +592,7 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, true, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, false, true>,
 		Cryptonight_hash<N>::template hash<cryptonight_monero_v8, true, true>,
-    
+
 		Cryptonight_hash<N>::template hash<cryptonight_superfast, false, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_superfast, true, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_superfast, false, true>,
@@ -633,7 +635,7 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 				printer::inst()->print_msg(L1, "Assembler '%s' unknown, fallback to non asm version of cryptonight_v8", selected_asm.c_str());
 		}
 	}
-	
+
 	return selected_function;
 }
 
