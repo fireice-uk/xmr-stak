@@ -409,7 +409,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		 * this is required if the dev pool is mining monero
 		 * but the user tuned there settings for another currency
 		 */
-		if(miner_algo[ii] == cryptonight_monero_v8)
+		if(miner_algo[ii] == cryptonight_monero_v8 || miner_algo[ii] == cryptonight_turtle)
 		{
 			if(ctx->memChunk < 2)
 				mem_chunk_exp = 1u << 2;
