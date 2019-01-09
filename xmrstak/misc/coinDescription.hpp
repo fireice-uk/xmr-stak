@@ -4,7 +4,8 @@
 
 #include <stdlib.h>
 #include <string>
-
+#include <vector>
+#include <algorithm>
 
 namespace xmrstak
 {
@@ -55,6 +56,28 @@ namespace xmrstak
 		inline coinDescription GetDescription(size_t poolId) const {
 			coinDescription tmp = (poolId == 0 ? pool_coin[1] : pool_coin[0]);
 			return tmp;
+		}
+
+		/** return all POW algorithm for the current selected currency
+		 *
+		 * @return required POW algorithms without duplicated entries
+		 */
+		inline std::vector<xmrstak_algo> GetAllAlgorithms()
+		{
+			std::vector<xmrstak_algo> allAlgos = {
+				GetDescription(0).GetMiningAlgo(),
+				GetDescription(0).GetMiningAlgoRoot(),
+				GetDescription(1).GetMiningAlgo(),
+				GetDescription(1).GetMiningAlgoRoot()
+			};
+
+			std::sort(allAlgos.begin(), allAlgos.end());
+			std::remove(allAlgos.begin(), allAlgos.end(), invalid_algo);
+			auto last = std::unique(allAlgos.begin(), allAlgos.end());
+			// remove duplicated algorithms
+			allAlgos.erase(last, allAlgos.end());
+
+			return allAlgos;
 		}
 	};
 } // namespace xmrstak

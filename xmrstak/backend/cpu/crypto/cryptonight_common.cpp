@@ -203,10 +203,13 @@ size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 
 cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 {
-	size_t hashMemSize = std::max(
-		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
-		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
-	);
+	auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
+
+	size_t hashMemSize = 0;
+	for(const auto algo : neededAlgorithms)
+	{
+		hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+	}
 
 	cryptonight_ctx* ptr = (cryptonight_ctx*)_mm_malloc(sizeof(cryptonight_ctx), 4096);
 
@@ -284,10 +287,13 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 
 void cryptonight_free_ctx(cryptonight_ctx* ctx)
 {
-	size_t hashMemSize = std::max(
-		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
-		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
-	);
+	auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
+
+	size_t hashMemSize = 0;
+	for(const auto algo : neededAlgorithms)
+	{
+		hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+	}
 
 	if(ctx->ctx_info[0] != 0)
 	{

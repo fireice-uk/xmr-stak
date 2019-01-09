@@ -287,19 +287,22 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	// prefer shared memory over L1 cache
 	CUDA_CHECK(ctx->device_id, cudaDeviceSetCacheConfig(cudaFuncCachePreferShared));
 
-	size_t hashMemSize = std::max(
-		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
-		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
-	);
+	auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
+
+	size_t hashMemSize = 0;
+	for(const auto algo : neededAlgorithms)
+	{
+		hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+	}
 
 	size_t wsize = ctx->device_blocks * ctx->device_threads;
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state, 50 * sizeof(uint32_t) * wsize));
 	size_t ctx_b_size = 4 * sizeof(uint32_t) * wsize;
 	if(
-		cryptonight_heavy == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() ||
-		cryptonight_haven == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() ||
-		cryptonight_bittube2 == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() ||
-		cryptonight_superfast == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()
+		std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_heavy) != neededAlgorithms.end() ||
+		std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_haven) != neededAlgorithms.end() ||
+		std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_bittube2) != neededAlgorithms.end() ||
+		std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_superfast) != neededAlgorithms.end()
 	)
 	{
 		// extent ctx_b to hold the state of idx0
@@ -307,8 +310,7 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 		// create a double buffer for the state to exchange the mixed state to phase1
 		CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state2, 50 * sizeof(uint32_t) * wsize));
 	}
-	else if(cryptonight_monero_v8 == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() ||
-			cryptonight_monero_v8 == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
+	else if(std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_monero_v8) != neededAlgorithms.end())
 	{
 		// bx1 (16byte), division_result (8byte) and sqrt_result (8byte)
 		ctx_b_size = 3 * 4 * sizeof(uint32_t) * wsize;
@@ -409,7 +411,7 @@ extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, 
 			"\n**suggestion: Try to increase the value of the attribute 'bfactor' in the NVIDIA config file.**",
 			cryptonight_extra_gpu_final<cryptonight_superfast><<<grid, block >>>( wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state,ctx->d_ctx_key2 )
 		);
-	} 
+	}
 	else if(miner_algo == cryptonight_bittube2)
 	{
 		CUDA_CHECK_MSG_KERNEL(
@@ -656,10 +658,13 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		ctx->total_device_memory = totalMemory;
 		ctx->free_device_memory = freeMemory;
 
-		size_t hashMemSize = std::max(
-			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
-			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
-		);
+		auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
+
+		size_t hashMemSize = 0;
+		for(const auto algo : neededAlgorithms)
+		{
+			hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+		}
 
 #ifdef WIN32
 		/* We use in windows bfactor (split slow kernel into smaller parts) to avoid
@@ -688,10 +693,10 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		// 680bytes are extra meta data memory per hash
 		size_t perThread = hashMemSize + 16192u + 680u;
 		if(
-			cryptonight_heavy == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() ||
-			cryptonight_haven == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() ||
-			cryptonight_bittube2 == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() ||
-			cryptonight_superfast == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()
+			std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_heavy) != neededAlgorithms.end() ||
+			std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_haven) != neededAlgorithms.end() ||
+			std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_bittube2) != neededAlgorithms.end() ||
+			std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_superfast) != neededAlgorithms.end()
 		)
 			perThread += 50 * 4; // state double buffer
 
@@ -707,9 +712,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		}
 
 		// check if cryptonight_monero_v8 is selected for the user pool
-		bool useCryptonight_v8 =
-			::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_monero_v8 ||
-			::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot() == cryptonight_monero_v8;
+		bool useCryptonight_v8 = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_monero_v8) != neededAlgorithms.end();
 
 		// overwrite default config if cryptonight_monero_v8 is mined and GPU has at least compute capability 5.0
 		if(useCryptonight_v8 && gpuArch >= 50)
