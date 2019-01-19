@@ -365,7 +365,7 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 
 	jpsock* pool = pick_pool_by_id(pool_id);
 
-	xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob, oPoolJob.iWorkLen, oPoolJob.iTarget, pool->is_nicehash(), pool_id);
+	xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob, oPoolJob.iWorkLen, oPoolJob.iTarget, pool->is_nicehash(), pool_id, oPoolJob.bMajorVersion, oPoolJob.bMinorVersion);
 
 	xmrstak::pool_data dat;
 	dat.iSavedNonce = oPoolJob.iSavedNonce;

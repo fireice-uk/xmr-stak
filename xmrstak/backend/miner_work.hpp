@@ -21,12 +21,14 @@ namespace xmrstak
 		bool        bNiceHash;
 		bool        bStall;
 		size_t      iPoolId;
+		uint32_t    bMajorVersion;
+		uint32_t    bMinorVersion;
 
-		miner_work() : iWorkSize(0), bNiceHash(false), bStall(true), iPoolId(invalid_pool_id) { }
+		miner_work() : iWorkSize(0), bNiceHash(false), bStall(true), iPoolId(invalid_pool_id), bMajorVersion(0), bMinorVersion(0) { }
 
 		miner_work(const char* sJobID, const uint8_t* bWork, uint32_t iWorkSize,
-			uint64_t iTarget, bool bNiceHash, size_t iPoolId) : iWorkSize(iWorkSize),
-			iTarget(iTarget), bNiceHash(bNiceHash), bStall(false), iPoolId(iPoolId)
+			uint64_t iTarget, bool bNiceHash, size_t iPoolId, const uint32_t bMajorVersion, const uint32_t bMinorVersion) : iWorkSize(iWorkSize),
+			iTarget(iTarget), bNiceHash(bNiceHash), bStall(false), iPoolId(iPoolId), bMajorVersion(bMajorVersion), bMinorVersion(bMinorVersion)
 		{
 			assert(iWorkSize <= sizeof(bWorkBlob));
 			memcpy(this->sJobID, sJobID, sizeof(miner_work::sJobID));
@@ -44,6 +46,8 @@ namespace xmrstak
 			bNiceHash = from.bNiceHash;
 			bStall = from.bStall;
 			iPoolId = from.iPoolId;
+			bMajorVersion = from.bMajorVersion;
+			bMinorVersion = from.bMinorVersion;
 
 			assert(iWorkSize <= sizeof(bWorkBlob));
 			memcpy(sJobID, from.sJobID, sizeof(sJobID));
@@ -53,7 +57,7 @@ namespace xmrstak
 		}
 
 		miner_work(miner_work&& from) : iWorkSize(from.iWorkSize), iTarget(from.iTarget),
-			bStall(from.bStall), iPoolId(from.iPoolId)
+			bStall(from.bStall), iPoolId(from.iPoolId), bMajorVersion(from.bMajorVersion), bMinorVersion(from.bMinorVersion)
 		{
 			assert(iWorkSize <= sizeof(bWorkBlob));
 			memcpy(sJobID, from.sJobID, sizeof(sJobID));
@@ -69,6 +73,8 @@ namespace xmrstak
 			bNiceHash = from.bNiceHash;
 			bStall = from.bStall;
 			iPoolId = from.iPoolId;
+			bMajorVersion = from.bMajorVersion;
+			bMinorVersion = from.bMinorVersion;
 
 			assert(iWorkSize <= sizeof(bWorkBlob));
 			memcpy(sJobID, from.sJobID, sizeof(sJobID));
@@ -79,6 +85,10 @@ namespace xmrstak
 
 		uint8_t getVersion() const
 		{
+			if (bMajorVersion != 0)
+			{
+				return (uint8_t) bMajorVersion;
+			}
 			return bWorkBlob[0];
 		}
 

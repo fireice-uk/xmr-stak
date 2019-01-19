@@ -16,10 +16,12 @@ struct pool_job
 	uint64_t	iTarget;
 	uint32_t	iWorkLen;
 	uint32_t	iSavedNonce;
+	uint32_t	bMajorVersion;
+	uint32_t	bMinorVersion;
 
-	pool_job() : iWorkLen(0), iSavedNonce(0) {}
-	pool_job(const char* sJobID, uint64_t iTarget, const uint8_t* bWorkBlob, uint32_t iWorkLen) :
-		iTarget(iTarget), iWorkLen(iWorkLen), iSavedNonce(0)
+	pool_job() : iWorkLen(0), iSavedNonce(0), bMajorVersion(0), bMinorVersion(0) {}
+	pool_job(const char* sJobID, uint64_t iTarget, const uint8_t* bWorkBlob, uint32_t iWorkLen, const uint32_t bMajorVersion, const uint32_t bMinorVersion) :
+		iTarget(iTarget), iWorkLen(iWorkLen), iSavedNonce(0), bMajorVersion(bMajorVersion), bMinorVersion(bMinorVersion)
 	{
 		assert(iWorkLen <= sizeof(pool_job::bWorkBlob));
 		memcpy(this->sJobID, sJobID, sizeof(pool_job::sJobID));

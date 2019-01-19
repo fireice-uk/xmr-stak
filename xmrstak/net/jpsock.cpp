@@ -403,11 +403,13 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 	if (!params->val->IsObject())
 		return set_socket_error("PARSE error: Job error 1");
 
-	const Value *blob, *jobid, *target, *motd;
+	const Value *blob, *jobid, *target, *motd, *majorVersion, *minorVersion;
 	jobid = GetObjectMember(*params->val, "job_id");
 	blob = GetObjectMember(*params->val, "blob");
 	target = GetObjectMember(*params->val, "target");
 	motd = GetObjectMember(*params->val, "motd");
+	majorVersion = GetObjectMember(*params->val, "blockMajorVersion");
+	minorVersion = GetObjectMember(*params->val, "blockMinorVersion");
 
 	if (jobid == nullptr || blob == nullptr || target == nullptr ||
 		!jobid->IsString() || !blob->IsString() || !target->IsString())
@@ -481,6 +483,16 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 		return set_socket_error("PARSE error: Job error 5");
 
 	iJobDiff = t64_to_diff(oPoolJob.iTarget);
+
+	if (majorVersion != nullptr && majorVersion->IsUint())
+	{
+		oPoolJob.bMajorVersion = majorVersion->GetUint();
+	}
+
+	if (minorVersion != nullptr && minorVersion->IsUint())
+	{
+		oPoolJob.bMinorVersion = minorVersion->GetUint();
+	}
 
 	std::unique_lock<std::mutex> lck(job_mutex);
 	oCurrentJob = oPoolJob;
