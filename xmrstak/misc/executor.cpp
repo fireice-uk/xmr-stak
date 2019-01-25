@@ -884,6 +884,8 @@ void executor::result_report(std::string& out)
 		iTotalRes += vMineResults[i].count;
 
 	out.append("RESULT REPORT\n");
+	out.append("Currency         : ").
+		append(jconf::inst()->GetMiningCoin()).append("\n");
 	if(iTotalRes == 0)
 	{
 		out.append("You haven't found any results yet.\n");
@@ -1119,6 +1121,7 @@ void executor::http_result_report(std::string& out)
 	}
 
 	snprintf(buffer, sizeof(buffer), sHtmlResultBodyHigh,
+		jconf::inst()->GetMiningCoin().c_str(),
 		iPoolDiff, iGoodRes, iTotalRes, fGoodResPrc, fAvgResTime, iPoolHashes,
 		int_port(iTopDiff[0]), int_port(iTopDiff[1]), int_port(iTopDiff[2]), int_port(iTopDiff[3]),
 		int_port(iTopDiff[4]), int_port(iTopDiff[5]), int_port(iTopDiff[6]), int_port(iTopDiff[7]),
