@@ -131,7 +131,8 @@ private:
 			}
 
 			// check if cryptonight_monero_v8 is selected for the user or dev pool
-			bool useCryptonight_v8 = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_monero_v8) != neededAlgorithms.end();
+			bool useCryptonight_v8 = (std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_monero_v8) != neededAlgorithms.end() ||
+			                          std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_turtle) != neededAlgorithms.end());
 
 			// true for all cryptonight_heavy derivates since we check the user and dev pool
 			bool useCryptonight_heavy = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_heavy) != neededAlgorithms.end();
@@ -152,6 +153,10 @@ private:
 			// increase all intensity limits by two if scratchpad is only 1 MiB
 			if(hashMemSize <= CRYPTONIGHT_LITE_MEMORY)
 				maxThreads *= 2u;
+
+			// increase all intensity limits by eight for turtle (*2u shadowed from lite)
+			if (hashMemSize <= CRYPTONIGHT_TURTLE_MEMORY)
+				maxThreads *= 4u;
 
 			// keep 128MiB memory free (value is randomly chosen) from the max available memory
 			const size_t maxAvailableFreeMem = ctx.freeMem - minFreeMem;

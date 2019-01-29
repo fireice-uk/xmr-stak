@@ -99,6 +99,7 @@ xmrstak::coin_selection coins[] = {
 	{ "cryptonight_lite_v7", {cryptonight_aeon, cryptonight_aeon, 0u},            {cryptonight_aeon, cryptonight_aeon, 0u},     nullptr },
 	{ "cryptonight_lite_v7_xor", {cryptonight_aeon, cryptonight_ipbc, 255u},      {cryptonight_aeon, cryptonight_aeon, 0u}, nullptr },
 	{ "cryptonight_superfast",   {cryptonight_heavy, cryptonight_superfast, 255u},{cryptonight_heavy, cryptonight_superfast, 0u},   nullptr },
+	{ "cryptonight_turtle",  {cryptonight_turtle, cryptonight_turtle, 0u},      {cryptonight_turtle, cryptonight_turtle, 0u},   nullptr },
 	{ "cryptonight_v7",      {cryptonight_monero_v8, cryptonight_monero, 255u},   {cryptonight_monero_v8, cryptonight_monero_v8, 0u}, nullptr },
 	{ "cryptonight_v8",      {cryptonight_monero_v8, cryptonight_monero_v8, 255u},   {cryptonight_monero_v8, cryptonight_monero_v8, 0u}, nullptr },
 	{ "cryptonight_v7_stellite", {cryptonight_monero_v8, cryptonight_stellite, 255u}, {cryptonight_monero_v8, cryptonight_monero_v8, 0u}, nullptr },
@@ -111,7 +112,8 @@ xmrstak::coin_selection coins[] = {
 	{ "qrl",             	 {cryptonight_monero_v8, cryptonight_monero, 255u},   {cryptonight_monero_v8, cryptonight_monero_v8, 0u}, nullptr },
 	{ "ryo",                 {cryptonight_heavy, cryptonight_heavy, 0u},          {cryptonight_heavy, cryptonight_heavy, 0u},   nullptr },
 	{ "stellite",            {cryptonight_monero_v8, cryptonight_stellite, 255u}, {cryptonight_monero_v8, cryptonight_monero_v8, 0u}, nullptr },
-	{ "turtlecoin",          {cryptonight_aeon, cryptonight_aeon, 0u},            {cryptonight_aeon, cryptonight_aeon, 0u},     nullptr }
+	{ "turtlecoin",          {cryptonight_turtle, cryptonight_aeon, 5u},            {cryptonight_aeon, cryptonight_aeon, 0u},     nullptr },
+	{ "plenteum",			 {cryptonight_turtle, cryptonight_aeon, 5u},            {cryptonight_aeon, cryptonight_aeon, 0u},     nullptr }
 };
 
 constexpr size_t coin_algo_size = (sizeof(coins)/sizeof(coins[0]));
