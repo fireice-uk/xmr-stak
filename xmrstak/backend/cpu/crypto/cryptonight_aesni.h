@@ -17,6 +17,7 @@
 
 #include "cryptonight.h"
 #include "xmrstak/backend/cryptonight.hpp"
+#include "cn_gpu.hpp"
 #include <memory.h>
 #include <stdio.h>
 #include <cfenv>
@@ -167,6 +168,8 @@ inline void mix_and_propagate(__m128i& x0, __m128i& x1, __m128i& x2, __m128i& x3
 template<size_t MEM, bool SOFT_AES, bool PREFETCH, xmrstak_algo ALGO>
 void cn_explode_scratchpad(const __m128i* input, __m128i* output)
 {
+	constexpr bool HEAVY_MIX = ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast;
+	
 	// This is more than we have registers, compiler will assign 2 keys on the stack
 	__m128i xin0, xin1, xin2, xin3, xin4, xin5, xin6, xin7;
 	__m128i k0, k1, k2, k3, k4, k5, k6, k7, k8, k9;
@@ -182,7 +185,7 @@ void cn_explode_scratchpad(const __m128i* input, __m128i* output)
 	xin6 = _mm_load_si128(input + 10);
 	xin7 = _mm_load_si128(input + 11);
 
-	if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
+	if(HEAVY_MIX)
 	{
 		for(size_t i=0; i < 16; i++)
 		{
@@ -263,9 +266,45 @@ void cn_explode_scratchpad(const __m128i* input, __m128i* output)
 	}
 }
 
+template<size_t MEM, bool PREFETCH, xmrstak_algo ALGO>
+void cn_explode_scratchpad_gpu(const uint8_t* input, uint8_t* output)
+{
+	constexpr size_t hash_size = 200; // 25x8 bytes
+	alignas(128) uint64_t hash[25];
+
+	for (uint64_t i = 0; i < MEM / 512; i++)
+	{
+		memcpy(hash, input, hash_size);
+		hash[0] ^= i;
+
+		keccakf(hash, 24);
+		memcpy(output, hash, 160);
+		output+=160;
+
+		keccakf(hash, 24);
+		memcpy(output, hash, 176);
+		output+=176;
+
+		keccakf(hash, 24);
+		memcpy(output, hash, 176);
+		output+=176;
+		
+		if(PREFETCH)
+		{
+			_mm_prefetch((const char*)output - 512, _MM_HINT_T2);
+			_mm_prefetch((const char*)output - 384, _MM_HINT_T2);
+			_mm_prefetch((const char*)output - 256, _MM_HINT_T2);
+			_mm_prefetch((const char*)output - 128, _MM_HINT_T2);
+		}
+	}
+}
+
 template<size_t MEM, bool SOFT_AES, bool PREFETCH, xmrstak_algo ALGO>
 void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 {
+	constexpr bool HEAVY_MIX = ALGO == cryptonight_heavy || ALGO == cryptonight_haven || 
+		ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast || ALGO == cryptonight_gpu;
+
 	// This is more than we have registers, compiler will assign 2 keys on the stack
 	__m128i xout0, xout1, xout2, xout3, xout4, xout5, xout6, xout7;
 	__m128i k0, k1, k2, k3, k4, k5, k6, k7, k8, k9;
@@ -326,11 +365,11 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 			aes_round(k9, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
 		}
 
-		if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
+		if(HEAVY_MIX)
 			mix_and_propagate(xout0, xout1, xout2, xout3, xout4, xout5, xout6, xout7);
 	}
 
-	if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
+	if(HEAVY_MIX)
 	{
 		for (size_t i = 0; i < MEM / sizeof(__m128i); i += 8)
 		{
@@ -377,7 +416,7 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 				aes_round(k9, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
 			}
 
-			if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
+			if(HEAVY_MIX)
 				mix_and_propagate(xout0, xout1, xout2, xout3, xout4, xout5, xout6, xout7);
 		}
 
@@ -998,5 +1037,30 @@ struct Cryptonight_hash_asm<2, 0>
 			keccakf((uint64_t*)ctx[i]->hash_state, 24);
 			extra_hashes[ctx[i]->hash_state[0] & 3](ctx[i]->hash_state, 200, (char*)output + 32 * i);
 		}
+	}
+};
+
+struct Cryptonight_hash_gpu
+{
+	static constexpr size_t N = 1;
+
+	template<xmrstak_algo ALGO, bool SOFT_AES, bool PREFETCH>
+	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+	{
+		constexpr size_t MASK = cn_select_mask<ALGO>();
+		constexpr size_t ITERATIONS = cn_select_iter<ALGO>();
+		constexpr size_t MEM = cn_select_memory<ALGO>();
+
+		keccak((const uint8_t *)input, len, ctx[0]->hash_state, 200);
+		cn_explode_scratchpad_gpu<MEM, PREFETCH, ALGO>(ctx[0]->hash_state, ctx[0]->long_state);
+
+		if(cngpu_check_avx2())
+			cn_gpu_inner_avx<ITERATIONS, MASK>(ctx[0]->hash_state, ctx[0]->long_state);
+		else
+			cn_gpu_inner_ssse3<ITERATIONS, MASK>(ctx[0]->hash_state, ctx[0]->long_state);
+
+		cn_implode_scratchpad<MEM, SOFT_AES, PREFETCH, ALGO>((__m128i*)ctx[0]->long_state, (__m128i*)ctx[0]->hash_state);
+		keccakf((uint64_t*)ctx[0]->hash_state, 24);
+		memcpy(output, ctx[0]->hash_state, 32);
 	}
 };

@@ -137,6 +137,9 @@ private:
 			// true for all cryptonight_heavy derivates since we check the user and dev pool
 			bool useCryptonight_heavy = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_heavy) != neededAlgorithms.end();
 
+			// true for all cryptonight_gpu derivates since we check the user and dev pool
+			bool useCryptonight_gpu = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_gpu) != neededAlgorithms.end();
+
 			// set strided index to default
 			ctx.stridedIndex = 1;
 
@@ -158,13 +161,21 @@ private:
 			if (hashMemSize <= CRYPTONIGHT_TURTLE_MEMORY)
 				maxThreads *= 4u;
 
+			if(useCryptonight_gpu)
+			{
+				// 6 waves per compute unit are a good value (based on profiling)
+				// @todo check again after all optimizations
+				maxThreads = ctx.computeUnits * 6 * 8;
+				ctx.stridedIndex = 0;
+			}
+
 			// keep 128MiB memory free (value is randomly chosen) from the max available memory
 			const size_t maxAvailableFreeMem = ctx.freeMem - minFreeMem;
 
 			size_t memPerThread = std::min(ctx.maxMemPerAlloc, maxAvailableFreeMem);
 
 			uint32_t numThreads = 1u;
-			if(ctx.isAMD)
+			if(ctx.isAMD && !useCryptonight_gpu)
 			{
 				numThreads = 2;
 				size_t memDoubleThread = maxAvailableFreeMem / numThreads;

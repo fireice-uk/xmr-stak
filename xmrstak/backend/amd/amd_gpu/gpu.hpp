@@ -53,7 +53,7 @@ struct GpuContext
 	cl_mem OutputBuffer;
 	cl_mem ExtraBuffers[6];
 	std::map<xmrstak_algo, cl_program> Program;
-	std::map<xmrstak_algo, std::array<cl_kernel,8>> Kernels;
+	std::map<xmrstak_algo, std::array<cl_kernel,7>> Kernels;
 	size_t freeMem;
 	size_t maxMemPerAlloc;
 	int computeUnits;
