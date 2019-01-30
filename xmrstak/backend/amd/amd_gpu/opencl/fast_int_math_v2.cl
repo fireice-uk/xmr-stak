@@ -4,7 +4,7 @@ R"===(
  */
 
 // cryptonight_monero_v8
-#if(ALGO==11 || ALGO==13)
+#if(ALGO==11 || ALGO==14)
 
 static const __constant uint RCP_C[256] =
 {

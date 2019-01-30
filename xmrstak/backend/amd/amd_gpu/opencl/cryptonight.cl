@@ -347,8 +347,11 @@ XMRSTAK_INCLUDE_JH
 XMRSTAK_INCLUDE_BLAKE256
 //#include "opencl/groestl256.cl"
 XMRSTAK_INCLUDE_GROESTL256
-//#include "opencl/cryptonight_gpu.cl"
-XMRSTAK_INCLUDE_CN_GPU
+
+#if (ALGO == 13)
+	//#include "opencl/cryptonight_gpu.cl"
+	XMRSTAK_INCLUDE_CN_GPU
+#endif
 
 )==="
 R"===(
@@ -789,7 +792,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
         ((uint4 *)a)[0] ^= tmp;
 
 // cryptonight_monero_v8
-#if (ALGO == 11 || ALGO==13)
+#if (ALGO == 11 || ALGO==14)
 #	if defined(__NV_CL_C_VERSION)
 			// flush shuffled data
 			SCRATCHPAD_CHUNK_GLOBAL = *scratchpad_line;
