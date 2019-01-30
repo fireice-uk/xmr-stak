@@ -462,30 +462,30 @@ __global__ void cryptonight_core_gpu_phase2_gpu(int32_t *spad, int *lpad_in, int
 
 		__syncthreads();
 
-		if(tid % 4 == 0)
-		{
-			__m128i out = _mm_xor_si128(smemOut[tid], smemOut[tid + 1]);
-			__m128i out2 = _mm_xor_si128(smemOut[tid + 2], smemOut[tid + 3]);
-			out = _mm_xor_si128(out, out2);
-			smemOut[tid] = out;
-			*scratchpad_ptr<MASK>(s , tid/4, lpad) = _mm_xor_si128(smem[tid/4], out);
-		}
+		const uint32_t b = tid / 4;
+		const uint32_t bb = tid % 4;
+
+		int outXor = ((int*)smemOut)[b * 16 + bb];
+		for(uint32_t dd = b * 16 + 4 + bb; dd < (b + 1) * 16; dd += 4)
+			outXor ^= ((int*)smemOut)[dd];
+
+		((int*)scratchpad_ptr<MASK>(s, tid/4, lpad))[tid%4] = outXor ^ ((int*)smem)[tid];
+		((int*)smemOut)[tid] = outXor;
+
+		float va_tmp1 = ((float*)smemVa)[b * 16 + bb] + ((float*)smemVa)[b * 16 + bb + 4];
+		float va_tmp2 = ((float*)smemVa)[b * 16 + bb + 8] + ((float*)smemVa)[b * 16 + bb + 12];
+		((float*)smemVa)[tid] = va_tmp1 + va_tmp2;
+
 		__syncthreads();
 
+		__m128i out2 = smemOut[0] ^ smemOut[1] ^ smemOut[2] ^ smemOut[3];
+		va_tmp1 = ((float*)smemVa)[b * 16 + bb] + ((float*)smemVa)[b * 16 + bb + 4];
+		va_tmp2 = ((float*)smemVa)[b * 16 + bb + 8] + ((float*)smemVa)[b * 16 + bb + 12];
+		((float*)smemVa)[tid] = va_tmp1 + va_tmp2;
 
-		__m128i out2 = smemOut[0] ^ smemOut[4] ^ smemOut[8] ^ smemOut[12];
+		__syncthreads();
 
-		if(tid%2 == 0)
-			smemVa[tid] = smemVa[tid] + smemVa[tid + 1];
-
-		if(tid%4 == 0)
-			smemVa[tid] = smemVa[tid] + smemVa[tid + 2];
-		if(tid%8 == 0)
-			smemVa[tid] = smemVa[tid] + smemVa[tid + 4];
-		if(tid%16 == 0)
-			smemVa[tid] = smemVa[tid] + smemVa[tid + 8];
 		vs = smemVa[0];
-
 		vs.abs(); // take abs(va) by masking the float sign bit
 		auto xx = _mm_mul_ps(vs, __m128(16777216.0f));
 		// vs range 0 - 64
