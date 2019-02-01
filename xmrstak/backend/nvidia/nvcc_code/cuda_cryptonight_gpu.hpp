@@ -347,7 +347,7 @@ __forceinline__ __device__ __m128i single_comupte(__m128 n0, __m128 n1, __m128 n
 
 }
 
-__forceinline__ __device__ void single_comupte_wrap(const uint32_t rot, __m128i v0, __m128i v1, __m128i v2, __m128i v3, float cnt, __m128 rnd_c, __m128& sum, __m128i& out)
+__forceinline__ __device__ void single_comupte_wrap(const uint32_t rot, const __m128i& v0, const __m128i& v1, const __m128i& v2, const __m128i& v3, float cnt, __m128 rnd_c, __m128& sum, __m128i& out)
 {
 	__m128 n0(v0);
 	__m128 n1(v1);
@@ -402,6 +402,16 @@ __constant__ float ccnt[16] = {
 	1.4609375f
 };
 
+
+__forceinline__ __device__ void sync()
+{
+#if (__CUDACC_VER_MAJOR__ >= 9)
+	__syncwarp();
+#else
+	__syncthreads( );
+#endif
+}
+
 template<size_t ITERATIONS, uint32_t MEMORY>
 __global__ void cryptonight_core_gpu_phase2_gpu(int32_t *spad, int *lpad_in, int bfactor, int partidx, uint32_t * roundVs, uint32_t * roundS)
 {
@@ -440,18 +450,19 @@ __global__ void cryptonight_core_gpu_phase2_gpu(int32_t *spad, int *lpad_in, int
 		s = ((uint32_t*)spad)[idxHash * 50] >> 8;
 	}
 
+	const uint32_t b = tid / 4;
+	const uint32_t bb = tid % 4;
+	const uint32_t block = b * 16 + bb;
+
 	for(size_t i = 0; i < batchsize; i++)
 	{
-		__syncthreads();
-
-		((int*)smem)[tid] = ((int*)scratchpad_ptr<MASK>(s, tid/4, lpad))[tid%4];
-		__syncthreads();
+		sync();
+		((int*)smem)[tid] = ((int*)scratchpad_ptr<MASK>(s, b, lpad))[bb];
+		sync();
 
 		__m128 rc = vs;
-
-
 		single_comupte_wrap(
-			tid%4,
+			bb,
 			*(smem + look[tid][0]),
 			*(smem + look[tid][1]),
 			*(smem + look[tid][2]),
@@ -460,40 +471,37 @@ __global__ void cryptonight_core_gpu_phase2_gpu(int32_t *spad, int *lpad_in, int
 			smemOut[tid]
 		);
 
-		__syncthreads();
+		sync();
 
-		const uint32_t b = tid / 4;
-		const uint32_t bb = tid % 4;
-
-		int outXor = ((int*)smemOut)[b * 16 + bb];
-		for(uint32_t dd = b * 16 + 4 + bb; dd < (b + 1) * 16; dd += 4)
+		int outXor = ((int*)smemOut)[block];
+		for(uint32_t dd = block + 4; dd < (b + 1) * 16; dd += 4)
 			outXor ^= ((int*)smemOut)[dd];
 
-		((int*)scratchpad_ptr<MASK>(s, tid/4, lpad))[tid%4] = outXor ^ ((int*)smem)[tid];
+		((int*)scratchpad_ptr<MASK>(s, b, lpad))[bb] = outXor ^ ((int*)smem)[tid];
 		((int*)smemOut)[tid] = outXor;
 
-		float va_tmp1 = ((float*)smemVa)[b * 16 + bb] + ((float*)smemVa)[b * 16 + bb + 4];
-		float va_tmp2 = ((float*)smemVa)[b * 16 + bb + 8] + ((float*)smemVa)[b * 16 + bb + 12];
+		float va_tmp1 = ((float*)smemVa)[block] + ((float*)smemVa)[block + 4];
+		float va_tmp2 = ((float*)smemVa)[block+ 8] + ((float*)smemVa)[block + 12];
 		((float*)smemVa)[tid] = va_tmp1 + va_tmp2;
 
-		__syncthreads();
+		sync();
 
 		__m128i out2 = smemOut[0] ^ smemOut[1] ^ smemOut[2] ^ smemOut[3];
-		va_tmp1 = ((float*)smemVa)[b * 16 + bb] + ((float*)smemVa)[b * 16 + bb + 4];
-		va_tmp2 = ((float*)smemVa)[b * 16 + bb + 8] + ((float*)smemVa)[b * 16 + bb + 12];
+		va_tmp1 = ((float*)smemVa)[block] + ((float*)smemVa)[block + 4];
+		va_tmp2 = ((float*)smemVa)[block + 8] + ((float*)smemVa)[block + 12];
 		((float*)smemVa)[tid] = va_tmp1 + va_tmp2;
 
-		__syncthreads();
+		sync();
 
 		vs = smemVa[0];
 		vs.abs(); // take abs(va) by masking the float sign bit
 		auto xx = _mm_mul_ps(vs, __m128(16777216.0f));
 		// vs range 0 - 64
-		*smem = xx.get_int();
-		*smem = _mm_xor_si128(*smem, out2);
+		auto xx_int = xx.get_int();
+		out2 = _mm_xor_si128(xx_int, out2);
 		// vs is now between 0 and 1
 		vs = _mm_div_ps(vs, __m128(64.0f));
-		s = smem->x ^ smem->y ^ smem->z ^ smem->w;
+		s = out2.x ^ out2.y ^ out2.z ^ out2.w;
 	}
 	if(partidx != ((1<<bfactor) - 1) && threadIdx.x % 16 == 0)
 	{
@@ -539,8 +547,10 @@ __global__ void cn_explode_gpu(int32_t *spad_in, int *lpad_in)
 	uint8_t* lpad = (uint8_t*)lpad_in + blockIdx.x * MEMORY;
 	uint64_t* spad = (uint64_t*)((uint8_t*)spad_in + blockIdx.x * 200);
 
-	constexpr size_t hash_size = 200; // 25x8 bytes
-	memcpy(state, spad, hash_size);
+	for(int i = threadIdx.x; i < 25; i += blockDim.x)
+		state[i] = spad[i];
+
+	sync();
 
 	for(uint64_t i = threadIdx.x; i < MEMORY / 512; i+=blockDim.x)
 	{
