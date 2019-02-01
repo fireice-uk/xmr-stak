@@ -593,6 +593,10 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		}
 	}
 
+	auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
+	bool useCryptonight_gpu = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_gpu) != neededAlgorithms.end();
+
+
 	// set all device option those marked as auto (-1) to a valid value
 	if(ctx->device_blocks == -1)
 	{
@@ -600,8 +604,11 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		 *   - 3 * SMX count for >=sm_30
 		 *   - 2 * SMX count for  <sm_30
 		 */
-		ctx->device_blocks = props.multiProcessorCount *
-			( props.major < 3 ? 2 : 3 );
+		ctx->device_blocks = props.multiProcessorCount * (props.major < 3 ? 2 : 3);
+
+		// use 6 blocks per SM for sm_2X else 8 blocks
+		if(useCryptonight_gpu)
+			ctx->device_blocks = props.multiProcessorCount * (props.major < 3 ? 6 : 8);
 
 		// increase bfactor for low end devices to avoid that the miner is killed by the OS
 		if(props.multiProcessorCount <= 6)
@@ -613,7 +620,16 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		 * `cryptonight_core_gpu_phase1` and `cryptonight_core_gpu_phase3` starts
 		 * `8 * ctx->device_threads` threads per block
 		 */
-		ctx->device_threads = 64;
+		const uint32_t maxThreadsPerBlock = props.major < 3 ? 512 : 1024;
+
+		// for the most algorithms we are using 8 threads per hash
+		uint32_t threadsPerHash = 8;
+
+		// phase2_gpu uses 16 threads per hash
+		if(useCryptonight_gpu)
+			threadsPerHash = 16;
+
+		ctx->device_threads = maxThreadsPerBlock / threadsPerHash;
 		constexpr size_t byteToMiB = 1024u * 1024u;
 
 		// no limit by default 1TiB
@@ -678,8 +694,6 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		ctx->total_device_memory = totalMemory;
 		ctx->free_device_memory = freeMemory;
 
-		auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
-
 		size_t hashMemSize = 0;
 		for(const auto algo : neededAlgorithms)
 		{
@@ -725,10 +739,9 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		// use only odd number of threads
 		ctx->device_threads = ctx->device_threads & 0xFFFFFFFE;
 
-		if(props.major == 2 && ctx->device_threads > 64)
+		if(ctx->device_threads > maxThreadsPerBlock / threadsPerHash)
 		{
-			// Fermi gpus only support 512 threads per block (we need start 4 * configured threads)
-			ctx->device_threads = 64;
+			ctx->device_threads = maxThreadsPerBlock / threadsPerHash;
 		}
 
 		// check if cryptonight_monero_v8 is selected for the user pool
@@ -748,6 +761,22 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 				ctx->device_threads = threads;
 				ctx->device_blocks = blockOptimal;
 			}
+		}
+		else if(useCryptonight_gpu)
+		{
+			// 8 based on my profiling sessions maybe it must be adjusted later
+			size_t threads = 8;
+			// 8 is chosen by checking the occupancy calculator
+			size_t blockOptimal = 8 * ctx->device_mpcount;
+			if(gpuArch >= 70)
+				blockOptimal = 5 *  ctx->device_mpcount;
+			
+			if(blockOptimal * threads * hashMemSize < limitedMemory)
+			{
+				ctx->device_threads = threads;
+				ctx->device_blocks = blockOptimal;
+			}
+
 		}
 	}
 	printf("device init succeeded\n");
