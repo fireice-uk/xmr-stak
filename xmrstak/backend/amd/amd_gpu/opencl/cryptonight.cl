@@ -1173,7 +1173,6 @@ __kernel void Blake(__global ulong *states, __global uint *BranchBuf, __global u
 
         ((uint8 *)h)[0] = vload8(0U, c_IV256);
 
-        #pragma unroll 4
         for(uint i = 0, bitlen = 0; i < 4; ++i)
         {
             if(i < 3)
