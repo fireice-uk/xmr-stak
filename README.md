@@ -43,8 +43,7 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 - [BitTube](https://coin.bit.tube/)
 - [Graft](https://www.graft.network)
 - [Haven](https://havenprotocol.com)
-- [Intense](https://intensecoin.com)
-- [Masari](https://getmasari.org)
+- [Lethean](https://lethean.io)
 - [QRL](https://theqrl.org)
 - **[Ryo](https://ryo-currency.com) - Upcoming xmr-stak-gui is sponsored by Ryo**
 - [TurtleCoin](https://turtlecoin.lol)

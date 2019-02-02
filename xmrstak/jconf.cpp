@@ -107,12 +107,10 @@ xmrstak::coin_selection coins[] = {
 	{ "freehaven",           {cryptonight_heavy, cryptonight_superfast, 255u},    {cryptonight_heavy, cryptonight_superfast, 0u},   nullptr },
 	{ "graft",               {cryptonight_monero_v8, cryptonight_monero_v8, 0u},    {cryptonight_monero_v8, cryptonight_monero_v8, 0u}, nullptr },
 	{ "haven",               {cryptonight_heavy, cryptonight_haven, 255u},        {cryptonight_heavy, cryptonight_heavy, 0u},   nullptr },
-	{ "intense",             {cryptonight_monero_v8, cryptonight_monero, 255u},   {cryptonight_monero_v8, cryptonight_monero_v8, 0u}, nullptr },
-	{ "masari",              {cryptonight_monero_v8, cryptonight_masari, 255u},   {cryptonight_monero_v8, cryptonight_monero_v8, 0u},nullptr },
+	{ "lethean",             {cryptonight_monero_v8, cryptonight_monero, 255u},   {cryptonight_monero_v8, cryptonight_monero_v8, 0u}, nullptr },
 	{ "monero",              {cryptonight_monero_v8, cryptonight_monero_v8, 0u},     {cryptonight_monero_v8, cryptonight_monero_v8, 0u}, "pool.usxmrpool.com:3333" },
 	{ "qrl",             	 {cryptonight_monero_v8, cryptonight_monero, 255u},   {cryptonight_monero_v8, cryptonight_monero_v8, 0u}, nullptr },
 	{ "ryo",                 {cryptonight_gpu, cryptonight_heavy, 6u},            {cryptonight_gpu, cryptonight_heavy, 6u},   nullptr },
-	{ "stellite",            {cryptonight_monero_v8, cryptonight_stellite, 255u}, {cryptonight_monero_v8, cryptonight_monero_v8, 0u}, nullptr },
 	{ "turtlecoin",          {cryptonight_turtle, cryptonight_aeon, 5u},            {cryptonight_aeon, cryptonight_aeon, 0u},     nullptr },
 	{ "plenteum",			 {cryptonight_turtle, cryptonight_aeon, 5u},            {cryptonight_aeon, cryptonight_aeon, 0u},     nullptr }
 };
