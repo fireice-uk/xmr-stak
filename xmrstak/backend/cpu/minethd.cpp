@@ -418,10 +418,19 @@ bool minethd::self_test()
 			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_turtle);
 			hashf("This is a test This is a test This is a test", 44, out, ctx);
 			bResult = bResult && memcmp(out, "\x30\x5f\x66\xfe\xbb\xf3\x60\x0e\xda\xbb\x60\xf7\xf1\xc9\xb9\x0a\x3a\xe8\x5a\x31\xd4\x76\xca\x38\x1d\x56\x18\xa6\xc6\x27\x60\xd7", 32) == 0;
-		
+
 			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_turtle);
 			hashf("This is a test This is a test This is a test", 44, out, ctx);
 			bResult = bResult && memcmp(out, "\x30\x5f\x66\xfe\xbb\xf3\x60\x0e\xda\xbb\x60\xf7\xf1\xc9\xb9\x0a\x3a\xe8\x5a\x31\xd4\x76\xca\x38\x1d\x56\x18\xa6\xc6\x27\x60\xd7", 32) == 0;
+		}
+		else if (algo == cryptonight_zelerius)
+		{
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_zelerius);
+			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			bResult = bResult && memcmp(out, "\x64\x8b\xdf\xaa\xf0\x54\x4a\x7e\xdc\xa6\x08\xc0\x6d\xea\xed\x66\xd8\x98\x45\x12\xc7\x51\x5b\x3d\x7b\xbc\x4e\x82\x4b\xe8\xc3\x53", 32) == 0;
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_zelerius);
+			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			bResult = bResult && memcmp(out, "\x64\x8b\xdf\xaa\xf0\x54\x4a\x7e\xdc\xa6\x08\xc0\x6d\xea\xed\x66\xd8\x98\x45\x12\xc7\x51\x5b\x3d\x7b\xbc\x4e\x82\x4b\xe8\xc3\x53", 32) == 0;
 		}
 
 		if(!bResult)
@@ -557,6 +566,9 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 	case cryptonight_turtle:
 		algv = 13;
 		break;
+	case cryptonight_zelerius:
+		algv = 14;
+		break;
 	default:
 		algv = 2;
 		break;
@@ -622,7 +634,7 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		Cryptonight_hash<N>::template hash<cryptonight_superfast, true, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_superfast, false, true>,
 		Cryptonight_hash<N>::template hash<cryptonight_superfast, true, true>,
-		
+
 		Cryptonight_hash_gpu::template hash<cryptonight_gpu, false, false>,
 		Cryptonight_hash_gpu::template hash<cryptonight_gpu, true, false>,
 		Cryptonight_hash_gpu::template hash<cryptonight_gpu, false, true>,
@@ -631,7 +643,12 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		Cryptonight_hash<N>::template hash<cryptonight_turtle, false, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_turtle, true, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_turtle, false, true>,
-		Cryptonight_hash<N>::template hash<cryptonight_turtle, true, true>
+		Cryptonight_hash<N>::template hash<cryptonight_turtle, true, true>,
+
+		Cryptonight_hash<N>::template hash<cryptonight_zelerius, false, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_zelerius, true, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_zelerius, false, true>,
+		Cryptonight_hash<N>::template hash<cryptonight_zelerius, true, true>
 	};
 
 	std::bitset<2> digit;
@@ -698,6 +715,35 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 			else if (selected_asm != "intel_avx" && selected_asm != "amd_avx") // unknown asm type
 				printer::inst()->print_msg(L1, "Assembler '%s' unknown, fallback to non asm version of cryptonight_v8", selected_asm.c_str());
 		}
+	}
+
+	if (N <= 2 && (algo == cryptonight_zelerius) && bHaveAes)
+	{
+		std::string selected_asm = asm_version_str;
+		if (selected_asm == "auto")
+			selected_asm = cpu::getAsmName(N);
+
+			if (selected_asm != "off")
+			{
+				if (selected_asm == "intel_avx" && asm_version_str != "auto")
+				{
+					// Intel Ivy Bridge (Xeon v2, Core i7/i5/i3 3xxx, Pentium G2xxx, Celeron G1xxx)
+					if (N == 1)
+						selected_function = Cryptonight_hash_asm<1u, 0u>::template hash<cryptonight_zelerius>;
+					else if (N == 2)
+						selected_function = Cryptonight_hash_asm<2u, 0u>::template hash<cryptonight_zelerius>;
+				}
+				// supports only 1 thread per hash
+				if (N == 1 && selected_asm == "amd_avx")
+				{
+					// AMD Ryzen (1xxx and 2xxx series)
+					selected_function = Cryptonight_hash_asm<1u, 1u>::template hash<cryptonight_zelerius>;
+				}
+				if (asm_version_str == "auto" && (selected_asm != "intel_avx" || selected_asm != "amd_avx"))
+					printer::inst()->print_msg(L3, "Switch to assembler version for '%s' cpu's", selected_asm.c_str());
+				else if (selected_asm != "intel_avx" && selected_asm != "amd_avx") // unknown asm type
+					printer::inst()->print_msg(L1, "Assembler '%s' unknown, fallback to non asm version of cryptonight_v8", selected_asm.c_str());
+			}
 	}
 
 	return selected_function;

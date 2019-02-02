@@ -169,7 +169,7 @@ template<size_t MEM, bool SOFT_AES, bool PREFETCH, xmrstak_algo ALGO>
 void cn_explode_scratchpad(const __m128i* input, __m128i* output)
 {
 	constexpr bool HEAVY_MIX = ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast;
-	
+
 	// This is more than we have registers, compiler will assign 2 keys on the stack
 	__m128i xin0, xin1, xin2, xin3, xin4, xin5, xin6, xin7;
 	__m128i k0, k1, k2, k3, k4, k5, k6, k7, k8, k9;
@@ -288,7 +288,7 @@ void cn_explode_scratchpad_gpu(const uint8_t* input, uint8_t* output)
 		keccakf(hash, 24);
 		memcpy(output, hash, 176);
 		output+=176;
-		
+
 		if(PREFETCH)
 		{
 			_mm_prefetch((const char*)output - 512, _MM_HINT_T2);
@@ -302,7 +302,7 @@ void cn_explode_scratchpad_gpu(const uint8_t* input, uint8_t* output)
 template<size_t MEM, bool SOFT_AES, bool PREFETCH, xmrstak_algo ALGO>
 void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 {
-	constexpr bool HEAVY_MIX = ALGO == cryptonight_heavy || ALGO == cryptonight_haven || 
+	constexpr bool HEAVY_MIX = ALGO == cryptonight_heavy || ALGO == cryptonight_haven ||
 		ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast || ALGO == cryptonight_gpu;
 
 	// This is more than we have registers, compiler will assign 2 keys on the stack
@@ -584,7 +584,7 @@ inline void set_float_rounding_mode()
 
 #define CN_MONERO_V8_SHUFFLE_0(n, l0, idx0, ax0, bx0, bx1) \
 	/* Shuffle the other 3x16 byte chunks in the current 64-byte cache line */ \
-	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle) \
+	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle || ALGO == cryptonight_zelerius) \
 	{ \
 		const uint64_t idx1 = idx0 & MASK; \
 		const __m128i chunk1 = _mm_load_si128((__m128i *)&l0[idx1 ^ 0x10]); \
@@ -597,7 +597,7 @@ inline void set_float_rounding_mode()
 
 #define CN_MONERO_V8_SHUFFLE_1(n, l0, idx0, ax0, bx0, bx1, lo, hi) \
 	/* Shuffle the other 3x16 byte chunks in the current 64-byte cache line */ \
-	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle) \
+	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle || ALGO == cryptonight_zelerius) \
 	{ \
 		const uint64_t idx1 = idx0 & MASK; \
 		const __m128i chunk1 = _mm_xor_si128(_mm_load_si128((__m128i *)&l0[idx1 ^ 0x10]), _mm_set_epi64x(lo, hi)); \
@@ -611,7 +611,7 @@ inline void set_float_rounding_mode()
 	}
 
 #define CN_MONERO_V8_DIV(n, cx, sqrt_result, division_result_xmm, cl) \
-	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle) \
+	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle || ALGO == cryptonight_zelerius) \
 	{ \
 		uint64_t sqrt_result_tmp; \
 		assign(sqrt_result_tmp, sqrt_result); \
@@ -666,7 +666,7 @@ inline void set_float_rounding_mode()
 		idx0 = h0[0] ^ h0[4]; \
 		ax0 = _mm_set_epi64x(h0[1] ^ h0[5], idx0); \
 		bx0 = _mm_set_epi64x(h0[3] ^ h0[7], h0[2] ^ h0[6]); \
-		if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle) \
+		if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle || ALGO == cryptonight_zelerius) \
 		{ \
 			bx1 = _mm_set_epi64x(h0[9] ^ h0[11], h0[8] ^ h0[10]); \
 			division_result_xmm = _mm_cvtsi64_si128(h0[12]); \
@@ -703,7 +703,7 @@ inline void set_float_rounding_mode()
 	ptr0 = (__m128i *)&l0[idx0 & MASK]; \
 	if(PREFETCH) \
 		_mm_prefetch((const char*)ptr0, _MM_HINT_T0); \
-	if(ALGO != cryptonight_monero_v8 && ALGO != cryptonight_turtle) \
+	if(ALGO != cryptonight_monero_v8 && ALGO != cryptonight_turtle && ALGO != cryptonight_zelerius) \
 		bx0 = cx
 
 #define CN_STEP3(n, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm) \
@@ -720,7 +720,7 @@ inline void set_float_rounding_mode()
 		ah0 += lo; \
 		al0 += hi; \
 	} \
-	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle) \
+	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle || ALGO == cryptonight_zelerius) \
 	{ \
 		bx1 = bx0; \
 		bx0 = cx; \

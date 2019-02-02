@@ -34,6 +34,7 @@ POOLCONF],
  *    ryo
  *    turtlecoin
  *    plenteum
+ *    zelerius
  *
  * Native algorithms which not depends on any block versions:
  *
@@ -48,6 +49,7 @@ POOLCONF],
  *    cryptonight_superfast
  *    cryptonight_v7
  *    cryptonight_v8
+ *    cryptonight_zelerius
  *    # 4MiB scratchpad memory
  *    cryptonight_bittube2
  *    cryptonight_haven
