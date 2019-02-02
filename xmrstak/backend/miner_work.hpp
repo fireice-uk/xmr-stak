@@ -1,5 +1,7 @@
 #pragma once
 
+#include "xmrstak/backend/pool_data.hpp"
+
 #include <thread>
 #include <atomic>
 #include <mutex>
@@ -20,7 +22,7 @@ namespace xmrstak
 		bool        bStall;
 		size_t      iPoolId;
 
-		miner_work() : iWorkSize(0), bNiceHash(false), bStall(true), iPoolId(0) { }
+		miner_work() : iWorkSize(0), bNiceHash(false), bStall(true), iPoolId(invalid_pool_id) { }
 
 		miner_work(const char* sJobID, const uint8_t* bWork, uint32_t iWorkSize,
 			uint64_t iTarget, bool bNiceHash, size_t iPoolId) : iWorkSize(iWorkSize),
@@ -81,4 +83,4 @@ namespace xmrstak
 		}
 
 	};
-} // namepsace xmrstak
+} // namespace xmrstak

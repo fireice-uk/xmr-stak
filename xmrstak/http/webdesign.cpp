@@ -113,7 +113,7 @@ extern const char sHtmlCssFile [] =
 
 size_t sHtmlCssSize = sizeof(sHtmlCssFile) - 1;
 
-extern const char sHttpAuthRelam[] = "XMR-Stak-Miner";
+extern const char sHttpAuthRealm[] = "XMR-Stak-Miner";
 extern const char sHttpAuthOpaque[] = "6c071f0df539e234cadbcd79164af7a594e23ab42bccb834df796aead6ce96e4";
 
 extern const char sHtmlAccessDenied[] =
@@ -136,13 +136,13 @@ extern const char sHtmlCommonHeader [] =
 
 	"<div class='flex-container'>"
 		"<div class='links flex-item'>"
-			"<a href='/h'><div><span class='letter'>H</span>ashrate</div></a>"
+			"<a href='h'><div><span class='letter'>H</span>ashrate</div></a>"
 		"</div>"
 		"<div class='links flex-item'>"
-			"<a href='/r'><div><span class='letter'>R</span>esults</div></a>"
+			"<a href='r'><div><span class='letter'>R</span>esults</div></a>"
 		"</div>"
 		"<div class='links flex-item'>"
-			"<a href='/c'><div><span class='letter'>C</span>onnection</div></a>"
+			"<a href='c'><div><span class='letter'>C</span>onnection</div></a>"
 		"</div>"
 	"</div>"
 	"<h4>%s</h4>";

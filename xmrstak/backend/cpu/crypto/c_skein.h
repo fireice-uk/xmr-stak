@@ -9,7 +9,7 @@
 ** This algorithm and source code is released to the public domain.
 **
 ***************************************************************************
-** 
+**
 ** The following compile-time switches may be defined to control some
 ** tradeoffs between speed, code size, error checking, and security.
 **
@@ -20,8 +20,8 @@
 **                            [default: no callouts (no overhead)]
 **
 **  SKEIN_ERR_CHECK        -- how error checking is handled inside Skein
-**                            code. If not defined, most error checking 
-**                            is disabled (for performance). Otherwise, 
+**                            code. If not defined, most error checking
+**                            is disabled (for performance). Otherwise,
 **                            the switch value is interpreted as:
 **                                0: use assert()      to flag errors
 **                                1: return SKEIN_FAIL to flag errors
@@ -37,11 +37,11 @@ typedef enum
 }
 SkeinHashReturn;
 
-typedef size_t   SkeinDataLength;                /* bit count  type */
+typedef uint32_t SkeinDataLength;                /* bit count  type */
 typedef u08b_t   SkeinBitSequence;               /* bit stream type */
 
 /* "all-in-one" call */
 SkeinHashReturn skein_hash(int hashbitlen,   const SkeinBitSequence *data,
-		SkeinDataLength databitlen, SkeinBitSequence *hashval);
+                           SkeinDataLength databitlen, SkeinBitSequence *hashval);
 
 #endif  /* ifndef _SKEIN_H_ */

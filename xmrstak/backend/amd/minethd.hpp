@@ -20,21 +20,18 @@ class minethd  : public iBackend
 {
 public:
 
-	static void switch_work(miner_work& pWork);
 	static std::vector<iBackend*>* thread_starter(uint32_t threadOffset, miner_work& pWork);
 	static bool init_gpus();
 
 private:
-	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx*);
+	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**);
 
 	minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::thd_cfg cfg);
 
 	void work_main();
-	void consume_work();
 
 	uint64_t iJobNo;
 
-	static miner_work oGlobalWork;
 	miner_work oWork;
 
 	std::promise<void> order_fix;
@@ -42,6 +39,7 @@ private:
 
 	std::thread oWorkThd;
 	int64_t affinity;
+	uint32_t autoTune;
 
 	bool bQuit;
 	bool bNoPrefetch;

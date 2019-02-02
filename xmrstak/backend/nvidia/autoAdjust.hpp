@@ -21,7 +21,7 @@ namespace nvidia
 {
 
 class autoAdjust
-{    
+{
 public:
 
 	autoAdjust()
@@ -42,7 +42,7 @@ public:
 		// evaluate config parameter for if auto adjustment is needed
 		for(int i = 0; i < deviceCount; i++)
 		{
-	   
+
 			nvid_ctx ctx;
 
 			ctx.device_id = i;
@@ -50,7 +50,7 @@ public:
 			ctx.device_blocks = -1;
 			ctx.device_threads = -1;
 
-			// set all evice option those marked as auto (-1) to a valid value
+			// set all device option those marked as auto (-1) to a valid value
 #ifndef _WIN32
 			ctx.device_bfactor = 0;
 			ctx.device_bsleep = 0;
@@ -96,6 +96,7 @@ private:
 					"    \"threads\" : " + std::to_string(ctx.device_threads) + ", \"blocks\" : " + std::to_string(ctx.device_blocks) + ",\n" +
 					"    \"bfactor\" : " + std::to_string(ctx.device_bfactor) + ", \"bsleep\" :  " + std::to_string(ctx.device_bsleep) + ",\n" +
 					"    \"affine_to_cpu\" : false, \"sync_mode\" : 3,\n" +
+					"    \"mem_mode\" : 1,\n" +
 					"  },\n";
 			}
 		}
@@ -109,4 +110,4 @@ private:
 };
 
 } // namespace nvidia
-} // namepsace xmrstak
+} // namespace xmrstak

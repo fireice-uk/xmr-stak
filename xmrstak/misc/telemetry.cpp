@@ -36,6 +36,7 @@ telemetry::telemetry(size_t iThd)
 	ppHashCounts = new uint64_t*[iThd];
 	ppTimestamps = new uint64_t*[iThd];
 	iBucketTop = new uint32_t[iThd];
+	mtx = new std::mutex[iThd];
 
 	for (size_t i = 0; i < iThd; i++)
 	{
@@ -47,15 +48,18 @@ telemetry::telemetry(size_t iThd)
 	}
 }
 
-double telemetry::calc_telemetry_data(size_t iLastMilisec, size_t iThread)
+double telemetry::calc_telemetry_data(size_t iLastMillisec, size_t iThread)
 {
-	uint64_t iTimeNow = get_timestamp_ms();
+
 
 	uint64_t iEarliestHashCnt = 0;
 	uint64_t iEarliestStamp = 0;
-	uint64_t iLastestStamp = 0;
-	uint64_t iLastestHashCnt = 0;
+	uint64_t iLatestStamp = 0;
+	uint64_t iLatestHashCnt = 0;
 	bool bHaveFullSet = false;
+
+	std::unique_lock<std::mutex> lk(mtx[iThread]);
+	uint64_t iTimeNow = get_timestamp_ms();
 
 	//Start at 1, buckettop points to next empty
 	for (size_t i = 1; i < iBucketSize; i++)
@@ -65,13 +69,13 @@ double telemetry::calc_telemetry_data(size_t iLastMilisec, size_t iThread)
 		if (ppTimestamps[iThread][idx] == 0)
 			break; //That means we don't have the data yet
 
-		if (iLastestStamp == 0)
+		if (iLatestStamp == 0)
 		{
-			iLastestStamp = ppTimestamps[iThread][idx];
-			iLastestHashCnt = ppHashCounts[iThread][idx];
+			iLatestStamp = ppTimestamps[iThread][idx];
+			iLatestHashCnt = ppHashCounts[iThread][idx];
 		}
 
-		if (iTimeNow - ppTimestamps[iThread][idx] > iLastMilisec)
+		if (iTimeNow - ppTimestamps[iThread][idx] > iLastMillisec)
 		{
 			bHaveFullSet = true;
 			break; //We are out of the requested time period
@@ -80,17 +84,18 @@ double telemetry::calc_telemetry_data(size_t iLastMilisec, size_t iThread)
 		iEarliestStamp = ppTimestamps[iThread][idx];
 		iEarliestHashCnt = ppHashCounts[iThread][idx];
 	}
+	lk.unlock();
 
-	if (!bHaveFullSet || iEarliestStamp == 0 || iLastestStamp == 0)
+	if (!bHaveFullSet || iEarliestStamp == 0 || iLatestStamp == 0)
 		return nan("");
 
 	//Don't think that can happen, but just in case
-	if (iLastestStamp - iEarliestStamp == 0)
+	if (iLatestStamp - iEarliestStamp == 0)
 		return nan("");
 
 	double fHashes, fTime;
-	fHashes = iLastestHashCnt - iEarliestHashCnt;
-	fTime = iLastestStamp - iEarliestStamp;
+	fHashes = static_cast<double>(iLatestHashCnt - iEarliestHashCnt);
+	fTime = static_cast<double>(iLatestStamp - iEarliestStamp);
 	fTime /= 1000.0;
 
 	return fHashes / fTime;
@@ -98,6 +103,7 @@ double telemetry::calc_telemetry_data(size_t iLastMilisec, size_t iThread)
 
 void telemetry::push_perf_value(size_t iThd, uint64_t iHashCount, uint64_t iTimestamp)
 {
+	std::unique_lock<std::mutex> lk(mtx[iThd]);
 	size_t iTop = iBucketTop[iThd];
 	ppHashCounts[iThd][iTop] = iHashCount;
 	ppTimestamps[iThd][iTop] = iTimestamp;
@@ -105,4 +111,4 @@ void telemetry::push_perf_value(size_t iThd, uint64_t iHashCount, uint64_t iTime
 	iBucketTop[iThd] = (iTop + 1) & iBucketMask;
 }
 
-} // namepsace xmrstak
+} // namespace xmrstak

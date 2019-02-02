@@ -15,7 +15,7 @@
 	- Parsing or connection error
 	Those are fatal errors (we drop the connection if we encounter them).
 	After they are constructed from const char* strings from various places.
-	(can be from read-only mem), we passs them in an exectutor message
+	(can be from read-only mem), we pass them in an executor message
 	once the recv thread expires.
 	- Call error
 	This error happens when the "server says no". Usually because the job was
@@ -40,9 +40,9 @@ public:
 	static bool hex2bin(const char* in, unsigned int len, unsigned char* out);
 	static void bin2hex(const unsigned char* in, unsigned int len, char* out);
 
-	inline double get_pool_weight(bool gross_weight) 
-	{ 
-		double ret = pool_weight; 
+	inline double get_pool_weight(bool gross_weight)
+	{
+		double ret = pool_weight;
 		if(gross_weight && bRunning)
 			ret += 10.0;
 		if(gross_weight && bLoggedIn)
@@ -124,8 +124,8 @@ private:
 	void jpsock_thread();
 	bool jpsock_thd_main();
 	bool process_line(char* line, size_t len);
-	bool process_pool_job(const opq_json_val* params);
-	bool cmd_ret_wait(const char* sPacket, opq_json_val& poResult);
+	bool process_pool_job(const opq_json_val* params, const uint64_t messageId);
+	bool cmd_ret_wait(const char* sPacket, opq_json_val& poResult, uint64_t& messageId);
 
 	char sMinerId[64];
 	std::atomic<uint64_t> iJobDiff;
@@ -142,5 +142,8 @@ private:
 
 	opaque_private* prv;
 	base_socket* sck;
+
+	uint64_t iMessageCnt = 0;
+	uint64_t iLastMessageId = 0;
 };
 

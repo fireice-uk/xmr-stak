@@ -24,6 +24,8 @@ struct params
 	bool AMDCache;
 	bool useNVIDIA;
 	bool useCPU;
+	// user selected OpenCL vendor
+	std::string openCLVendor;
 
 	bool poolUseTls = false;
 	std::string poolURL;
@@ -52,6 +54,8 @@ struct params
 
 	// block_version >= 0 enable benchmark
 	int benchmark_block_version = -1;
+	int benchmark_wait_sec = 30;
+	int benchmark_work_sec = 60;
 
 	params() :
 		binaryName("xmr-stak"),
@@ -60,6 +64,7 @@ struct params
 		AMDCache(true),
 		useNVIDIA(true),
 		useCPU(true),
+		openCLVendor("AMD"),
 		configFile("config.txt"),
 		configFilePools("pools.txt"),
 		configFileAMD("amd.txt"),
@@ -69,4 +74,4 @@ struct params
 
 };
 
-} // namepsace xmrstak
+} // namespace xmrstak

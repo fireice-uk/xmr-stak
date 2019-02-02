@@ -1,11 +1,13 @@
 #pragma once
 
+#include "xmrstak/backend/cryptonight.hpp"
+
 #include <string>
 #include <string.h>
 #include <assert.h>
 
 // Structures that we use to pass info between threads constructors are here just to make
-// the stack allocation take up less space, heap is a shared resouce that needs locks too of course
+// the stack allocation take up less space, heap is a shared resource that needs locks too of course
 
 struct pool_job
 {
@@ -31,9 +33,11 @@ struct job_result
 	char		sJobID[64];
 	uint32_t	iNonce;
 	uint32_t	iThreadId;
+	xmrstak_algo algorithm = invalid_algo;
 
 	job_result() {}
-	job_result(const char* sJobID, uint32_t iNonce, const uint8_t* bResult, uint32_t iThreadId) : iNonce(iNonce), iThreadId(iThreadId)
+	job_result(const char* sJobID, uint32_t iNonce, const uint8_t* bResult, uint32_t iThreadId, xmrstak_algo algo) :
+		iNonce(iNonce), iThreadId(iThreadId), algorithm(algo)
 	{
 		memcpy(this->sJobID, sJobID, sizeof(job_result::sJobID));
 		memcpy(this->bResult, bResult, sizeof(job_result::bResult));
@@ -72,15 +76,15 @@ struct gpu_res_err
 };
 
 enum ex_event_name { EV_INVALID_VAL, EV_SOCK_READY, EV_SOCK_ERROR, EV_GPU_RES_ERROR,
-	EV_POOL_HAVE_JOB, EV_MINER_HAVE_RESULT, EV_PERF_TICK, EV_EVAL_POOL_CHOICE, 
-	EV_USR_HASHRATE, EV_USR_RESULTS, EV_USR_CONNSTAT, EV_HASHRATE_LOOP, 
+	EV_POOL_HAVE_JOB, EV_MINER_HAVE_RESULT, EV_PERF_TICK, EV_EVAL_POOL_CHOICE,
+	EV_USR_HASHRATE, EV_USR_RESULTS, EV_USR_CONNSTAT, EV_HASHRATE_LOOP,
 	EV_HTML_HASHRATE, EV_HTML_RESULTS, EV_HTML_CONNSTAT, EV_HTML_JSON };
 
 /*
    This is how I learned to stop worrying and love c++11 =).
    Ghosts of endless heap allocations have finally been exorcised. Thanks
    to the nifty magic of move semantics, string will only be allocated
-   once on the heap. Considering that it makes a jorney across stack,
+   once on the heap. Considering that it makes a journey across stack,
    heap alloced queue, to another stack before being finally processed
    I think it is kind of nifty, don't you?
    Also note that for non-arg events we only copy two qwords
@@ -179,7 +183,7 @@ inline size_t get_timestamp()
 	return time_point_cast<seconds>(steady_clock::now()).time_since_epoch().count();
 };
 
-//Get milisecond timestamp
+//Get millisecond timestamp
 inline size_t get_timestamp_ms()
 {
 	using namespace std::chrono;

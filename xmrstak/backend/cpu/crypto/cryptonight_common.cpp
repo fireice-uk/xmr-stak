@@ -35,6 +35,7 @@ extern "C"
 #include "xmrstak/jconf.hpp"
 #include <stdio.h>
 #include <stdlib.h>
+#include <algorithm>
 
 #ifdef __GNUC__
 #include <mm_malloc.h>
@@ -55,23 +56,23 @@ extern "C"
 #include <string.h>
 #endif // _WIN32
 
-void do_blake_hash(const void* input, size_t len, char* output) {
+void do_blake_hash(const void* input, uint32_t len, char* output) {
 	blake256_hash((uint8_t*)output, (const uint8_t*)input, len);
 }
 
-void do_groestl_hash(const void* input, size_t len, char* output) {
+void do_groestl_hash(const void* input, uint32_t len, char* output) {
 	groestl((const uint8_t*)input, len * 8, (uint8_t*)output);
 }
 
-void do_jh_hash(const void* input, size_t len, char* output) {
+void do_jh_hash(const void* input, uint32_t len, char* output) {
 	jh_hash(32 * 8, (const uint8_t*)input, 8 * len, (uint8_t*)output);
 }
 
-void do_skein_hash(const void* input, size_t len, char* output) {
+void do_skein_hash(const void* input, uint32_t len, char* output) {
 	skein_hash(8 * 32, (const uint8_t*)input, 8 * len, (uint8_t*)output);
 }
 
-void (* const extra_hashes[4])(const void *, size_t, char *) = {do_blake_hash, do_groestl_hash, do_jh_hash, do_skein_hash};
+void (* const extra_hashes[4])(const void *, uint32_t, char *) = {do_blake_hash, do_groestl_hash, do_jh_hash, do_skein_hash};
 
 #ifdef _WIN32
 #include "xmrstak/misc/uac.hpp"
@@ -117,7 +118,7 @@ BOOL AddLargePageRights()
 
 		DWORD size = 0;
 		GetTokenInformation(hToken, TokenUser, NULL, 0, &size);
-		
+
 		if (size > 0 && bIsElevated)
 		{
 			user = (PTOKEN_USER)LocalAlloc(LPTR, size);
@@ -135,7 +136,7 @@ BOOL AddLargePageRights()
 	ZeroMemory(&attributes, sizeof(attributes));
 
 	BOOL result = FALSE;
-	if (LsaOpenPolicy(NULL, &attributes, POLICY_ALL_ACCESS, &handle) == 0) 
+	if (LsaOpenPolicy(NULL, &attributes, POLICY_ALL_ACCESS, &handle) == 0)
 	{
 		LSA_UNICODE_STRING lockmem;
 		lockmem.Buffer = L"SeLockMemoryPrivilege";
@@ -202,7 +203,10 @@ size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 
 cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg)
 {
-	size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
+	size_t hashMemSize = std::max(
+		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
+		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
+	);
 
 	cryptonight_ctx* ptr = (cryptonight_ctx*)_mm_malloc(sizeof(cryptonight_ctx), 4096);
 
@@ -212,6 +216,8 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 		ptr->long_state = (uint8_t*)_mm_malloc(hashMemSize, hashMemSize);
 		ptr->ctx_info[0] = 0;
 		ptr->ctx_info[1] = 0;
+		if(ptr->long_state == NULL)
+			printer::inst()->print_msg(L0, "MEMORY ALLOC FAILED: _mm_malloc was not able to allocate %s byte",std::to_string(hashMemSize).c_str());
 		return ptr;
 	}
 
@@ -239,25 +245,25 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 		return ptr;
 	}
 #else
-
+//http://man7.org/linux/man-pages/man2/mmap.2.html
 #if defined(__APPLE__)
-	ptr->long_state  = (uint8_t*)mmap(0, hashMemSize, PROT_READ | PROT_WRITE,
+	ptr->long_state  = (uint8_t*)mmap(NULL, hashMemSize, PROT_READ | PROT_WRITE,
 		MAP_PRIVATE | MAP_ANON, VM_FLAGS_SUPERPAGE_SIZE_2MB, 0);
 #elif defined(__FreeBSD__)
-	ptr->long_state = (uint8_t*)mmap(0, hashMemSize, PROT_READ | PROT_WRITE,
+	ptr->long_state = (uint8_t*)mmap(NULL, hashMemSize, PROT_READ | PROT_WRITE,
 		MAP_PRIVATE | MAP_ANONYMOUS | MAP_ALIGNED_SUPER | MAP_PREFAULT_READ, -1, 0);
 #elif defined(__OpenBSD__)
-	ptr->long_state = (uint8_t*)mmap(0, hashMemSize, PROT_READ | PROT_WRITE,
+	ptr->long_state = (uint8_t*)mmap(NULL, hashMemSize, PROT_READ | PROT_WRITE,
 		MAP_PRIVATE | MAP_ANON, -1, 0);
 #else
-	ptr->long_state = (uint8_t*)mmap(0, hashMemSize, PROT_READ | PROT_WRITE,
-		MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, 0, 0);
+	ptr->long_state = (uint8_t*)mmap(NULL, hashMemSize, PROT_READ | PROT_WRITE,
+		MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, -1, 0);
 #endif
 
 	if (ptr->long_state == MAP_FAILED)
 	{
 		_mm_free(ptr);
-		msg->warning = "mmap failed";
+		msg->warning = "mmap failed, check attribute 'use_slow_memory' in 'config.txt'";
 		return NULL;
 	}
 
@@ -278,7 +284,10 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 
 void cryptonight_free_ctx(cryptonight_ctx* ctx)
 {
-	size_t hashMemSize = cn_select_memory(::jconf::inst()->GetMiningAlgo());
+	size_t hashMemSize = std::max(
+		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
+		cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
+	);
 
 	if(ctx->ctx_info[0] != 0)
 	{

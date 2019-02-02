@@ -13,7 +13,7 @@
 - During install choose following components:
   - `Desktop development with C++` (left side)
   - `VC++ 2015.3 v140 toolset for desktop` (right side - **NOT** needed for CUDA 9 or AMD GPU)
-  - Since release of VS2017 15.5 (12/04/17), require `VC++ 2017 version 15.4 v14.11 toolset` (under tab `Individual Components`, section `Compilers, build tools, and runtimes`), as CUDA 9.1 is not compatible with compiler 14.12.X
+  - Since release of VS2017 15.5 (12/04/17), require `VC++ 2017 version 15.4 v14.11 toolset` (under tab `Individual Components`, section `Compilers, build tools, and runtimes`), as CUDA 9.x is not compatible with compiler 14.12.X
 
 ### CMake for Win64
 
@@ -30,9 +30,16 @@
     - CUDA/Runtime
     - Driver components
 
-### AMD APP SDK 3.0 (only needed for AMD GPUs)
+### AMD DRIVER/OCL-SDK (only needed for AMD GPUs)
 
-- Download and install the latest version from http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/
+- Download & install the AMD driver: https://www.amd.com/en/support
+
+**ATTENTION** Many windows driver 18.5+ creating invalid shares.
+If you have an issue with `invalid shares` please downgrade your driver.
+
+- Download and install the latest version of the OCL-SDK from https://github.com/GPUOpen-LibrariesAndSDKs/OCL-SDK/releases 
+
+Do not follow old information that you need the AMD APP SDK. AMD has removed the APP SDK and is now shipping the OCL-SDK_light.
 
 ### Dependencies OpenSSL/Hwloc and Microhttpd
 - For CUDA 8*:
@@ -82,17 +89,17 @@
 - Go to extracted source code directory (e.g. `cd C:\Users\USERNAME\xmr-stak-<version>`)
 - Execute the following commands (NOTE: path to Visual Studio Community 2017 can be different)
   ```
-  # Execute next line only if compiling for Cuda 9.1 and using Visual Studio 2017 >= 15.5 (released 12/04/17)
-  "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 -vcvars_ver=14.11  
-  
+  # Execute next line only if compiling for Cuda 9.x and using Visual Studio 2017 >= 15.5 (released 12/04/17)
+  "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 -vcvars_ver=14.11
+
   "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsMSBuildCmd.bat"
   ```
 - Sometimes Windows will change the directory to `C:\Users\USERNAME\source\` instead of `C:\Users\USERNAME\xmr-stak-<version>\`. If that's the case execute `cd C:\Users\USERNAME\xmr-stak-<version>` followed by:
   ```
   mkdir build
-  
+
   cd build
-  
+
   set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc;C:\xmr-stak-dep\libmicrohttpd;C:\xmr-stak-dep\openssl
   ```
 
@@ -104,9 +111,9 @@
 - Then execute
   ```
   cmake --build . --config Release --target install
-  
+
   cd bin\Release
-  
+
   copy C:\xmr-stak-dep\openssl\bin\* .
   ```
-- Miner is by default compiled for NVIDIA GPUs (if CUDA is installed), AMD GPUs (if the AMD APP SDK is installed) and CPUs.
+- Miner is by default compiled for NVIDIA GPUs (if CUDA is installed), AMD GPUs (if the AMD OCL-SDK_light is installed) and CPUs.

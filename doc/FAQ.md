@@ -9,8 +9,8 @@
 * [Virus Protection Alert](#virus-protection-alert)
 * [Change Currency to Mine](#change-currency-to-mine)
 * [How can I mine Monero](#how-can-i-mine-monero)
-* [Why is Monero named monero7](why-is-monero-named-monero7)
 * [Which currency must be chosen if my fork coin is not listed](#which-currency-must-be-chosen-if-my-fork-coin-is-not-listed)
+* [Internal compiler error: Killed (program cc1plus)](#internal-compiler-error)
 
 ## "Obtaining SeLockMemoryPrivilege failed."
 
@@ -35,7 +35,7 @@ Reference: http://rybkaforum.net/cgi-bin/rybkaforum/topic_show.pl?pid=259791#pid
 
 If you set up the user rights properly ([see above](https://github.com/fireice-uk/xmr-stak/blob/master/doc/FAQ.md#selockmemoryprivilege-failed)), and your system has 4-8GB of RAM (50%+ use), there is a significant chance that there simply won't be a large enough chunk of contiguous memory because Windows is fairly bad at mitigating memory fragmentation.
 
-If that happens, disable all auto-staring applications and run the miner after a reboot.
+If that happens, disable all auto-starting applications and run the miner after a reboot.
 
 ## Error msvcp140.dll and vcruntime140.dll not available
 
@@ -44,20 +44,35 @@ Download and install this [runtime package](https://go.microsoft.com/fwlink/?Lin
 
 ## Error: MEMORY ALLOC FAILED: mmap failed
 
-On Linux you will need to configure large page support and increase your ulimit -l. 
+On Linux you will need to configure large page support and increase your memlock limit (`ulimit -l`).
 
-To set large page support, add the following lines to /etc/sysctl.conf:
-    
+Never put settings directly into `/etc/sysctl.conf` or `/etc/security/limits.conf` as those are system defaults and can be replaced in upgrades, and custom settings in that file are deprecated in all distros since at least wheezy/trusty (has been illegal in RedHat based distros for longer than that), and will be even more deprecated with systemd (it no longer even reads sysctl.conf, ONLY sysctl.d files, for example - there is a link to the old `/etc/sysctl.conf` for backward compatibility but that can go away at any time).  Also adding to `/etc/rc.local` is extra incorrect, systemd does not even use that file anymore (once the sysvinit compatibility layer is gone, rc.local will no longer work).
+
+To check current settings, run `/sbin/sysctl vm.nr_hugepages ; ulimit -l` as whatever user you will run `xmr-stak` as (example shows bad/low sample defaults):
+
+    $ /sbin/sysctl vm.nr_hugepages ; ulimit -l
+    vm.nr_hugepages = 0
+    16
+
+To set large page support, add the following lines to `/etc/sysctl.d/60-hugepages.conf`:
+
     vm.nr_hugepages=128
 
-To increase the ulimit, add following lines to /etc/security/limits.conf:
+You WILL need to run `sudo sysctl --system` for these settings to take effect on your system (or reboot).  In some cases (many threads, very large CPU, etc) you may need more than 128 (try 256 if there are still complaints from thread inits)
 
-    * soft memlock 262144
-    * hard memlock 262144
+To increase the memlock (ulimit -l), add following lines to `/etc/security/limits.d/60-memlock.conf`:
 
-You WILL need to log out and log back in for these settings to take affect on your user (no need to reboot, just relogin in your session).
+    *    - memlock 262144
+    root - memlock 262144
 
-You can also do it Windows-style and simply run-as-root, but this is NOT recommended for security reasons.
+You WILL need to log out and log back in for these settings to take effect on your user (no need to reboot, just relogin in your session).
+Recheck after completing these steps to validate:
+
+    $ /sbin/sysctl vm.nr_hugepages ; ulimit -l
+    vm.nr_hugepages = 128
+    262144
+
+You can also do it Windows-style and simply run-as-root, but this is NOT recommended for security reasons.  Also running as root does not properly get around the `ulimit -l` being large enough (and limits `*` does not apply to `root` either, it must be specified explicitly).
 
 ## Illegal Instruction
 
@@ -72,18 +87,18 @@ If your antivirus software flags **xmr-stak**, it will likely move it to its qua
 
 If the miner is compiled for Monero and Aeon than you can change
  - the value `currency` in the config *or*
- - start the miner with the [command line option](usage.md) `--currency monero7` or `--currency aeon7`
+ - start the miner with the [command line option](usage.md) `--currency monero` or `--currency aeon7`
  - run `xmr-stak --help` to see all supported currencies and algorithms
 
 ## How can I mine Monero
 
-Set the value `currency` in `pools.txt` to `monero7`.
-
-## Why is Monero named monero7
-
-To avoid configuration conflicts after the hard fork of Monero to the new POW with our old naming schema where all cryptonight currencies was selected by choosing `monero` as currency we decided to switch to the name `monero7`.
+Set the value `currency` in `pools.txt` to `monero`.
 
 ## Which currency must be chosen if my fork coin is not listed
 
 If your coin you want to mine is not listed please check the documentation of the coin and try to find out if `cryptonight` or `cryptonight-lite` is the used algorithm.
 Select one of these generic coin algorithms.
+
+## Internal compiler error
+
+Seeing `g++: internal compiler error: Killed (program cc1plus)` is probably related to not enough RAM to compile. 1 Gb RAM should be enough (it is on clean Ubuntu 16.04).

@@ -156,7 +156,8 @@ int plain_socket::recv(char* buf, unsigned int len)
 
 bool plain_socket::send(const char* buf)
 {
-	int pos = 0, slen = strlen(buf);
+	size_t pos = 0;
+	size_t slen = strlen(buf);
 	while (pos != slen)
 	{
 		int ret = ::send(hSocket, buf + pos, slen - pos, 0);
@@ -338,7 +339,7 @@ bool tls_socket::connect()
 	{
 		if(!pCallback->is_dev_pool())
 		{
-			printer::inst()->print_msg(L0, "FINGERPRINT FAILED CHECK [%s] %.*s was given, %s was configured", 
+			printer::inst()->print_msg(L0, "FINGERPRINT FAILED CHECK [%s] %.*s was given, %s was configured",
 				pCallback->get_pool_addr(), (int)b64_len, b64_md, conf_md);
 		}
 

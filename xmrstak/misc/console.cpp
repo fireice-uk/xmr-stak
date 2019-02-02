@@ -156,7 +156,8 @@ printer::printer()
 {
 	verbose_level = LINF;
 	logfile = nullptr;
-	b_flush_stdout = false;
+	// Windows doesn't do line buffering, so it needs to enable full buffering and manually flush the buffer
+	setvbuf(stdout, NULL, _IOFBF, BUFSIZ);
 }
 
 bool printer::open_logfile(const char* file)
@@ -191,30 +192,14 @@ void printer::print_msg(verbosity verbose, const char* fmt, ...)
 	buf[bpos] = '\n';
 	buf[bpos+1] = '\0';
 
-	std::unique_lock<std::mutex> lck(print_mutex);
-	fputs(buf, stdout);
-
-	if (b_flush_stdout)
-	{
-		fflush(stdout);
-	}
-
-	if(logfile != nullptr)
-	{
-		fputs(buf, logfile);
-		fflush(logfile);
-	}
+    print_str(buf);
 }
 
 void printer::print_str(const char* str)
 {
 	std::unique_lock<std::mutex> lck(print_mutex);
 	fputs(str, stdout);
-
-	if (b_flush_stdout)
-	{
-		fflush(stdout);
-	}
+	fflush(stdout);
 
 	if(logfile != nullptr)
 	{
@@ -223,9 +208,9 @@ void printer::print_str(const char* str)
 	}
 }
 
-//Do a press any key for the windows folk. *insert any key joke here*
+// Do a press any key for the windows folk. *insert any key joke here*
 #ifdef _WIN32
-void win_exit(size_t code)
+void win_exit(int code)
 {
 	size_t envSize = 0;
 	getenv_s(&envSize, nullptr, 0, "XMRSTAK_NOWAIT");
@@ -238,8 +223,8 @@ void win_exit(size_t code)
 }
 
 #else
-void win_exit(size_t code) 
-{ 
+void win_exit(int code)
+{
 	std::exit(code);
 }
 #endif // _WIN32

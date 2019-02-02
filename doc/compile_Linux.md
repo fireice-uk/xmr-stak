@@ -2,9 +2,17 @@
 
 ## Install Dependencies
 
-### AMD APP SDK 3.0 (only needed to use AMD GPUs)
+### AMD Driver (only needed to use AMD GPUs)
 
-- download and install the latest version from [http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/](http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)
+- the AMD APP SDK is not longer needed (all is included in the driver package)
+- download & unzip the AMD driver: https://www.amd.com/en/support
+- run `./amdgpu-pro-install --opencl=legacy,pal` from the unzipped folder
+- set the environment variable to opencl `export AMDAPPSDKROOT=/opt/amdgpu-pro/`
+
+**ATTENTION** The linux driver 18.3 creating invalid shares. 
+If you have an issue with `invalid shares` please downgrade your driver or switch to ROCm.
+
+For linux also the OpenSource driver ROCm 1.9.X+ is a well working alternative, see https://rocm.github.io/ROCmInstall.html
 
 ### Cuda 8.0+ (only needed to use NVIDIA GPUs)
 
@@ -64,7 +72,7 @@
     cd xmr-stak/build
     cmake ..
     make install
-    
+
     # TinyCore Linux 8.x
     # TinyCore is 32-bit only, but there is an x86-64 port, known as "Pure 64,"
     # hosted on the TinyCore home page, and it works well.
@@ -94,7 +102,7 @@
     make install
 ```
 
-- g++ version 5.1 or higher is required for full C++11 support. 
+- g++ version 5.1 or higher is required for full C++11 support.
 If you want to compile the binary without installing libraries / compiler or just compile binary for some other distribution, please check the [build_xmr-stak_docker.sh script](scripts/build_xmr-stak_docker/build_xmr-stak_docker.sh).
 
 - Some newer gcc versions are not supported by CUDA (e.g. Ubuntu 17.10). It will require installing gcc 5 but you can avoid changing defaults.
@@ -103,6 +111,8 @@ In that case you can force CUDA to use an older compiler in the following way:
 ```
 cmake -DCUDA_HOST_COMPILER=/usr/bin/gcc-5 ..
 ```
+
+- You need 1 Gb RAM to compile (a bit less might be enough, 512 Mb isn't). 
 
 ### To do a generic and static build for a system without gcc 5.1+
 ```

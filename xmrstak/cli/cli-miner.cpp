@@ -55,7 +55,7 @@
 #	include "xmrstak/misc/uac.hpp"
 #endif // _WIN32
 
-int do_benchmark(int block_version);
+int do_benchmark(int block_version, int wait_sec, int work_sec);
 
 void help()
 {
@@ -72,7 +72,9 @@ void help()
 #ifdef _WIN32
 	cout<<"  --noUAC                    disable the UAC dialog"<<endl;
 #endif
-	cout<<"  --benchmark BLOCKVERSION   ONLY do a 60-second benchmark and exit"<<endl;
+	cout<<"  --benchmark BLOCKVERSION   ONLY do a benchmark and exit"<<endl;
+	cout<<"  --benchwait WAIT_SEC             ... benchmark wait time"<<endl;
+	cout<<"  --benchwork WORK_SEC             ... benchmark work time"<<endl;
 #ifndef CONF_NO_CPU
 	cout<<"  --noCPU                    disable the CPU miner backend"<<endl;
 	cout<<"  --cpu FILE                 CPU backend miner config file"<<endl;
@@ -80,6 +82,8 @@ void help()
 #ifndef CONF_NO_OPENCL
 	cout<<"  --noAMD                    disable the AMD miner backend"<<endl;
 	cout<<"  --noAMDCache               disable the AMD(OpenCL) cache for precompiled binaries"<<endl;
+	cout<<"  --openCLVendor VENDOR      use OpenCL driver of VENDOR and devices [AMD,NVIDIA]"<<endl;
+	cout<<"                             default: AMD"<<endl;
 	cout<<"  --amd FILE                 AMD backend miner config file"<<endl;
 #endif
 #ifndef CONF_NO_CUDA
@@ -108,7 +112,7 @@ void help()
 #endif
 	std::string algos;
 	jconf::GetAlgoList(algos);
-	cout<< "Supported coin opitons: " << endl << algos << endl; 
+	cout<< "Supported coin options: " << endl << algos << endl;
 	cout<< "Version: " << get_version_str_short() << endl;
 	cout<<"Brought to by fireice_uk and psychocrypt under GPLv3."<<endl;
 }
@@ -148,7 +152,7 @@ std::string get_multipool_entry(bool& final)
 	std::cin.clear(); std::cin.ignore(INT_MAX,'\n');
 	std::cout<<"- Password (mostly empty or x):"<<std::endl;
 	getline(std::cin, passwd);
-	
+
 	std::string rigid;
 	std::cout<<"- Rig identifier for pool-side statistics (needs pool support). Can be empty:"<<std::endl;
 	getline(std::cin, rigid);
@@ -172,7 +176,7 @@ std::string get_multipool_entry(bool& final)
 	final = !read_yes_no("- Do you want to add another pool? (y/n)");
 
 	return "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName + "\", \"rig_id\" : \"" + rigid +
-		"\", \"pool_password\" : \"" + passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " + 
+		"\", \"pool_password\" : \"" + passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " +
 		bool_to_str(tls) + ", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
 }
 
@@ -211,7 +215,7 @@ void do_guided_pool_config()
 			std::cout << "- Please enter the currency that you want to mine: "<<std::endl;
 			std::cout << list << std::endl;
 			std::cin >> tmp;
-		} 
+		}
 		currency = tmp;
 	}
 
@@ -299,7 +303,7 @@ void do_guided_pool_config()
 		std::cout << "Miner will mine mostly at the pool with the highest weight, unless the pool fails." << std::endl;
 		std::cout << "Weight must be an integer larger than 0." << std::endl;
 		std::cout << "- Please enter a weight for this pool: "<<std::endl;
-		
+
 		while(!(std::cin >> pool_weight) || pool_weight <= 0)
 		{
 			std::cin.clear();
@@ -312,7 +316,7 @@ void do_guided_pool_config()
 
 	std::string pool_table;
 	pool_table += "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName +  "\", \"rig_id\" : \"" + rigid +
-		"\", \"pool_password\" : \"" +  passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " + 
+		"\", \"pool_password\" : \"" +  passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " +
 		bool_to_str(tls) + ", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
 
 	if(multipool)
@@ -389,20 +393,20 @@ int main(int argc, char *argv[])
 	using namespace xmrstak;
 
 	std::string pathWithName(argv[0]);
-	std::string seperator("/");
-	auto pos = pathWithName.rfind(seperator);
+	std::string separator("/");
+	auto pos = pathWithName.rfind(separator);
 
 	if(pos == std::string::npos)
 	{
 		// try windows "\"
-		seperator = "\\";
-		pos = pathWithName.rfind(seperator);
+		separator = "\\";
+		pos = pathWithName.rfind(separator);
 	}
 	params::inst().binaryName = std::string(pathWithName, pos + 1, std::string::npos);
 	if(params::inst().binaryName.compare(pathWithName) != 0)
 	{
 		params::inst().executablePrefix = std::string(pathWithName, 0, pos);
-		params::inst().executablePrefix += seperator;
+		params::inst().executablePrefix += separator;
 	}
 
 	params::inst().minerArg0 = argv[0];
@@ -449,6 +453,24 @@ int main(int argc, char *argv[])
 		else if(opName.compare("--noAMD") == 0)
 		{
 			params::inst().useAMD = false;
+		}
+		else if(opName.compare("--openCLVendor") == 0)
+		{
+			++i;
+			if( i >=argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--openCLVendor' given");
+				win_exit();
+				return 1;
+			}
+			std::string vendor(argv[i]);
+			params::inst().openCLVendor = vendor;
+			if(vendor != "AMD" && vendor != "NVIDIA")
+			{
+				printer::inst()->print_msg(L0, "'--openCLVendor' must be 'AMD' or 'NVIDIA'");
+				win_exit();
+				return 1;
+			}
 		}
 		else if(opName.compare("--noAMDCache") == 0)
 		{
@@ -579,7 +601,7 @@ int main(int argc, char *argv[])
 				win_exit();
 				return 1;
 			}
-			
+
 			params::inst().userSetRigid = true;
 			params::inst().poolRigid = argv[i];
 		}
@@ -654,6 +676,44 @@ int main(int argc, char *argv[])
 			}
 			params::inst().benchmark_block_version = bversion;
 		}
+		else if(opName.compare("--benchwait") == 0)
+		{
+			++i;
+			if( i >= argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--benchwait' given");
+				win_exit();
+				return 1;
+			}
+			char* wait_sec = nullptr;
+			long int waitsec = strtol(argv[i], &wait_sec, 10);
+
+			if(waitsec < 0 || waitsec >= 300)
+			{
+				printer::inst()->print_msg(L0, "Benchmark wait seconds must be in the range [0,300]");
+				return 1;
+			}
+			params::inst().benchmark_wait_sec = waitsec;
+		}
+		else if(opName.compare("--benchwork") == 0)
+		{
+			++i;
+			if( i >= argc )
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--benchwork' given");
+				win_exit();
+				return 1;
+			}
+			char* work_sec = nullptr;
+			long int worksec = strtol(argv[i], &work_sec, 10);
+
+			if(worksec < 10 || worksec >= 300)
+			{
+				printer::inst()->print_msg(L0, "Benchmark work seconds must be in the range [10,300]");
+				return 1;
+			}
+			params::inst().benchmark_work_sec = worksec;
+		}
 		else
 		{
 			printer::inst()->print_msg(L0, "Parameter unknown '%s'",argv[i]);
@@ -689,6 +749,7 @@ int main(int argc, char *argv[])
 
 	if (!BackendConnector::self_test())
 	{
+		printer::inst()->print_msg(L0, "Self test not passed!");
 		win_exit();
 		return 1;
 	}
@@ -722,19 +783,32 @@ int main(int argc, char *argv[])
 	char buffer[64];
 	snprintf(buffer, sizeof(buffer), "\nConfigurable dev donation level is set to %.1f%%\n\n", fDevDonationLevel * 100.0);
 	printer::inst()->print_str(buffer);
+	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_str("You can use following keys to display reports:\n");
 	printer::inst()->print_str("'h' - hashrate\n");
 	printer::inst()->print_str("'r' - results\n");
 	printer::inst()->print_str("'c' - connection\n");
+	printer::inst()->print_str("-------------------------------------------------------------------\n");
+	printer::inst()->print_str("Upcoming xmr-stak-gui is sponsored by:\n");
+	printer::inst()->print_str("   #####   ______               ____\n");
+	printer::inst()->print_str(" ##     ## | ___ \\             /  _ \\\n");
+	printer::inst()->print_str("#    _    #| |_/ /_   _   ___  | / \\/ _   _  _ _  _ _  ___  _ __    ___  _   _\n");
+	printer::inst()->print_str("#   |_|   #|    /| | | | / _ \\ | |   | | | || '_|| '_|/ _ \\| '_ \\  / __|| | | |\n");
+	printer::inst()->print_str("#         #| |\\ \\| |_| || (_) || \\_/\\| |_| || |  | | |  __/| | | || (__ | |_| |\n");
+	printer::inst()->print_str(" ##     ## \\_| \\_|\\__, | \\___/ \\____/ \\__,_||_|  |_|  \\___||_| |_| \\___| \\__, |\n");
+	printer::inst()->print_str("   #####           __/ |                                                  __/ |\n");
+	printer::inst()->print_str("                  |___/   https://ryo-currency.com                       |___/\n\n");
+	printer::inst()->print_str("This currency is a way for us to implement the ideas that we were unable to in\n");
+	printer::inst()->print_str("Monero. See https://github.com/fireice-uk/cryptonote-speedup-demo for details.\n");
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_msg(L0, "Mining coin: %s", jconf::inst()->GetMiningCoin().c_str());
 
 	if(params::inst().benchmark_block_version >= 0)
 	{
 		printer::inst()->print_str("!!!! Doing only a benchmark and exiting. To mine, remove the '--benchmark' option. !!!!\n");
-		return do_benchmark(params::inst().benchmark_block_version);
+		return do_benchmark(params::inst().benchmark_block_version, params::inst().benchmark_wait_sec, params::inst().benchmark_work_sec);
 	}
-	
+
 	executor::inst()->ex_start(jconf::inst()->DaemonMode());
 
 	uint64_t lastTime = get_timestamp_ms();
@@ -769,7 +843,7 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-int do_benchmark(int block_version)
+int do_benchmark(int block_version, int wait_sec, int work_sec)
 {
 	using namespace std::chrono;
 	std::vector<xmrstak::iBackend*>* pvThreads;
@@ -785,18 +859,18 @@ int do_benchmark(int block_version)
 	xmrstak::miner_work oWork = xmrstak::miner_work();
 	pvThreads = xmrstak::BackendConnector::thread_starter(oWork);
 
-	printer::inst()->print_msg(L0, "Wait 30 sec until all backends are initialized");
-	std::this_thread::sleep_for(std::chrono::seconds(30));
+	printer::inst()->print_msg(L0, "Wait %d sec until all backends are initialized",wait_sec);
+	std::this_thread::sleep_for(std::chrono::seconds(wait_sec));
 
 	/* AMD and NVIDIA is currently only supporting work sizes up to 84byte
 	 * \todo fix this issue
 	 */
 	xmrstak::miner_work benchWork = xmrstak::miner_work("", work, 84, 0, false, 0);
-	printer::inst()->print_msg(L0, "Start a 60 second benchmark...");
+	printer::inst()->print_msg(L0, "Start a %d second benchmark...",work_sec);
 	xmrstak::globalStates::inst().switch_work(benchWork, dat);
 	uint64_t iStartStamp = get_timestamp_ms();
 
-	std::this_thread::sleep_for(std::chrono::seconds(60));
+	std::this_thread::sleep_for(std::chrono::seconds(work_sec));
 	xmrstak::globalStates::inst().switch_work(oWork, dat);
 
 	double fTotalHps = 0.0;

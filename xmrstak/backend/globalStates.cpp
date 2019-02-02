@@ -33,24 +33,37 @@
 namespace xmrstak
 {
 
+void globalStates::consume_work( miner_work& threadWork, uint64_t& currentJobId)
+{
+	jobLock.ReadLock();
+
+	threadWork = oGlobalWork;
+	currentJobId = iGlobalJobNo.load(std::memory_order_relaxed);
+
+	jobLock.UnLock();
+}
 
 void globalStates::switch_work(miner_work& pWork, pool_data& dat)
 {
-	// iConsumeCnt is a basic lock-like polling mechanism just in case we happen to push work
-	// faster than threads can consume them. This should never happen in real life.
-	// Pool cant physically send jobs faster than every 250ms or so due to net latency.
+	jobLock.WriteLock();
 
-	while (iConsumeCnt.load(std::memory_order_seq_cst) < iThreadCount)
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	/* This notifies all threads that the job has changed.
+	 * To avoid duplicated shared this must be done before the nonce is exchanged.
+	 */
+	iGlobalJobNo++;
 
 	size_t xid = dat.pool_id;
 	dat.pool_id = pool_id;
 	pool_id = xid;
 
-	dat.iSavedNonce = iGlobalNonce.exchange(dat.iSavedNonce, std::memory_order_seq_cst);
+	/* Maybe a worker thread is updating the nonce while we read it.
+	 * To avoid duplicated share calculations the job ID is checked in the worker thread
+	 * after the nonce is read.
+	 */
+	dat.iSavedNonce = iGlobalNonce.exchange(dat.iSavedNonce, std::memory_order_relaxed);
 	oGlobalWork = pWork;
-	iConsumeCnt.store(0, std::memory_order_seq_cst);
-	iGlobalJobNo++;
+
+	jobLock.UnLock();
 }
 
-} // namepsace xmrstak
+} // namespace xmrstak
