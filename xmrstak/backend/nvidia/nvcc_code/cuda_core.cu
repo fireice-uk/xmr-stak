@@ -10,6 +10,7 @@
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/backend/nvidia/nvcc_code/cuda_fast_int_math_v2.hpp"
 #include "xmrstak/backend/nvidia/nvcc_code/cuda_fast_div_heavy.hpp"
+#include "xmrstak/backend/nvidia/nvcc_code/cuda_cryptonight_gpu.hpp"
 
 
 #ifdef _WIN32
@@ -310,7 +311,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 	uint64_t bx1;
 	uint32_t sqrt_result;
 	uint64_t division_result;
-	if(ALGO == cryptonight_monero_v8)
+	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
 	{
 		bx0 = ((uint64_t*)(d_ctx_b + thread * 12))[sub];
 		bx1 = ((uint64_t*)(d_ctx_b + thread * 12 + 4))[sub];
@@ -350,7 +351,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 			t_fn0( cx.y & 0xff ) ^ t_fn1( (cx2.x >> 8) & 0xff ) ^ rotate16(t_fn0( (cx2.y >> 16) & 0xff ) ^ t_fn1( (cx.x >> 24 ) ))
 		);
 
-		if(ALGO == cryptonight_monero_v8)
+		if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
 		{
 
 			const uint64_t chunk1 = myChunks[ idx1 ^ 2 + sub ];
@@ -393,14 +394,14 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 		else
 			((ulonglong4*)myChunks)[sub] = ((ulonglong4*)ptr0)[sub];
 
-		if(ALGO != cryptonight_monero_v8)
+		if(ALGO != cryptonight_monero_v8 && ALGO != cryptonight_turtle)
 			bx0 = cx_aes;
 
 		uint64_t cx_mul;
 		((uint32_t*)&cx_mul)[0] = shuffle<2>(sPtr, sub, cx_aes.x , 0);
 		((uint32_t*)&cx_mul)[1] = shuffle<2>(sPtr, sub, cx_aes.y , 0);
 
-		if(ALGO == cryptonight_monero_v8 && sub == 1)
+		if((ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle) && sub == 1)
 		{
 			// Use division and square root results from the _previous_ iteration to hide the latency
 			((uint32_t*)&division_result)[1] ^= sqrt_result;
@@ -424,7 +425,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 			uint64_t cl = ((uint64_t*)myChunks)[ idx1 ];
 			// sub 0 -> hi, sub 1 -> lo
 			uint64_t res = sub == 0 ? __umul64hi( cx_mul, cl ) : cx_mul * cl;
-			if(ALGO == cryptonight_monero_v8)
+			if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
 			{
 				const uint64_t chunk1 = myChunks[ idx1 ^ 2 + sub ] ^ res;
 				uint64_t chunk2 = myChunks[ idx1 ^ 4 + sub ];
@@ -441,7 +442,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 			}
 			ax0 += res;
 		}
-		if(ALGO == cryptonight_monero_v8)
+		if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
 		{
 			bx1 = bx0;
 			bx0 = cx_aes;
@@ -464,7 +465,7 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 	if ( bfactor > 0 )
 	{
 		((uint64_t*)(d_ctx_a + thread * 4))[sub] = ax0;
-		if(ALGO == cryptonight_monero_v8)
+		if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
 		{
 			((uint64_t*)(d_ctx_b + thread * 12))[sub] = bx0;
 			((uint64_t*)(d_ctx_b + thread * 12 + 4))[sub] = bx1;
@@ -724,7 +725,8 @@ __global__ void cryptonight_core_gpu_phase3( int threads, int bfactor, int parti
 
 		cn_aes_pseudo_round_mut( sharedMemory, text, key );
 
-		if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
+		if(ALGO == cryptonight_gpu || ALGO == cryptonight_heavy || ALGO == cryptonight_haven ||
+			ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
 		{
 			#pragma unroll
 			for ( int j = 0; j < 4; ++j )
@@ -771,7 +773,7 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 
 	for ( int i = 0; i < partcount; i++ )
 	{
-		if(ALGO == cryptonight_monero_v8)
+		if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
 		{
 			// two threads per block
 			CUDA_CHECK_MSG_KERNEL(
@@ -843,6 +845,73 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 	}
 }
 
+template<size_t ITERATIONS, uint32_t MASK, uint32_t MEMORY, xmrstak_algo ALGO, uint32_t MEM_MODE>
+void cryptonight_core_gpu_hash_gpu(nvid_ctx* ctx, uint32_t nonce)
+{
+	dim3 grid( ctx->device_blocks );
+	dim3 block( ctx->device_threads );
+	dim3 block2( ctx->device_threads << 1 );
+	dim3 block4( ctx->device_threads << 2 );
+	dim3 block8( ctx->device_threads << 3 );
+
+	size_t intensity = ctx->device_blocks * ctx->device_threads;
+
+	CUDA_CHECK_KERNEL(
+		ctx->device_id,
+		xmrstak::nvidia::cn_explode_gpu<MEMORY><<<intensity,32>>>((int*)ctx->d_ctx_state, (int*)ctx->d_long_state)
+	);
+
+	int partcount = 1 << ctx->device_bfactor;
+	for(int i = 0; i < partcount; i++)
+	{
+		CUDA_CHECK_KERNEL(
+			ctx->device_id,
+			// 36 x 16byte x numThreads
+			xmrstak::nvidia::cryptonight_core_gpu_phase2_gpu<ITERATIONS, MEMORY>
+				<<<ctx->device_blocks, ctx->device_threads * 16,  36 * 16 * ctx->device_threads>>>
+				(
+					(int*)ctx->d_ctx_state,
+					(int*)ctx->d_long_state,
+					ctx->device_bfactor,
+					i,
+					ctx->d_ctx_a,
+					ctx->d_ctx_b
+				)
+		);
+	}
+
+	/* bfactor for phase 3
+	 *
+	 * 3 consume less time than phase 2, therefore we begin with the
+	 * kernel splitting if the user defined a `bfactor >= 5`
+	 */
+	int bfactorOneThree = ctx->device_bfactor - 4;
+	if( bfactorOneThree < 0 )
+		bfactorOneThree = 0;
+
+	int partcountOneThree = 1 << bfactorOneThree;
+	int roundsPhase3 = partcountOneThree;
+
+	if(ALGO == cryptonight_gpu || ALGO == cryptonight_heavy || ALGO == cryptonight_haven ||
+		ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast )
+	{
+		// cryptonight_heavy used two full rounds over the scratchpad memory
+		roundsPhase3 *= 2;
+	}
+
+	for ( int i = 0; i < roundsPhase3; i++ )
+	{
+		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase3<ITERATIONS,MEMORY/4, ALGO><<<
+			grid,
+			block8,
+			block8.x * sizeof(uint32_t) * static_cast< int >( ctx->device_arch[0] < 3 )
+		>>>( ctx->device_blocks*ctx->device_threads,
+			bfactorOneThree, i,
+			ctx->d_long_state,
+			ctx->d_ctx_state, ctx->d_ctx_key2 ));
+	}
+}
+
 void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t startNonce)
 {
 	typedef void (*cuda_hash_fn)(nvid_ctx* ctx, uint32_t nonce);
@@ -882,9 +951,15 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t 
 
 		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero_v8, 0>,
 		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero_v8, 1>,
-    
+
 		cryptonight_core_gpu_hash<CRYPTONIGHT_SUPERFAST_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_superfast, 0>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_SUPERFAST_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_superfast, 1>
+		cryptonight_core_gpu_hash<CRYPTONIGHT_SUPERFAST_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_superfast, 1>,
+
+		cryptonight_core_gpu_hash_gpu<CRYPTONIGHT_GPU_ITER, CRYPTONIGHT_GPU_MASK, CRYPTONIGHT_MEMORY, cryptonight_gpu, 0>,
+		cryptonight_core_gpu_hash_gpu<CRYPTONIGHT_GPU_ITER, CRYPTONIGHT_GPU_MASK, CRYPTONIGHT_MEMORY, cryptonight_gpu, 1>,
+
+		cryptonight_core_gpu_hash<CRYPTONIGHT_TURTLE_ITER, CRYPTONIGHT_TURTLE_MASK, CRYPTONIGHT_TURTLE_MEMORY/4, cryptonight_turtle, 0>,
+		cryptonight_core_gpu_hash<CRYPTONIGHT_TURTLE_ITER, CRYPTONIGHT_TURTLE_MASK, CRYPTONIGHT_TURTLE_MEMORY/4, cryptonight_turtle, 1>
 	};
 
 	std::bitset<1> digit;
@@ -892,4 +967,5 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t 
 
 	cuda_hash_fn selected_function = func_table[ ((miner_algo - 1u) << 1) | digit.to_ulong() ];
 	selected_function(ctx, startNonce);
+
 }

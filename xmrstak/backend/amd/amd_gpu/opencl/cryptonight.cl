@@ -14,6 +14,23 @@ R"===(
   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
   */
 
+// defines to translate algorithm names int a same number used within cryptonight.h
+#define invalid_algo 0
+#define cryptonight 1
+#define cryptonight_lite 2
+#define cryptonight_monero 3
+#define cryptonight_heavy 4
+#define cryptonight_aeon 5
+#define cryptonight_ipbc 6
+#define cryptonight_stellite 7
+#define cryptonight_masari 8
+#define cryptonight_haven 9
+#define cryptonight_bittube2 10
+#define cryptonight_monero_v8 11
+#define cryptonight_superfast 12
+#define cryptonight_gpu 13
+#define cryptonight_turtle 14
+
 /* For Mesa clover support */
 #ifdef cl_clang_storage_class_specifiers
 #   pragma OPENCL EXTENSION cl_clang_storage_class_specifiers : enable
@@ -77,21 +94,6 @@ inline int amd_bfe(const uint src0, const uint offset, const uint width)
     return src0 >> offset;
 }
 #endif
-
-//#include "opencl/fast_int_math_v2.cl"
-XMRSTAK_INCLUDE_FAST_INT_MATH_V2
-//#include "fast_div_heavy.cl"
-XMRSTAK_INCLUDE_FAST_DIV_HEAVY
-//#include "opencl/wolf-aes.cl"
-XMRSTAK_INCLUDE_WOLF_AES
-//#include "opencl/wolf-skein.cl"
-XMRSTAK_INCLUDE_WOLF_SKEIN
-//#include "opencl/jh.cl"
-XMRSTAK_INCLUDE_JH
-//#include "opencl/blake256.cl"
-XMRSTAK_INCLUDE_BLAKE256
-//#include "opencl/groestl256.cl"
-XMRSTAK_INCLUDE_GROESTL256
 
 static const __constant ulong keccakf_rndc[24] =
 {
@@ -186,31 +188,49 @@ static const __constant uint keccakf_piln[24] =
     15, 23, 19, 13, 12, 2, 20, 14, 22, 9,  6,  1
 };
 
-void keccakf1600_1(ulong *st)
+inline void keccakf1600_1(ulong st[25])
 {
     int i, round;
     ulong t, bc[5];
 
     #pragma unroll 1
-    for(round = 0; round < 24; ++round)
+    for (round = 0; round < 24; ++round)
     {
+        bc[0] = st[0] ^ st[5] ^ st[10] ^ st[15] ^ st[20] ^ rotate(st[2] ^ st[7] ^ st[12] ^ st[17] ^ st[22], 1UL);
+        bc[1] = st[1] ^ st[6] ^ st[11] ^ st[16] ^ st[21] ^ rotate(st[3] ^ st[8] ^ st[13] ^ st[18] ^ st[23], 1UL);
+        bc[2] = st[2] ^ st[7] ^ st[12] ^ st[17] ^ st[22] ^ rotate(st[4] ^ st[9] ^ st[14] ^ st[19] ^ st[24], 1UL);
+        bc[3] = st[3] ^ st[8] ^ st[13] ^ st[18] ^ st[23] ^ rotate(st[0] ^ st[5] ^ st[10] ^ st[15] ^ st[20], 1UL);
+        bc[4] = st[4] ^ st[9] ^ st[14] ^ st[19] ^ st[24] ^ rotate(st[1] ^ st[6] ^ st[11] ^ st[16] ^ st[21], 1UL);
 
-        // Theta
-        bc[0] = st[0] ^ st[5] ^ st[10] ^ st[15] ^ st[20];
-        bc[1] = st[1] ^ st[6] ^ st[11] ^ st[16] ^ st[21];
-        bc[2] = st[2] ^ st[7] ^ st[12] ^ st[17] ^ st[22];
-        bc[3] = st[3] ^ st[8] ^ st[13] ^ st[18] ^ st[23];
-        bc[4] = st[4] ^ st[9] ^ st[14] ^ st[19] ^ st[24];
+        st[0] ^= bc[4];
+        st[5] ^= bc[4];
+        st[10] ^= bc[4];
+        st[15] ^= bc[4];
+        st[20] ^= bc[4];
 
-        #pragma unroll 1
-        for (i = 0; i < 5; ++i) {
-            t = bc[(i + 4) % 5] ^ rotate(bc[(i + 1) % 5], 1UL);
-            st[i     ] ^= t;
-            st[i +  5] ^= t;
-            st[i + 10] ^= t;
-            st[i + 15] ^= t;
-            st[i + 20] ^= t;
-        }
+        st[1] ^= bc[0];
+        st[6] ^= bc[0];
+        st[11] ^= bc[0];
+        st[16] ^= bc[0];
+        st[21] ^= bc[0];
+
+        st[2] ^= bc[1];
+        st[7] ^= bc[1];
+        st[12] ^= bc[1];
+        st[17] ^= bc[1];
+        st[22] ^= bc[1];
+
+        st[3] ^= bc[2];
+        st[8] ^= bc[2];
+        st[13] ^= bc[2];
+        st[18] ^= bc[2];
+        st[23] ^= bc[2];
+
+        st[4] ^= bc[3];
+        st[9] ^= bc[3];
+        st[14] ^= bc[3];
+        st[19] ^= bc[3];
+        st[24] ^= bc[3];
 
         // Rho Pi
         t = st[1];
@@ -221,17 +241,16 @@ void keccakf1600_1(ulong *st)
             t = bc[0];
         }
 
-        #pragma unroll 1
+        #pragma unroll
         for(int i = 0; i < 25; i += 5)
         {
-            ulong tmp[5];
+            ulong tmp1 = st[i], tmp2 = st[i + 1];
 
-            #pragma unroll 1
-            for(int x = 0; x < 5; ++x)
-                tmp[x] = bitselect(st[i + x] ^ st[i + ((x + 2) % 5)], st[i + x], st[i + ((x + 1) % 5)]);
-
-            #pragma unroll 1
-            for(int x = 0; x < 5; ++x) st[i + x] = tmp[x];
+            st[i] = bitselect(st[i] ^ st[i + 2], st[i], st[i + 1]);
+            st[i + 1] = bitselect(st[i + 1] ^ st[i + 3], st[i + 1], st[i + 2]);
+            st[i + 2] = bitselect(st[i + 2] ^ st[i + 4], st[i + 2], st[i + 3]);
+            st[i + 3] = bitselect(st[i + 3] ^ tmp1, st[i + 3], st[i + 4]);
+            st[i + 4] = bitselect(st[i + 4] ^ tmp2, st[i + 4], tmp1);
         }
 
         //  Iota
@@ -311,6 +330,46 @@ void keccakf1600_2(__local ulong *st)
     }
 }
 
+#define MEM_CHUNK (1<<MEM_CHUNK_EXPONENT)
+
+#if(STRIDED_INDEX==0)
+#   define IDX(x)	(x)
+#elif(STRIDED_INDEX==1)
+#	define IDX(x)   (mul24(((uint)(x)), Threads))
+#elif(STRIDED_INDEX==2)
+#   define IDX(x)	(((x) % MEM_CHUNK) + ((x) / MEM_CHUNK) * WORKSIZE * MEM_CHUNK)
+#elif(STRIDED_INDEX==3)
+#	define IDX(x)   ((x) * WORKSIZE)
+#endif
+
+#define JOIN_DO(x,y) x##y
+#define JOIN(x,y) JOIN_DO(x,y)
+
+inline uint getIdx()
+{
+    return get_global_id(0) - get_global_offset(0);
+}
+
+//#include "opencl/fast_int_math_v2.cl"
+XMRSTAK_INCLUDE_FAST_INT_MATH_V2
+//#include "fast_div_heavy.cl"
+XMRSTAK_INCLUDE_FAST_DIV_HEAVY
+//#include "opencl/wolf-aes.cl"
+XMRSTAK_INCLUDE_WOLF_AES
+//#include "opencl/wolf-skein.cl"
+XMRSTAK_INCLUDE_WOLF_SKEIN
+//#include "opencl/jh.cl"
+XMRSTAK_INCLUDE_JH
+//#include "opencl/blake256.cl"
+XMRSTAK_INCLUDE_BLAKE256
+//#include "opencl/groestl256.cl"
+XMRSTAK_INCLUDE_GROESTL256
+
+#if (ALGO == cryptonight_gpu)
+	//#include "opencl/cryptonight_gpu.cl"
+	XMRSTAK_INCLUDE_CN_GPU
+#endif
+
 )==="
 R"===(
 
@@ -360,27 +419,7 @@ void AESExpandKey256(uint *keybuf)
 )==="
 R"===(
 
-#define MEM_CHUNK (1<<MEM_CHUNK_EXPONENT)
-
-#if(STRIDED_INDEX==0)
-#   define IDX(x)	(x)
-#elif(STRIDED_INDEX==1)
-#	define IDX(x)   (mul24(((uint)(x)), Threads))
-#elif(STRIDED_INDEX==2)
-#   define IDX(x)	(((x) % MEM_CHUNK) + ((x) / MEM_CHUNK) * WORKSIZE * MEM_CHUNK)
-#elif(STRIDED_INDEX==3)
-#	define IDX(x)   ((x) * WORKSIZE)
-#endif
-
-inline uint getIdx()
-{
-    return get_global_id(0) - get_global_offset(0);
-}
-
 #define mix_and_propagate(xin) (xin)[(get_local_id(1)) % 8][get_local_id(0)] ^ (xin)[(get_local_id(1) + 1) % 8][get_local_id(0)]
-
-        #define JOIN_DO(x,y) x##y
-#define JOIN(x,y) JOIN_DO(x,y)
 
 __attribute__((reqd_work_group_size(8, 8, 1)))
 __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, __global ulong *states, uint Threads)
@@ -482,8 +521,7 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 
     mem_fence(CLK_LOCAL_MEM_FENCE);
 
-// cryptonight_heavy || cryptonight_haven || cryptonight_bittube2 || cryptonight_superfast
-#if (ALGO == 4 || ALGO == 9 || ALGO == 10 || ALGO == 12)
+#if (ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
     __local uint4 xin[8][8];
     {
 
@@ -537,8 +575,8 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 )==="
 R"===(
 
-// cryptonight_monero_v8 && NVIDIA
-#if(ALGO==11 && defined(__NV_CL_C_VERSION))
+// __NV_CL_C_VERSION checks if NVIDIA opencl is used
+#if((ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle) && defined(__NV_CL_C_VERSION))
 #	define SCRATCHPAD_CHUNK(N) (*(__local uint4*)((__local uchar*)(scratchpad_line) + (idxS ^ (N << 4))))
 #	define SCRATCHPAD_CHUNK_GLOBAL (*((__global uint16*)(Scratchpad + (IDX((idx0 & 0x1FFFC0U) >> 4)))))
 #else
@@ -547,16 +585,15 @@ R"===(
 
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
 __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states, uint Threads
-// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2
-#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10)
+
+#if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
 , __global ulong *input
 #endif
 )
 {
 	ulong a[2];
 
-// cryptonight_monero_v8
-#if(ALGO==11)
+#if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
 	ulong b[4];
 	uint4 b_x[2];
 // NVIDIA
@@ -570,8 +607,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #endif
     __local uint AES0[256], AES1[256];
 
-// cryptonight_monero_v8
-#if(ALGO==11)
+#if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
 #	if defined(__clang__) && !defined(__NV_CL_C_VERSION)
     __local uint RCP[256];
 #	endif
@@ -586,15 +622,15 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
         const uint tmp = AES0_C[i];
         AES0[i] = tmp;
         AES1[i] = rotate(tmp, 8U);
-// cryptonight_monero_v8
-#if(ALGO==11 && (defined(__clang__) && !defined(__NV_CL_C_VERSION)))
+
+#if((ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle) && (defined(__clang__) && !defined(__NV_CL_C_VERSION)))
 		RCP[i] = RCP_C[i];
 #endif
     }
 
     barrier(CLK_LOCAL_MEM_FENCE);
-// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2
-#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10)
+
+#if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
     uint2 tweak1_2;
 #endif
 
@@ -621,8 +657,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
 		b_x[0] = ((uint4 *)b)[0];
 
-// cryptonight_monero_v8
-#if(ALGO==11)
+#if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
         a[1] = states[1] ^ states[5];
         b[2] = states[8] ^ states[10];
         b[3] = states[9] ^ states[11];
@@ -630,8 +665,8 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 		division_result = as_uint2(states[12]);
 		sqrt_result = as_uint2(states[13]).s0;
 #endif
-// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2
-#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10)
+
+#if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
 		tweak1_2 = as_uint2(input[4]);
 		tweak1_2.s0 >>= 24;
 		tweak1_2.s0 |= tweak1_2.s1 << 8;
@@ -653,22 +688,21 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
     for(int i = 0; i < ITERATIONS; ++i)
     {
 			ulong c[2];
-// cryptonight_monero_v8 && NVIDIA
-#if(ALGO==11 && defined(__NV_CL_C_VERSION))
+
+#if((ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle) && defined(__NV_CL_C_VERSION))
 			uint idxS = idx0 & 0x30U;
  			*scratchpad_line = SCRATCHPAD_CHUNK_GLOBAL;
 #endif
 
 			((uint4 *)c)[0] = SCRATCHPAD_CHUNK(0);
-// cryptonight_bittube2
-#if(ALGO == 10)
+
+#if(ALGO == cryptonight_bittube2)
 			((uint4 *)c)[0] = AES_Round2_bittube2(AES0, AES1, ~((uint4 *)c)[0], ((uint4 *)a)[0]);
 #else
 			((uint4 *)c)[0] = AES_Round2(AES0, AES1, ((uint4 *)c)[0], ((uint4 *)a)[0]);
 #endif
 
-// cryptonight_monero_v8
-#if(ALGO==11)
+#if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
         {
 			ulong2 chunk1 = as_ulong2(SCRATCHPAD_CHUNK(1));
 			ulong2 chunk2 = as_ulong2(SCRATCHPAD_CHUNK(2));
@@ -679,12 +713,11 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
         }
 #endif
 
-// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2
-#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10)
+#if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
 			uint table = 0x75310U;
 			b_x[0] ^= ((uint4 *)c)[0];
-// cryptonight_stellite
-#	if(ALGO == 7)
+
+#	if(ALGO == cryptonight_stellite)
 			uint index = ((b_x[0].s2 >> 27) & 12) | ((b_x[0].s2 >> 23) & 2);
 #	else
 			uint index = ((b_x[0].s2 >> 26) & 12) | ((b_x[0].s2 >> 23) & 2);
@@ -692,8 +725,8 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			b_x[0].s2 ^= ((table >> index) & 0x30U) << 24;
 			SCRATCHPAD_CHUNK(0) = b_x[0];
 			idx0 = as_uint2(c[0]).s0 & MASK;
-// cryptonight_monero_v8
-#elif(ALGO==11)
+
+#elif(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
 			SCRATCHPAD_CHUNK(0) = b_x[0] ^ ((uint4 *)c)[0];
 #	ifdef __NV_CL_C_VERSION
 			// flush shuffled data
@@ -711,8 +744,8 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #endif
 			uint4 tmp;
 			tmp = SCRATCHPAD_CHUNK(0);
-// cryptonight_monero_v8
-#if(ALGO==11)
+
+#if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
 			// Use division and square root results from the _previous_ iteration to hide the latency
             tmp.s0 ^= division_result.s0;
             tmp.s1 ^= division_result.s1 ^ sqrt_result;
@@ -748,11 +781,10 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			a[1] += c[0] * as_ulong2(tmp).s0;
 			a[0] += mul_hi(c[0], as_ulong2(tmp).s0);
 #endif
-// cryptonight_monero || cryptonight_aeon || cryptonight_ipbc || cryptonight_stellite || cryptonight_masari || cryptonight_bittube2
-#if(ALGO == 3 || ALGO == 5 || ALGO == 6 || ALGO == 7 || ALGO == 8 || ALGO == 10)
 
-// cryptonight_ipbc || cryptonight_bittube2
-#	if(ALGO == 6 || ALGO == 10)
+#if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
+
+#	if(ALGO == cryptonight_ipbc || ALGO == cryptonight_bittube2)
 			uint2 ipbc_tmp = tweak1_2 ^ ((uint2 *)&(a[0]))[0];
 			((uint2 *)&(a[1]))[0] ^= ipbc_tmp;
 			SCRATCHPAD_CHUNK(0) = ((uint4 *)a)[0];
@@ -769,8 +801,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
         ((uint4 *)a)[0] ^= tmp;
 
-// cryptonight_monero_v8
-#if (ALGO == 11)
+#if (ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
 #	if defined(__NV_CL_C_VERSION)
 			// flush shuffled data
 			SCRATCHPAD_CHUNK_GLOBAL = *scratchpad_line;
@@ -780,15 +811,13 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			b_x[0] = ((uint4 *)c)[0];
 			idx0 = as_uint2(a[0]).s0 & MASK;
 
-// cryptonight_heavy || cryptonight_bittube2
-#if (ALGO == 4 || ALGO == 10)
+#if (ALGO == cryptonight_heavy || ALGO == cryptonight_bittube2)
 			long n = *((__global long*)(Scratchpad + (IDX((idx0) >> 4))));
 			int d = ((__global int*)(Scratchpad + (IDX((idx0) >> 4))))[2];
             long q = fast_div_heavy(n, d | 0x5);
 			*((__global long*)(Scratchpad + (IDX((idx0) >> 4)))) = n ^ q;
 			idx0 = (d ^ as_int2(q).s0) & MASK;
-// cryptonight_haven || cryptonight_superfast
-#elif (ALGO == 9 || ALGO == 12)
+#elif (ALGO == cryptonight_haven || ALGO == cryptonight_superfast)
 			long n = *((__global long*)(Scratchpad + (IDX((idx0) >> 4))));
 			int d = ((__global int*)(Scratchpad + (IDX((idx0) >> 4))))[2];
 			long q = fast_div_heavy(n, d | 0x5);
@@ -805,7 +834,13 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 R"===(
 
 __attribute__((reqd_work_group_size(8, 8, 1)))
-__kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states, __global uint *Branch0, __global uint *Branch1, __global uint *Branch2, __global uint *Branch3, uint Threads)
+__kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states,
+
+#if (ALGO == cryptonight_gpu)
+	__global uint *output, ulong Target, uint Threads)
+#else
+	__global uint *Branch0, __global uint *Branch1, __global uint *Branch2, __global uint *Branch3, uint Threads)
+#endif
 {
     __local uint AES0[256], AES1[256], AES2[256], AES3[256];
     uint ExpandedKey2[40];
@@ -823,8 +858,7 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
-// cryptonight_heavy || cryptonight_haven || cryptonight_bittube2 || cryptonight_superfast
-#if (ALGO == 4 || ALGO == 9 || ALGO == 10  || ALGO == 12)
+#if (ALGO == cryptonight_gpu || ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2  || ALGO == cryptonight_superfast)
     __local uint4 xin1[8][8];
     __local uint4 xin2[8][8];
 #endif
@@ -862,8 +896,7 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
-// cryptonight_heavy || cryptonight_haven || cryptonight_bittube2 || cryptonight_superfast
-#if (ALGO == 4 || ALGO == 9 || ALGO == 10 || ALGO == 12)
+#if (ALGO == cryptonight_gpu || ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
     __local uint4* xin1_store = &xin1[get_local_id(1)][get_local_id(0)];
     __local uint4* xin1_load = &xin1[(get_local_id(1) + 1) % 8][get_local_id(0)];
     __local uint4* xin2_store = &xin2[get_local_id(1)][get_local_id(0)];
@@ -876,7 +909,8 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
     if (gIdx < Threads)
 #endif
     {
-#if (ALGO == 4 || ALGO == 9 || ALGO == 10 || ALGO == 12)
+
+#if (ALGO == cryptonight_gpu || ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
         #pragma unroll 2
         for(int i = 0, i1 = get_local_id(1); i < (MEMORY >> 7); ++i, i1 = (i1 + 16) % (MEMORY >> 4))
         {
@@ -916,8 +950,7 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #endif
     }
 
-// cryptonight_heavy || cryptonight_haven || cryptonight_bittube2 || cryptonight_superfast
-#if (ALGO == 4 || ALGO == 9 || ALGO == 10 || ALGO == 12)
+#if (ALGO == cryptonight_gpu || ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
     /* Also left over threads performe this loop.
      * The left over thread results will be ignored
      */
@@ -960,6 +993,14 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
             keccakf1600_2(State);
 
+#if (ALGO == cryptonight_gpu)
+			if(State[3] <= Target)
+			{
+				ulong outIdx = atomic_inc(output + 0xFF);
+				if(outIdx < 0xFF)
+					output[outIdx] = get_global_id(0);
+			}
+#else
             for(int i = 0; i < 25; ++i) states[i] = State[i];
 
             uint StateSwitch = State[0] & 3;
@@ -967,6 +1008,7 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
             __global uint *destinationBranch2 = StateSwitch == 2 ? Branch2 : Branch3;
             __global uint *destinationBranch = StateSwitch < 2 ? destinationBranch1 : destinationBranch2;
             destinationBranch[atomic_inc(destinationBranch + Threads)] = gIdx;
+#endif
         }
     }
     mem_fence(CLK_GLOBAL_MEM_FENCE);
@@ -1131,7 +1173,6 @@ __kernel void Blake(__global ulong *states, __global uint *BranchBuf, __global u
 
         ((uint8 *)h)[0] = vload8(0U, c_IV256);
 
-        #pragma unroll 4
         for(uint i = 0, bitlen = 0; i < 4; ++i)
         {
             if(i < 3)

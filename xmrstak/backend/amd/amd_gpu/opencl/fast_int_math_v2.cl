@@ -3,8 +3,7 @@ R"===(
  * @author SChernykh
  */
 
-// cryptonight_monero_v8
-#if(ALGO==11)
+#if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
 
 static const __constant uint RCP_C[256] =
 {

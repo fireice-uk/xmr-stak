@@ -14,6 +14,8 @@
 #include <vector>
 #include <mutex>
 #include <memory>
+#include <map>
+#include <array>
 
 #define ERR_SUCCESS (0)
 #define ERR_OCL_API (2)
@@ -50,8 +52,8 @@ struct GpuContext
 	cl_mem InputBuffer;
 	cl_mem OutputBuffer;
 	cl_mem ExtraBuffers[6];
-	cl_program Program[2];
-	cl_kernel Kernels[2][8];
+	std::map<xmrstak_algo, cl_program> Program;
+	std::map<xmrstak_algo, std::array<cl_kernel,7>> Kernels;
 	size_t freeMem;
 	size_t maxMemPerAlloc;
 	int computeUnits;

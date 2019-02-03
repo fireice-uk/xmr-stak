@@ -28,10 +28,12 @@ public:
 
 	autoAdjust()
 	{
-		hashMemSize = std::max(
-			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
-			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
-		);
+		auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
+
+		for(const auto algo : neededAlgorithms)
+		{
+			hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+		}
 		halfHashMemSize = hashMemSize / 2u;
 	}
 
@@ -93,8 +95,8 @@ public:
 	}
 
 private:
-	size_t hashMemSize;
-	size_t halfHashMemSize;
+	size_t hashMemSize = 0;
+	size_t halfHashMemSize = 0;
 
 	std::vector<uint32_t> results;
 

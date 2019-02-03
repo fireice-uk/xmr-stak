@@ -28,11 +28,15 @@ public:
 
 	bool printConfig()
 	{
+		auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
 
-		const size_t hashMemSizeKB = std::max(
-			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
-			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
-		) / 1024u;
+		size_t hashMemSize = 0;
+		for(const auto algo : neededAlgorithms)
+		{
+			hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+		}
+		const size_t hashMemSizeKB = hashMemSize / 1024u;
+
 		const size_t halfHashMemSizeKB = hashMemSizeKB / 2u;
 
 		configEditor configTpl{};

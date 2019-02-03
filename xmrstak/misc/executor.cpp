@@ -560,8 +560,15 @@ void executor::ex_main()
 		else
 			pools.emplace_front(0, "donate.xmr-stak.net:5555", "", "", "", 0.0, true, false, "", true);
 		break;
+	case cryptonight_gpu:
+		if(dev_tls)
+			pools.emplace_front(0, "donate.xmr-stak.net:8811", "", "", "", 0.0, true, true, "", false);
+		else
+			pools.emplace_front(0, "donate.xmr-stak.net:5511", "", "", "", 0.0, true, false, "", false);
+		break;
 	case cryptonight_monero_v8:
 	case cryptonight_monero:
+	case cryptonight_turtle:
 		if(dev_tls)
 			pools.emplace_front(0, "donate.xmr-stak.net:8800", "", "", "", 0.0, true, true, "", false);
 		else
@@ -884,6 +891,8 @@ void executor::result_report(std::string& out)
 		iTotalRes += vMineResults[i].count;
 
 	out.append("RESULT REPORT\n");
+	out.append("Currency         : ").
+		append(jconf::inst()->GetMiningCoin()).append("\n");
 	if(iTotalRes == 0)
 	{
 		out.append("You haven't found any results yet.\n");
@@ -945,6 +954,7 @@ void executor::connection_report(std::string& out)
 		pool = pick_pool_by_id(last_usr_pool_id);
 
 	out.append("CONNECTION REPORT\n");
+	out.append("Rig ID          : ").append(pool != nullptr ? pool->get_rigid() : "").append(1, '\n');
 	out.append("Pool address    : ").append(pool != nullptr ? pool->get_pool_addr() : "<not connected>").append(1, '\n');
 	if(pool != nullptr && pool->is_running() && pool->is_logged_in())
 		out.append("Connected since : ").append(time_format(date, sizeof(date), tPoolConnTime)).append(1, '\n');
@@ -1040,9 +1050,27 @@ void executor::http_hashrate_report(std::string& out)
 	out.append(buffer);
 
 	double fTotal[3] = { 0.0, 0.0, 0.0};
+	auto bTypePrev = static_cast<xmrstak::iBackend::BackendType>(0);
+	std::string name;
+	size_t j = 0;
 	for(size_t i=0; i < nthd; i++)
 	{
 		double fHps[3];
+		char csThreadTag[25];
+		auto bType = static_cast<xmrstak::iBackend::BackendType>(pvThreads->at(i)->backendType);
+		if(bTypePrev == bType)
+			j++;
+		else
+		{
+			j = 0;
+			bTypePrev = bType;
+			name = xmrstak::iBackend::getName(bType);
+			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+		}
+		snprintf(csThreadTag, sizeof(csThreadTag),
+			(99 < nthd) ? "[%s.%03u]:%03u" : ((9 < nthd) ? "[%s.%02u]:%02u" : "[%s.%u]:%u"),
+			name.c_str(), (unsigned int)(j), (unsigned int)i
+		);
 
 		fHps[0] = telem->calc_telemetry_data(10000, i);
 		fHps[1] = telem->calc_telemetry_data(60000, i);
@@ -1057,7 +1085,7 @@ void executor::http_hashrate_report(std::string& out)
 		fTotal[1] += fHps[1];
 		fTotal[2] += fHps[2];
 
-		snprintf(buffer, sizeof(buffer), sHtmlHashrateTableRow, (unsigned int)i, num_a, num_b, num_c);
+		snprintf(buffer, sizeof(buffer), sHtmlHashrateTableRow, csThreadTag, num_a, num_b, num_c);
 		out.append(buffer);
 	}
 
@@ -1100,6 +1128,7 @@ void executor::http_result_report(std::string& out)
 	}
 
 	snprintf(buffer, sizeof(buffer), sHtmlResultBodyHigh,
+		jconf::inst()->GetMiningCoin().c_str(),
 		iPoolDiff, iGoodRes, iTotalRes, fGoodResPrc, fAvgResTime, iPoolHashes,
 		int_port(iTopDiff[0]), int_port(iTopDiff[1]), int_port(iTopDiff[2]), int_port(iTopDiff[3]),
 		int_port(iTopDiff[4]), int_port(iTopDiff[5]), int_port(iTopDiff[6]), int_port(iTopDiff[7]),
@@ -1145,6 +1174,7 @@ void executor::http_connection_report(std::string& out)
 	}
 
 	snprintf(buffer, sizeof(buffer), sHtmlConnectionBodyHigh,
+		pool != nullptr ? pool->get_rigid() : "",
 		pool != nullptr ? pool->get_pool_addr() : "not connected",
 		cdate, ping_time);
 	out.append(buffer);
