@@ -201,7 +201,7 @@ __kernel void JOIN(cn1_cn_gpu,ALGO)(__global int *lpad_in, __global int *spad, u
 	const uint gIdx = getIdx();
 
 #if(COMP_MODE==1)
-	if(gIdx < Threads)
+	if(gIdx/16 >= numThreads)
 		return;
 #endif
 
@@ -368,16 +368,11 @@ __kernel void JOIN(cn0_cn_gpu,ALGO)(__global ulong *input, __global int *Scratch
 
 	barrier(CLK_LOCAL_MEM_FENCE);
 
-#if(COMP_MODE==1)
-    // do not use early return here
-	if(gIdx < Threads)
-#endif
+	for(ulong i = get_local_id(1); i < MEMORY / 512; i += get_local_size(1))
 	{
-		for(ulong i = get_local_id(1); i < MEMORY / 512; i += get_local_size(1))
-		{
-			generate_512(i, State, (__global ulong*)((__global uchar*)Scratchpad + i*512));
-		}
+		generate_512(i, State, (__global ulong*)((__global uchar*)Scratchpad + i*512));
 	}
+
 }
 
 )==="
