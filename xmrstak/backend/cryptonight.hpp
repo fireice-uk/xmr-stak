@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <inttypes.h>
 #include <type_traits>
+#include <string>
 
 enum xmrstak_algo
 {
@@ -20,7 +21,67 @@ enum xmrstak_algo
 	cryptonight_superfast = 12,
 	cryptonight_gpu = 13,
 	cryptonight_turtle = 14
+	// please add the algorithm name to get_algo_name()
 };
+
+/** get name of the algorithm
+ *
+ * @param algo mining algorithm
+ */
+inline std::string get_algo_name(xmrstak_algo algo)
+{
+	std::string algo_name;
+	switch(algo)
+	{
+	case invalid_algo:
+		algo_name = "invalid_algo";
+		break;
+	case cryptonight:
+		algo_name = "cryptonight";
+		break;
+	case cryptonight_lite:
+		algo_name = "cryptonight_lite";
+		break;
+	case cryptonight_monero:
+		algo_name = "cryptonight_v7";
+		break;
+	case cryptonight_monero_v8:
+		algo_name = "cryptonight_v8";
+		break;
+	case cryptonight_aeon:
+		algo_name = "cryptonight_lite_v7";
+		break;
+	case cryptonight_stellite:
+		algo_name = "cryptonight_v7_stellite";
+		break;
+	case cryptonight_ipbc:
+		algo_name = "cryptonight_lite_v7_xor";
+		break;
+	case cryptonight_heavy:
+		algo_name = "cryptonight_heavy";
+		break;
+	case cryptonight_haven:
+		algo_name = "cryptonight_haven";
+		break;
+	case cryptonight_masari:
+		algo_name = "cryptonight_masari";
+		break;
+	case cryptonight_superfast:
+		algo_name = "cryptonight_superfast";
+		break;
+	case cryptonight_gpu:
+		algo_name = "cryptonight_gpu";
+		break;
+	case cryptonight_turtle:
+		algo_name = "cryptonight_turtle";
+		break;
+	default:
+		algo_name = "unknown";
+		break;
+	}
+
+	return algo_name;
+}
 
 // define aeon settings
 constexpr size_t CRYPTONIGHT_LITE_MEMORY = 1 * 1024 * 1024;
@@ -40,7 +101,7 @@ constexpr uint32_t CRYPTONIGHT_GPU_ITER = 0xC000;
 
 constexpr uint32_t CRYPTONIGHT_MASARI_ITER = 0x40000;
 
-constexpr uint32_t CRYPTONIGHT_SUPERFAST_ITER = 0x20000; 
+constexpr uint32_t CRYPTONIGHT_SUPERFAST_ITER = 0x20000;
 
 constexpr size_t CRYPTONIGHT_TURTLE_MEMORY = 256 * 1024;
 constexpr uint32_t CRYPTONIGHT_TURTLE_MASK = 0x1FFF0;
@@ -83,10 +144,10 @@ template<>
 inline constexpr size_t cn_select_memory<cryptonight_bittube2>() { return CRYPTONIGHT_HEAVY_MEMORY; }
 
 template<>
-inline constexpr size_t cn_select_memory<cryptonight_superfast>() { return CRYPTONIGHT_MEMORY; } 
+inline constexpr size_t cn_select_memory<cryptonight_superfast>() { return CRYPTONIGHT_MEMORY; }
 
 template<>
-inline constexpr size_t cn_select_memory<cryptonight_gpu>() { return CRYPTONIGHT_MEMORY; } 
+inline constexpr size_t cn_select_memory<cryptonight_gpu>() { return CRYPTONIGHT_MEMORY; }
 
 template<>
 inline constexpr size_t cn_select_memory<cryptonight_turtle>() { return CRYPTONIGHT_TURTLE_MEMORY; }
@@ -100,7 +161,7 @@ inline size_t cn_select_memory(xmrstak_algo algo)
 	case cryptonight_monero_v8:
 	case cryptonight_masari:
 	case cryptonight:
-	case cryptonight_superfast: 
+	case cryptonight_superfast:
 	case cryptonight_gpu:
 		return CRYPTONIGHT_MEMORY;
 	case cryptonight_ipbc:
@@ -155,10 +216,10 @@ template<>
 inline constexpr uint32_t cn_select_mask<cryptonight_bittube2>() { return CRYPTONIGHT_HEAVY_MASK; }
 
 template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_superfast>() { return CRYPTONIGHT_MASK; } 
+inline constexpr uint32_t cn_select_mask<cryptonight_superfast>() { return CRYPTONIGHT_MASK; }
 
 template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_gpu>() { return CRYPTONIGHT_GPU_MASK; } 
+inline constexpr uint32_t cn_select_mask<cryptonight_gpu>() { return CRYPTONIGHT_GPU_MASK; }
 
 template<>
 inline constexpr uint32_t cn_select_mask<cryptonight_turtle>() { return CRYPTONIGHT_TURTLE_MASK; }
@@ -172,7 +233,7 @@ inline size_t cn_select_mask(xmrstak_algo algo)
 	case cryptonight_monero_v8:
 	case cryptonight_masari:
 	case cryptonight:
-	case cryptonight_superfast: 
+	case cryptonight_superfast:
 		return CRYPTONIGHT_MASK;
 	case cryptonight_ipbc:
 	case cryptonight_aeon:
@@ -228,10 +289,10 @@ template<>
 inline constexpr uint32_t cn_select_iter<cryptonight_bittube2>() { return CRYPTONIGHT_HEAVY_ITER; }
 
 template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_superfast>() { return CRYPTONIGHT_SUPERFAST_ITER; } 
+inline constexpr uint32_t cn_select_iter<cryptonight_superfast>() { return CRYPTONIGHT_SUPERFAST_ITER; }
 
 template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_gpu>() { return CRYPTONIGHT_GPU_ITER; } 
+inline constexpr uint32_t cn_select_iter<cryptonight_gpu>() { return CRYPTONIGHT_GPU_ITER; }
 
 template<>
 inline constexpr uint32_t cn_select_iter<cryptonight_turtle>() { return CRYPTONIGHT_TURTLE_ITER; }

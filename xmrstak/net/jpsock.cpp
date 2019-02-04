@@ -673,51 +673,7 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 
 	if(ext_algo)
 	{
-		const char* algo_name;
-		switch(algo)
-		{
-		case cryptonight:
-			algo_name = "cryptonight";
-			break;
-		case cryptonight_lite:
-			algo_name = "cryptonight_lite";
-			break;
-		case cryptonight_monero:
-			algo_name = "cryptonight_v7";
-			break;
-		case cryptonight_monero_v8:
-			algo_name = "cryptonight_v8";
-			break;
-		case cryptonight_aeon:
-			algo_name = "cryptonight_lite_v7";
-			break;
-		case cryptonight_stellite:
-			algo_name = "cryptonight_v7_stellite";
-			break;
-		case cryptonight_ipbc:
-			algo_name = "cryptonight_lite_v7_xor";
-			break;
-		case cryptonight_heavy:
-			algo_name = "cryptonight_heavy";
-			break;
-		case cryptonight_haven:
-			algo_name = "cryptonight_haven";
-			break;
-		case cryptonight_masari:
-			algo_name = "cryptonight_masari";
-			break;
-		case cryptonight_superfast:
-			algo_name = "cryptonight_superfast";
-			break;
-		case cryptonight_turtle:
-			algo_name = "cryptonight_turtle";
-			break;
-		default:
-			algo_name = "unknown";
-			break;
-		}
-
-		snprintf(sAlgo, sizeof(sAlgo), ",\"algo\":\"%s\"", algo_name);
+		snprintf(sAlgo, sizeof(sAlgo), ",\"algo\":\"%s\"", get_algo_name(algo).c_str());
 	}
 
 	bin2hex((unsigned char*)&iNonce, 4, sNonce);
