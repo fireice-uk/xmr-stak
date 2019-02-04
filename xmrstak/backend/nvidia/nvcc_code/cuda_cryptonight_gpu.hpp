@@ -415,7 +415,7 @@ __forceinline__ __device__ void sync()
 template<size_t ITERATIONS, uint32_t MEMORY>
 __global__ void cryptonight_core_gpu_phase2_gpu(int32_t *spad, int *lpad_in, int bfactor, int partidx, uint32_t * roundVs, uint32_t * roundS)
 {
-	static constexpr uint32_t MASK = ((MEMORY-1) >> 6) << 6;
+	constexpr uint32_t MASK = ((MEMORY-1) >> 6) << 6;
 
 	const int batchsize = (ITERATIONS * 2) >> ( 1 + bfactor );
 
