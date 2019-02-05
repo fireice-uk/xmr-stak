@@ -1,5 +1,6 @@
 #pragma once
 
+#include "xmrstak/backend/cryptonight.hpp"
 #include <stdint.h>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -36,8 +37,6 @@ inline bool cngpu_check_avx2()
 	return (cpu_info[1] & (1 << 5)) != 0;
 }
 
-template<size_t ITER, uint32_t MASK>
-void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad);
+void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad, const xmrstak_algo& algo);
 
-template<size_t ITER, uint32_t MASK>
-void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad);
+void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad, const xmrstak_algo& algo);

@@ -655,13 +655,17 @@ bool jpsock::cmd_login()
 	return true;
 }
 
-bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult, const char* backend_name, uint64_t backend_hashcount, uint64_t total_hashcount, xmrstak_algo algo)
+bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult, const char* backend_name, uint64_t backend_hashcount, uint64_t total_hashcount, const xmrstak_algo& algo)
 {
 	char cmd_buffer[1024];
 	char sNonce[9];
 	char sResult[65];
 	/*Extensions*/
 	char sAlgo[64] = {0};
+	char sBaseAlgo[64] = {0};
+	char sIterations[32] = {0};
+	char sMemory[32] = {0};
+	char sMemAlignBytes[32] = {0};
 	char sBackend[64] = {0};
 	char sHashcount[128] = {0};
 
@@ -673,7 +677,12 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 
 	if(ext_algo)
 	{
-		snprintf(sAlgo, sizeof(sAlgo), ",\"algo\":\"%s\"", get_algo_name(algo).c_str());
+		snprintf(sAlgo, sizeof(sAlgo), ",\"algo\":\"%s\"", algo.Name().c_str());
+		// the real algorithm with three degrees of freedom
+		snprintf(sBaseAlgo, sizeof(sBaseAlgo), ",\"base_algo\":\"%s\"", algo.BaseName().c_str());
+		snprintf(sIterations, sizeof(sIterations), ",\"iterations\":\"0x%08x\"", algo.Iter());
+		snprintf(sMemory, sizeof(sMemory), ",\"scratchpad\":\"0x%08x\"", (uint32_t)algo.Mem());
+		snprintf(sMemAlignBytes, sizeof(sMemAlignBytes), ",\"mask\":\"0x%08x\"", algo.Mask());
 	}
 
 	bin2hex((unsigned char*)&iNonce, 4, sNonce);
@@ -682,8 +691,8 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 	bin2hex(bResult, 32, sResult);
 	sResult[64] = '\0';
 
-	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"submit\",\"params\":{\"id\":\"%s\",\"job_id\":\"%s\",\"nonce\":\"%s\",\"result\":\"%s\"%s%s%s},\"id\":1}\n",
-		sMinerId, sJobId, sNonce, sResult, sBackend, sHashcount, sAlgo);
+	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"submit\",\"params\":{\"id\":\"%s\",\"job_id\":\"%s\",\"nonce\":\"%s\",\"result\":\"%s\"%s%s%s%s%s%s%s},\"id\":1}\n",
+		sMinerId, sJobId, sNonce, sResult, sBackend, sHashcount, sAlgo, sBaseAlgo, sIterations,sMemory, sMemAlignBytes);
 
 	uint64_t messageId = 0;
 	opq_json_val oResult(nullptr);

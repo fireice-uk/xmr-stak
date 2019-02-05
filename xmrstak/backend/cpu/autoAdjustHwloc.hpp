@@ -32,7 +32,7 @@ public:
 
 		for(const auto algo : neededAlgorithms)
 		{
-			hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+			hashMemSize = std::max(hashMemSize, algo.Mem());
 		}
 		halfHashMemSize = hashMemSize / 2u;
 	}
