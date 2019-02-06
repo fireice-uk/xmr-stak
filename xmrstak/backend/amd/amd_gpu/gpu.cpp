@@ -300,6 +300,21 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		MaximumWorkSize /= 8;
 	}
 	printer::inst()->print_msg(L1,"Device %lu work size %lu / %lu.", ctx->deviceIdx, ctx->workSize, MaximumWorkSize);
+
+	if(ctx->workSize > MaximumWorkSize)
+	{
+		ctx->workSize = MaximumWorkSize;
+		printer::inst()->print_msg(L1,"Device %lu work size to large, reduce to %lu / %lu.", ctx->deviceIdx, ctx->workSize, MaximumWorkSize);
+	}
+
+	const std::string backendName = xmrstak::params::inst().openCLVendor;
+	if( (ctx->stridedIndex == 2 || ctx->stridedIndex == 3) && (ctx->rawIntensity % ctx->workSize) != 0)
+	{
+		size_t reduced_intensity = (ctx->rawIntensity / ctx->workSize) * ctx->workSize;
+		ctx->rawIntensity = reduced_intensity;
+		printer::inst()->print_msg(L0, "WARNING %s: gpu %d intensity is not a multiple of 'worksize', auto reduce intensity to %d", backendName.c_str(), ctx->deviceIdx, int(reduced_intensity));
+	}
+
 #if defined(CL_VERSION_2_0) && !defined(CONF_ENFORCE_OpenCL_1_2)
 	const cl_queue_properties CommandQueueProperties[] = { 0, 0, 0 };
 	ctx->CommandQueues = clCreateCommandQueueWithProperties(opencl_ctx, ctx->DeviceID, CommandQueueProperties, &ret);
@@ -983,14 +998,6 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 		ctx[i].interleaveData = interleaveData[devIdx];
 		ctx[i].interleaveData->adjustThreshold = static_cast<double>(ctx[i].interleave)/100.0;
 		ctx[i].interleaveData->startAdjustThreshold = ctx[i].interleaveData->adjustThreshold;
-
-		const std::string backendName = xmrstak::params::inst().openCLVendor;
-		if( (ctx[i].stridedIndex == 2 || ctx[i].stridedIndex == 3) && (ctx[i].rawIntensity % ctx[i].workSize) != 0)
-		{
-			size_t reduced_intensity = (ctx[i].rawIntensity / ctx[i].workSize) * ctx[i].workSize;
-			ctx[i].rawIntensity = reduced_intensity;
-			printer::inst()->print_msg(L0, "WARNING %s: gpu %d intensity is not a multiple of 'worksize', auto reduce intensity to %d", backendName.c_str(), ctx[i].deviceIdx, int(reduced_intensity));
-		}
 
 		if((ret = InitOpenCLGpu(opencl_ctx, &ctx[i], source_code.c_str())) != ERR_SUCCESS)
 		{
