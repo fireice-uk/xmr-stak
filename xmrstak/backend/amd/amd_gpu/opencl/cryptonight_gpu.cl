@@ -225,6 +225,7 @@ __kernel void JOIN(cn1_cn_gpu,ALGO)(__global int *lpad_in, __global int *spad, u
 	uint s = ((__global uint*)spad)[idxHash * 50] >> 8;
 	float4 vs = (float4)(0);
 
+	#pragma unroll CN_UNROLL
 	for(size_t i = 0; i < ITERATIONS; i++)
 	{
 		mem_fence(CLK_LOCAL_MEM_FENCE);

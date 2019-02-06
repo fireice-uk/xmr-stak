@@ -137,8 +137,8 @@ private:
 			// true for all cryptonight_heavy derivates since we check the user and dev pool
 			bool useCryptonight_heavy = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_heavy) != neededAlgorithms.end();
 
-			// true for all cryptonight_gpu derivates since we check the user and dev pool
-			bool useCryptonight_gpu = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_gpu) != neededAlgorithms.end();
+			// true for cryptonight_gpu as main user pool algorithm
+			bool useCryptonight_gpu = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_gpu;
 
 			// set strided index to default
 			ctx.stridedIndex = 1;
@@ -161,12 +161,15 @@ private:
 			if (hashMemSize <= CRYPTONIGHT_TURTLE_MEMORY)
 				maxThreads *= 4u;
 
+			uint32_t numUnroll = 8;
+
 			if(useCryptonight_gpu)
 			{
 				// 6 waves per compute unit are a good value (based on profiling)
 				// @todo check again after all optimizations
 				maxThreads = ctx.computeUnits * 6 * 8;
 				ctx.stridedIndex = 0;
+				numUnroll = 1;
 			}
 
 			// keep 128MiB memory free (value is randomly chosen) from the max available memory
@@ -210,7 +213,7 @@ private:
 					conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
 						"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
 						"    \"affine_to_cpu\" : false, \"strided_index\" : " + std::to_string(ctx.stridedIndex) + ", \"mem_chunk\" : 2,\n"
-						"    \"unroll\" : 8, \"comp_mode\" : true, \"interleave\" : " + std::to_string(ctx.interleave) + "\n" +
+						"    \"unroll\" : " + std::to_string(numUnroll) + ", \"comp_mode\" : true, \"interleave\" : " + std::to_string(ctx.interleave) + "\n" +
 						"  },\n";
 				}
 			}
