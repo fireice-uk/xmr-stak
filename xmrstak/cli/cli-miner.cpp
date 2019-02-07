@@ -801,7 +801,7 @@ int main(int argc, char *argv[])
 	printer::inst()->print_str("This currency is a way for us to implement the ideas that we were unable to in\n");
 	printer::inst()->print_str("Monero. See https://github.com/fireice-uk/cryptonote-speedup-demo for details.\n");
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
-	printer::inst()->print_msg(L0, "Mining coin: %s", jconf::inst()->GetMiningCoin().c_str());
+	printer::inst()->print_msg(L0, "Mining coin: %s", ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo().Name().c_str());
 
 	if(params::inst().benchmark_block_version >= 0)
 	{

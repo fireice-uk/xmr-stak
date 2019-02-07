@@ -93,7 +93,7 @@ __device__ __forceinline__ void mix_and_propagate( uint32_t* state )
 		(state + 4 * 7)[x] = (state + 4 * 7)[x] ^ tmp0[x];
 }
 
-template<xmrstak_algo ALGO>
+template<xmrstak_algo_id ALGO>
 __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restrict__ d_input, uint32_t len, uint32_t startNonce, uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_state2, uint32_t * __restrict__ d_ctx_a, uint32_t * __restrict__ d_ctx_b, uint32_t * __restrict__ d_ctx_key1, uint32_t * __restrict__ d_ctx_key2 )
 {
 	int thread = ( blockDim.x * blockIdx.x + threadIdx.x );
@@ -162,7 +162,7 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
 	}
 }
 
-template<xmrstak_algo ALGO>
+template<xmrstak_algo_id ALGO>
 __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint32_t * __restrict__ d_res_nonce, uint32_t * __restrict__ d_ctx_state,uint32_t * __restrict__ d_ctx_key2 )
 {
 	const int thread = blockDim.x * blockIdx.x + threadIdx.x;
@@ -292,7 +292,7 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	size_t hashMemSize = 0;
 	for(const auto algo : neededAlgorithms)
 	{
-		hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+		hashMemSize = std::max(hashMemSize, algo.Mem());
 	}
 
 	size_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -335,7 +335,7 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	return 1;
 }
 
-extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, xmrstak_algo miner_algo)
+extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, const xmrstak_algo& miner_algo)
 {
 	int threadsperblock = 128;
 	uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -388,7 +388,7 @@ extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce
 	}
 }
 
-extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce,xmrstak_algo miner_algo)
+extern "C" void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce, const xmrstak_algo& miner_algo)
 {
 	int threadsperblock = 128;
 	uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -697,7 +697,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		size_t hashMemSize = 0;
 		for(const auto algo : neededAlgorithms)
 		{
-			hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+			hashMemSize = std::max(hashMemSize, algo.Mem());
 		}
 
 #ifdef WIN32
@@ -770,7 +770,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			size_t blockOptimal = 8 * ctx->device_mpcount;
 			if(gpuArch >= 70)
 				blockOptimal = 5 *  ctx->device_mpcount;
-			
+
 			if(blockOptimal * threads * hashMemSize < limitedMemory)
 			{
 				ctx->device_threads = threads;

@@ -33,7 +33,7 @@ public:
 		size_t hashMemSize = 0;
 		for(const auto algo : neededAlgorithms)
 		{
-			hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+			hashMemSize = std::max(hashMemSize, algo.Mem());
 		}
 		const size_t hashMemSizeKB = hashMemSize / 1024u;
 

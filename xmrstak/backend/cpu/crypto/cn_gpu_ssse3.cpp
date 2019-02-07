@@ -9,11 +9,11 @@ inline void prep_dv(__m128i* idx, __m128i& v, __m128& n)
 	n = _mm_cvtepi32_ps(v);
 }
 
-inline __m128 fma_break(__m128 x) 
-{ 
-	// Break the dependency chain by setitng the exp to ?????01 
-	x = _mm_and_ps(_mm_castsi128_ps(_mm_set1_epi32(0xFEFFFFFF)), x); 
-	return _mm_or_ps(_mm_castsi128_ps(_mm_set1_epi32(0x00800000)), x); 
+inline __m128 fma_break(__m128 x)
+{
+	// Break the dependency chain by setitng the exp to ?????01
+	x = _mm_and_ps(_mm_castsi128_ps(_mm_set1_epi32(0xFEFFFFFF)), x);
+	return _mm_or_ps(_mm_castsi128_ps(_mm_set1_epi32(0x00800000)), x);
 }
 
 // 14
@@ -94,25 +94,26 @@ inline void single_comupte_wrap(__m128 n0, __m128 n1, __m128 n2,  __m128 n3, flo
 	out = _mm_xor_si128(out, r);
 }
 
-template<uint32_t MASK>
-inline __m128i* scratchpad_ptr(uint8_t* lpad, uint32_t idx, size_t n) { return reinterpret_cast<__m128i*>(lpad + (idx & MASK) + n*16); }
+inline __m128i* scratchpad_ptr(uint8_t* lpad, uint32_t idx, size_t n, const uint32_t mask) { return reinterpret_cast<__m128i*>(lpad + (idx & mask) + n*16); }
 
-template<size_t ITER, uint32_t MASK>
-void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad)
+void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad, const xmrstak_algo& algo)
 {
+	const uint32_t ITER = algo.Iter();
+	const uint32_t mask = algo.Mask();
+
 	uint32_t s = reinterpret_cast<const uint32_t*>(spad)[0] >> 8;
-	__m128i* idx0 = scratchpad_ptr<MASK>(lpad, s, 0);
-	__m128i* idx1 = scratchpad_ptr<MASK>(lpad, s, 1);
-	__m128i* idx2 = scratchpad_ptr<MASK>(lpad, s, 2);
-	__m128i* idx3 = scratchpad_ptr<MASK>(lpad, s, 3);
+	__m128i* idx0 = scratchpad_ptr(lpad, s, 0, mask);
+	__m128i* idx1 = scratchpad_ptr(lpad, s, 1, mask);
+	__m128i* idx2 = scratchpad_ptr(lpad, s, 2, mask);
+	__m128i* idx3 = scratchpad_ptr(lpad, s, 3, mask);
 	__m128 sum0 = _mm_setzero_ps();
-	
+
 	for(size_t i = 0; i < ITER; i++)
 	{
 		__m128 n0, n1, n2, n3;
 		__m128i v0, v1, v2, v3;
 		__m128 suma, sumb, sum1, sum2, sum3;
-		
+
 		prep_dv(idx0, v0, n0);
 		prep_dv(idx1, v1, n1);
 		prep_dv(idx2, v2, n2);
@@ -128,7 +129,7 @@ void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad)
 		sum0 = _mm_add_ps(suma, sumb);
 		_mm_store_si128(idx0, _mm_xor_si128(v0, out));
 		out2 = out;
-	
+
 		out = _mm_setzero_si128();
 		single_comupte_wrap<0>(n1, n0, n2, n3, 1.4296875f, rc, suma, out);
 		single_comupte_wrap<1>(n1, n2, n3, n0, 1.3984375f, rc, suma, out);
@@ -160,7 +161,7 @@ void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad)
 		sum0 = _mm_add_ps(sum0, sum2);
 
 		sum0 = _mm_and_ps(_mm_castsi128_ps(_mm_set1_epi32(0x7fffffff)), sum0); // take abs(va) by masking the float sign bit
-		// vs range 0 - 64 
+		// vs range 0 - 64
 		n0 = _mm_mul_ps(sum0, _mm_set1_ps(16777216.0f));
 		v0 = _mm_cvttps_epi32(n0);
 		v0 = _mm_xor_si128(v0, out2);
@@ -172,11 +173,9 @@ void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad)
 		// vs is now between 0 and 1
 		sum0 = _mm_div_ps(sum0, _mm_set1_ps(64.0f));
 		uint32_t n = _mm_cvtsi128_si32(v0);
-		idx0 = scratchpad_ptr<MASK>(lpad, n, 0);
-		idx1 = scratchpad_ptr<MASK>(lpad, n, 1);
-		idx2 = scratchpad_ptr<MASK>(lpad, n, 2);
-		idx3 = scratchpad_ptr<MASK>(lpad, n, 3);
+		idx0 = scratchpad_ptr(lpad, n, 0, mask);
+		idx1 = scratchpad_ptr(lpad, n, 1, mask);
+		idx2 = scratchpad_ptr(lpad, n, 2, mask);
+		idx3 = scratchpad_ptr(lpad, n, 3, mask);
 	}
 }
-
-template void cn_gpu_inner_ssse3<CRYPTONIGHT_GPU_ITER, CRYPTONIGHT_GPU_MASK>(const uint8_t* spad, uint8_t* lpad);

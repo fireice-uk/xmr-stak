@@ -128,8 +128,9 @@ __device__ __forceinline__ uint32_t rotate16( const uint32_t n )
 	return (n >> 16u) | (n << 16u);
 }
 
-template<size_t ITERATIONS, uint32_t MEMORY>
-__global__ void cryptonight_core_gpu_phase1( int threads, int bfactor, int partidx, uint32_t * __restrict__ long_state, uint32_t * __restrict__ ctx_state2, uint32_t * __restrict__ ctx_key1 )
+__global__ void cryptonight_core_gpu_phase1(
+	const uint32_t ITERATIONS,  const size_t MEMORY,
+	int threads, int bfactor, int partidx, uint32_t * __restrict__ long_state, uint32_t * __restrict__ ctx_state2, uint32_t * __restrict__ ctx_key1 )
 {
 	__shared__ uint32_t sharedMemory[1024];
 
@@ -267,11 +268,13 @@ struct u64 : public uint2
  * @tparam MEM_MODE if `0` than 64bit memory transfers per thread will be used to store/load data within shared memory
  *                   else if `1` 256bit operations will be used
  */
-template<size_t ITERATIONS, uint32_t MEMORY, uint32_t MASK, xmrstak_algo ALGO, uint32_t MEM_MODE>
+template<xmrstak_algo_id ALGO, uint32_t MEM_MODE>
 #ifdef XMR_STAK_THREADS
 __launch_bounds__( XMR_STAK_THREADS * 2 )
 #endif
-__global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b, uint32_t * d_ctx_state,
+__global__ void cryptonight_core_gpu_phase2_double(
+	const uint32_t ITERATIONS,  const size_t MEMORY, const uint32_t MASK,
+	int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b, uint32_t * d_ctx_state,
 		uint32_t startNonce, uint32_t * __restrict__ d_input )
 {
 	__shared__ uint32_t sharedMemory[512];
@@ -482,11 +485,13 @@ __global__ void cryptonight_core_gpu_phase2_double( int threads, int bfactor, in
 	}
 }
 
-template<size_t ITERATIONS, uint32_t MEMORY, uint32_t MASK, xmrstak_algo ALGO>
+template<xmrstak_algo_id ALGO>
 #ifdef XMR_STAK_THREADS
 __launch_bounds__( XMR_STAK_THREADS * 4 )
 #endif
-__global__ void cryptonight_core_gpu_phase2_quad( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b, uint32_t * d_ctx_state,
+__global__ void cryptonight_core_gpu_phase2_quad(
+	const uint32_t ITERATIONS,  const size_t MEMORY, const uint32_t MASK,
+	int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b, uint32_t * d_ctx_state,
 		uint32_t startNonce, uint32_t * __restrict__ d_input )
 {
 	__shared__ uint32_t sharedMemory[1024];
@@ -685,8 +690,10 @@ __global__ void cryptonight_core_gpu_phase2_quad( int threads, int bfactor, int 
 	}
 }
 
-template<size_t ITERATIONS, uint32_t MEMORY, xmrstak_algo ALGO>
-__global__ void cryptonight_core_gpu_phase3( int threads, int bfactor, int partidx, const uint32_t * __restrict__ long_state, uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_key2 )
+template<xmrstak_algo_id ALGO>
+__global__ void cryptonight_core_gpu_phase3(
+	const uint32_t ITERATIONS,  const size_t MEMORY,
+	int threads, int bfactor, int partidx, const uint32_t * __restrict__ long_state, uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_key2 )
 {
 	__shared__ uint32_t sharedMemory[1024];
 
@@ -737,9 +744,13 @@ __global__ void cryptonight_core_gpu_phase3( int threads, int bfactor, int parti
 	MEMCPY8( d_ctx_state + thread * 50 + sub + 16, text, 2 );
 }
 
-template<size_t ITERATIONS, uint32_t MASK, uint32_t MEMORY, xmrstak_algo ALGO, uint32_t MEM_MODE>
-void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
+template<xmrstak_algo_id ALGO, uint32_t MEM_MODE>
+void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo& algo)
 {
+	const uint32_t MASK = algo.Mask();
+	const uint32_t ITERATIONS = algo.Iter();
+	const size_t MEM = algo.Mem()/4;
+
 	dim3 grid( ctx->device_blocks );
 	dim3 block( ctx->device_threads );
 	dim3 block2( ctx->device_threads << 1 );
@@ -761,7 +772,10 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 
 	for ( int i = 0; i < partcountOneThree; i++ )
 	{
-		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase1<ITERATIONS,MEMORY><<< grid, block8 >>>( ctx->device_blocks*ctx->device_threads,
+		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase1<<< grid, block8 >>>(
+			ITERATIONS,
+			MEM,
+			ctx->device_blocks*ctx->device_threads,
 			bfactorOneThree, i,
 			ctx->d_long_state,
 			(ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast ? ctx->d_ctx_state2 : ctx->d_ctx_state),
@@ -779,13 +793,16 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 			CUDA_CHECK_MSG_KERNEL(
 				ctx->device_id,
 				"\n**suggestion: Try to increase the value of the attribute 'bfactor' or \nreduce 'threads' in the NVIDIA config file.**",
-				cryptonight_core_gpu_phase2_double<ITERATIONS,MEMORY,MASK,ALGO, MEM_MODE><<<
+				cryptonight_core_gpu_phase2_double<ALGO, MEM_MODE><<<
 					grid,
 					block2,
 					sizeof(uint64_t) * block2.x * 8 +
 						// shuffle memory for fermi gpus
 						block2.x * sizeof(uint32_t) * static_cast< int >( ctx->device_arch[0] < 3 )
 				>>>(
+					ITERATIONS,
+					MEM,
+					MASK,
 					ctx->device_blocks*ctx->device_threads,
 					ctx->device_bfactor,
 					i,
@@ -803,11 +820,14 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 			CUDA_CHECK_MSG_KERNEL(
 				ctx->device_id,
 				"\n**suggestion: Try to increase the value of the attribute 'bfactor' or \nreduce 'threads' in the NVIDIA config file.**",
-				cryptonight_core_gpu_phase2_quad<ITERATIONS,MEMORY,MASK,ALGO><<<
+				cryptonight_core_gpu_phase2_quad<ALGO><<<
 					grid,
 					block4,
 					block4.x * sizeof(uint32_t) * static_cast< int >( ctx->device_arch[0] < 3 )
 				>>>(
+					ITERATIONS,
+					MEM,
+					MASK,
 					ctx->device_blocks*ctx->device_threads,
 					ctx->device_bfactor,
 					i,
@@ -834,20 +854,27 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 
 	for ( int i = 0; i < roundsPhase3; i++ )
 	{
-		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase3<ITERATIONS,MEMORY, ALGO><<<
+		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase3<ALGO><<<
 			grid,
 			block8,
 			block8.x * sizeof(uint32_t) * static_cast< int >( ctx->device_arch[0] < 3 )
-		>>>( ctx->device_blocks*ctx->device_threads,
+		>>>(
+			ITERATIONS,
+			MEM,
+			ctx->device_blocks*ctx->device_threads,
 			bfactorOneThree, i,
 			ctx->d_long_state,
 			ctx->d_ctx_state, ctx->d_ctx_key2 ));
 	}
 }
 
-template<size_t ITERATIONS, uint32_t MASK, uint32_t MEMORY, xmrstak_algo ALGO, uint32_t MEM_MODE>
-void cryptonight_core_gpu_hash_gpu(nvid_ctx* ctx, uint32_t nonce)
+template<xmrstak_algo_id ALGO, uint32_t MEM_MODE>
+void cryptonight_core_gpu_hash_gpu(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo& algo)
 {
+	const uint32_t MASK = algo.Mask();
+	const uint32_t ITERATIONS = algo.Iter();
+	const size_t MEM = algo.Mem();
+
 	dim3 grid( ctx->device_blocks );
 	dim3 block( ctx->device_threads );
 	dim3 block2( ctx->device_threads << 1 );
@@ -858,7 +885,7 @@ void cryptonight_core_gpu_hash_gpu(nvid_ctx* ctx, uint32_t nonce)
 
 	CUDA_CHECK_KERNEL(
 		ctx->device_id,
-		xmrstak::nvidia::cn_explode_gpu<MEMORY><<<intensity,32>>>((int*)ctx->d_ctx_state, (int*)ctx->d_long_state)
+		xmrstak::nvidia::cn_explode_gpu<<<intensity,32>>>(MEM, (int*)ctx->d_ctx_state, (int*)ctx->d_long_state)
 	);
 
 	int partcount = 1 << ctx->device_bfactor;
@@ -867,9 +894,12 @@ void cryptonight_core_gpu_hash_gpu(nvid_ctx* ctx, uint32_t nonce)
 		CUDA_CHECK_KERNEL(
 			ctx->device_id,
 			// 36 x 16byte x numThreads
-			xmrstak::nvidia::cryptonight_core_gpu_phase2_gpu<ITERATIONS, MEMORY>
+			xmrstak::nvidia::cryptonight_core_gpu_phase2_gpu
 				<<<ctx->device_blocks, ctx->device_threads * 16,  36 * 16 * ctx->device_threads>>>
 				(
+					ITERATIONS,
+					MEM,
+					MASK,
 					(int*)ctx->d_ctx_state,
 					(int*)ctx->d_long_state,
 					ctx->device_bfactor,
@@ -901,71 +931,74 @@ void cryptonight_core_gpu_hash_gpu(nvid_ctx* ctx, uint32_t nonce)
 
 	for ( int i = 0; i < roundsPhase3; i++ )
 	{
-		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase3<ITERATIONS,MEMORY/4, ALGO><<<
+		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase3<ALGO><<<
 			grid,
 			block8,
 			block8.x * sizeof(uint32_t) * static_cast< int >( ctx->device_arch[0] < 3 )
-		>>>( ctx->device_blocks*ctx->device_threads,
+		>>>(
+			ITERATIONS,
+			MEM/4,
+			ctx->device_blocks*ctx->device_threads,
 			bfactorOneThree, i,
 			ctx->d_long_state,
 			ctx->d_ctx_state, ctx->d_ctx_key2 ));
 	}
 }
 
-void cryptonight_core_cpu_hash(nvid_ctx* ctx, xmrstak_algo miner_algo, uint32_t startNonce)
+void cryptonight_core_cpu_hash(nvid_ctx* ctx, const xmrstak_algo& miner_algo, uint32_t startNonce)
 {
-	typedef void (*cuda_hash_fn)(nvid_ctx* ctx, uint32_t nonce);
+	typedef void (*cuda_hash_fn)(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo& algo);
 
 	if(miner_algo == invalid_algo) return;
 
 	static const cuda_hash_fn func_table[] = {
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight, 0>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight, 1>,
+		cryptonight_core_gpu_hash<cryptonight, 0>,
+		cryptonight_core_gpu_hash<cryptonight, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_lite, 0>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_lite, 1>,
+		cryptonight_core_gpu_hash<cryptonight_lite, 0>,
+		cryptonight_core_gpu_hash<cryptonight_lite, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero, 0>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero, 1>,
+		cryptonight_core_gpu_hash<cryptonight_monero, 0>,
+		cryptonight_core_gpu_hash<cryptonight_monero, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_heavy, 0>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_heavy, 1>,
+		cryptonight_core_gpu_hash<cryptonight_heavy, 0>,
+		cryptonight_core_gpu_hash<cryptonight_heavy, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_aeon, 0>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_aeon, 1>,
+		cryptonight_core_gpu_hash<cryptonight_aeon, 0>,
+		cryptonight_core_gpu_hash<cryptonight_aeon, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_ipbc, 0>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY/4, cryptonight_ipbc, 1>,
+		cryptonight_core_gpu_hash<cryptonight_ipbc, 0>,
+		cryptonight_core_gpu_hash<cryptonight_ipbc, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_stellite, 0>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_stellite, 1>,
+		cryptonight_core_gpu_hash<cryptonight_stellite, 0>,
+		cryptonight_core_gpu_hash<cryptonight_stellite, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_MASARI_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_masari, 0>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_MASARI_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_masari, 1>,
+		cryptonight_core_gpu_hash<cryptonight_masari, 0>,
+		cryptonight_core_gpu_hash<cryptonight_masari, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_haven, 0>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_haven, 1>,
+		cryptonight_core_gpu_hash<cryptonight_haven, 0>,
+		cryptonight_core_gpu_hash<cryptonight_haven, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_bittube2, 0>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY/4, cryptonight_bittube2, 1>,
+		cryptonight_core_gpu_hash<cryptonight_bittube2, 0>,
+		cryptonight_core_gpu_hash<cryptonight_bittube2, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero_v8, 0>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_monero_v8, 1>,
+		cryptonight_core_gpu_hash<cryptonight_monero_v8, 0>,
+		cryptonight_core_gpu_hash<cryptonight_monero_v8, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_SUPERFAST_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_superfast, 0>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_SUPERFAST_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY/4, cryptonight_superfast, 1>,
+		cryptonight_core_gpu_hash<cryptonight_superfast, 0>,
+		cryptonight_core_gpu_hash<cryptonight_superfast, 1>,
 
-		cryptonight_core_gpu_hash_gpu<CRYPTONIGHT_GPU_ITER, CRYPTONIGHT_GPU_MASK, CRYPTONIGHT_MEMORY, cryptonight_gpu, 0>,
-		cryptonight_core_gpu_hash_gpu<CRYPTONIGHT_GPU_ITER, CRYPTONIGHT_GPU_MASK, CRYPTONIGHT_MEMORY, cryptonight_gpu, 1>,
+		cryptonight_core_gpu_hash_gpu<cryptonight_gpu, 0>,
+		cryptonight_core_gpu_hash_gpu<cryptonight_gpu, 1>,
 
-		cryptonight_core_gpu_hash<CRYPTONIGHT_TURTLE_ITER, CRYPTONIGHT_TURTLE_MASK, CRYPTONIGHT_TURTLE_MEMORY/4, cryptonight_turtle, 0>,
-		cryptonight_core_gpu_hash<CRYPTONIGHT_TURTLE_ITER, CRYPTONIGHT_TURTLE_MASK, CRYPTONIGHT_TURTLE_MEMORY/4, cryptonight_turtle, 1>
+		cryptonight_core_gpu_hash<cryptonight_turtle, 0>,
+		cryptonight_core_gpu_hash<cryptonight_turtle, 1>
 	};
 
 	std::bitset<1> digit;
 	digit.set(0, ctx->memMode == 1);
 
 	cuda_hash_fn selected_function = func_table[ ((miner_algo - 1u) << 1) | digit.to_ulong() ];
-	selected_function(ctx, startNonce);
+	selected_function(ctx, startNonce, miner_algo);
 
 }

@@ -88,7 +88,7 @@ private:
 		size_t hashMemSize = 0;
 		for(const auto algo : neededAlgorithms)
 		{
-			hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+			hashMemSize = std::max(hashMemSize, algo.Mem());
 		}
 
 		std::string conf;
@@ -153,13 +153,12 @@ private:
 			else if(useCryptonight_heavy)
 				ctx.stridedIndex = 3;
 
-			// increase all intensity limits by two if scratchpad is only 1 MiB
-			if(hashMemSize <= CRYPTONIGHT_LITE_MEMORY)
-				maxThreads *= 2u;
-
-			// increase all intensity limits by eight for turtle (*2u shadowed from lite)
-			if (hashMemSize <= CRYPTONIGHT_TURTLE_MEMORY)
-				maxThreads *= 4u;
+			if(hashMemSize < CN_MEMORY)
+			{
+				size_t factor = CN_MEMORY / hashMemSize;
+				// increase all intensity relative to the original scratchpad size
+				maxThreads *= factor;
+			}
 
 			uint32_t numUnroll = 8;
 

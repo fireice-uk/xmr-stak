@@ -345,7 +345,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	size_t scratchPadSize = 0;
 	for(const auto algo : neededAlgorithms)
 	{
-		scratchPadSize = std::max(scratchPadSize, cn_select_memory(algo));
+		scratchPadSize = std::max(scratchPadSize, algo.Mem());
 	}
 
 	size_t g_thd = ctx->rawIntensity;
@@ -420,9 +420,9 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	for(const auto miner_algo : neededAlgorithms)
 	{
 		// scratchpad size for the selected mining algorithm
-		size_t hashMemSize = cn_select_memory(miner_algo);
-		int threadMemMask = cn_select_mask(miner_algo);
-		int hashIterations = cn_select_iter(miner_algo);
+		size_t hashMemSize = miner_algo.Mem();
+		int threadMemMask = miner_algo.Mask();
+		int hashIterations = miner_algo.Iter();
 
 		size_t mem_chunk_exp = 1u << ctx->memChunk;
 		size_t strided_index = ctx->stridedIndex;
@@ -453,7 +453,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		options += " -DMEM_CHUNK_EXPONENT=" + std::to_string(mem_chunk_exp) + "U";
 		options += " -DCOMP_MODE=" + std::to_string(needCompMode);
 		options += " -DMEMORY=" + std::to_string(hashMemSize) + "LU";
-		options += " -DALGO=" + std::to_string(miner_algo);
+		options += " -DALGO=" + std::to_string(miner_algo.Id());
 		options += " -DCN_UNROLL=" + std::to_string(ctx->unroll);
 		/* AMD driver output is something like: `1445.5 (VM)`
 		 * and is mapped to `14` only. The value is only used for a compiler
@@ -1008,10 +1008,10 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	return ERR_SUCCESS;
 }
 
-size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target, xmrstak_algo miner_algo)
+size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target, const xmrstak_algo& miner_algo)
 {
 
-	const auto & Kernels = ctx->Kernels[miner_algo];
+	const auto & Kernels = ctx->Kernels[miner_algo.Id()];
 
 	cl_int ret;
 
@@ -1296,9 +1296,9 @@ uint64_t interleaveAdjustDelay(GpuContext* ctx, const bool enableAutoAdjustment)
 	return t0;
 }
 
-size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo)
+size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, const xmrstak_algo& miner_algo)
 {
-	const auto & Kernels = ctx->Kernels[miner_algo];
+	const auto & Kernels = ctx->Kernels[miner_algo.Id()];
 
 	cl_int ret;
 	cl_uint zero = 0;

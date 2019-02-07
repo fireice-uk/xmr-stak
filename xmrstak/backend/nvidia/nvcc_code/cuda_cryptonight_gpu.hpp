@@ -275,8 +275,7 @@ __forceinline__ __device__ __m128i _mm_alignr_epi8(__m128i a, const uint32_t rot
 	);
 }
 
-template<uint32_t MASK>
-__device__ __m128i* scratchpad_ptr(uint32_t idx, uint32_t n, int *lpad) { return (__m128i*)((uint8_t*)lpad + (idx & MASK) + n * 16); }
+__device__ __m128i* scratchpad_ptr(uint32_t idx, uint32_t n, int *lpad, const uint32_t MASK) { return (__m128i*)((uint8_t*)lpad + (idx & MASK) + n * 16); }
 
 
 __forceinline__ __device__  __m128 fma_break(__m128 x)
@@ -412,10 +411,10 @@ __forceinline__ __device__ void sync()
 #endif
 }
 
-template<size_t ITERATIONS, uint32_t MEMORY>
-__global__ void cryptonight_core_gpu_phase2_gpu(int32_t *spad, int *lpad_in, int bfactor, int partidx, uint32_t * roundVs, uint32_t * roundS)
+__global__ void cryptonight_core_gpu_phase2_gpu(
+	const uint32_t ITERATIONS,  const size_t MEMORY, const uint32_t MASK,
+	int32_t *spad, int *lpad_in, int bfactor, int partidx, uint32_t * roundVs, uint32_t * roundS)
 {
-	constexpr uint32_t MASK = ((MEMORY-1) >> 6) << 6;
 
 	const int batchsize = (ITERATIONS * 2) >> ( 1 + bfactor );
 
@@ -457,7 +456,7 @@ __global__ void cryptonight_core_gpu_phase2_gpu(int32_t *spad, int *lpad_in, int
 	for(size_t i = 0; i < batchsize; i++)
 	{
 		sync();
-		((int*)smem)[tid] = ((int*)scratchpad_ptr<MASK>(s, b, lpad))[bb];
+		((int*)smem)[tid] = ((int*)scratchpad_ptr(s, b, lpad, MASK))[bb];
 		sync();
 
 		__m128 rc = vs;
@@ -477,7 +476,7 @@ __global__ void cryptonight_core_gpu_phase2_gpu(int32_t *spad, int *lpad_in, int
 		for(uint32_t dd = block + 4; dd < (b + 1) * 16; dd += 4)
 			outXor ^= ((int*)smemOut)[dd];
 
-		((int*)scratchpad_ptr<MASK>(s, b, lpad))[bb] = outXor ^ ((int*)smem)[tid];
+		((int*)scratchpad_ptr(s, b, lpad, MASK))[bb] = outXor ^ ((int*)smem)[tid];
 		((int*)smemOut)[tid] = outXor;
 
 		float va_tmp1 = ((float*)smemVa)[block] + ((float*)smemVa)[block + 4];
@@ -539,8 +538,8 @@ __forceinline__ __device__ void generate_512(uint64_t idx, const uint64_t* in, u
 		((ulonglong2*)out)[i] = ((ulonglong2*)hash)[i];
 }
 
-template<size_t MEMORY>
-__global__ void cn_explode_gpu(int32_t *spad_in, int *lpad_in)
+
+__global__ void cn_explode_gpu(const size_t MEMORY, int32_t *spad_in, int *lpad_in)
 {
 	__shared__ uint64_t state[25];
 

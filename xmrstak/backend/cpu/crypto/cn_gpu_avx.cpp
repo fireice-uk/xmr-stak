@@ -9,11 +9,11 @@ inline void prep_dv_avx(__m256i* idx, __m256i& v, __m256& n01)
 	n01 = _mm256_cvtepi32_ps(v);
 }
 
-inline __m256 fma_break(const __m256& x) 
-{ 
-	// Break the dependency chain by setitng the exp to ?????01 
-	__m256 xx = _mm256_and_ps(_mm256_castsi256_ps(_mm256_set1_epi32(0xFEFFFFFF)), x); 
-	return _mm256_or_ps(_mm256_castsi256_ps(_mm256_set1_epi32(0x00800000)), xx); 
+inline __m256 fma_break(const __m256& x)
+{
+	// Break the dependency chain by setitng the exp to ?????01
+	__m256 xx = _mm256_and_ps(_mm256_castsi256_ps(_mm256_set1_epi32(0xFEFFFFFF)), x);
+	return _mm256_or_ps(_mm256_castsi256_ps(_mm256_set1_epi32(0x00800000)), xx);
 }
 
 // 14
@@ -60,7 +60,7 @@ inline void round_compute(const __m256& n0, const __m256& n1, const __m256& n2, 
 
 // 112×4 = 448
 template <bool add>
-inline __m256i double_comupte(const __m256& n0, const __m256& n1, const __m256& n2, const __m256& n3, 
+inline __m256i double_comupte(const __m256& n0, const __m256& n1, const __m256& n2, const __m256& n3,
 							  float lcnt, float hcnt, const __m256& rnd_c, __m256& sum)
 {
 	__m256 c = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_set1_ps(lcnt)), _mm_set1_ps(hcnt), 1);
@@ -85,7 +85,7 @@ inline __m256i double_comupte(const __m256& n0, const __m256& n1, const __m256& 
 }
 
 template <size_t rot>
-inline void double_comupte_wrap(const __m256& n0, const __m256& n1, const __m256& n2, const __m256& n3, 
+inline void double_comupte_wrap(const __m256& n0, const __m256& n1, const __m256& n2, const __m256& n3,
 								float lcnt, float hcnt, const __m256& rnd_c, __m256& sum, __m256i& out)
 {
 	__m256i r = double_comupte<rot % 2 != 0>(n0, n1, n2, n3, lcnt, hcnt, rnd_c, sum);
@@ -95,15 +95,18 @@ inline void double_comupte_wrap(const __m256& n0, const __m256& n1, const __m256
 	out = _mm256_xor_si256(out, r);
 }
 
-template<uint32_t MASK>
-inline __m256i* scratchpad_ptr(uint8_t* lpad, uint32_t idx, size_t n) { return reinterpret_cast<__m256i*>(lpad + (idx & MASK) + n*16); }
 
-template<size_t ITER, uint32_t MASK>
-void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad)
+inline __m256i* scratchpad_ptr(uint8_t* lpad, uint32_t idx, size_t n, const uint32_t mask) { return reinterpret_cast<__m256i*>(lpad + (idx & mask) + n*16); }
+
+
+void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad, const xmrstak_algo& algo)
 {
+	const uint32_t ITER = algo.Iter();
+	const uint32_t mask = algo.Mask();
+
 	uint32_t s = reinterpret_cast<const uint32_t*>(spad)[0] >> 8;
-	__m256i* idx0 = scratchpad_ptr<MASK>(lpad, s, 0);
-	__m256i* idx2 = scratchpad_ptr<MASK>(lpad, s, 2);
+	__m256i* idx0 = scratchpad_ptr(lpad, s, 0, mask);
+	__m256i* idx2 = scratchpad_ptr(lpad, s, 2, mask);
 	__m256 sum0 = _mm256_setzero_ps();
 
 	for(size_t i = 0; i < ITER; i++)
@@ -116,13 +119,13 @@ void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad)
 		__m256 d01, d23;
 		prep_dv_avx(idx0, v01, n01);
 		prep_dv_avx(idx2, v23, n23);
-		
+
 		__m256i out, out2;
 		__m256 n10, n22, n33;
 		n10 = _mm256_permute2f128_ps(n01, n01, 0x01);
 		n22 = _mm256_permute2f128_ps(n23, n23, 0x00);
 		n33 = _mm256_permute2f128_ps(n23, n23, 0x11);
-		
+
 		out = _mm256_setzero_si256();
 		double_comupte_wrap<0>(n01, n10, n22, n33, 1.3437500f, 1.4296875f, rc, suma, out);
 		double_comupte_wrap<1>(n01, n22, n33, n10, 1.2812500f, 1.3984375f, rc, suma, out);
@@ -131,7 +134,7 @@ void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad)
 		_mm256_store_si256(idx0, _mm256_xor_si256(v01, out));
 		sum0 = _mm256_add_ps(suma, sumb);
 		out2 = out;
-		
+
 		__m256 n11, n02, n30;
 		n11 = _mm256_permute2f128_ps(n01, n01, 0x11);
 		n02 = _mm256_permute2f128_ps(n01, n23, 0x20);
@@ -156,7 +159,7 @@ void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad)
 		__m128 sum = _mm256_castps256_ps128(sum0);
 
 		sum = _mm_and_ps(_mm_castsi128_ps(_mm_set1_epi32(0x7fffffff)), sum); // take abs(va) by masking the float sign bit
-		// vs range 0 - 64 
+		// vs range 0 - 64
 		__m128i v0 = _mm_cvttps_epi32(_mm_mul_ps(sum, _mm_set1_ps(16777216.0f)));
 		v0 = _mm_xor_si128(v0, _mm256_castsi256_si128(out2));
 		__m128i v1 = _mm_shuffle_epi32(v0, _MM_SHUFFLE(0, 1, 2, 3));
@@ -168,9 +171,7 @@ void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad)
 		sum = _mm_div_ps(sum, _mm_set1_ps(64.0f));
 		sum0 = _mm256_insertf128_ps(_mm256_castps128_ps256(sum), sum, 1);
 		uint32_t n = _mm_cvtsi128_si32(v0);
-		idx0 = scratchpad_ptr<MASK>(lpad, n, 0);
-		idx2 = scratchpad_ptr<MASK>(lpad, n, 2);
+		idx0 = scratchpad_ptr(lpad, n, 0, mask);
+		idx2 = scratchpad_ptr(lpad, n, 2, mask);
 	}
 }
-
-template void cn_gpu_inner_avx<CRYPTONIGHT_GPU_ITER, CRYPTONIGHT_GPU_MASK>(const uint8_t* spad, uint8_t* lpad);
