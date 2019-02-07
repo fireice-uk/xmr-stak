@@ -127,7 +127,7 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
 	XOR_BLOCKS_DST( ctx_state, ctx_state + 8, ctx_a );
 	XOR_BLOCKS_DST( ctx_state + 4, ctx_state + 12, ctx_b );
 	memcpy( d_ctx_a + thread * 4, ctx_a, 4 * 4 );
-	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
+	if(ALGO == cryptonight_monero_v8)
 	{
 		memcpy( d_ctx_b + thread * 12, ctx_b, 4 * 4 );
 		// bx1
@@ -310,8 +310,7 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 		// create a double buffer for the state to exchange the mixed state to phase1
 		CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state2, 50 * sizeof(uint32_t) * wsize));
 	}
-	else if(std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_monero_v8) != neededAlgorithms.end() ||
-	        std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_turtle) != neededAlgorithms.end() )
+	else if(std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_monero_v8) != neededAlgorithms.end())
 	{
 		// bx1 (16byte), division_result (8byte) and sqrt_result (8byte)
 		ctx_b_size = 3 * 4 * sizeof(uint32_t) * wsize;
@@ -367,11 +366,6 @@ extern "C" void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce
 	{
 		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<cryptonight_monero_v8><<<grid, block >>>( wsize, ctx->d_input, ctx->inputlen, startNonce,
 			ctx->d_ctx_state,ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2 ));
-	}
-	else if (miner_algo == cryptonight_turtle)
-	{
-		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_prepare<cryptonight_turtle> << <grid, block >> > (wsize, ctx->d_input, ctx->inputlen, startNonce,
-			ctx->d_ctx_state, ctx->d_ctx_state2, ctx->d_ctx_a, ctx->d_ctx_b, ctx->d_ctx_key1, ctx->d_ctx_key2));
 	}
 	else if(miner_algo == cryptonight_gpu)
 	{
@@ -745,8 +739,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		}
 
 		// check if cryptonight_monero_v8 is selected for the user pool
-		bool useCryptonight_v8 = (std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_monero_v8) != neededAlgorithms.end() ||
-		                          std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_turtle) != neededAlgorithms.end());
+		bool useCryptonight_v8 = (std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_monero_v8) != neededAlgorithms.end());
 
 		// overwrite default config if cryptonight_monero_v8 is mined and GPU has at least compute capability 5.0
 		if(useCryptonight_v8 && gpuArch >= 50)

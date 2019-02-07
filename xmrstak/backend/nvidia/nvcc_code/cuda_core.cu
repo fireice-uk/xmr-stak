@@ -314,7 +314,7 @@ __global__ void cryptonight_core_gpu_phase2_double(
 	uint64_t bx1;
 	uint32_t sqrt_result;
 	uint64_t division_result;
-	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
+	if(ALGO == cryptonight_monero_v8)
 	{
 		bx0 = ((uint64_t*)(d_ctx_b + thread * 12))[sub];
 		bx1 = ((uint64_t*)(d_ctx_b + thread * 12 + 4))[sub];
@@ -354,7 +354,7 @@ __global__ void cryptonight_core_gpu_phase2_double(
 			t_fn0( cx.y & 0xff ) ^ t_fn1( (cx2.x >> 8) & 0xff ) ^ rotate16(t_fn0( (cx2.y >> 16) & 0xff ) ^ t_fn1( (cx.x >> 24 ) ))
 		);
 
-		if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
+		if(ALGO == cryptonight_monero_v8)
 		{
 
 			const uint64_t chunk1 = myChunks[ idx1 ^ 2 + sub ];
@@ -397,14 +397,14 @@ __global__ void cryptonight_core_gpu_phase2_double(
 		else
 			((ulonglong4*)myChunks)[sub] = ((ulonglong4*)ptr0)[sub];
 
-		if(ALGO != cryptonight_monero_v8 && ALGO != cryptonight_turtle)
+		if(ALGO != cryptonight_monero_v8)
 			bx0 = cx_aes;
 
 		uint64_t cx_mul;
 		((uint32_t*)&cx_mul)[0] = shuffle<2>(sPtr, sub, cx_aes.x , 0);
 		((uint32_t*)&cx_mul)[1] = shuffle<2>(sPtr, sub, cx_aes.y , 0);
 
-		if((ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle) && sub == 1)
+		if((ALGO == cryptonight_monero_v8) && sub == 1)
 		{
 			// Use division and square root results from the _previous_ iteration to hide the latency
 			((uint32_t*)&division_result)[1] ^= sqrt_result;
@@ -428,7 +428,7 @@ __global__ void cryptonight_core_gpu_phase2_double(
 			uint64_t cl = ((uint64_t*)myChunks)[ idx1 ];
 			// sub 0 -> hi, sub 1 -> lo
 			uint64_t res = sub == 0 ? __umul64hi( cx_mul, cl ) : cx_mul * cl;
-			if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
+			if(ALGO == cryptonight_monero_v8)
 			{
 				const uint64_t chunk1 = myChunks[ idx1 ^ 2 + sub ] ^ res;
 				uint64_t chunk2 = myChunks[ idx1 ^ 4 + sub ];
@@ -445,7 +445,7 @@ __global__ void cryptonight_core_gpu_phase2_double(
 			}
 			ax0 += res;
 		}
-		if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
+		if(ALGO == cryptonight_monero_v8)
 		{
 			bx1 = bx0;
 			bx0 = cx_aes;
@@ -468,7 +468,7 @@ __global__ void cryptonight_core_gpu_phase2_double(
 	if ( bfactor > 0 )
 	{
 		((uint64_t*)(d_ctx_a + thread * 4))[sub] = ax0;
-		if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
+		if(ALGO == cryptonight_monero_v8)
 		{
 			((uint64_t*)(d_ctx_b + thread * 12))[sub] = bx0;
 			((uint64_t*)(d_ctx_b + thread * 12 + 4))[sub] = bx1;
@@ -787,7 +787,7 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo
 
 	for ( int i = 0; i < partcount; i++ )
 	{
-		if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_turtle)
+		if(ALGO == cryptonight_monero_v8)
 		{
 			// two threads per block
 			CUDA_CHECK_MSG_KERNEL(
@@ -989,10 +989,7 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, const xmrstak_algo& miner_algo, ui
 		cryptonight_core_gpu_hash<cryptonight_superfast, 1>,
 
 		cryptonight_core_gpu_hash_gpu<cryptonight_gpu, 0>,
-		cryptonight_core_gpu_hash_gpu<cryptonight_gpu, 1>,
-
-		cryptonight_core_gpu_hash<cryptonight_turtle, 0>,
-		cryptonight_core_gpu_hash<cryptonight_turtle, 1>
+		cryptonight_core_gpu_hash_gpu<cryptonight_gpu, 1>
 	};
 
 	std::bitset<1> digit;

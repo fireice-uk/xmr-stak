@@ -23,10 +23,9 @@ enum xmrstak_algo_id
 	cryptonight_monero_v8 = 11,
 	cryptonight_superfast = 12,
 	cryptonight_gpu = 13,
-	cryptonight_turtle = 14
-	// please add the algorithm name to get_algo_name()
 
-	// e.g for derived algorithms cryptonight_derived = start_derived_algo_id
+	cryptonight_turtle = start_derived_algo_id
+	// please add the algorithm name to get_algo_name()
 };
 
 /** get name of the algorithm
@@ -35,7 +34,7 @@ enum xmrstak_algo_id
  */
 inline std::string get_algo_name(xmrstak_algo_id algo_id)
 {
-	static std::array<std::string, 15> base_algo_names =
+	static std::array<std::string, 14> base_algo_names =
 	{{
 		"invalid_algo",
 		"cryptonight",
@@ -50,13 +49,12 @@ inline std::string get_algo_name(xmrstak_algo_id algo_id)
 		"cryptonight_bittube2",
 		"cryptonight_v8",
 		"cryptonight_superfast",
-		"cryptonight_gpu",
-		"cryptonight_turtle"
+		"cryptonight_gpu"
 	}};
 
-	static std::array<std::string, 0> derived_algo_names =
+	static std::array<std::string, 1> derived_algo_names =
 	{{
-		// cryptonight_derived
+		"cryptonight_turtle"
 	}};
 
 
@@ -169,7 +167,7 @@ constexpr uint32_t CN_TURTLE_MASK = 0x1FFF0;
 
 inline xmrstak_algo POW(xmrstak_algo_id algo_id)
 {
-	static std::array<xmrstak_algo, 15> pow = {{
+	static std::array<xmrstak_algo, 14> pow = {{
 		{invalid_algo, invalid_algo},
 		{cryptonight, cryptonight, CN_ITER, CN_MEMORY},
 		{cryptonight_lite, cryptonight_lite, CN_ITER/2, CN_MEMORY/2},
@@ -183,14 +181,12 @@ inline xmrstak_algo POW(xmrstak_algo_id algo_id)
 		{cryptonight_bittube2, cryptonight_bittube2, CN_ITER/2, CN_MEMORY*2}, // derived from cryptonight_heavy with own aes-round implementation and minor other tweaks
 		{cryptonight_monero_v8, cryptonight_monero_v8, CN_ITER, CN_MEMORY},
 		{cryptonight_superfast, cryptonight_superfast, CN_ITER/4, CN_MEMORY},
-		{cryptonight_gpu, cryptonight_gpu, CN_GPU_ITER, CN_MEMORY, CN_GPU_MASK},
-		{cryptonight_turtle, cryptonight_turtle, CN_ITER/8, CN_MEMORY/8, CN_TURTLE_MASK}
+		{cryptonight_gpu, cryptonight_gpu, CN_GPU_ITER, CN_MEMORY, CN_GPU_MASK}
 	}};
 
 	static std::array<xmrstak_algo, 1> derived_pow =
 	{{
-		// cryptonight_turtle is currently only a placeholder that MSVC is not crying
-		{cryptonight_turtle, cryptonight_turtle, CN_ITER/8, CN_MEMORY/8, CN_TURTLE_MASK}
+		{cryptonight_turtle, cryptonight_monero_v8, CN_ITER/8, CN_MEMORY/8, CN_TURTLE_MASK}
 		// {cryptonight_derived}
 	}};
 
