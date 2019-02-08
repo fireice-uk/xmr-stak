@@ -551,9 +551,6 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 	case cryptonight_gpu:
 		algv = 12;
 		break;
-	case cryptonight_turtle:
-		algv = 13;
-		break;
 	default:
 		algv = 2;
 		break;
@@ -623,12 +620,7 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		Cryptonight_hash_gpu::template hash<cryptonight_gpu, false, false>,
 		Cryptonight_hash_gpu::template hash<cryptonight_gpu, true, false>,
 		Cryptonight_hash_gpu::template hash<cryptonight_gpu, false, true>,
-		Cryptonight_hash_gpu::template hash<cryptonight_gpu, true, true>,
-
-		Cryptonight_hash<N>::template hash<cryptonight_turtle, false, false>,
-		Cryptonight_hash<N>::template hash<cryptonight_turtle, true, false>,
-		Cryptonight_hash<N>::template hash<cryptonight_turtle, false, true>,
-		Cryptonight_hash<N>::template hash<cryptonight_turtle, true, true>
+		Cryptonight_hash_gpu::template hash<cryptonight_gpu, true, true>
 	};
 
 	std::bitset<2> digit;
