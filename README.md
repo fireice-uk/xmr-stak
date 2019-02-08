@@ -44,8 +44,10 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 - [Graft](https://www.graft.network)
 - [Haven](https://havenprotocol.com)
 - [Lethean](https://lethean.io)
+- [Masari](https://getmasari.org)
 - [QRL](https://theqrl.org)
 - **[Ryo](https://ryo-currency.com) - Upcoming xmr-stak-gui is sponsored by Ryo**
+- [Stellite](https://stellite.cash/)
 - [TurtleCoin](https://turtlecoin.lol)
 - [Plenteum](https://www.plenteum.com/)
 
@@ -61,10 +63,11 @@ If your prefered coin is not listed, you can choose one of the following algorit
     - cryptonight_lite_v7_xor (algorithm used by ipbc)
 - 2MiB scratchpad memory
     - cryptonight
-    - cryptonight_masari
+    - cryptonight_masari (used in 2018)
     - cryptonight_v7
     - cryptonight_v7_stellite
     - cryptonight_v8
+    - cryptonight_v8_half (used by masari and stellite)
 - 4MiB scratchpad memory
     - cryptonight_haven
     - cryptonight_heavy

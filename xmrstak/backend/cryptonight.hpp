@@ -24,7 +24,8 @@ enum xmrstak_algo_id
 	cryptonight_superfast = 12,
 	cryptonight_gpu = 13,
 
-	cryptonight_turtle = start_derived_algo_id
+	cryptonight_turtle = start_derived_algo_id,
+	cryptonight_v8_half = (start_derived_algo_id + 1)
 	// please add the algorithm name to get_algo_name()
 };
 
@@ -52,9 +53,10 @@ inline std::string get_algo_name(xmrstak_algo_id algo_id)
 		"cryptonight_gpu"
 	}};
 
-	static std::array<std::string, 1> derived_algo_names =
+	static std::array<std::string, 2> derived_algo_names =
 	{{
-		"cryptonight_turtle"
+		"cryptonight_turtle",
+		"cryptonight_v8_half" // used by masari and stellite
 	}};
 
 
@@ -184,9 +186,10 @@ inline xmrstak_algo POW(xmrstak_algo_id algo_id)
 		{cryptonight_gpu, cryptonight_gpu, CN_GPU_ITER, CN_MEMORY, CN_GPU_MASK}
 	}};
 
-	static std::array<xmrstak_algo, 1> derived_pow =
+	static std::array<xmrstak_algo, 2> derived_pow =
 	{{
-		{cryptonight_turtle, cryptonight_monero_v8, CN_ITER/8, CN_MEMORY/8, CN_TURTLE_MASK}
+		{cryptonight_turtle, cryptonight_monero_v8, CN_ITER/8, CN_MEMORY/8, CN_TURTLE_MASK},
+		{cryptonight_v8_half, cryptonight_monero_v8, CN_ITER/2, CN_MEMORY}
 		// {cryptonight_derived}
 	}};
 
