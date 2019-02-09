@@ -1025,7 +1025,7 @@ R"===(
 
 __kernel void Skein(__global ulong *states, __global uint *BranchBuf, __global uint *output, ulong Target, uint Threads)
 {
-    const ulong idx = get_global_id(0) - get_global_offset(0);
+    const uint idx = get_global_id(0) - get_global_offset(0);
 
     // do not use early return here
     if(idx < BranchBuf[Threads])
@@ -1043,7 +1043,8 @@ __kernel void Skein(__global ulong *states, __global uint *BranchBuf, __global u
         ulong t[3] = { 0x00UL, 0x7000000000000000UL, 0x00UL };
         ulong8 p, m;
 
-        for(uint i = 0; i < 4; ++i)
+        #pragma unroll 1
+        for (uint i = 0; i < 4; ++i)
         {
             t[0] += i < 3 ? 0x40UL : 0x08UL;
 
@@ -1067,15 +1068,13 @@ __kernel void Skein(__global ulong *states, __global uint *BranchBuf, __global u
 
         p = Skein512Block(p, h, h8, t);
 
-        //vstore8(p, 0, output);
-
         // Note that comparison is equivalent to subtraction - we can't just compare 8 32-bit values
         // and expect an accurate result for target > 32-bit without implementing carries
-		if(p.s3 <= Target)
+        if (p.s3 <= Target)
 		{
             ulong outIdx = atomic_inc(output + 0xFF);
-			if(outIdx < 0xFF)
-				output[outIdx] = BranchBuf[idx] + (uint)get_global_offset(0);
+            if(outIdx < 0xFF)
+                output[outIdx] = BranchBuf[idx] + (uint)get_global_offset(0);
         }
     }
     mem_fence(CLK_GLOBAL_MEM_FENCE);
@@ -1117,33 +1116,29 @@ __kernel void JH(__global ulong *states, __global uint *BranchBuf, __global uint
         sph_u64 h4h = 0x754D2E7F8996A371UL, h4l = 0x62E27DF70849141DUL, h5h = 0x948F2476F7957627UL, h5l = 0x6C29804757B6D587UL, h6h = 0x6C0D8EAC2D275E5CUL, h6l = 0x0F7A0557C6508451UL, h7h = 0xEA12247067D3E47BUL, h7l = 0x69D71CD313ABE389UL;
         sph_u64 tmp;
 
-        for(int i = 0; i < 3; ++i)
-        {
+		#pragma unroll 1
+        for(uint i = 0; i < 3; ++i)
+		{
             ulong input[8];
 
             const int shifted = i << 3;
-            for(int x = 0; x < 8; ++x) input[x] = (states[shifted + x]);
-            JHXOR;
-        }
-        {
-            ulong input[8];
-            input[0] = (states[24]);
-            input[1] = 0x80UL;
-            #pragma unroll 6
-            for(int x = 2; x < 8; ++x) input[x] = 0x00UL;
-            JHXOR;
-        }
-        {
-            ulong input[8];
-            for(int x = 0; x < 7; ++x) input[x] = 0x00UL;
-            input[7] = 0x4006000000000000UL;
+            for (uint x = 0; x < 8; ++x)
+			{
+                input[x] = (states[shifted + x]);
+            }
+
             JHXOR;
         }
 
-        //output[0] = h6h;
-        //output[1] = h6l;
-        //output[2] = h7h;
-        //output[3] = h7l;
+        {
+            ulong input[8] = { (states[24]), 0x80UL, 0x00UL, 0x00UL, 0x00UL, 0x00UL, 0x00UL, 0x00UL };
+            JHXOR;
+        }
+
+        {
+            ulong input[8] = { 0x00UL, 0x00UL, 0x00UL, 0x00UL, 0x00UL, 0x00UL, 0x00UL, 0x4006000000000000UL };
+            JHXOR;
+        }
 
         // Note that comparison is equivalent to subtraction - we can't just compare 8 32-bit values
         // and expect an accurate result for target > 32-bit without implementing carries
@@ -1152,9 +1147,9 @@ __kernel void JH(__global ulong *states, __global uint *BranchBuf, __global uint
             ulong outIdx = atomic_inc(output + 0xFF);
 			if(outIdx < 0xFF)
 				output[outIdx] = BranchBuf[idx] + (uint)get_global_offset(0);
-            }
         }
     }
+}
 
 #define SWAP4(x)	as_uint(as_uchar4(x).s3210)
 
@@ -1170,42 +1165,28 @@ __kernel void Blake(__global ulong *states, __global uint *BranchBuf, __global u
         unsigned int m[16];
         unsigned int v[16];
         uint h[8];
+        uint bitlen = 0;
 
         ((uint8 *)h)[0] = vload8(0U, c_IV256);
 
-        for(uint i = 0, bitlen = 0; i < 4; ++i)
-        {
-            if(i < 3)
-            {
-                ((uint16 *)m)[0] = vload16(i, (__global uint *)states);
-                for(int i = 0; i < 16; ++i) m[i] = SWAP4(m[i]);
-                bitlen += 512;
+		#pragma unroll 1
+        for (uint i = 0; i < 3; ++i)
+		{
+            ((uint16 *)m)[0] = vload16(i, (__global uint *)states);
+            for (uint x = 0; x < 16; ++x)
+			{
+                m[x] = SWAP4(m[x]);
             }
-            else
-            {
-                m[0] = SWAP4(((__global uint *)states)[48]);
-                m[1] = SWAP4(((__global uint *)states)[49]);
-                m[2] = 0x80000000U;
 
-                for(int i = 3; i < 13; ++i) m[i] = 0x00U;
-
-                m[13] = 1U;
-                m[14] = 0U;
-                m[15] = 0x640;
-                bitlen += 64;
-            }
+            bitlen += 512;
 
             ((uint16 *)v)[0].lo = ((uint8 *)h)[0];
             ((uint16 *)v)[0].hi = vload8(0U, c_u256);
 
-            //v[12] ^= (i < 3) ? (i + 1) << 9 : 1600U;
-            //v[13] ^= (i < 3) ? (i + 1) << 9 : 1600U;
-
             v[12] ^= bitlen;
             v[13] ^= bitlen;
 
-            for(int r = 0; r < 14; r++)
-            {
+            for (uint r = 0; r < 14; r++) {
                 GS(0, 4, 0x8, 0xC, 0x0);
                 GS(1, 5, 0x9, 0xD, 0x2);
                 GS(2, 6, 0xA, 0xE, 0x4);
@@ -1219,19 +1200,62 @@ __kernel void Blake(__global ulong *states, __global uint *BranchBuf, __global u
             ((uint8 *)h)[0] ^= ((uint8 *)v)[0] ^ ((uint8 *)v)[1];
         }
 
-        for(int i = 0; i < 8; ++i) h[i] = SWAP4(h[i]);
+        m[0]  = SWAP4(((__global uint *)states)[48]);
+        m[1]  = SWAP4(((__global uint *)states)[49]);
+        m[2]  = 0x80000000U;
+        m[3]  = 0x00U;
+        m[4]  = 0x00U;
+        m[5]  = 0x00U;
+        m[6]  = 0x00U;
+        m[7]  = 0x00U;
+        m[8]  = 0x00U;
+        m[9]  = 0x00U;
+        m[10] = 0x00U;
+        m[11] = 0x00U;
+        m[12] = 0x00U;
+        m[13] = 1U;
+        m[14] = 0U;
+        m[15] = 0x640;
+
+        bitlen += 64;
+
+        ((uint16 *)v)[0].lo = ((uint8 *)h)[0];
+        ((uint16 *)v)[0].hi = vload8(0U, c_u256);
+
+        v[12] ^= bitlen;
+        v[13] ^= bitlen;
+
+        for (uint r = 0; r < 14; r++) {
+            GS(0, 4, 0x8, 0xC, 0x0);
+            GS(1, 5, 0x9, 0xD, 0x2);
+            GS(2, 6, 0xA, 0xE, 0x4);
+            GS(3, 7, 0xB, 0xF, 0x6);
+            GS(0, 5, 0xA, 0xF, 0x8);
+            GS(1, 6, 0xB, 0xC, 0xA);
+            GS(2, 7, 0x8, 0xD, 0xC);
+            GS(3, 4, 0x9, 0xE, 0xE);
+        }
+
+        ((uint8 *)h)[0] ^= ((uint8 *)v)[0] ^ ((uint8 *)v)[1];
+
+        for (uint i = 0; i < 8; ++i) {
+            h[i] = SWAP4(h[i]);
+        }
 
         // Note that comparison is equivalent to subtraction - we can't just compare 8 32-bit values
         // and expect an accurate result for target > 32-bit without implementing carries
         uint2 t = (uint2)(h[6],h[7]);
-		if( as_ulong(t) <= Target)
+        if(as_ulong(t) <= Target)
 		{
             ulong outIdx = atomic_inc(output + 0xFF);
 			if(outIdx < 0xFF)
 				output[outIdx] = BranchBuf[idx] + (uint)get_global_offset(0);
-            }
         }
     }
+}
+
+#undef SWAP4
+
 
 __kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global uint *output, ulong Target, uint Threads)
 {
@@ -1242,45 +1266,51 @@ __kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global
     {
         states += 25 * BranchBuf[idx];
 
-        ulong State[8];
+        ulong State[8] = { 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0x0001000000000000UL };
+        volatile ulong H[8], M[8];
 
-        for(int i = 0; i < 7; ++i) State[i] = 0UL;
+        for (uint i = 0; i < 3; ++i) {
+            ((ulong8 *)M)[0] = vload8(i, states);
 
-        State[7] = 0x0001000000000000UL;
-
-        for(uint i = 0; i < 4; ++i)
-        {
-            volatile ulong H[8], M[8];
-
-            if(i < 3)
-            {
-                ((ulong8 *)M)[0] = vload8(i, states);
+            for (uint x = 0; x < 8; ++x) {
+                H[x] = M[x] ^ State[x];
             }
-            else
-            {
-                M[0] = states[24];
-                M[1] = 0x80UL;
-
-                for(int x = 2; x < 7; ++x) M[x] = 0UL;
-
-                M[7] = 0x0400000000000000UL;
-            }
-
-            for(int x = 0; x < 8; ++x) H[x] = M[x] ^ State[x];
 
             PERM_SMALL_P(H);
             PERM_SMALL_Q(M);
 
-            for(int x = 0; x < 8; ++x) State[x] ^= H[x] ^ M[x];
+            for (uint x = 0; x < 8; ++x)
+			{
+                State[x] ^= H[x] ^ M[x];
+            }
         }
 
-        ulong tmp[8];
+        M[0] = states[24];
+        M[1] = 0x80UL;
+        M[2] = 0UL;
+        M[3] = 0UL;
+        M[4] = 0UL;
+        M[5] = 0UL;
+        M[6] = 0UL;
+        M[7] = 0x0400000000000000UL;
 
-        for(int i = 0; i < 8; ++i) tmp[i] = State[i];
+        for (uint x = 0; x < 8; ++x) {
+            H[x] = M[x] ^ State[x];
+        }
+
+        PERM_SMALL_P(H);
+        PERM_SMALL_Q(M);
+
+        ulong tmp[8];
+        for (uint i = 0; i < 8; ++i) {
+            tmp[i] = State[i] ^= H[i] ^ M[i];
+        }
 
         PERM_SMALL_P(State);
 
-        for(int i = 0; i < 8; ++i) State[i] ^= tmp[i];
+        for (uint i = 0; i < 8; ++i) {
+            State[i] ^= tmp[i];
+        }
 
         // Note that comparison is equivalent to subtraction - we can't just compare 8 32-bit values
         // and expect an accurate result for target > 32-bit without implementing carries
@@ -1289,8 +1319,9 @@ __kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global
             ulong outIdx = atomic_inc(output + 0xFF);
 			if(outIdx < 0xFF)
 				output[outIdx] = BranchBuf[idx] + (uint)get_global_offset(0);
-            }
         }
     }
+}
 
 )==="
+	
