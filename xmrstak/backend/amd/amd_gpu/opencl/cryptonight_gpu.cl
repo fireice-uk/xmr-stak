@@ -13,8 +13,6 @@ inline float4 _mm_sub_ps(float4 a, float4 b)
 
 inline float4 _mm_mul_ps(float4 a, float4 b)
 {
-
-	//#pragma OPENCL SELECT_ROUNDING_MODE rte
 	return a * b;
 }
 
@@ -287,7 +285,11 @@ __kernel void JOIN(cn1_cn_gpu,ALGO)(__global int *lpad_in, __global int *spad, u
 )==="
 R"===(
 
-inline void generate_512(ulong idx, __local ulong* in, __global ulong* out)
+static const __constant uint skip[3] = {
+	20,22,22
+};
+
+inline void generate_512(uint idx, __local ulong* in, __global ulong* out)
 {
 	ulong hash[25];
 
@@ -295,19 +297,13 @@ inline void generate_512(ulong idx, __local ulong* in, __global ulong* out)
 	for(int i = 1; i < 25; ++i)
 		hash[i] = in[i];
 
-	keccakf1600_1(hash);
-	for(int i = 0; i < 20; ++i)
-		out[i] = hash[i];
-	out+=160/8;
-
-	keccakf1600_1(hash);
-	for(int i = 0; i < 22; ++i)
-		out[i] = hash[i];
-	out+=176/8;
-
-	keccakf1600_1(hash);
-	for(int i = 0; i < 22; ++i)
-		out[i] = hash[i];
+	for(int a = 0; a < 3;++a)
+	{
+		keccakf1600_1(hash);
+		for(int i = 0; i < skip[a]; ++i)
+			out[i] = hash[i];
+		out+=skip[a];
+	}
 }
 
 __attribute__((reqd_work_group_size(8, 8, 1)))
@@ -367,14 +363,30 @@ __kernel void JOIN(cn0_cn_gpu,ALGO)(__global ulong *input, __global int *Scratch
             }
         }
 	}
+}
+
+__attribute__((reqd_work_group_size(64, 1, 1)))
+__kernel void JOIN(cn00_cn_gpu,ALGO)(__global int *Scratchpad, __global ulong *states)
+{
+    const uint gIdx = getIdx() / 64;
+    __local ulong State[25];
+
+	states += 25 * gIdx;
+
+#if(STRIDED_INDEX==0)
+    Scratchpad = (__global int*)((__global char*)Scratchpad + MEMORY * gIdx);
+#endif
+
+	for(int i = get_local_id(0); i < 25; i+=get_local_size(0))
+		State[i] = states[i];
 
 	barrier(CLK_LOCAL_MEM_FENCE);
 
-	for(ulong i = get_local_id(1); i < MEMORY / 512; i += get_local_size(1))
+
+	for(uint i = get_local_id(0); i < MEMORY / 512; i += get_local_size(0))
 	{
 		generate_512(i, State, (__global ulong*)((__global uchar*)Scratchpad + i*512));
 	}
-
 }
 
 )==="
