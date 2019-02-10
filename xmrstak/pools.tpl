@@ -45,9 +45,12 @@ POOLCONF],
  *    cryptonight_lite_v7_xor (algorithm used by ipbc)
  *    # 2MiB scratchpad memory
  *    cryptonight
+ *    cryptonight_gpu (for Ryo's 14th of Feb fork)
  *    cryptonight_superfast
  *    cryptonight_v7
  *    cryptonight_v8
+ *    cryptonight_v8_half (used by masari and stellite)
+ *    cryptonight_v8_zelerius
  *    # 4MiB scratchpad memory
  *    cryptonight_bittube2
  *    cryptonight_haven
