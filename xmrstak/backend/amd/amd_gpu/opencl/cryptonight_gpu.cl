@@ -225,20 +225,22 @@ __kernel void JOIN(cn1_cn_gpu,ALGO)(__global int *lpad_in, __global int *spad, u
 	uint s = ((__global uint*)spad)[idxHash * 50] >> 8;
 	float4 vs = (float4)(0);
 
-	const uint b = tid / 4;
-	const uint bb = tid % 4;
-	const uint block = b * 16 + bb;
+	// tid divided
+	const uint tidd = tid / 4;
+	// tid modulo
+	const uint tidm = tid % 4;
+	const uint block = tidd * 16 + tidm;
 
 	#pragma unroll CN_UNROLL
 	for(size_t i = 0; i < ITERATIONS; i++)
 	{
 		mem_fence(CLK_LOCAL_MEM_FENCE);
-		((__local int*)smem)[tid] = ((__global int*)scratchpad_ptr(s, tid/4, lpad))[tid%4];
+		((__local int*)smem)[tid] = ((__global int*)scratchpad_ptr(s, tidd, lpad))[tidm];
 		mem_fence(CLK_LOCAL_MEM_FENCE);
 
 		{
 			single_comupte_wrap(
-				tid%4,
+				tidm,
 				*(smem + look[tid][0]),
 				*(smem + look[tid][1]),
 				*(smem + look[tid][2]),
@@ -250,10 +252,10 @@ __kernel void JOIN(cn1_cn_gpu,ALGO)(__global int *lpad_in, __global int *spad, u
 		mem_fence(CLK_LOCAL_MEM_FENCE);
 
 		int outXor = ((__local int*)smemOut)[block];
-		for(uint dd = block + 4; dd < (b + 1) * 16; dd += 4)
+		for(uint dd = block + 4; dd < (tidd + 1) * 16; dd += 4)
 			outXor ^= ((__local int*)smemOut)[dd];
 
-		((__global int*)scratchpad_ptr(s, b, lpad))[bb] = outXor ^ ((__local int*)smem)[tid];
+		((__global int*)scratchpad_ptr(s, tidd, lpad))[tidm] = outXor ^ ((__local int*)smem)[tid];
 		((__local int*)smemOut)[tid] = outXor;
 
 		float va_tmp1 = ((__local float*)smemVa)[block] + ((__local float*)smemVa)[block + 4];

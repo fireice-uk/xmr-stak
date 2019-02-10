@@ -449,19 +449,21 @@ __global__ void cryptonight_core_gpu_phase2_gpu(
 		s = ((uint32_t*)spad)[idxHash * 50] >> 8;
 	}
 
-	const uint32_t b = tid / 4;
-	const uint32_t bb = tid % 4;
-	const uint32_t block = b * 16 + bb;
+	// tid divided
+	const uint32_t tidd = tid / 4;
+	// tid modulo
+	const uint32_t tidm = tid % 4;
+	const uint32_t block = tidd * 16 + tidm;
 
 	for(size_t i = 0; i < batchsize; i++)
 	{
 		sync();
-		((int*)smem)[tid] = ((int*)scratchpad_ptr(s, b, lpad, MASK))[bb];
+		((int*)smem)[tid] = ((int*)scratchpad_ptr(s, tidd, lpad, MASK))[tidm];
 		sync();
 
 		__m128 rc = vs;
 		single_comupte_wrap(
-			bb,
+			tidm,
 			*(smem + look[tid][0]),
 			*(smem + look[tid][1]),
 			*(smem + look[tid][2]),
@@ -473,10 +475,10 @@ __global__ void cryptonight_core_gpu_phase2_gpu(
 		sync();
 
 		int outXor = ((int*)smemOut)[block];
-		for(uint32_t dd = block + 4; dd < (b + 1) * 16; dd += 4)
+		for(uint32_t dd = block + 4; dd < (tidd + 1) * 16; dd += 4)
 			outXor ^= ((int*)smemOut)[dd];
 
-		((int*)scratchpad_ptr(s, b, lpad, MASK))[bb] = outXor ^ ((int*)smem)[tid];
+		((int*)scratchpad_ptr(s, tidd, lpad, MASK))[tidm] = outXor ^ ((int*)smem)[tid];
 		((int*)smemOut)[tid] = outXor;
 
 		float va_tmp1 = ((float*)smemVa)[block] + ((float*)smemVa)[block + 4];
