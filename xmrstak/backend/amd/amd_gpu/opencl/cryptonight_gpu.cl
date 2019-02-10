@@ -225,14 +225,16 @@ __kernel void JOIN(cn1_cn_gpu,ALGO)(__global int *lpad_in, __global int *spad, u
 	uint s = ((__global uint*)spad)[idxHash * 50] >> 8;
 	float4 vs = (float4)(0);
 
+	const uint b = tid / 4;
+	const uint bb = tid % 4;
+	const uint block = b * 16 + bb;
+
 	#pragma unroll CN_UNROLL
 	for(size_t i = 0; i < ITERATIONS; i++)
 	{
 		mem_fence(CLK_LOCAL_MEM_FENCE);
 		((__local int*)smem)[tid] = ((__global int*)scratchpad_ptr(s, tid/4, lpad))[tid%4];
 		mem_fence(CLK_LOCAL_MEM_FENCE);
-
-		float4 rc = vs;
 
 		{
 			single_comupte_wrap(
@@ -241,45 +243,40 @@ __kernel void JOIN(cn1_cn_gpu,ALGO)(__global int *lpad_in, __global int *spad, u
 				*(smem + look[tid][1]),
 				*(smem + look[tid][2]),
 				*(smem + look[tid][3]),
-				ccnt[tid], rc, smemVa + tid,
+				ccnt[tid], vs, smemVa + tid,
 				smemOut + tid
 			);
 		}
 		mem_fence(CLK_LOCAL_MEM_FENCE);
 
-		int4 tmp2;
-		if(tid % 4 == 0)
-		{
-			int4 out = _mm_xor_si128(smemOut[tid], smemOut[tid + 1]);
-			int4 out2 = _mm_xor_si128(smemOut[tid + 2], smemOut[tid + 3]);
-			out = _mm_xor_si128(out, out2);
-			tmp2 = out;
-			*scratchpad_ptr(s , tid/4, lpad) = _mm_xor_si128(smem[tid/4], out);
-		}
-		mem_fence(CLK_LOCAL_MEM_FENCE);
-		if(tid % 4 == 0)
-			smemOut[tid] = tmp2;
-		mem_fence(CLK_LOCAL_MEM_FENCE);
-		int4 out2 = smemOut[0] ^ smemOut[4] ^ smemOut[8] ^ smemOut[12];
+		int outXor = ((__local int*)smemOut)[block];
+		for(uint dd = block + 4; dd < (b + 1) * 16; dd += 4)
+			outXor ^= ((__local int*)smemOut)[dd];
 
-		if(tid%2 == 0)
-			smemVa[tid] = smemVa[tid] + smemVa[tid + 1];
-		if(tid%4 == 0)
-			smemVa[tid] = smemVa[tid] + smemVa[tid + 2];
-		if(tid%8 == 0)
-			smemVa[tid] = smemVa[tid] + smemVa[tid + 4];
-		if(tid%16 == 0)
-			smemVa[tid] = smemVa[tid] + smemVa[tid + 8];
+		((__global int*)scratchpad_ptr(s, b, lpad))[bb] = outXor ^ ((__local int*)smem)[tid];
+		((__local int*)smemOut)[tid] = outXor;
+
+		float va_tmp1 = ((__local float*)smemVa)[block] + ((__local float*)smemVa)[block + 4];
+		float va_tmp2 = ((__local float*)smemVa)[block+ 8] + ((__local float*)smemVa)[block + 12];
+		((__local float*)smemVa)[tid] = va_tmp1 + va_tmp2;
+
+		mem_fence(CLK_LOCAL_MEM_FENCE);
+
+		int out2 = ((__local int*)smemOut)[tid] ^ ((__local int*)smemOut)[tid + 4 ] ^ ((__local int*)smemOut)[tid + 8] ^ ((__local int*)smemOut)[tid + 12];
+		va_tmp1 = ((__local float*)smemVa)[block] + ((__local float*)smemVa)[block + 4];
+		va_tmp2 = ((__local float*)smemVa)[block + 8] + ((__local float*)smemVa)[block + 12];
+		va_tmp1 = va_tmp1 + va_tmp2;
+		va_tmp1 = fabs(va_tmp1);
+
+		float xx = va_tmp1 * 16777216.0f;
+		int xx_int = (int)xx;
+		((__local int*)smemOut)[tid] = out2 ^ xx_int;
+		((__local float*)smemVa)[tid] = va_tmp1 / 64.0f;
+
+		mem_fence(CLK_LOCAL_MEM_FENCE);
+
 		vs = smemVa[0];
-
-		vs = fabs(vs); // take abs(va) by masking the float sign bit
-		float4 xx = _mm_mul_ps(vs, (float4)(16777216.0f));
-		// vs range 0 - 64
-		int4 tmp = convert_int4_rte(xx);
-		tmp = _mm_xor_si128(tmp, out2);
-		// vs is now between 0 and 1
-		vs = _mm_div_ps(vs, (float4)(64.0f));
-		s = tmp.x ^ tmp.y ^ tmp.z ^ tmp.w;
+		s = smemOut->x ^ smemOut->y ^ smemOut->z ^ smemOut->w;
 	}
 }
 
