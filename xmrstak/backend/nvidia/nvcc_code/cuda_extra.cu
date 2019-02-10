@@ -761,8 +761,14 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			size_t threads = 8;
 			// 8 is chosen by checking the occupancy calculator
 			size_t blockOptimal = 8 * ctx->device_mpcount;
+
+			// the following values are calculated with CUDA10 and the occupancy calculator
+			if(gpuArch == 35 || gpuArch/10 == 5 || gpuArch/10 == 6)
+				blockOptimal = 7 *  ctx->device_mpcount;
+			if(gpuArch == 37)
+				blockOptimal = 14 *  ctx->device_mpcount;
 			if(gpuArch >= 70)
-				blockOptimal = 5 *  ctx->device_mpcount;
+				blockOptimal = 6 *  ctx->device_mpcount;
 
 			if(blockOptimal * threads * hashMemSize < limitedMemory)
 			{
