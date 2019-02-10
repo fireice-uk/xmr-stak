@@ -1324,4 +1324,3 @@ __kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global
 }
 
 )==="
-	

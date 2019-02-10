@@ -626,6 +626,11 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		for(int k = 0; k < 3; k++)
 			KernelNames[k] += std::to_string(miner_algo);
 
+		if(miner_algo == cryptonight_gpu)
+		{
+			KernelNames.push_back(std::string("cn00_cn_gpu") + std::to_string(miner_algo));
+		}
+
 		for(int i = 0; i < KernelNames.size(); ++i)
 		{
 			ctx->Kernels[miner_algo][i] = clCreateKernel(ctx->Program[miner_algo], KernelNames[i].c_str(), &ret);
@@ -1056,6 +1061,24 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 		return(ERR_OCL_API);
 	}
 
+	if(miner_algo == cryptonight_gpu)
+	{
+		// we use an additional cn0 kernel to prepare the scratchpad
+		// Scratchpads
+		if((ret = clSetKernelArg(Kernels[7], 0, sizeof(cl_mem), ctx->ExtraBuffers + 0)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 0, argument 1.", err_to_str(ret));
+			return ERR_OCL_API;
+		}
+
+		// States
+		if((ret = clSetKernelArg(Kernels[7], 1, sizeof(cl_mem), ctx->ExtraBuffers + 1)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 0, argument 2.", err_to_str(ret));
+			return ERR_OCL_API;
+		}
+	}
+
 	// CN1 Kernel
 
 	// Scratchpads
@@ -1343,6 +1366,14 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, const xmrstak_algo& miner
 
 	if(miner_algo == cryptonight_gpu)
 	{
+		size_t thd = 64;
+		size_t intens = g_intensity * thd;
+		if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, Kernels[7], 1, 0, &intens, &thd, 0, NULL, NULL)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1,"Error %s when calling clEnqueueNDRangeKernel for kernel %d.", err_to_str(ret), 7);
+			return ERR_OCL_API;
+		}
+
 		size_t w_size_cn_gpu = w_size * 16;
 		size_t g_thd_cn_gpu = g_thd * 16;
 
