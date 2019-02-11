@@ -235,7 +235,7 @@ __kernel void JOIN(cn1_cn_gpu,ALGO)(__global int *lpad_in, __global int *spad, u
 	{
 		mem_fence(CLK_LOCAL_MEM_FENCE);
 		int tmp = ((__global int*)scratchpad_ptr(s, tidd, lpad))[tidm];
-		((__local int*)smem)[tid] = tmp;
+		((__local int*)(smem->out))[tid] = tmp;
 		mem_fence(CLK_LOCAL_MEM_FENCE);
 
 		{
@@ -278,7 +278,7 @@ __kernel void JOIN(cn1_cn_gpu,ALGO)(__global int *lpad_in, __global int *spad, u
 		mem_fence(CLK_LOCAL_MEM_FENCE);
 
 		vs = smem->va[0];
-		s = smem->out->x ^ smem->out->y ^ smem->out->z ^ smem->out->w;
+		s = smem->out[0].x ^ smem->out[0].y ^ smem->out[0].z ^ smem->out[0].w;
 	}
 }
 
