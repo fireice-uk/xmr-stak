@@ -33,7 +33,7 @@ public:
 		size_t hashMemSize = 0;
 		for(const auto algo : neededAlgorithms)
 		{
-			hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+			hashMemSize = std::max(hashMemSize, algo.Mem());
 		}
 		const size_t hashMemSizeKB = hashMemSize / 1024u;
 
@@ -49,7 +49,14 @@ public:
 
 		std::string conf;
 
+		// if cryptonight_gpu is used we will disable cpu mining but provide a inactive config
+		bool useCryptonight_gpu = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_gpu;
 
+		if(useCryptonight_gpu)
+		{
+			printer::inst()->print_msg(L0, "WARNING: CPU mining will be disabled because cryptonight_gpu is not suitable for CPU mining. You can uncomment the auto generated config in %s to enable CPU mining.", params::inst().configFileCPU.c_str());
+			conf += "/*\n//CPU config is disabled by default because cryptonight_gpu is not suitable for CPU mining.\n";
+		}
 		if(!detectL3Size() || L3KB_size < halfHashMemSizeKB || L3KB_size > (halfHashMemSizeKB * 2048u))
 		{
 			if(L3KB_size < halfHashMemSizeKB || L3KB_size > (halfHashMemSizeKB * 2048))
@@ -99,6 +106,9 @@ public:
 					L3KB_size -= hashMemSizeKB;
 			}
 		}
+
+		if(useCryptonight_gpu)
+			conf += "*/\n";
 
 		configTpl.replace("CPUCONFIG",conf);
 		configTpl.write(params::inst().configFileCPU);

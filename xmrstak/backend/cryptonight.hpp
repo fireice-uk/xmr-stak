@@ -2,8 +2,12 @@
 #include <stddef.h>
 #include <inttypes.h>
 #include <type_traits>
+#include <string>
+#include <array>
 
-enum xmrstak_algo
+constexpr size_t start_derived_algo_id = 1000;
+
+enum xmrstak_algo_id
 {
 	invalid_algo = 0,
 	cryptonight = 1,
@@ -19,249 +23,182 @@ enum xmrstak_algo
 	cryptonight_monero_v8 = 11,
 	cryptonight_superfast = 12,
 	cryptonight_gpu = 13,
-	cryptonight_turtle = 14
+
+	cryptonight_turtle = start_derived_algo_id,
+	cryptonight_v8_half = (start_derived_algo_id + 1),
+	cryptonight_v8_zelerius = (start_derived_algo_id + 2)
+	// please add the algorithm name to get_algo_name()
 };
 
-// define aeon settings
-constexpr size_t CRYPTONIGHT_LITE_MEMORY = 1 * 1024 * 1024;
-constexpr uint32_t CRYPTONIGHT_LITE_MASK = 0xFFFF0;
-constexpr uint32_t CRYPTONIGHT_LITE_ITER = 0x40000;
-
-constexpr size_t CRYPTONIGHT_MEMORY = 2 * 1024 * 1024;
-constexpr uint32_t CRYPTONIGHT_MASK = 0x1FFFF0;
-constexpr uint32_t CRYPTONIGHT_ITER = 0x80000;
-
-constexpr size_t CRYPTONIGHT_HEAVY_MEMORY = 4 * 1024 * 1024;
-constexpr uint32_t CRYPTONIGHT_HEAVY_MASK = 0x3FFFF0;
-constexpr uint32_t CRYPTONIGHT_HEAVY_ITER = 0x40000;
-
-constexpr uint32_t CRYPTONIGHT_GPU_MASK = 0x1FFFC0;
-constexpr uint32_t CRYPTONIGHT_GPU_ITER = 0xC000;
-
-constexpr uint32_t CRYPTONIGHT_MASARI_ITER = 0x40000;
-
-constexpr uint32_t CRYPTONIGHT_SUPERFAST_ITER = 0x20000; 
-
-constexpr size_t CRYPTONIGHT_TURTLE_MEMORY = 256 * 1024;
-constexpr uint32_t CRYPTONIGHT_TURTLE_MASK = 0x1FFF0;
-constexpr uint32_t CRYPTONIGHT_TURTLE_ITER = 0x10000;
-
-template<xmrstak_algo ALGO>
-inline constexpr size_t cn_select_memory() { return 0; }
-
-template<>
-inline constexpr size_t cn_select_memory<cryptonight>() { return CRYPTONIGHT_MEMORY; }
-
-template<>
-inline constexpr size_t cn_select_memory<cryptonight_lite>() { return CRYPTONIGHT_LITE_MEMORY; }
-
-template<>
-inline constexpr size_t cn_select_memory<cryptonight_monero>() { return CRYPTONIGHT_MEMORY; }
-
-template<>
-inline constexpr size_t cn_select_memory<cryptonight_monero_v8>() { return CRYPTONIGHT_MEMORY; }
-
-template<>
-inline constexpr size_t cn_select_memory<cryptonight_heavy>() { return CRYPTONIGHT_HEAVY_MEMORY; }
-
-template<>
-inline constexpr size_t cn_select_memory<cryptonight_aeon>() { return CRYPTONIGHT_LITE_MEMORY; }
-
-template<>
-inline constexpr size_t cn_select_memory<cryptonight_ipbc>() { return CRYPTONIGHT_LITE_MEMORY; }
-
-template<>
-inline constexpr size_t cn_select_memory<cryptonight_stellite>() { return CRYPTONIGHT_MEMORY; }
-
-template<>
-inline constexpr size_t cn_select_memory<cryptonight_masari>() { return CRYPTONIGHT_MEMORY; }
-
-template<>
-inline constexpr size_t cn_select_memory<cryptonight_haven>() { return CRYPTONIGHT_HEAVY_MEMORY; }
-
-template<>
-inline constexpr size_t cn_select_memory<cryptonight_bittube2>() { return CRYPTONIGHT_HEAVY_MEMORY; }
-
-template<>
-inline constexpr size_t cn_select_memory<cryptonight_superfast>() { return CRYPTONIGHT_MEMORY; } 
-
-template<>
-inline constexpr size_t cn_select_memory<cryptonight_gpu>() { return CRYPTONIGHT_MEMORY; } 
-
-template<>
-inline constexpr size_t cn_select_memory<cryptonight_turtle>() { return CRYPTONIGHT_TURTLE_MEMORY; }
-
-inline size_t cn_select_memory(xmrstak_algo algo)
+/** get name of the algorithm
+ *
+ * @param algo mining algorithm
+ */
+inline std::string get_algo_name(xmrstak_algo_id algo_id)
 {
-	switch(algo)
-	{
-	case cryptonight_stellite:
-	case cryptonight_monero:
-	case cryptonight_monero_v8:
-	case cryptonight_masari:
-	case cryptonight:
-	case cryptonight_superfast: 
-	case cryptonight_gpu:
-		return CRYPTONIGHT_MEMORY;
-	case cryptonight_ipbc:
-	case cryptonight_aeon:
-	case cryptonight_lite:
-		return CRYPTONIGHT_LITE_MEMORY;
-	case cryptonight_bittube2:
-	case cryptonight_haven:
-	case cryptonight_heavy:
-		return CRYPTONIGHT_HEAVY_MEMORY;
-	case cryptonight_turtle:
-		return CRYPTONIGHT_TURTLE_MEMORY;
-	default:
-		return 0;
-	}
+	static std::array<std::string, 14> base_algo_names =
+	{{
+		"invalid_algo",
+		"cryptonight",
+		"cryptonight_lite",
+		"cryptonight_v7",
+		"cryptonight_heavy",
+		"cryptonight_lite_v7",
+		"cryptonight_lite_v7_xor",
+		"cryptonight_v7_stellite",
+		"cryptonight_masari",
+		"cryptonight_haven",
+		"cryptonight_bittube2",
+		"cryptonight_v8",
+		"cryptonight_superfast",
+		"cryptonight_gpu"
+	}};
+
+	static std::array<std::string, 3> derived_algo_names =
+	{{
+		"cryptonight_turtle",
+		"cryptonight_v8_half", // used by masari and stellite
+		"cryptonight_v8_zelerius"
+	}};
+
+
+	if(algo_id < start_derived_algo_id)
+		return base_algo_names[algo_id];
+	else
+		return derived_algo_names[algo_id - start_derived_algo_id];
 }
 
-template<xmrstak_algo ALGO>
-inline constexpr uint32_t cn_select_mask() { return 0; }
-
-template<>
-inline constexpr uint32_t cn_select_mask<cryptonight>() { return CRYPTONIGHT_MASK; }
-
-template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_lite>() { return CRYPTONIGHT_LITE_MASK; }
-
-template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_monero>() { return CRYPTONIGHT_MASK; }
-
-template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_monero_v8>() { return CRYPTONIGHT_MASK; }
-
-template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_heavy>() { return CRYPTONIGHT_HEAVY_MASK; }
-
-template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_aeon>() { return CRYPTONIGHT_LITE_MASK; }
-
-template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_ipbc>() { return CRYPTONIGHT_LITE_MASK; }
-
-template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_stellite>() { return CRYPTONIGHT_MASK; }
-
-template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_masari>() { return CRYPTONIGHT_MASK; }
-
-template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_haven>() { return CRYPTONIGHT_HEAVY_MASK; }
-
-template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_bittube2>() { return CRYPTONIGHT_HEAVY_MASK; }
-
-template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_superfast>() { return CRYPTONIGHT_MASK; } 
-
-template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_gpu>() { return CRYPTONIGHT_GPU_MASK; } 
-
-template<>
-inline constexpr uint32_t cn_select_mask<cryptonight_turtle>() { return CRYPTONIGHT_TURTLE_MASK; }
-
-inline size_t cn_select_mask(xmrstak_algo algo)
+struct xmrstak_algo
 {
-	switch(algo)
+	xmrstak_algo(xmrstak_algo_id name_id) : algo_name(name_id), base_algo(name_id)
 	{
-	case cryptonight_stellite:
-	case cryptonight_monero:
-	case cryptonight_monero_v8:
-	case cryptonight_masari:
-	case cryptonight:
-	case cryptonight_superfast: 
-		return CRYPTONIGHT_MASK;
-	case cryptonight_ipbc:
-	case cryptonight_aeon:
-	case cryptonight_lite:
-		return CRYPTONIGHT_LITE_MASK;
-	case cryptonight_bittube2:
-	case cryptonight_haven:
-	case cryptonight_heavy:
-		return CRYPTONIGHT_HEAVY_MASK;
-	case cryptonight_gpu:
-		return CRYPTONIGHT_GPU_MASK;
-	case cryptonight_turtle:
-		return CRYPTONIGHT_TURTLE_MASK;
-	default:
-		return 0;
 	}
-}
+	xmrstak_algo(xmrstak_algo_id name_id, xmrstak_algo_id algorithm) : algo_name(name_id), base_algo(algorithm)
+	{
+	}
+	xmrstak_algo(xmrstak_algo_id name_id, xmrstak_algo_id algorithm, uint32_t iteration) : algo_name(name_id), base_algo(algorithm), iter(iteration)
+	{
+	}
+	xmrstak_algo(xmrstak_algo_id name_id, xmrstak_algo_id algorithm, uint32_t iteration, size_t memory) : algo_name(name_id), base_algo(algorithm), iter(iteration), mem(memory)
+	{
+	}
+	xmrstak_algo(xmrstak_algo_id name_id, xmrstak_algo_id algorithm, uint32_t iteration, size_t memory, uint32_t mem_mask) : algo_name(name_id), base_algo(algorithm), iter(iteration), mem(memory), mask(mem_mask)
+	{
+	}
 
-template<xmrstak_algo ALGO>
-inline constexpr uint32_t cn_select_iter() { return 0; }
+	/** check if the algorithm is equal to another algorithm
+	 *
+	 * we do not check the member algo_name because this is only an alias name
+	 */
+	bool operator==(const xmrstak_algo& other) const
+	{
+		return other.Id() == Id() && other.Mem() == Mem() && other.Iter() == Iter() && other.Mask() == Mask();
+	}
 
-template<>
-inline constexpr uint32_t cn_select_iter<cryptonight>() { return CRYPTONIGHT_ITER; }
+	bool operator==(const xmrstak_algo_id& id) const
+	{
+		return base_algo == id;
+	}
 
-template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_lite>() { return CRYPTONIGHT_LITE_ITER; }
+	operator xmrstak_algo_id() const
+	{
+		return base_algo;
+	}
 
-template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_monero>() { return CRYPTONIGHT_ITER; }
+	xmrstak_algo_id Id() const
+	{
+		return base_algo;
+	}
 
-template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_monero_v8>() { return CRYPTONIGHT_ITER; }
+	size_t Mem() const
+	{
+		if(base_algo == invalid_algo)
+			return 0;
+		else
+			return mem;
+	}
 
-template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_heavy>() { return CRYPTONIGHT_HEAVY_ITER; }
+	uint32_t Iter() const
+	{
+		return iter;
+	}
 
-template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_aeon>() { return CRYPTONIGHT_LITE_ITER; }
+	/** Name of the algorithm
+	 *
+	 * This name is only an alias for the native implemented base algorithm.
+	 */
+	std::string Name() const
+	{
+		return get_algo_name(algo_name);
+	}
 
-template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_ipbc>() { return CRYPTONIGHT_LITE_ITER; }
+	/** Name of the parent algorithm
+	 *
+	 * This is the real algorithm which is implemented in all POW functions.
+	 */
+	std::string BaseName() const
+	{
+		return get_algo_name(base_algo);
+	}
 
-template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_stellite>() { return CRYPTONIGHT_ITER; }
+	uint32_t Mask() const
+	{
+		// default is a 16 byte aligne mask
+		if(mask == 0)
+			return ((mem - 1u) / 16) * 16;
+		else
+			return mask;
+	}
 
-template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_masari>() { return CRYPTONIGHT_MASARI_ITER; }
+	xmrstak_algo_id algo_name = invalid_algo;
+	xmrstak_algo_id base_algo = invalid_algo;
+	uint32_t iter = 0u;
+	size_t mem = 0u;
+	uint32_t mask = 0u;
+};
 
-template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_haven>() { return CRYPTONIGHT_HEAVY_ITER; }
+// default cryptonight
+constexpr size_t CN_MEMORY = 2 * 1024 * 1024;
+constexpr uint32_t CN_ITER = 0x80000;
 
-template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_bittube2>() { return CRYPTONIGHT_HEAVY_ITER; }
+// crptonight gpu
+constexpr uint32_t CN_GPU_MASK = 0x1FFFC0;
+constexpr uint32_t CN_GPU_ITER = 0xC000;
 
-template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_superfast>() { return CRYPTONIGHT_SUPERFAST_ITER; } 
+// cryptonight turtle (the mask is not using the full 256kib scratchpad)
+constexpr uint32_t CN_TURTLE_MASK = 0x1FFF0;
 
-template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_gpu>() { return CRYPTONIGHT_GPU_ITER; } 
+constexpr uint32_t CN_ZELERIUS_ITER = 0x6000;
 
-template<>
-inline constexpr uint32_t cn_select_iter<cryptonight_turtle>() { return CRYPTONIGHT_TURTLE_ITER; }
-
-inline size_t cn_select_iter(xmrstak_algo algo)
+inline xmrstak_algo POW(xmrstak_algo_id algo_id)
 {
-	switch(algo)
-	{
-	case cryptonight_stellite:
-	case cryptonight_monero:
-	case cryptonight_monero_v8:
-	case cryptonight:
-		return CRYPTONIGHT_ITER;
-	case cryptonight_ipbc:
-	case cryptonight_aeon:
-	case cryptonight_lite:
-		return CRYPTONIGHT_LITE_ITER;
-	case cryptonight_bittube2:
-	case cryptonight_haven:
-	case cryptonight_heavy:
-		return CRYPTONIGHT_HEAVY_ITER;
-	case cryptonight_masari:
-		return CRYPTONIGHT_MASARI_ITER;
-	case cryptonight_superfast:
-		return CRYPTONIGHT_SUPERFAST_ITER;
-	case cryptonight_gpu:
-		return CRYPTONIGHT_GPU_ITER;
-	case cryptonight_turtle:
-		return CRYPTONIGHT_TURTLE_ITER;
-	default:
-		return 0;
-	}
+	static std::array<xmrstak_algo, 14> pow = {{
+		{invalid_algo, invalid_algo},
+		{cryptonight, cryptonight, CN_ITER, CN_MEMORY},
+		{cryptonight_lite, cryptonight_lite, CN_ITER/2, CN_MEMORY/2},
+		{cryptonight_monero, cryptonight_monero, CN_ITER, CN_MEMORY},
+		{cryptonight_heavy, cryptonight_heavy, CN_ITER/2, CN_MEMORY*2},
+		{cryptonight_aeon, cryptonight_aeon, CN_ITER/2, CN_MEMORY/2},
+		{cryptonight_ipbc, cryptonight_ipbc, CN_ITER/2, CN_MEMORY/2}, // equal to cryptonight_aeon with a small tweak in the miner code
+		{cryptonight_stellite, cryptonight_stellite, CN_ITER, CN_MEMORY}, //equal to cryptonight_monero but with one tiny change
+		{cryptonight_masari, cryptonight_masari, CN_ITER/2, CN_MEMORY}, //equal to cryptonight_monero but with less iterations, used by masari
+		{cryptonight_haven, cryptonight_haven, CN_ITER/2, CN_MEMORY*2}, // equal to cryptonight_heavy with a small tweak
+		{cryptonight_bittube2, cryptonight_bittube2, CN_ITER/2, CN_MEMORY*2}, // derived from cryptonight_heavy with own aes-round implementation and minor other tweaks
+		{cryptonight_monero_v8, cryptonight_monero_v8, CN_ITER, CN_MEMORY},
+		{cryptonight_superfast, cryptonight_superfast, CN_ITER/4, CN_MEMORY},
+		{cryptonight_gpu, cryptonight_gpu, CN_GPU_ITER, CN_MEMORY, CN_GPU_MASK}
+	}};
+
+	static std::array<xmrstak_algo, 3> derived_pow =
+	{{
+		{cryptonight_turtle, cryptonight_monero_v8, CN_ITER/8, CN_MEMORY/8, CN_TURTLE_MASK},
+		{cryptonight_v8_half, cryptonight_monero_v8, CN_ITER/2, CN_MEMORY},
+		{cryptonight_v8_zelerius, cryptonight_monero_v8, CN_ZELERIUS_ITER, CN_MEMORY}
+		// {cryptonight_derived}
+	}};
+
+	if(algo_id < start_derived_algo_id)
+		return pow[algo_id];
+	else
+		return derived_pow[algo_id - start_derived_algo_id];
 }

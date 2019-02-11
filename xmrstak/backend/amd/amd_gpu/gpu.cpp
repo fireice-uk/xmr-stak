@@ -300,6 +300,21 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		MaximumWorkSize /= 8;
 	}
 	printer::inst()->print_msg(L1,"Device %lu work size %lu / %lu.", ctx->deviceIdx, ctx->workSize, MaximumWorkSize);
+
+	if(ctx->workSize > MaximumWorkSize)
+	{
+		ctx->workSize = MaximumWorkSize;
+		printer::inst()->print_msg(L1,"Device %lu work size to large, reduce to %lu / %lu.", ctx->deviceIdx, ctx->workSize, MaximumWorkSize);
+	}
+
+	const std::string backendName = xmrstak::params::inst().openCLVendor;
+	if( (ctx->stridedIndex == 2 || ctx->stridedIndex == 3) && (ctx->rawIntensity % ctx->workSize) != 0)
+	{
+		size_t reduced_intensity = (ctx->rawIntensity / ctx->workSize) * ctx->workSize;
+		ctx->rawIntensity = reduced_intensity;
+		printer::inst()->print_msg(L0, "WARNING %s: gpu %d intensity is not a multiple of 'worksize', auto reduce intensity to %d", backendName.c_str(), ctx->deviceIdx, int(reduced_intensity));
+	}
+
 #if defined(CL_VERSION_2_0) && !defined(CONF_ENFORCE_OpenCL_1_2)
 	const cl_queue_properties CommandQueueProperties[] = { 0, 0, 0 };
 	ctx->CommandQueues = clCreateCommandQueueWithProperties(opencl_ctx, ctx->DeviceID, CommandQueueProperties, &ret);
@@ -330,7 +345,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	size_t scratchPadSize = 0;
 	for(const auto algo : neededAlgorithms)
 	{
-		scratchPadSize = std::max(scratchPadSize, cn_select_memory(algo));
+		scratchPadSize = std::max(scratchPadSize, algo.Mem());
 	}
 
 	size_t g_thd = ctx->rawIntensity;
@@ -405,9 +420,9 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	for(const auto miner_algo : neededAlgorithms)
 	{
 		// scratchpad size for the selected mining algorithm
-		size_t hashMemSize = cn_select_memory(miner_algo);
-		int threadMemMask = cn_select_mask(miner_algo);
-		int hashIterations = cn_select_iter(miner_algo);
+		size_t hashMemSize = miner_algo.Mem();
+		int threadMemMask = miner_algo.Mask();
+		int hashIterations = miner_algo.Iter();
 
 		size_t mem_chunk_exp = 1u << ctx->memChunk;
 		size_t strided_index = ctx->stridedIndex;
@@ -415,7 +430,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		 * this is required if the dev pool is mining monero
 		 * but the user tuned there settings for another currency
 		 */
-		if(miner_algo == cryptonight_monero_v8 || miner_algo == cryptonight_turtle)
+		if(miner_algo == cryptonight_monero_v8)
 		{
 			if(ctx->memChunk < 2)
 				mem_chunk_exp = 1u << 2;
@@ -438,7 +453,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		options += " -DMEM_CHUNK_EXPONENT=" + std::to_string(mem_chunk_exp) + "U";
 		options += " -DCOMP_MODE=" + std::to_string(needCompMode);
 		options += " -DMEMORY=" + std::to_string(hashMemSize) + "LU";
-		options += " -DALGO=" + std::to_string(miner_algo);
+		options += " -DALGO=" + std::to_string(miner_algo.Id());
 		options += " -DCN_UNROLL=" + std::to_string(ctx->unroll);
 		/* AMD driver output is something like: `1445.5 (VM)`
 		 * and is mapped to `14` only. The value is only used for a compiler
@@ -610,6 +625,11 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		// append algorithm number to kernel name
 		for(int k = 0; k < 3; k++)
 			KernelNames[k] += std::to_string(miner_algo);
+
+		if(miner_algo == cryptonight_gpu)
+		{
+			KernelNames.push_back(std::string("cn00_cn_gpu") + std::to_string(miner_algo));
+		}
 
 		for(int i = 0; i < KernelNames.size(); ++i)
 		{
@@ -984,14 +1004,6 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 		ctx[i].interleaveData->adjustThreshold = static_cast<double>(ctx[i].interleave)/100.0;
 		ctx[i].interleaveData->startAdjustThreshold = ctx[i].interleaveData->adjustThreshold;
 
-		const std::string backendName = xmrstak::params::inst().openCLVendor;
-		if( (ctx[i].stridedIndex == 2 || ctx[i].stridedIndex == 3) && (ctx[i].rawIntensity % ctx[i].workSize) != 0)
-		{
-			size_t reduced_intensity = (ctx[i].rawIntensity / ctx[i].workSize) * ctx[i].workSize;
-			ctx[i].rawIntensity = reduced_intensity;
-			printer::inst()->print_msg(L0, "WARNING %s: gpu %d intensity is not a multiple of 'worksize', auto reduce intensity to %d", backendName.c_str(), ctx[i].deviceIdx, int(reduced_intensity));
-		}
-
 		if((ret = InitOpenCLGpu(opencl_ctx, &ctx[i], source_code.c_str())) != ERR_SUCCESS)
 		{
 			return ret;
@@ -1001,10 +1013,10 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	return ERR_SUCCESS;
 }
 
-size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target, xmrstak_algo miner_algo)
+size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target, const xmrstak_algo& miner_algo)
 {
 
-	const auto & Kernels = ctx->Kernels[miner_algo];
+	const auto & Kernels = ctx->Kernels[miner_algo.Id()];
 
 	cl_int ret;
 
@@ -1047,6 +1059,24 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 0, argument 3.", err_to_str(ret));
 		return(ERR_OCL_API);
+	}
+
+	if(miner_algo == cryptonight_gpu)
+	{
+		// we use an additional cn0 kernel to prepare the scratchpad
+		// Scratchpads
+		if((ret = clSetKernelArg(Kernels[7], 0, sizeof(cl_mem), ctx->ExtraBuffers + 0)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 0, argument 1.", err_to_str(ret));
+			return ERR_OCL_API;
+		}
+
+		// States
+		if((ret = clSetKernelArg(Kernels[7], 1, sizeof(cl_mem), ctx->ExtraBuffers + 1)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1,"Error %s when calling clSetKernelArg for kernel 0, argument 2.", err_to_str(ret));
+			return ERR_OCL_API;
+		}
 	}
 
 	// CN1 Kernel
@@ -1289,9 +1319,9 @@ uint64_t interleaveAdjustDelay(GpuContext* ctx, const bool enableAutoAdjustment)
 	return t0;
 }
 
-size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo)
+size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, const xmrstak_algo& miner_algo)
 {
-	const auto & Kernels = ctx->Kernels[miner_algo];
+	const auto & Kernels = ctx->Kernels[miner_algo.Id()];
 
 	cl_int ret;
 	cl_uint zero = 0;
@@ -1336,6 +1366,14 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, xmrstak_algo miner_algo)
 
 	if(miner_algo == cryptonight_gpu)
 	{
+		size_t thd = 64;
+		size_t intens = g_intensity * thd;
+		if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, Kernels[7], 1, 0, &intens, &thd, 0, NULL, NULL)) != CL_SUCCESS)
+		{
+			printer::inst()->print_msg(L1,"Error %s when calling clEnqueueNDRangeKernel for kernel %d.", err_to_str(ret), 7);
+			return ERR_OCL_API;
+		}
+
 		size_t w_size_cn_gpu = w_size * 16;
 		size_t g_thd_cn_gpu = g_thd * 16;
 

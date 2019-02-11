@@ -11,13 +11,17 @@ namespace xmrstak
 {
 	struct coinDescription
 	{
-		xmrstak_algo algo = xmrstak_algo::invalid_algo;
-		xmrstak_algo algo_root = xmrstak_algo::invalid_algo;
+		xmrstak_algo algo = {xmrstak_algo_id::invalid_algo};
 		uint8_t fork_version = 0u;
+		xmrstak_algo algo_root = {xmrstak_algo_id::invalid_algo};
 
 		coinDescription() = default;
 
-		coinDescription(const xmrstak_algo in_algo, xmrstak_algo in_algo_root, const uint8_t in_fork_version) :
+		coinDescription(
+			const xmrstak_algo in_algo,
+			const uint8_t in_fork_version = 0,
+			xmrstak_algo in_algo_root = xmrstak_algo_id::invalid_algo
+		) :
 			algo(in_algo), algo_root(in_algo_root), fork_version(in_fork_version)
 		{}
 

@@ -32,7 +32,7 @@ public:
 
 		for(const auto algo : neededAlgorithms)
 		{
-			hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+			hashMemSize = std::max(hashMemSize, algo.Mem());
 		}
 		halfHashMemSize = hashMemSize / 2u;
 	}
@@ -52,6 +52,15 @@ public:
 			#include "./config.tpl"
 		;
 		configTpl.set( std::string(tpl) );
+
+		// if cryptonight_gpu is used we will disable cpu mining but provide a inactive config
+		bool useCryptonight_gpu = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_gpu;
+
+		if(useCryptonight_gpu)
+		{
+			printer::inst()->print_msg(L0, "WARNING: CPU mining will be disabled because cryptonight_gpu is not suitable for CPU mining. You can uncomment the auto generated config in %s to enable CPU mining.", params::inst().configFileCPU.c_str());
+			conf += "/*\n//CPU config is disabled by default because cryptonight_gpu is not suitable for CPU mining.\n";
+		}
 
 		try
 		{
@@ -84,6 +93,9 @@ public:
 			conf += std::string(", \"no_prefetch\" : true, \"asm\" : \"off\", \"affine_to_cpu\" : false },\n");
 			printer::inst()->print_msg(L0, "Autoconf FAILED: %s. Create config for a single thread.", err.what());
 		}
+
+		if(useCryptonight_gpu)
+			conf += "*/\n";
 
 		configTpl.replace("CPUCONFIG",conf);
 		configTpl.write(params::inst().configFileCPU);

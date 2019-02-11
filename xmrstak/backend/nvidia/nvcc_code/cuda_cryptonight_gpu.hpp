@@ -275,8 +275,7 @@ __forceinline__ __device__ __m128i _mm_alignr_epi8(__m128i a, const uint32_t rot
 	);
 }
 
-template<uint32_t MASK>
-__device__ __m128i* scratchpad_ptr(uint32_t idx, uint32_t n, int *lpad) { return (__m128i*)((uint8_t*)lpad + (idx & MASK) + n * 16); }
+__device__ __m128i* scratchpad_ptr(uint32_t idx, uint32_t n, int *lpad, const uint32_t MASK) { return (__m128i*)((uint8_t*)lpad + (idx & MASK) + n * 16); }
 
 
 __forceinline__ __device__  __m128 fma_break(__m128 x)
@@ -412,27 +411,27 @@ __forceinline__ __device__ void sync()
 #endif
 }
 
-template<size_t ITERATIONS, uint32_t MEMORY>
-__global__ void cryptonight_core_gpu_phase2_gpu(int32_t *spad, int *lpad_in, int bfactor, int partidx, uint32_t * roundVs, uint32_t * roundS)
+struct SharedMemChunk
 {
-	static constexpr uint32_t MASK = ((MEMORY-1) >> 6) << 6;
+	__m128i out[16];
+	__m128 va[16];
+};
+
+__global__ void cryptonight_core_gpu_phase2_gpu(
+	const uint32_t ITERATIONS,  const size_t MEMORY, const uint32_t MASK,
+	int32_t *spad, int *lpad_in, int bfactor, int partidx, uint32_t * roundVs, uint32_t * roundS)
+{
 
 	const int batchsize = (ITERATIONS * 2) >> ( 1 + bfactor );
 
-	extern __shared__ __m128i smemExtern_in[];
+	extern __shared__ SharedMemChunk smemExtern_in[];
 
 	const uint32_t chunk = threadIdx.x / 16;
 	const uint32_t numHashPerBlock = blockDim.x / 16;
 
 	int* lpad = (int*)((uint8_t*)lpad_in + size_t(MEMORY) * (blockIdx.x * numHashPerBlock + chunk));
 
-	__m128i* smem = smemExtern_in + 4 * chunk;
-
-	__m128i* smemExtern = smemExtern_in + numHashPerBlock * 4;
-	__m128i* smemOut = smemExtern + 16 * chunk;
-
-	smemExtern = smemExtern + numHashPerBlock * 16;
-	__m128* smemVa = (__m128*)smemExtern + 16 * chunk;
+	SharedMemChunk* smem = smemExtern_in + chunk;
 
 	uint32_t tid = threadIdx.x % 16;
 
@@ -450,50 +449,53 @@ __global__ void cryptonight_core_gpu_phase2_gpu(int32_t *spad, int *lpad_in, int
 		s = ((uint32_t*)spad)[idxHash * 50] >> 8;
 	}
 
-	const uint32_t b = tid / 4;
-	const uint32_t bb = tid % 4;
-	const uint32_t block = b * 16 + bb;
+	// tid divided
+	const uint32_t tidd = tid / 4;
+	// tid modulo
+	const uint32_t tidm = tid % 4;
+	const uint32_t block = tidd * 16 + tidm;
 
 	for(size_t i = 0; i < batchsize; i++)
 	{
 		sync();
-		((int*)smem)[tid] = ((int*)scratchpad_ptr<MASK>(s, b, lpad))[bb];
+		int tmp = ((int*)scratchpad_ptr(s, tidd, lpad, MASK))[tidm];
+		((int*)smem->out)[tid] = tmp;
 		sync();
 
 		__m128 rc = vs;
 		single_comupte_wrap(
-			bb,
-			*(smem + look[tid][0]),
-			*(smem + look[tid][1]),
-			*(smem + look[tid][2]),
-			*(smem + look[tid][3]),
-			ccnt[tid], rc, smemVa[tid],
-			smemOut[tid]
+			tidm,
+			*(smem->out + look[tid][0]),
+			*(smem->out + look[tid][1]),
+			*(smem->out + look[tid][2]),
+			*(smem->out + look[tid][3]),
+			ccnt[tid], rc, smem->va[tid],
+			smem->out[tid]
 		);
 
 		sync();
 
-		int outXor = ((int*)smemOut)[block];
-		for(uint32_t dd = block + 4; dd < (b + 1) * 16; dd += 4)
-			outXor ^= ((int*)smemOut)[dd];
+		int outXor = ((int*)smem->out)[block];
+		for(uint32_t dd = block + 4; dd < (tidd + 1) * 16; dd += 4)
+			outXor ^= ((int*)smem->out)[dd];
 
-		((int*)scratchpad_ptr<MASK>(s, b, lpad))[bb] = outXor ^ ((int*)smem)[tid];
-		((int*)smemOut)[tid] = outXor;
+		((int*)scratchpad_ptr(s, tidd, lpad, MASK))[tidm] = outXor ^ tmp;
+		((int*)smem->out)[tid] = outXor;
 
-		float va_tmp1 = ((float*)smemVa)[block] + ((float*)smemVa)[block + 4];
-		float va_tmp2 = ((float*)smemVa)[block+ 8] + ((float*)smemVa)[block + 12];
-		((float*)smemVa)[tid] = va_tmp1 + va_tmp2;
-
-		sync();
-
-		__m128i out2 = smemOut[0] ^ smemOut[1] ^ smemOut[2] ^ smemOut[3];
-		va_tmp1 = ((float*)smemVa)[block] + ((float*)smemVa)[block + 4];
-		va_tmp2 = ((float*)smemVa)[block + 8] + ((float*)smemVa)[block + 12];
-		((float*)smemVa)[tid] = va_tmp1 + va_tmp2;
+		float va_tmp1 = ((float*)smem->va)[block] + ((float*)smem->va)[block + 4];
+		float va_tmp2 = ((float*)smem->va)[block+ 8] + ((float*)smem->va)[block + 12];
+		((float*)smem->va)[tid] = va_tmp1 + va_tmp2;
 
 		sync();
 
-		vs = smemVa[0];
+		__m128i out2 = smem->out[0] ^ smem->out[1] ^ smem->out[2] ^ smem->out[3];
+		va_tmp1 = ((float*)smem->va)[block] + ((float*)smem->va)[block + 4];
+		va_tmp2 = ((float*)smem->va)[block + 8] + ((float*)smem->va)[block + 12];
+		((float*)smem->va)[tid] = va_tmp1 + va_tmp2;
+
+		sync();
+
+		vs = smem->va[0];
 		vs.abs(); // take abs(va) by masking the float sign bit
 		auto xx = _mm_mul_ps(vs, __m128(16777216.0f));
 		// vs range 0 - 64
@@ -539,8 +541,8 @@ __forceinline__ __device__ void generate_512(uint64_t idx, const uint64_t* in, u
 		((ulonglong2*)out)[i] = ((ulonglong2*)hash)[i];
 }
 
-template<size_t MEMORY>
-__global__ void cn_explode_gpu(int32_t *spad_in, int *lpad_in)
+
+__global__ void cn_explode_gpu(const size_t MEMORY, int32_t *spad_in, int *lpad_in)
 {
 	__shared__ uint64_t state[25];
 

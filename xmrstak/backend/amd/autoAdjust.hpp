@@ -88,7 +88,7 @@ private:
 		size_t hashMemSize = 0;
 		for(const auto algo : neededAlgorithms)
 		{
-			hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+			hashMemSize = std::max(hashMemSize, algo.Mem());
 		}
 
 		std::string conf;
@@ -131,14 +131,13 @@ private:
 			}
 
 			// check if cryptonight_monero_v8 is selected for the user or dev pool
-			bool useCryptonight_v8 = (std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_monero_v8) != neededAlgorithms.end() ||
-			                          std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_turtle) != neededAlgorithms.end());
+			bool useCryptonight_v8 = (std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_monero_v8) != neededAlgorithms.end());
 
 			// true for all cryptonight_heavy derivates since we check the user and dev pool
 			bool useCryptonight_heavy = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_heavy) != neededAlgorithms.end();
 
-			// true for all cryptonight_gpu derivates since we check the user and dev pool
-			bool useCryptonight_gpu = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_gpu) != neededAlgorithms.end();
+			// true for cryptonight_gpu as main user pool algorithm
+			bool useCryptonight_gpu = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_gpu;
 
 			// set strided index to default
 			ctx.stridedIndex = 1;
@@ -153,13 +152,14 @@ private:
 			else if(useCryptonight_heavy)
 				ctx.stridedIndex = 3;
 
-			// increase all intensity limits by two if scratchpad is only 1 MiB
-			if(hashMemSize <= CRYPTONIGHT_LITE_MEMORY)
-				maxThreads *= 2u;
+			if(hashMemSize < CN_MEMORY)
+			{
+				size_t factor = CN_MEMORY / hashMemSize;
+				// increase all intensity relative to the original scratchpad size
+				maxThreads *= factor;
+			}
 
-			// increase all intensity limits by eight for turtle (*2u shadowed from lite)
-			if (hashMemSize <= CRYPTONIGHT_TURTLE_MEMORY)
-				maxThreads *= 4u;
+			uint32_t numUnroll = 8;
 
 			if(useCryptonight_gpu)
 			{
@@ -167,6 +167,7 @@ private:
 				// @todo check again after all optimizations
 				maxThreads = ctx.computeUnits * 6 * 8;
 				ctx.stridedIndex = 0;
+				numUnroll = 1;
 			}
 
 			// keep 128MiB memory free (value is randomly chosen) from the max available memory
@@ -210,7 +211,7 @@ private:
 					conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
 						"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
 						"    \"affine_to_cpu\" : false, \"strided_index\" : " + std::to_string(ctx.stridedIndex) + ", \"mem_chunk\" : 2,\n"
-						"    \"unroll\" : 8, \"comp_mode\" : true, \"interleave\" : " + std::to_string(ctx.interleave) + "\n" +
+						"    \"unroll\" : " + std::to_string(numUnroll) + ", \"comp_mode\" : true, \"interleave\" : " + std::to_string(ctx.interleave) + "\n" +
 						"  },\n";
 				}
 			}

@@ -208,7 +208,7 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 	size_t hashMemSize = 0;
 	for(const auto algo : neededAlgorithms)
 	{
-		hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+		hashMemSize = std::max(hashMemSize, algo.Mem());
 	}
 
 	cryptonight_ctx* ptr = (cryptonight_ctx*)_mm_malloc(sizeof(cryptonight_ctx), 4096);
@@ -292,7 +292,7 @@ void cryptonight_free_ctx(cryptonight_ctx* ctx)
 	size_t hashMemSize = 0;
 	for(const auto algo : neededAlgorithms)
 	{
-		hashMemSize = std::max(hashMemSize, cn_select_memory(algo));
+		hashMemSize = std::max(hashMemSize, algo.Mem());
 	}
 
 	if(ctx->ctx_info[0] != 0)

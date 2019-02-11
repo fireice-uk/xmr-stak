@@ -239,190 +239,187 @@ bool minethd::self_test()
 	cn_hash_fun hashf;
 	cn_hash_fun hashf_multi;
 
-	if(xmrstak_algo::invalid_algo == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgoRoot() ||
-		xmrstak_algo::invalid_algo == ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
-	{
-		printer::inst()->print_msg(L0, "Root algorithm is not allowed to be invalid");
-		return false;
-	}
-
 	auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
 
 	for(const auto algo : neededAlgorithms)
 	{
-		if(algo == cryptonight)
+		if(algo == POW(cryptonight))
 		{
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight);
-			hashf("This is a test", 14, out, ctx);
+			std::cout<<algo.Name()<< " test cn" <<std::endl;
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf("This is a test", 14, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight);
-			hashf("This is a test", 14, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, algo);
+			hashf("This is a test", 14, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
-			hashf_multi = func_multi_selector<2>(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight);
-			hashf_multi("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx);
+			hashf_multi = func_multi_selector<2>(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf_multi("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
 					"\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
 
-			hashf_multi = func_multi_selector<2>(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight);
-			hashf_multi("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx);
+			hashf_multi = func_multi_selector<2>(::jconf::inst()->HaveHardwareAes(), true, algo);
+			hashf_multi("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
 					"\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
 
-			hashf_multi = func_multi_selector<3>(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight);
-			hashf_multi("This is a testThis is a testThis is a test", 14, out, ctx);
+			hashf_multi = func_multi_selector<3>(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf_multi("This is a testThis is a testThis is a test", 14, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 96) == 0;
 
-			hashf_multi = func_multi_selector<4>(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight);
-			hashf_multi("This is a testThis is a testThis is a testThis is a test", 14, out, ctx);
+			hashf_multi = func_multi_selector<4>(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf_multi("This is a testThis is a testThis is a testThis is a test", 14, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 128) == 0;
 
-			hashf_multi = func_multi_selector<5>(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight);
-			hashf_multi("This is a testThis is a testThis is a testThis is a testThis is a test", 14, out, ctx);
+			hashf_multi = func_multi_selector<5>(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf_multi("This is a testThis is a testThis is a testThis is a testThis is a test", 14, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 160) == 0;
 		}
-		else if(algo == cryptonight_lite)
+		else if(algo == POW(cryptonight_lite))
 		{
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_lite);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\x5a\x24\xa0\x29\xde\x1c\x39\x3f\x3d\x52\x7a\x2f\x9b\x39\xdc\x3d\xb3\xbc\x87\x11\x8b\x84\x52\x9b\x9f\x0\x88\x49\x25\x4b\x5\xce", 32) == 0;
 
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_lite);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\x5a\x24\xa0\x29\xde\x1c\x39\x3f\x3d\x52\x7a\x2f\x9b\x39\xdc\x3d\xb3\xbc\x87\x11\x8b\x84\x52\x9b\x9f\x0\x88\x49\x25\x4b\x5\xce", 32) == 0;
 		}
-		else if(algo == cryptonight_monero)
+		else if(algo == POW(cryptonight_monero))
 		{
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_monero);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\x1\x57\xc5\xee\x18\x8b\xbe\xc8\x97\x52\x85\xa3\x6\x4e\xe9\x20\x65\x21\x76\x72\xfd\x69\xa1\xae\xbd\x7\x66\xc7\xb5\x6e\xe0\xbd", 32) == 0;
 
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_monero);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\x1\x57\xc5\xee\x18\x8b\xbe\xc8\x97\x52\x85\xa3\x6\x4e\xe9\x20\x65\x21\x76\x72\xfd\x69\xa1\xae\xbd\x7\x66\xc7\xb5\x6e\xe0\xbd", 32) == 0;
 		}
-		else if(algo == cryptonight_monero_v8)
+		else if(algo == POW(cryptonight_monero_v8))
 		{
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_monero_v8);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = memcmp(out, "\x35\x3f\xdc\x06\x8f\xd4\x7b\x03\xc0\x4b\x94\x31\xe0\x05\xe0\x0b\x68\xc2\x16\x8a\x3c\xc7\x33\x5c\x8b\x9b\x30\x81\x56\x59\x1a\x4f", 32) == 0;
 
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_monero_v8);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult &= memcmp(out, "\x35\x3f\xdc\x06\x8f\xd4\x7b\x03\xc0\x4b\x94\x31\xe0\x05\xe0\x0b\x68\xc2\x16\x8a\x3c\xc7\x33\x5c\x8b\x9b\x30\x81\x56\x59\x1a\x4f", 32) == 0;
 		}
-		else if(algo == cryptonight_aeon)
+		else if(algo == POW(cryptonight_aeon))
 		{
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_aeon);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xfc\xa1\x7d\x44\x37\x70\x9b\x4a\x3b\xd7\x1e\xf3\xed\x21\xb4\x17\xca\x93\xdc\x86\x79\xce\x81\xdf\xd3\xcb\xdd\xa\x22\xd7\x58\xba", 32) == 0;
 
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_aeon);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xfc\xa1\x7d\x44\x37\x70\x9b\x4a\x3b\xd7\x1e\xf3\xed\x21\xb4\x17\xca\x93\xdc\x86\x79\xce\x81\xdf\xd3\xcb\xdd\xa\x22\xd7\x58\xba", 32) == 0;
 		}
-		else if(algo == cryptonight_ipbc)
+		else if(algo == POW(cryptonight_ipbc))
 		{
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_ipbc);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xbc\xe7\x48\xaf\xc5\x31\xff\xc9\x33\x7f\xcf\x51\x1b\xe3\x20\xa3\xaa\x8d\x4\x55\xf9\x14\x2a\x61\xe8\x38\xdf\xdc\x3b\x28\x3e\x0xb0", 32) == 0;
 
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_ipbc);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xbc\xe7\x48\xaf\xc5\x31\xff\xc9\x33\x7f\xcf\x51\x1b\xe3\x20\xa3\xaa\x8d\x4\x55\xf9\x14\x2a\x61\xe8\x38\xdf\xdc\x3b\x28\x3e\x0", 32) == 0;
 		}
-		else if(algo == cryptonight_stellite)
+		else if(algo == POW(cryptonight_stellite))
 		{
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_stellite);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xb9\x9d\x6c\xee\x50\x3c\x6f\xa6\x3f\x30\x69\x24\x4a\x0\x9f\xe4\xd4\x69\x3f\x68\x92\xa4\x5c\xc2\x51\xae\x46\x87\x7c\x6b\x98\xae", 32) == 0;
 
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_stellite);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xb9\x9d\x6c\xee\x50\x3c\x6f\xa6\x3f\x30\x69\x24\x4a\x0\x9f\xe4\xd4\x69\x3f\x68\x92\xa4\x5c\xc2\x51\xae\x46\x87\x7c\x6b\x98\xae", 32) == 0;
 		}
-		else if(algo == cryptonight_masari)
+		else if(algo == POW(cryptonight_masari))
 		{
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_masari);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xbf\x5f\xd\xf3\x5a\x65\x7c\x89\xb0\x41\xcf\xf0\xd\x46\x6a\xb6\x30\xf9\x77\x7f\xd9\xc6\x3\xd7\x3b\xd8\xf1\xb5\x4b\x49\xed\x28", 32) == 0;
 
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_masari);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xbf\x5f\xd\xf3\x5a\x65\x7c\x89\xb0\x41\xcf\xf0\xd\x46\x6a\xb6\x30\xf9\x77\x7f\xd9\xc6\x3\xd7\x3b\xd8\xf1\xb5\x4b\x49\xed\x28", 32) == 0;
 		}
-		else if(algo == cryptonight_heavy)
+		else if(algo == POW(cryptonight_heavy))
 		{
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_heavy);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xf9\x44\x97\xce\xb4\xf0\xd9\x84\xb\x9b\xfc\x45\x94\x74\x55\x25\xcf\x26\x83\x16\x4f\xc\xf8\x2d\xf5\xf\x25\xff\x45\x28\x2e\x85", 32) == 0;
 
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_heavy);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xf9\x44\x97\xce\xb4\xf0\xd9\x84\xb\x9b\xfc\x45\x94\x74\x55\x25\xcf\x26\x83\x16\x4f\xc\xf8\x2d\xf5\xf\x25\xff\x45\x28\x2e\x85", 32) == 0;
 		}
-		else if(algo == cryptonight_haven)
+		else if(algo == POW(cryptonight_haven))
 		{
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_haven);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xc7\xd4\x52\x9\x2b\x48\xa5\xaf\xae\x11\xaf\x40\x9a\x87\xe5\x88\xf0\x29\x35\xa3\x68\xd\xe3\x6b\xce\x43\xf6\xc8\xdf\xd3\xe3\x9", 32) == 0;
 
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_haven);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xc7\xd4\x52\x9\x2b\x48\xa5\xaf\xae\x11\xaf\x40\x9a\x87\xe5\x88\xf0\x29\x35\xa3\x68\xd\xe3\x6b\xce\x43\xf6\xc8\xdf\xd3\xe3\x9", 32) == 0;
 		}
-		else if(algo == cryptonight_bittube2)
+		else if(algo == POW(cryptonight_bittube2))
 		{
 			unsigned char out[32 * MAX_N];
 			cn_hash_fun hashf;
 
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_bittube2);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
 
-			hashf("\x38\x27\x4c\x97\xc4\x5a\x17\x2c\xfc\x97\x67\x98\x70\x42\x2e\x3a\x1a\xb0\x78\x49\x60\xc6\x05\x14\xd8\x16\x27\x14\x15\xc3\x06\xee\x3a\x3e\xd1\xa7\x7e\x31\xf6\xa8\x85\xc3\xcb\xff\x01\x02\x03\x04", 48, out, ctx);
+			hashf("\x38\x27\x4c\x97\xc4\x5a\x17\x2c\xfc\x97\x67\x98\x70\x42\x2e\x3a\x1a\xb0\x78\x49\x60\xc6\x05\x14\xd8\x16\x27\x14\x15\xc3\x06\xee\x3a\x3e\xd1\xa7\x7e\x31\xf6\xa8\x85\xc3\xcb\xff\x01\x02\x03\x04", 48, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\x18\x2c\x30\x41\x93\x1a\x14\x73\xc6\xbf\x7e\x77\xfe\xb5\x17\x9b\xa8\xbe\xa9\x68\xba\x9e\xe1\xe8\x24\x1a\x12\x7a\xac\x81\xb4\x24", 32) == 0;
 
-			hashf("\x04\x04\xb4\x94\xce\xd9\x05\x18\xe7\x25\x5d\x01\x28\x63\xde\x8a\x4d\x27\x72\xb1\xff\x78\x8c\xd0\x56\x20\x38\x98\x3e\xd6\x8c\x94\xea\x00\xfe\x43\x66\x68\x83\x00\x00\x00\x00\x18\x7c\x2e\x0f\x66\xf5\x6b\xb9\xef\x67\xed\x35\x14\x5c\x69\xd4\x69\x0d\x1f\x98\x22\x44\x01\x2b\xea\x69\x6e\xe8\xb3\x3c\x42\x12\x01", 76, out, ctx);
+			hashf("\x04\x04\xb4\x94\xce\xd9\x05\x18\xe7\x25\x5d\x01\x28\x63\xde\x8a\x4d\x27\x72\xb1\xff\x78\x8c\xd0\x56\x20\x38\x98\x3e\xd6\x8c\x94\xea\x00\xfe\x43\x66\x68\x83\x00\x00\x00\x00\x18\x7c\x2e\x0f\x66\xf5\x6b\xb9\xef\x67\xed\x35\x14\x5c\x69\xd4\x69\x0d\x1f\x98\x22\x44\x01\x2b\xea\x69\x6e\xe8\xb3\x3c\x42\x12\x01", 76, out, ctx, algo);
 			bResult = bResult && memcmp(out, "\x7f\xbe\xb9\x92\x76\x87\x5a\x3c\x43\xc2\xbe\x5a\x73\x36\x06\xb5\xdc\x79\xcc\x9c\xf3\x7c\x43\x3e\xb4\x18\x56\x17\xfb\x9b\xc9\x36", 32) == 0;
 
-			hashf("\x85\x19\xe0\x39\x17\x2b\x0d\x70\xe5\xca\x7b\x33\x83\xd6\xb3\x16\x73\x15\xa4\x22\x74\x7b\x73\xf0\x19\xcf\x95\x28\xf0\xfd\xe3\x41\xfd\x0f\x2a\x63\x03\x0b\xa6\x45\x05\x25\xcf\x6d\xe3\x18\x37\x66\x9a\xf6\xf1\xdf\x81\x31\xfa\xf5\x0a\xaa\xb8\xd3\xa7\x40\x55\x89", 64, out, ctx);
+			hashf("\x85\x19\xe0\x39\x17\x2b\x0d\x70\xe5\xca\x7b\x33\x83\xd6\xb3\x16\x73\x15\xa4\x22\x74\x7b\x73\xf0\x19\xcf\x95\x28\xf0\xfd\xe3\x41\xfd\x0f\x2a\x63\x03\x0b\xa6\x45\x05\x25\xcf\x6d\xe3\x18\x37\x66\x9a\xf6\xf1\xdf\x81\x31\xfa\xf5\x0a\xaa\xb8\xd3\xa7\x40\x55\x89", 64, out, ctx, algo);
 			bResult = bResult && memcmp(out, "\x90\xdc\x65\x53\x8d\xb0\x00\xea\xa2\x52\xcd\xd4\x1c\x17\x7a\x64\xfe\xff\x95\x36\xe7\x71\x68\x35\xd4\xcf\x5c\x73\x56\xb1\x2f\xcd", 32) == 0;
 		}
-		else if(algo == cryptonight_superfast)
+		else if(algo == POW(cryptonight_superfast))
 		{
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_superfast);
-			hashf("\x03\x05\xa0\xdb\xd6\xbf\x05\xcf\x16\xe5\x03\xf3\xa6\x6f\x78\x00\x7c\xbf\x34\x14\x43\x32\xec\xbf\xc2\x2e\xd9\x5c\x87\x00\x38\x3b\x30\x9a\xce\x19\x23\xa0\x96\x4b\x00\x00\x00\x08\xba\x93\x9a\x62\x72\x4c\x0d\x75\x81\xfc\xe5\x76\x1e\x9d\x8a\x0e\x6a\x1c\x3f\x92\x4f\xdd\x84\x93\xd1\x11\x56\x49\xc0\x5e\xb6\x01", 76, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf("\x03\x05\xa0\xdb\xd6\xbf\x05\xcf\x16\xe5\x03\xf3\xa6\x6f\x78\x00\x7c\xbf\x34\x14\x43\x32\xec\xbf\xc2\x2e\xd9\x5c\x87\x00\x38\x3b\x30\x9a\xce\x19\x23\xa0\x96\x4b\x00\x00\x00\x08\xba\x93\x9a\x62\x72\x4c\x0d\x75\x81\xfc\xe5\x76\x1e\x9d\x8a\x0e\x6a\x1c\x3f\x92\x4f\xdd\x84\x93\xd1\x11\x56\x49\xc0\x5e\xb6\x01", 76, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\x40\x86\x5a\xa8\x87\x41\xec\x1d\xcc\xbd\x2b\xc6\xff\x36\xb9\x4d\x54\x71\x58\xdb\x94\x69\x8e\x3c\xa0\x3d\xe4\x81\x9a\x65\x9f\xef", 32) == 0;
 		}
-		else if(algo == cryptonight_gpu)
+		else if(algo == POW(cryptonight_gpu))
 		{
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_gpu);
-			hashf("", 0, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf("", 0, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\x55\x5e\x0a\xee\x78\x79\x31\x6d\x7d\xef\xf7\x72\x97\x3c\xb9\x11\x8e\x38\x95\x70\x9d\xb2\x54\x7a\xc0\x72\xd5\xb9\x13\x10\x01\xd8", 32) == 0;
 
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_gpu);
-			hashf("", 0, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, algo);
+			hashf("", 0, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\x55\x5e\x0a\xee\x78\x79\x31\x6d\x7d\xef\xf7\x72\x97\x3c\xb9\x11\x8e\x38\x95\x70\x9d\xb2\x54\x7a\xc0\x72\xd5\xb9\x13\x10\x01\xd8", 32) == 0;
 		}
-		else if (algo == cryptonight_turtle)
+		else if (algo == POW(cryptonight_turtle))
 		{
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, xmrstak_algo::cryptonight_turtle);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult && memcmp(out, "\x30\x5f\x66\xfe\xbb\xf3\x60\x0e\xda\xbb\x60\xf7\xf1\xc9\xb9\x0a\x3a\xe8\x5a\x31\xd4\x76\xca\x38\x1d\x56\x18\xa6\xc6\x27\x60\xd7", 32) == 0;
-		
-			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, xmrstak_algo::cryptonight_turtle);
-			hashf("This is a test This is a test This is a test", 44, out, ctx);
+
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult && memcmp(out, "\x30\x5f\x66\xfe\xbb\xf3\x60\x0e\xda\xbb\x60\xf7\xf1\xc9\xb9\x0a\x3a\xe8\x5a\x31\xd4\x76\xca\x38\x1d\x56\x18\xa6\xc6\x27\x60\xd7", 32) == 0;
 		}
+		else
+			printer::inst()->print_msg(L0,
+				"Cryptonight hash self-test NOT defined for POW %s", algo.Name().c_str());
 
 		if(!bResult)
 			printer::inst()->print_msg(L0,
@@ -504,7 +501,7 @@ static std::string getAsmName(const uint32_t num_hashes)
 }
 
 template<size_t N>
-minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetch, xmrstak_algo algo, const std::string& asm_version_str)
+minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo, const std::string& asm_version_str)
 {
 	static_assert(N >= 1, "number of threads must be >= 1" );
 
@@ -513,7 +510,7 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 	// function as a two digit binary
 
 	uint8_t algv;
-	switch(algo)
+	switch(algo.Id())
 	{
 	case cryptonight:
 		algv = 2;
@@ -553,9 +550,6 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		break;
 	case cryptonight_gpu:
 		algv = 12;
-		break;
-	case cryptonight_turtle:
-		algv = 13;
 		break;
 	default:
 		algv = 2;
@@ -622,16 +616,11 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		Cryptonight_hash<N>::template hash<cryptonight_superfast, true, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_superfast, false, true>,
 		Cryptonight_hash<N>::template hash<cryptonight_superfast, true, true>,
-		
+
 		Cryptonight_hash_gpu::template hash<cryptonight_gpu, false, false>,
 		Cryptonight_hash_gpu::template hash<cryptonight_gpu, true, false>,
 		Cryptonight_hash_gpu::template hash<cryptonight_gpu, false, true>,
-		Cryptonight_hash_gpu::template hash<cryptonight_gpu, true, true>,
-
-		Cryptonight_hash<N>::template hash<cryptonight_turtle, false, false>,
-		Cryptonight_hash<N>::template hash<cryptonight_turtle, true, false>,
-		Cryptonight_hash<N>::template hash<cryptonight_turtle, false, true>,
-		Cryptonight_hash<N>::template hash<cryptonight_turtle, true, true>
+		Cryptonight_hash_gpu::template hash<cryptonight_gpu, true, true>
 	};
 
 	std::bitset<2> digit;
@@ -642,7 +631,7 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 
 
 	// check for asm optimized version for cryptonight_v8
-	if(N <= 2 && algo == cryptonight_monero_v8 && bHaveAes)
+	if(N <= 2 && algo == cryptonight_monero_v8 && bHaveAes && algo.Mem() == CN_MEMORY && algo.Iter() == CN_ITER)
 	{
 		std::string selected_asm = asm_version_str;
 		if(selected_asm == "auto")
@@ -671,39 +660,10 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		}
 	}
 
-	if (N <= 2 && (algo == cryptonight_turtle) && bHaveAes)
-	{
-		std::string selected_asm = asm_version_str;
-		if (selected_asm == "auto")
-			selected_asm = cpu::getAsmName(N);
-
-		if (selected_asm != "off")
-		{
-			if (selected_asm == "intel_avx" && asm_version_str != "auto")
-			{
-				// Intel Ivy Bridge (Xeon v2, Core i7/i5/i3 3xxx, Pentium G2xxx, Celeron G1xxx)
-				if (N == 1)
-					selected_function = Cryptonight_hash_asm<1u, 0u>::template hash<cryptonight_turtle>;
-				else if (N == 2)
-					selected_function = Cryptonight_hash_asm<2u, 0u>::template hash<cryptonight_turtle>;
-			}
-			// supports only 1 thread per hash
-			if (N == 1 && selected_asm == "amd_avx")
-			{
-				// AMD Ryzen (1xxx and 2xxx series)
-				selected_function = Cryptonight_hash_asm<1u, 1u>::template hash<cryptonight_turtle>;
-			}
-			if (asm_version_str == "auto" && (selected_asm != "intel_avx" || selected_asm != "amd_avx"))
-				printer::inst()->print_msg(L3, "Switch to assembler version for '%s' cpu's", selected_asm.c_str());
-			else if (selected_asm != "intel_avx" && selected_asm != "amd_avx") // unknown asm type
-				printer::inst()->print_msg(L1, "Assembler '%s' unknown, fallback to non asm version of cryptonight_v8", selected_asm.c_str());
-		}
-	}
-
 	return selected_function;
 }
 
-minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, xmrstak_algo algo)
+minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo)
 {
 	return func_multi_selector<1>(bHaveAes, bNoPrefetch, algo);
 }
@@ -853,7 +813,7 @@ void minethd::multiway_work_main()
 			for (size_t i = 0; i < N; i++)
 				*piNonce[i] = iNonce++;
 
-			hash_fun_multi(bWorkBlob, oWork.iWorkSize, bHashOut, ctx);
+			hash_fun_multi(bWorkBlob, oWork.iWorkSize, bHashOut, ctx, miner_algo);
 
 			for (size_t i = 0; i < N; i++)
 			{
