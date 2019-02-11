@@ -193,6 +193,12 @@ static const __constant float ccnt[16] = {
 	1.4609375f
 };
 
+struct SharedMemChunk
+{
+	int4 out[16];
+	float4 va[16];
+};
+
 __attribute__((reqd_work_group_size(WORKSIZE * 16, 1, 1)))
 __kernel void JOIN(cn1_cn_gpu,ALGO)(__global int *lpad_in, __global int *spad, uint numThreads)
 {
@@ -209,11 +215,8 @@ __kernel void JOIN(cn1_cn_gpu,ALGO)(__global int *lpad_in, __global int *spad, u
 	__global int* lpad = (__global int*)((__global char*)lpad_in + MEMORY * (gIdx/16));
 #endif
 
-	__local int4 smemOutShared[16 * WORKSIZE];
-	__local float4 smemVaShared[16 * WORKSIZE];
-
-	__local int4* smemOut = smemOutShared + 16 * chunk;
-	__local float4* smemVa = smemVaShared + 16 * chunk;
+	__local struct SharedMemChunk smem_in[WORKSIZE];
+	__local struct SharedMemChunk* smem = smem_in + chunk;
 
 	uint tid = get_local_id(0) % 16;
 
@@ -232,50 +235,50 @@ __kernel void JOIN(cn1_cn_gpu,ALGO)(__global int *lpad_in, __global int *spad, u
 	{
 		mem_fence(CLK_LOCAL_MEM_FENCE);
 		int tmp = ((__global int*)scratchpad_ptr(s, tidd, lpad))[tidm];
-		((__local int*)smemOut)[tid] = tmp;
+		((__local int*)(smem->out))[tid] = tmp;
 		mem_fence(CLK_LOCAL_MEM_FENCE);
 
 		{
 			single_comupte_wrap(
 				tidm,
-				*(smemOut + look[tid][0]),
-				*(smemOut + look[tid][1]),
-				*(smemOut + look[tid][2]),
-				*(smemOut + look[tid][3]),
-				ccnt[tid], vs, smemVa + tid,
-				smemOut + tid
+				*(smem->out + look[tid][0]),
+				*(smem->out + look[tid][1]),
+				*(smem->out + look[tid][2]),
+				*(smem->out + look[tid][3]),
+				ccnt[tid], vs, smem->va + tid,
+				smem->out + tid
 			);
 		}
 		mem_fence(CLK_LOCAL_MEM_FENCE);
 
-		int outXor = ((__local int*)smemOut)[block];
+		int outXor = ((__local int*)smem->out)[block];
 		for(uint dd = block + 4; dd < (tidd + 1) * 16; dd += 4)
-			outXor ^= ((__local int*)smemOut)[dd];
+			outXor ^= ((__local int*)smem->out)[dd];
 
 		((__global int*)scratchpad_ptr(s, tidd, lpad))[tidm] = outXor ^ tmp;
-		((__local int*)smemOut)[tid] = outXor;
+		((__local int*)smem->out)[tid] = outXor;
 
-		float va_tmp1 = ((__local float*)smemVa)[block] + ((__local float*)smemVa)[block + 4];
-		float va_tmp2 = ((__local float*)smemVa)[block+ 8] + ((__local float*)smemVa)[block + 12];
-		((__local float*)smemVa)[tid] = va_tmp1 + va_tmp2;
+		float va_tmp1 = ((__local float*)smem->va)[block] + ((__local float*)smem->va)[block + 4];
+		float va_tmp2 = ((__local float*)smem->va)[block+ 8] + ((__local float*)smem->va)[block + 12];
+		((__local float*)smem->va)[tid] = va_tmp1 + va_tmp2;
 
 		mem_fence(CLK_LOCAL_MEM_FENCE);
 
-		int out2 = ((__local int*)smemOut)[tid] ^ ((__local int*)smemOut)[tid + 4 ] ^ ((__local int*)smemOut)[tid + 8] ^ ((__local int*)smemOut)[tid + 12];
-		va_tmp1 = ((__local float*)smemVa)[block] + ((__local float*)smemVa)[block + 4];
-		va_tmp2 = ((__local float*)smemVa)[block + 8] + ((__local float*)smemVa)[block + 12];
+		int out2 = ((__local int*)smem->out)[tid] ^ ((__local int*)smem->out)[tid + 4 ] ^ ((__local int*)smem->out)[tid + 8] ^ ((__local int*)smem->out)[tid + 12];
+		va_tmp1 = ((__local float*)smem->va)[block] + ((__local float*)smem->va)[block + 4];
+		va_tmp2 = ((__local float*)smem->va)[block + 8] + ((__local float*)smem->va)[block + 12];
 		va_tmp1 = va_tmp1 + va_tmp2;
 		va_tmp1 = fabs(va_tmp1);
 
 		float xx = va_tmp1 * 16777216.0f;
 		int xx_int = (int)xx;
-		((__local int*)smemOut)[tid] = out2 ^ xx_int;
-		((__local float*)smemVa)[tid] = va_tmp1 / 64.0f;
+		((__local int*)smem->out)[tid] = out2 ^ xx_int;
+		((__local float*)smem->va)[tid] = va_tmp1 / 64.0f;
 
 		mem_fence(CLK_LOCAL_MEM_FENCE);
 
-		vs = smemVa[0];
-		s = smemOut->x ^ smemOut->y ^ smemOut->z ^ smemOut->w;
+		vs = smem->va[0];
+		s = smem->out[0].x ^ smem->out[0].y ^ smem->out[0].z ^ smem->out[0].w;
 	}
 }
 
