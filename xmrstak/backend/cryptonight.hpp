@@ -168,7 +168,7 @@ constexpr uint32_t CN_GPU_ITER = 0xC000;
 // cryptonight turtle (the mask is not using the full 256kib scratchpad)
 constexpr uint32_t CN_TURTLE_MASK = 0x1FFF0;
 
-constexpr uint32_t CN_ZELERIUS_ITER = 0x6000;
+constexpr uint32_t CN_ZELERIUS_ITER = 0x60000;
 
 inline xmrstak_algo POW(xmrstak_algo_id algo_id)
 {
