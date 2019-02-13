@@ -407,6 +407,16 @@ bool minethd::self_test()
 			hashf("", 0, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\x55\x5e\x0a\xee\x78\x79\x31\x6d\x7d\xef\xf7\x72\x97\x3c\xb9\x11\x8e\x38\x95\x70\x9d\xb2\x54\x7a\xc0\x72\xd5\xb9\x13\x10\x01\xd8", 32) == 0;
 		}
+		else if(algo == POW(cryptonight_conceal))
+		{
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf("", 0, out, ctx, algo);
+			bResult = bResult &&  memcmp(out, "\xb5\x54\x4b\x58\x16\x70\x26\x47\x63\x47\xe4\x1f\xb6\x5e\x57\xc9\x7c\xa5\x93\xfe\x0e\xb1\x0f\xb9\x2f\xa7\x3e\x5b\xae\xef\x79\x8c", 32) == 0;
+
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, algo);
+			hashf("", 0, out, ctx, algo);
+			bResult = bResult &&  memcmp(out, "\xb5\x54\x4b\x58\x16\x70\x26\x47\x63\x47\xe4\x1f\xb6\x5e\x57\xc9\x7c\xa5\x93\xfe\x0e\xb1\x0f\xb9\x2f\xa7\x3e\x5b\xae\xef\x79\x8c", 32) == 0;
+		}
 		else if (algo == POW(cryptonight_turtle))
 		{
 			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
@@ -551,6 +561,9 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 	case cryptonight_gpu:
 		algv = 12;
 		break;
+	case cryptonight_conceal:
+		algv = 13;
+		break;
 	default:
 		algv = 2;
 		break;
@@ -620,7 +633,12 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		Cryptonight_hash_gpu::template hash<cryptonight_gpu, false, false>,
 		Cryptonight_hash_gpu::template hash<cryptonight_gpu, true, false>,
 		Cryptonight_hash_gpu::template hash<cryptonight_gpu, false, true>,
-		Cryptonight_hash_gpu::template hash<cryptonight_gpu, true, true>
+		Cryptonight_hash_gpu::template hash<cryptonight_gpu, true, true>,
+
+		Cryptonight_hash<N>::template hash<cryptonight_conceal, false, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_conceal, true, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_conceal, false, true>,
+		Cryptonight_hash<N>::template hash<cryptonight_conceal, true, true>
 	};
 
 	std::bitset<2> digit;

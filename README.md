@@ -41,6 +41,7 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 - [Aeon](http://www.aeon.cash)
 - [BBSCoin](https://www.bbscoin.xyz)
 - [BitTube](https://coin.bit.tube/)
+- [Conceal](https://conceal.network)
 - [Graft](https://www.graft.network)
 - [Haven](https://havenprotocol.com)
 - [Lethean](https://lethean.io)
