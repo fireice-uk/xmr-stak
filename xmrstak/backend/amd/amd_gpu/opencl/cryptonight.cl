@@ -1197,7 +1197,6 @@ __kernel void JH(__global ulong *states, __global uint *BranchBuf, __global uint
 		sph_u64 h4h = 0x754D2E7F8996A371UL, h4l = 0x62E27DF70849141DUL, h5h = 0x948F2476F7957627UL, h5l = 0x6C29804757B6D587UL, h6h = 0x6C0D8EAC2D275E5CUL, h6l = 0x0F7A0557C6508451UL, h7h = 0xEA12247067D3E47BUL, h7l = 0x69D71CD313ABE389UL;
 		sph_u64 tmp;
 
-		#pragma unroll 1
 		for(uint i = 0; i < 3; ++i)
 		{
 			ulong input[8];
@@ -1250,7 +1249,6 @@ __kernel void Blake(__global ulong *states, __global uint *BranchBuf, __global u
 
 		((uint8 *)h)[0] = vload8(0U, c_IV256);
 
-		#pragma unroll 1
 		for (uint i = 0; i < 3; ++i)
 		{
 			((uint16 *)m)[0] = vload16(i, (__global uint *)states);
@@ -1348,7 +1346,11 @@ __kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global
 		states += 25 * BranchBuf[idx];
 
 		ulong State[8] = { 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0x0001000000000000UL };
-		volatile ulong H[8], M[8];
+#if defined(__clang__) && !defined(__NV_CL_C_VERSION)
+		// on ROCM we need volatile for AMD RX5xx cards to avoid invalid shares
+		volatile
+#endif
+		ulong H[8], M[8];
 
 		for (uint i = 0; i < 3; ++i) {
 			((ulong8 *)M)[0] = vload8(i, states);
