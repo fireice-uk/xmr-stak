@@ -23,6 +23,7 @@ enum xmrstak_algo_id
 	cryptonight_monero_v8 = 11,
 	cryptonight_superfast = 12,
 	cryptonight_gpu = 13,
+	cryptonight_conceal = 14,
 
 	cryptonight_turtle = start_derived_algo_id,
 	cryptonight_v8_half = (start_derived_algo_id + 1),
@@ -36,7 +37,7 @@ enum xmrstak_algo_id
  */
 inline std::string get_algo_name(xmrstak_algo_id algo_id)
 {
-	static std::array<std::string, 14> base_algo_names =
+	static std::array<std::string, 15> base_algo_names =
 	{{
 		"invalid_algo",
 		"cryptonight",
@@ -51,7 +52,8 @@ inline std::string get_algo_name(xmrstak_algo_id algo_id)
 		"cryptonight_bittube2",
 		"cryptonight_v8",
 		"cryptonight_superfast",
-		"cryptonight_gpu"
+		"cryptonight_gpu",
+		"cryptonight_conceal"
 	}};
 
 	static std::array<std::string, 3> derived_algo_names =
@@ -168,11 +170,11 @@ constexpr uint32_t CN_GPU_ITER = 0xC000;
 // cryptonight turtle (the mask is not using the full 256kib scratchpad)
 constexpr uint32_t CN_TURTLE_MASK = 0x1FFF0;
 
-constexpr uint32_t CN_ZELERIUS_ITER = 0x6000;
+constexpr uint32_t CN_ZELERIUS_ITER = 0x60000;
 
 inline xmrstak_algo POW(xmrstak_algo_id algo_id)
 {
-	static std::array<xmrstak_algo, 14> pow = {{
+	static std::array<xmrstak_algo, 15> pow = {{
 		{invalid_algo, invalid_algo},
 		{cryptonight, cryptonight, CN_ITER, CN_MEMORY},
 		{cryptonight_lite, cryptonight_lite, CN_ITER/2, CN_MEMORY/2},
@@ -186,7 +188,8 @@ inline xmrstak_algo POW(xmrstak_algo_id algo_id)
 		{cryptonight_bittube2, cryptonight_bittube2, CN_ITER/2, CN_MEMORY*2}, // derived from cryptonight_heavy with own aes-round implementation and minor other tweaks
 		{cryptonight_monero_v8, cryptonight_monero_v8, CN_ITER, CN_MEMORY},
 		{cryptonight_superfast, cryptonight_superfast, CN_ITER/4, CN_MEMORY},
-		{cryptonight_gpu, cryptonight_gpu, CN_GPU_ITER, CN_MEMORY, CN_GPU_MASK}
+		{cryptonight_gpu, cryptonight_gpu, CN_GPU_ITER, CN_MEMORY, CN_GPU_MASK},
+		{cryptonight_conceal, cryptonight_conceal, CN_ITER/2, CN_MEMORY}
 	}};
 
 	static std::array<xmrstak_algo, 3> derived_pow =
