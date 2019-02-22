@@ -427,6 +427,16 @@ bool minethd::self_test()
 			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult && memcmp(out, "\x30\x5f\x66\xfe\xbb\xf3\x60\x0e\xda\xbb\x60\xf7\xf1\xc9\xb9\x0a\x3a\xe8\x5a\x31\xd4\x76\xca\x38\x1d\x56\x18\xa6\xc6\x27\x60\xd7", 32) == 0;
 		}
+		else if(algo == POW(cryptonight_v8_reversewaltz))
+		{
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
+			bResult = memcmp(out, "\x32\xf7\x36\xec\x1d\x2f\x3f\xc5\x4c\x49\xbe\xb8\xa0\x47\x6c\xbf\xdd\x14\xc3\x51\xb9\xc6\xd7\x2c\x6f\x9f\xfc\xb5\x87\x5b\xe6\xb3", 32) == 0;
+
+			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, algo);
+			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
+			bResult &= memcmp(out, "\x32\xf7\x36\xec\x1d\x2f\x3f\xc5\x4c\x49\xbe\xb8\xa0\x47\x6c\xbf\xdd\x14\xc3\x51\xb9\xc6\xd7\x2c\x6f\x9f\xfc\xb5\x87\x5b\xe6\xb3", 32) == 0;
+		}
 		else
 			printer::inst()->print_msg(L0,
 				"Cryptonight hash self-test NOT defined for POW %s", algo.Name().c_str());
@@ -564,6 +574,9 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 	case cryptonight_conceal:
 		algv = 13;
 		break;
+	case cryptonight_v8_reversewaltz:
+		algv = 14;
+		break;
 	default:
 		algv = 2;
 		break;
@@ -638,7 +651,12 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		Cryptonight_hash<N>::template hash<cryptonight_conceal, false, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_conceal, true, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_conceal, false, true>,
-		Cryptonight_hash<N>::template hash<cryptonight_conceal, true, true>
+		Cryptonight_hash<N>::template hash<cryptonight_conceal, true, true>,
+
+		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, false, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, true, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, false, true>,
+		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, true, true>
 	};
 
 	std::bitset<2> digit;
@@ -646,7 +664,6 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 	digit.set(1, !bNoPrefetch);
 
 	auto selected_function = func_table[ algv << 2 | digit.to_ulong() ];
-
 
 	// check for asm optimized version for cryptonight_v8
 	if(N <= 2 && algo == cryptonight_monero_v8 && bHaveAes && algo.Mem() == CN_MEMORY && algo.Iter() == CN_ITER)

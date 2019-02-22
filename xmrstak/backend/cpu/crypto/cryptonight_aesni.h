@@ -626,6 +626,16 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x10], _mm_add_epi64(chunk3, bx1)); \
 		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x20], _mm_add_epi64(chunk1, bx0)); \
 		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x30], _mm_add_epi64(chunk2, ax0)); \
+	} \
+	if(ALGO == cryptonight_v8_reversewaltz) \
+	{ \
+		const uint64_t idx1 = idx0 & MASK; \
+		const __m128i chunk3 = _mm_load_si128((__m128i *)&l0[idx1 ^ 0x10]); \
+		const __m128i chunk2 = _mm_load_si128((__m128i *)&l0[idx1 ^ 0x20]); \
+		const __m128i chunk1 = _mm_load_si128((__m128i *)&l0[idx1 ^ 0x30]); \
+		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x10], _mm_add_epi64(chunk3, bx1)); \
+		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x20], _mm_add_epi64(chunk1, bx0)); \
+		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x30], _mm_add_epi64(chunk2, ax0)); \
 	}
 
 #define CN_MONERO_V8_SHUFFLE_1(n, l0, idx0, ax0, bx0, bx1, lo, hi) \
@@ -641,10 +651,22 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x10], _mm_add_epi64(chunk3, bx1)); \
 		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x20], _mm_add_epi64(chunk1, bx0)); \
 		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x30], _mm_add_epi64(chunk2, ax0)); \
+	} \
+	if(ALGO == cryptonight_v8_reversewaltz) \
+	{ \
+		const uint64_t idx1 = idx0 & MASK; \
+		const __m128i chunk3 = _mm_xor_si128(_mm_load_si128((__m128i *)&l0[idx1 ^ 0x10]), _mm_set_epi64x(lo, hi)); \
+		const __m128i chunk2 = _mm_load_si128((__m128i *)&l0[idx1 ^ 0x20]); \
+		hi ^= ((uint64_t*)&chunk2)[0]; \
+		lo ^= ((uint64_t*)&chunk2)[1]; \
+		const __m128i chunk1 = _mm_load_si128((__m128i *)&l0[idx1 ^ 0x30]); \
+		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x10], _mm_add_epi64(chunk3, bx1)); \
+		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x20], _mm_add_epi64(chunk1, bx0)); \
+		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x30], _mm_add_epi64(chunk2, ax0)); \
 	}
 
 #define CN_MONERO_V8_DIV(n, cx, sqrt_result, division_result_xmm, cl) \
-	if(ALGO == cryptonight_monero_v8) \
+	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz) \
 	{ \
 		uint64_t sqrt_result_tmp; \
 		assign(sqrt_result_tmp, sqrt_result); \
@@ -705,7 +727,7 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 		idx0 = h0[0] ^ h0[4]; \
 		ax0 = _mm_set_epi64x(h0[1] ^ h0[5], idx0); \
 		bx0 = _mm_set_epi64x(h0[3] ^ h0[7], h0[2] ^ h0[6]); \
-		if(ALGO == cryptonight_monero_v8) \
+		if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz) \
 		{ \
 			bx1 = _mm_set_epi64x(h0[9] ^ h0[11], h0[8] ^ h0[10]); \
 			division_result_xmm = _mm_cvtsi64_si128(h0[12]); \
@@ -744,7 +766,7 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 	ptr0 = (__m128i *)&l0[idx0 & MASK]; \
 	if(PREFETCH) \
 		_mm_prefetch((const char*)ptr0, _MM_HINT_T0); \
-	if(ALGO != cryptonight_monero_v8) \
+	if(ALGO != cryptonight_monero_v8 && ALGO != cryptonight_v8_reversewaltz) \
 		bx0 = cx
 
 #define CN_STEP3(n, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm) \
@@ -761,7 +783,7 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 		ah0 += lo; \
 		al0 += hi; \
 	} \
-	if(ALGO == cryptonight_monero_v8) \
+	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz) \
 	{ \
 		bx1 = bx0; \
 		bx0 = cx; \

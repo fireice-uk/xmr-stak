@@ -107,8 +107,9 @@ xmrstak::coin_selection coins[] = {
 	{ "cryptonight_v7_stellite", {POW(cryptonight_stellite)},  {POW(cryptonight_monero_v8)}, nullptr },
 	{ "cryptonight_gpu",         {POW(cryptonight_gpu)},       {POW(cryptonight_gpu)},       "pool.ryo-currency.com:3333" },
 	{ "cryptonight_conceal",     {POW(cryptonight_conceal)},   {POW(cryptonight_monero_v8)}, nullptr },
+	{ "cryptonight_v8_reversewaltz",{POW(cryptonight_v8_reversewaltz)}, {POW(cryptonight_monero_v8)}, "mining.grftpool.com:3333" },
 	{ "freehaven",               {POW(cryptonight_superfast)}, {POW(cryptonight_monero_v8)}, nullptr },
-	{ "graft",                   {POW(cryptonight_monero_v8)}, {POW(cryptonight_monero_v8)}, nullptr },
+	{ "graft",                   {POW(cryptonight_v8_reversewaltz)}, {POW(cryptonight_monero_v8)}, "mining.grftpool.com:3333" },
 	{ "haven",                   {POW(cryptonight_haven)},     {POW(cryptonight_heavy)},     nullptr },
 	{ "lethean",                 {POW(cryptonight_monero)},    {POW(cryptonight_monero_v8)}, nullptr },
 	{ "masari",                  {POW(cryptonight_v8_half)},   {POW(cryptonight_monero_v8)}, nullptr },
@@ -118,7 +119,8 @@ xmrstak::coin_selection coins[] = {
 	{ "stellite",                {POW(cryptonight_v8_half)},   {POW(cryptonight_monero_v8)}, nullptr },
 	{ "turtlecoin",              {POW(cryptonight_turtle), 6u,POW(cryptonight_aeon)}, {POW(cryptonight_aeon)}, nullptr },
 	{ "plenteum",			     {POW(cryptonight_turtle)},    {POW(cryptonight_turtle)},    nullptr },
-	{ "zelerius",                {POW(cryptonight_v8_zelerius), 7, POW(cryptonight_monero_v8)},   {POW(cryptonight_monero_v8)}, nullptr }
+	{ "zelerius",                {POW(cryptonight_v8_zelerius), 7, POW(cryptonight_monero_v8)},   {POW(cryptonight_monero_v8)}, nullptr },
+	{ "reverse_waltz",           {POW(cryptonight_v8_reversewaltz)}, {POW(cryptonight_monero_v8)}, "mining.grftpool.com:3333" }
 };
 
 constexpr size_t coin_algo_size = (sizeof(coins)/sizeof(coins[0]));

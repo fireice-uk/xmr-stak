@@ -51,6 +51,7 @@ POOLCONF],
  *    cryptonight_v8
  *    cryptonight_v8_half (used by masari and stellite)
  *    cryptonight_v8_zelerius
+ *    cryptonight_v8_reversewaltz (used by graft)
  *    # 4MiB scratchpad memory
  *    cryptonight_bittube2
  *    cryptonight_haven
