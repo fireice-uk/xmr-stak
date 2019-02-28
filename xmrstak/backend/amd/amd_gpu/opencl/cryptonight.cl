@@ -793,9 +793,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			SCRATCHPAD_CHUNK(2) = as_uint4(chunk1 + ((ulong2 *)b_x)[0]);
 			SCRATCHPAD_CHUNK(3) = as_uint4(chunk2 + ((ulong2 *)a)[0]);
 		}
-#endif
-
-#if(ALGO == cryptonight_v8_reversewaltz)
+#elif(ALGO == cryptonight_v8_reversewaltz)
 		{
 			ulong2 chunk3 = as_ulong2(SCRATCHPAD_CHUNK(1));
 			ulong2 chunk2 = as_ulong2(SCRATCHPAD_CHUNK(2));

@@ -369,8 +369,7 @@ __global__ void cryptonight_core_gpu_phase2_double(
 			myChunks[ idx1 ^ 4 + sub ] = chunk1 + bx0;
 			myChunks[ idx1 ^ 6 + sub ] = chunk2 + ax0;
 		}
-
-		if(ALGO == cryptonight_v8_reversewaltz)
+		else if(ALGO == cryptonight_v8_reversewaltz)
 		{
 
 			const uint64_t chunk3 = myChunks[ idx1 ^ 2 + sub ];
