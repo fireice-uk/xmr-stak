@@ -11,6 +11,7 @@
 #include "xmrstak/backend/nvidia/nvcc_code/cuda_fast_int_math_v2.hpp"
 #include "xmrstak/backend/nvidia/nvcc_code/cuda_fast_div_heavy.hpp"
 #include "xmrstak/backend/nvidia/nvcc_code/cuda_cryptonight_gpu.hpp"
+#include "xmrstak/backend/nvidia/CudaCryptonightR_gen.hpp"
 
 
 #ifdef _WIN32
@@ -316,11 +317,11 @@ __global__ void cryptonight_core_gpu_phase2_double(
 	uint64_t division_result;
 	if(ALGO == cryptonight_monero_v8)
 	{
-		bx0 = ((uint64_t*)(d_ctx_b + thread * 12))[sub];
-		bx1 = ((uint64_t*)(d_ctx_b + thread * 12 + 4))[sub];
+		bx0 = ((uint64_t*)(d_ctx_b + thread * 16))[sub];
+		bx1 = ((uint64_t*)(d_ctx_b + thread * 16 + 4))[sub];
 
-		division_result = ((uint64_t*)(d_ctx_b + thread * 12 + 4 * 2))[0];
-		sqrt_result = (d_ctx_b + thread * 12 + 4 * 2 + 2)[0];
+		division_result = ((uint64_t*)(d_ctx_b + thread * 16 + 4 * 2))[0];
+		sqrt_result = (d_ctx_b + thread * 16 + 4 * 2 + 2)[0];
 	}
 	else
 		 bx0 = ((uint64_t*)(d_ctx_b + thread * 4))[sub];
@@ -470,14 +471,14 @@ __global__ void cryptonight_core_gpu_phase2_double(
 		((uint64_t*)(d_ctx_a + thread * 4))[sub] = ax0;
 		if(ALGO == cryptonight_monero_v8)
 		{
-			((uint64_t*)(d_ctx_b + thread * 12))[sub] = bx0;
-			((uint64_t*)(d_ctx_b + thread * 12 + 4))[sub] = bx1;
+			((uint64_t*)(d_ctx_b + thread * 16))[sub] = bx0;
+			((uint64_t*)(d_ctx_b + thread * 16 + 4))[sub] = bx1;
 
 			if(sub == 1)
 			{
 				// must be valid only for `sub == 1`
-				((uint64_t*)(d_ctx_b + thread * 12 + 4 * 2))[0] = division_result;
-				(d_ctx_b + thread * 12 + 4 * 2 + 2)[0] = sqrt_result;
+				((uint64_t*)(d_ctx_b + thread * 16 + 4 * 2))[0] = division_result;
+				(d_ctx_b + thread * 16 + 4 * 2 + 2)[0] = sqrt_result;
 			}
 		}
 		else
@@ -531,7 +532,7 @@ __global__ void cryptonight_core_gpu_phase2_quad(
 		else
 			conc_var = 0.0f;
 	}
-	
+
 	uint32_t tweak1_2[2];
 	if (ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
 	{
@@ -600,7 +601,7 @@ __global__ void cryptonight_core_gpu_phase2_quad(
 				{
 					float r = int2float((int32_t)x_0);
 					float c_old = conc_var;
-					
+
 					r += conc_var;
 					r = r * r * r;
 					r = int_as_float((float_as_int(r) & 0x807FFFFF) | 0x40000000);
@@ -774,9 +775,9 @@ __global__ void cryptonight_core_gpu_phase3(
 template<xmrstak_algo_id ALGO, uint32_t MEM_MODE>
 void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo& algo)
 {
-	const uint32_t MASK = algo.Mask();
-	const uint32_t ITERATIONS = algo.Iter();
-	const size_t MEM = algo.Mem()/4;
+	uint32_t MASK = algo.Mask();
+	uint32_t ITERATIONS = algo.Iter();
+	size_t MEM = algo.Mem()/4;
 
 	dim3 grid( ctx->device_blocks );
 	dim3 block( ctx->device_threads );
@@ -823,7 +824,7 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo
 				cryptonight_core_gpu_phase2_double<ALGO, MEM_MODE><<<
 					grid,
 					block2,
-					sizeof(uint64_t) * block2.x * 8 +
+					sizeof(uint64_t) * block.x * 8 +
 						// shuffle memory for fermi gpus
 						block2.x * sizeof(uint32_t) * static_cast< int >( ctx->device_arch[0] < 3 )
 				>>>(
@@ -841,6 +842,26 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo
 					ctx->d_input
 				)
 			);
+		}
+		else if(ALGO == cryptonight_r_wow || ALGO == cryptonight_r)
+		{
+			int numThreads = ctx->device_blocks*ctx->device_threads;
+			void* args[] = {
+				&ITERATIONS, &MEM, &MASK,
+				&numThreads, &ctx->device_bfactor, &i,
+				&ctx->d_long_state, &ctx->d_ctx_a, &ctx->d_ctx_b, &ctx->d_ctx_state, &nonce, &ctx->d_input
+			};
+			CU_CHECK(ctx->device_id, cuLaunchKernel(
+				ctx->kernel,
+				grid.x, grid.y, grid.z,
+				block2.x, block2.y, block2.z,
+				sizeof(uint64_t) * block.x * 8 +
+						// shuffle memory for fermi gpus
+						block2.x * sizeof(uint32_t) * static_cast< int >( ctx->device_arch[0] < 3 ),
+				nullptr,
+				args, 0
+			));
+			CU_CHECK(ctx->device_id, cuCtxSynchronize());
 		}
 		else
 		{
@@ -972,8 +993,30 @@ void cryptonight_core_gpu_hash_gpu(nvid_ctx* ctx, uint32_t nonce, const xmrstak_
 	}
 }
 
-void cryptonight_core_cpu_hash(nvid_ctx* ctx, const xmrstak_algo& miner_algo, uint32_t startNonce)
+void cryptonight_core_cpu_hash(nvid_ctx* ctx, const xmrstak_algo& miner_algo, uint32_t startNonce, uint64_t chain_height)
 {
+
+	if((miner_algo == cryptonight_r_wow) || (miner_algo == cryptonight_r))
+	{
+		if(ctx->kernel_height != chain_height || ctx->cached_algo != miner_algo)
+		{
+			 if(ctx->module)
+				cuModuleUnload(ctx->module);
+
+			std::vector<char> ptx;
+			std::string lowered_name;
+			xmrstak::nvidia::CryptonightR_get_program(ptx, lowered_name, miner_algo, chain_height, ctx->device_arch[0], ctx->device_arch[1]);
+
+			CU_CHECK(ctx->device_id, cuModuleLoadDataEx(&ctx->module, ptx.data(), 0, 0, 0));
+			CU_CHECK(ctx->device_id, cuModuleGetFunction(&ctx->kernel, ctx->module, lowered_name.c_str()));
+
+			ctx->kernel_height = chain_height;
+			ctx->cached_algo = miner_algo;
+
+			xmrstak::nvidia::CryptonightR_get_program(ptx, lowered_name, miner_algo, chain_height + 1, ctx->device_arch[0], ctx->device_arch[1], true);
+		}
+	}
+
 	typedef void (*cuda_hash_fn)(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo& algo);
 
 	if(miner_algo == invalid_algo) return;
@@ -1019,7 +1062,13 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, const xmrstak_algo& miner_algo, ui
 		cryptonight_core_gpu_hash_gpu<cryptonight_gpu, 1>,
 
 		cryptonight_core_gpu_hash<cryptonight_conceal, 0>,
-		cryptonight_core_gpu_hash<cryptonight_conceal, 1>
+		cryptonight_core_gpu_hash<cryptonight_conceal, 1>,
+
+		cryptonight_core_gpu_hash<cryptonight_r_wow, 0>,
+		cryptonight_core_gpu_hash<cryptonight_r_wow, 1>,
+
+		cryptonight_core_gpu_hash<cryptonight_r, 0>,
+		cryptonight_core_gpu_hash<cryptonight_r, 1>
 	};
 
 	std::bitset<1> digit;

@@ -22,6 +22,18 @@
 } \
 ( (void) 0 )
 
+#define CU_CHECK(id, ...) {                                                                             \
+    CUresult result = __VA_ARGS__;                                                                      \
+    if(result != CUDA_SUCCESS){                                                                         \
+        const char* s;                                                                                  \
+        cuGetErrorString(result, &s);                                                                   \
+        std::cerr << "[CUDA] Error gpu " << id << ": <" << __FUNCTION__ << ">:" << __LINE__ << " \"" << (s ? s : "unknown error") << "\"" << std::endl; \
+        throw std::runtime_error(std::string("[CUDA] Error: ") + std::string(s ? s : "unknown error")); \
+    }                                                                                                   \
+}                                                                                                       \
+( (void) 0 )
+
+
 /** execute and check a CUDA api command
  *
  * @param id gpu id (thread id)
