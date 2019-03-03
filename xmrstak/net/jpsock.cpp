@@ -403,11 +403,12 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 	if (!params->val->IsObject())
 		return set_socket_error("PARSE error: Job error 1");
 
-	const Value *blob, *jobid, *target, *motd;
+	const Value *blob, *jobid, *target, *motd, *blk_height;
 	jobid = GetObjectMember(*params->val, "job_id");
 	blob = GetObjectMember(*params->val, "blob");
 	target = GetObjectMember(*params->val, "target");
 	motd = GetObjectMember(*params->val, "motd");
+	blk_height = GetObjectMember(*params->val, "height");
 
 	if (jobid == nullptr || blob == nullptr || target == nullptr ||
 		!jobid->IsString() || !blob->IsString() || !target->IsString())
@@ -445,10 +446,8 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 	// lock reading of oCurrentJob
 	std::unique_lock<std::mutex> jobIdLock(job_mutex);
 	// compare possible non equal length job id's
-	if(iWorkLen == oCurrentJob.iWorkLen &&
-		memcmp(oPoolJob.bWorkBlob, oCurrentJob.bWorkBlob, iWorkLen) == 0 &&
-		strcmp(jobid->GetString(), oCurrentJob.sJobID) == 0
-	)
+	if(iWorkLen == oCurrentJob.iWorkLen && memcmp(oPoolJob.bWorkBlob, oCurrentJob.bWorkBlob, iWorkLen) == 0 &&
+		strcmp(jobid->GetString(), oCurrentJob.sJobID) == 0)
 	{
 		return set_socket_error("Duplicate equal job detected! Please contact your pool admin.");
 	}
@@ -466,7 +465,6 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 		if(!hex2bin(sTempStr, 8, (unsigned char*)&iTempInt) || iTempInt == 0)
 			return set_socket_error("PARSE error: Invalid target");
 
-
 		oPoolJob.iTarget = t32_to_t64(iTempInt);
 	}
 	else if(target_slen <= 16)
@@ -481,6 +479,9 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 		return set_socket_error("PARSE error: Job error 5");
 
 	iJobDiff = t64_to_diff(oPoolJob.iTarget);
+	
+	if(blk_height != nullptr && blk_height->IsUint64())
+		oPoolJob.iBlockHeight = bswap_64(blk_height->GetUint64());
 
 	std::unique_lock<std::mutex> lck(job_mutex);
 	oCurrentJob = oPoolJob;

@@ -33,7 +33,7 @@
 namespace xmrstak
 {
 
-void globalStates::consume_work( miner_work& threadWork, uint64_t& currentJobId)
+void globalStates::consume_work(miner_work& threadWork, uint64_t& currentJobId)
 {
 	jobLock.ReadLock();
 
@@ -43,7 +43,7 @@ void globalStates::consume_work( miner_work& threadWork, uint64_t& currentJobId)
 	jobLock.UnLock();
 }
 
-void globalStates::switch_work(miner_work& pWork, pool_data& dat)
+void globalStates::switch_work(miner_work&& pWork, pool_data& dat)
 {
 	jobLock.WriteLock();
 
@@ -61,7 +61,7 @@ void globalStates::switch_work(miner_work& pWork, pool_data& dat)
 	 * after the nonce is read.
 	 */
 	dat.iSavedNonce = iGlobalNonce.exchange(dat.iSavedNonce, std::memory_order_relaxed);
-	oGlobalWork = pWork;
+	oGlobalWork = std::move(pWork);
 
 	jobLock.UnLock();
 }
