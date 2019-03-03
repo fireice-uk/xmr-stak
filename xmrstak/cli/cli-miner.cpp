@@ -865,13 +865,12 @@ int do_benchmark(int block_version, int wait_sec, int work_sec)
 	/* AMD and NVIDIA is currently only supporting work sizes up to 84byte
 	 * \todo fix this issue
 	 */
-	xmrstak::miner_work benchWork = xmrstak::miner_work("", work, 84, 0, false, 0);
 	printer::inst()->print_msg(L0, "Start a %d second benchmark...",work_sec);
-	xmrstak::globalStates::inst().switch_work(benchWork, dat);
+	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work("", work, 84, 0, false, 0, 0), dat);
 	uint64_t iStartStamp = get_timestamp_ms();
 
 	std::this_thread::sleep_for(std::chrono::seconds(work_sec));
-	xmrstak::globalStates::inst().switch_work(oWork, dat);
+	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work("", work, 84, 0, false, 0, 0), dat);
 
 	double fTotalHps = 0.0;
 	for (uint32_t i = 0; i < pvThreads->size(); i++)

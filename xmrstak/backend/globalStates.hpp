@@ -22,7 +22,7 @@ struct globalStates
 	}
 
 	//pool_data is in-out winapi style
-	void switch_work(miner_work& pWork, pool_data& dat);
+	void switch_work(miner_work&& pWork, pool_data& dat);
 
 	inline void calc_start_nonce(uint32_t& nonce, bool use_nicehash, uint32_t reserve_count)
 	{
