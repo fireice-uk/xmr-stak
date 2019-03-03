@@ -98,6 +98,8 @@ xmrstak::coin_selection coins[] = {
 	{ "cryptonight_lite",        {POW(cryptonight_lite)},      {POW(cryptonight_aeon)},      nullptr },
 	{ "cryptonight_lite_v7",     {POW(cryptonight_aeon)},      {POW(cryptonight_aeon)},      nullptr },
 	{ "cryptonight_lite_v7_xor", {POW(cryptonight_ipbc)},      {POW(cryptonight_aeon)},      nullptr },
+	{ "cryptonight_r",           {POW(cryptonight_r)},         {POW(cryptonight_monero_v8)}, nullptr },
+	{ "cryptonight_r_wow",       {POW(cryptonight_r_wow)},     {POW(cryptonight_monero_v8)}, nullptr },
 	{ "cryptonight_superfast",   {POW(cryptonight_superfast)}, {POW(cryptonight_monero_v8)}, nullptr },
 	{ "cryptonight_turtle",      {POW(cryptonight_turtle)},    {POW(cryptonight_turtle)},    nullptr },
 	{ "cryptonight_v7",          {POW(cryptonight_monero)},    {POW(cryptonight_monero_v8)}, nullptr },

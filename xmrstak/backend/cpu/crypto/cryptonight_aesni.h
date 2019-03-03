@@ -1144,8 +1144,8 @@ struct Cryptonight_R_generator
 	template<xmrstak_algo_id ALGO>
 	static void cn_on_new_job(const xmrstak::miner_work& work, cryptonight_ctx** ctx)
 	{
-		//if(ctx[0]->cn_r_ctx.height == work.iBlockHeight)
-		//	return;
+		if(ctx[0]->cn_r_ctx.height == work.iBlockHeight)
+			return;
 
 		ctx[0]->cn_r_ctx.height = work.iBlockHeight;
 		v4_random_math_init<ALGO>(ctx[0]->cn_r_ctx.code, work.iBlockHeight);
