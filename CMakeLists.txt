@@ -86,22 +86,8 @@ if(CUDA_ENABLE)
         PATH_SUFFIXES
             lib64	
             lib/x64
-            /lib/Win32)
-        find_path(nvvvvv
-        NAMES
-            libnvrtc 
-            nvrtc 
-            nvrtc.lib
-        HINTS 
-            ${CUDA_TOOLKIT_ROOT_DIR} 
-            ${LIBNVRTC_LIBRARY_DIR}
-            ${CUDA_TOOLKIT_ROOT_DIR}
-            /usr 
-            /usr/local/cuda
-        PATH_SUFFIXES
-            lib64
-            lib/x64
-            /lib/Win32)
+            lib/Win32
+            lib64/stubs)
 
         #nvrtc
         find_library(CUDA_NVRTC_LIB 
@@ -118,7 +104,7 @@ if(CUDA_ENABLE)
         PATH_SUFFIXES
             lib64
             lib/x64
-            /lib/Win32)
+            lib/Win32)
 
         list(APPEND BACKEND_TYPES "nvidia")
         option(XMR-STAK_LARGEGRID "Support large CUDA block count > 128" ON)
