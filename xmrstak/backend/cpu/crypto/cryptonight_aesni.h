@@ -586,7 +586,7 @@ inline void set_float_rounding_mode()
 #endif
 }
 
-inline void set_float_rounding_mode_conceal()
+inline void set_float_rounding_mode_nearest()
 {
 #ifdef _MSC_VER
 	_control87(RC_NEAR, MCW_RC);
@@ -713,9 +713,9 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 	__m128i bx1; \
 	__m128i division_result_xmm; \
 	__m128 conc_var; \
-	if(ALGO == cryptonight_conceal) \
+	if(ALGO == cryptonight_conceal || ALGO == cryptonight_gpu) \
 	{\
-		set_float_rounding_mode_conceal(); \
+		set_float_rounding_mode_nearest(); \
 		conc_var = _mm_setzero_ps(); \
 	}\
 	GetOptimalSqrtType_t<N> sqrt_result; \
