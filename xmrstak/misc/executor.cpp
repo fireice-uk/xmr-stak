@@ -125,9 +125,8 @@ bool executor::get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev)
 			if(xmrstak::globalStates::inst().pool_id != invalid_pool_id)
 			{
 				printer::inst()->print_msg(L0, "All pools are dead. Idling...");
-				auto work = xmrstak::miner_work();
 				xmrstak::pool_data dat;
-				xmrstak::globalStates::inst().switch_work(work, dat);
+				xmrstak::globalStates::inst().switch_work(xmrstak::miner_work(), dat);
 			}
 
 			if(over_limit == pool_count)
@@ -365,13 +364,12 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 
 	jpsock* pool = pick_pool_by_id(pool_id);
 
-	xmrstak::miner_work oWork(oPoolJob.sJobID, oPoolJob.bWorkBlob, oPoolJob.iWorkLen, oPoolJob.iTarget, pool->is_nicehash(), pool_id);
-
 	xmrstak::pool_data dat;
 	dat.iSavedNonce = oPoolJob.iSavedNonce;
 	dat.pool_id = pool_id;
 
-	xmrstak::globalStates::inst().switch_work(oWork, dat);
+	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work(oPoolJob.sJobID, oPoolJob.bWorkBlob, 
+		oPoolJob.iWorkLen, oPoolJob.iTarget, pool->is_nicehash(), pool_id, oPoolJob.iBlockHeight), dat);
 
 	if(dat.pool_id != pool_id)
 	{
@@ -446,7 +444,7 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 	if(bResult)
 	{
 		uint64_t* targets = (uint64_t*)oResult.bResult;
-		log_result_ok(jpsock::t64_to_diff(targets[3]));
+		log_result_ok(t64_to_diff(targets[3]));
 		printer::inst()->print_msg(L3, "Result accepted by the pool.");
 	}
 	else
@@ -578,8 +576,13 @@ void executor::ex_main()
 		else
 			pools.emplace_front(0, "donate.xmr-stak.net:4444", "", "", "", 0.0, true, false, "", true);
 		break;
+	case cryptonight_r:
+		if(dev_tls)
+			pools.emplace_front(0, "donate.xmr-stak.net:8822", "", "", "", 0.0, true, true, "", false);
+		else
+			pools.emplace_front(0, "donate.xmr-stak.net:5522", "", "", "", 0.0, true, false, "", false);
+		break;
 	default:
-			case cryptonight_lite:
 		if(dev_tls)
 			pools.emplace_front(0, "donate.xmr-stak.net:6666", "", "", "", 0.0, true, true, "", false);
 		else

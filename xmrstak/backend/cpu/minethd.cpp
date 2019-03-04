@@ -50,6 +50,7 @@
 #include <cstring>
 #include <thread>
 #include <bitset>
+#include <unordered_map>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -250,34 +251,35 @@ bool minethd::self_test()
 			hashf("This is a test", 14, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
+			minethd::cn_on_new_job dm;
 			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), true, algo);
 			hashf("This is a test", 14, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
-			hashf_multi = func_multi_selector<2>(::jconf::inst()->HaveHardwareAes(), false, algo);
+			func_multi_selector<2>(hashf_multi, dm, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			hashf_multi("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
 					"\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
 
-			hashf_multi = func_multi_selector<2>(::jconf::inst()->HaveHardwareAes(), true, algo);
+			func_multi_selector<2>(hashf_multi, dm, ::jconf::inst()->HaveHardwareAes(), true, algo);
 			hashf_multi("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
 					"\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
 
-			hashf_multi = func_multi_selector<3>(::jconf::inst()->HaveHardwareAes(), false, algo);
+			func_multi_selector<3>(hashf_multi, dm, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			hashf_multi("This is a testThis is a testThis is a test", 14, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 96) == 0;
 
-			hashf_multi = func_multi_selector<4>(::jconf::inst()->HaveHardwareAes(), false, algo);
+			func_multi_selector<4>(hashf_multi, dm, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			hashf_multi("This is a testThis is a testThis is a testThis is a test", 14, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 128) == 0;
 
-			hashf_multi = func_multi_selector<5>(::jconf::inst()->HaveHardwareAes(), false, algo);
+			func_multi_selector<5>(hashf_multi, dm, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			hashf_multi("This is a testThis is a testThis is a testThis is a testThis is a test", 14, out, ctx, algo);
 			bResult = bResult &&  memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
 					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
@@ -427,6 +429,16 @@ bool minethd::self_test()
 			hashf("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult && memcmp(out, "\x30\x5f\x66\xfe\xbb\xf3\x60\x0e\xda\xbb\x60\xf7\xf1\xc9\xb9\x0a\x3a\xe8\x5a\x31\xd4\x76\xca\x38\x1d\x56\x18\xa6\xc6\x27\x60\xd7", 32) == 0;
 		}
+		else if(algo == POW(cryptonight_r))
+		{
+			minethd::cn_on_new_job set_job;
+			func_multi_selector<1>(hashf, set_job, ::jconf::inst()->HaveHardwareAes(), false, algo);
+			miner_work work;
+			work.iBlockHeight = 1806260;
+			set_job(work, ctx);
+			hashf("\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74\x20\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74\x20\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74", 44, out, ctx, algo);
+			bResult = bResult &&  memcmp(out, "\xf7\x59\x58\x8a\xd5\x7e\x75\x84\x67\x29\x54\x43\xa9\xbd\x71\x49\x0a\xbf\xf8\xe9\xda\xd1\xb9\x5b\x6b\xf2\xf5\xd0\xd7\x83\x87\xbc", 32) == 0;
+		}
 		else if(algo == POW(cryptonight_v8_reversewaltz))
 		{
 			hashf = func_selector(::jconf::inst()->HaveHardwareAes(), false, algo);
@@ -521,7 +533,8 @@ static std::string getAsmName(const uint32_t num_hashes)
 }
 
 template<size_t N>
-minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo, const std::string& asm_version_str)
+void minethd::func_multi_selector(minethd::cn_hash_fun& hash_fun, minethd::cn_on_new_job& on_new_job,
+	bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo, const std::string& asm_version_str)
 {
 	static_assert(N >= 1, "number of threads must be >= 1" );
 
@@ -574,8 +587,11 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 	case cryptonight_conceal:
 		algv = 13;
 		break;
-	case cryptonight_v8_reversewaltz:
+	case cryptonight_r:
 		algv = 14;
+		break;
+	case cryptonight_v8_reversewaltz:
+		algv = 15;
 		break;
 	default:
 		algv = 2;
@@ -653,6 +669,11 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		Cryptonight_hash<N>::template hash<cryptonight_conceal, false, true>,
 		Cryptonight_hash<N>::template hash<cryptonight_conceal, true, true>,
 
+		Cryptonight_hash<N>::template hash<cryptonight_r, false, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_r, true, false>,
+		Cryptonight_hash<N>::template hash<cryptonight_r, false, true>,
+		Cryptonight_hash<N>::template hash<cryptonight_r, true, true>,
+
 		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, false, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, true, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, false, true>,
@@ -663,7 +684,7 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 	digit.set(0, !bHaveAes);
 	digit.set(1, !bNoPrefetch);
 
-	auto selected_function = func_table[ algv << 2 | digit.to_ulong() ];
+	hash_fun = func_table[ algv << 2 | digit.to_ulong() ];
 
 	// check for asm optimized version for cryptonight_v8
 	if(N <= 2 && algo == cryptonight_monero_v8 && bHaveAes && algo.Mem() == CN_MEMORY && algo.Iter() == CN_ITER)
@@ -678,15 +699,15 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 			{
 				// Intel Ivy Bridge (Xeon v2, Core i7/i5/i3 3xxx, Pentium G2xxx, Celeron G1xxx)
 				if(N == 1)
-					selected_function = Cryptonight_hash_asm<1u, 0u>::template hash<cryptonight_monero_v8>;
+					hash_fun = Cryptonight_hash_asm<1u, 0u>::template hash<cryptonight_monero_v8>;
 				else if(N == 2)
-					selected_function = Cryptonight_hash_asm<2u, 0u>::template hash<cryptonight_monero_v8>;
+					hash_fun = Cryptonight_hash_asm<2u, 0u>::template hash<cryptonight_monero_v8>;
 			}
 			// supports only 1 thread per hash
 			if(N == 1 && selected_asm == "amd_avx")
 			{
 				// AMD Ryzen (1xxx and 2xxx series)
-				selected_function = Cryptonight_hash_asm<1u, 1u>::template hash<cryptonight_monero_v8>;
+				hash_fun = Cryptonight_hash_asm<1u, 1u>::template hash<cryptonight_monero_v8>;
 			}
 			if(asm_version_str == "auto" && (selected_asm != "intel_avx" || selected_asm != "amd_avx"))
 				printer::inst()->print_msg(L3, "Switch to assembler version for '%s' cpu's", selected_asm.c_str());
@@ -695,12 +716,23 @@ minethd::cn_hash_fun minethd::func_multi_selector(bool bHaveAes, bool bNoPrefetc
 		}
 	}
 
-	return selected_function;
+	static const std::unordered_map<uint32_t, minethd::cn_on_new_job> on_new_job_map = {
+		{cryptonight_r, Cryptonight_R_generator<N>::template cn_on_new_job<cryptonight_r>},
+	};
+
+	auto it = on_new_job_map.find(algo.Id());
+	if (it != on_new_job_map.end())
+		on_new_job = it->second;
+	else
+		on_new_job = nullptr;
 }
 
 minethd::cn_hash_fun minethd::func_selector(bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo)
 {
-	return func_multi_selector<1>(bHaveAes, bNoPrefetch, algo);
+	minethd::cn_hash_fun fun;
+	minethd::cn_on_new_job dm;
+	func_multi_selector<1>(fun, dm, bHaveAes, bNoPrefetch, algo);
+	return fun;
 }
 
 void minethd::work_main()
@@ -780,10 +812,12 @@ void minethd::multiway_work_main()
 
 	// start with root algorithm and switch later if fork version is reached
 	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
-	cn_hash_fun hash_fun_multi = func_multi_selector<N>(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
+	cn_hash_fun hash_fun_multi;
+	cn_on_new_job on_new_job;
 	uint8_t version = 0;
 	size_t lastPoolId = 0;
 
+	func_multi_selector<N>(hash_fun_multi, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
 	while (bQuit == 0)
 	{
 		if (oWork.bStall)
@@ -815,16 +849,19 @@ void minethd::multiway_work_main()
 			if(new_version >= coinDesc.GetMiningForkVersion())
 			{
 				miner_algo = coinDesc.GetMiningAlgo();
-				hash_fun_multi = func_multi_selector<N>(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
+				func_multi_selector<N>(hash_fun_multi, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
 			}
 			else
 			{
 				miner_algo = coinDesc.GetMiningAlgoRoot();
-				hash_fun_multi = func_multi_selector<N>(::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
+				func_multi_selector<N>(hash_fun_multi, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
 			}
 			lastPoolId = oWork.iPoolId;
 			version = new_version;
 		}
+
+		if(on_new_job != nullptr)
+			on_new_job(oWork, ctx);
 
 		while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
