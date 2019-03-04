@@ -774,7 +774,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	// Same as the platform index sanity check, except we must check all requested device indexes
 	for(int i = 0; i < num_gpus; ++i)
 	{
-		if(entries <= ctx[i].deviceIdx)
+		if(ctx[i].deviceIdx >= entries)
 		{
 			printer::inst()->print_msg(L1,"Selected OpenCL device index %lu doesn't exist.\n", ctx[i].deviceIdx);
 			return ERR_STUPID_PARAMS;
@@ -793,15 +793,20 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	}
 
 	// Indexes sanity checked above
-#ifdef __GNUC__
-	cl_device_id TempDeviceList[num_gpus];
-#else
-	cl_device_id* TempDeviceList = (cl_device_id*)_alloca(entries * sizeof(cl_device_id));
-#endif
+	std::vector<cl_device_id> TempDeviceList(num_gpus, nullptr);
+
+	printer::inst()->print_msg(LDEBUG, "Number of OpenCL GPUs %d", entries);
 	for(int i = 0; i < num_gpus; ++i)
 	{
 		ctx[i].DeviceID = DeviceIDList[ctx[i].deviceIdx];
 		TempDeviceList[i] = DeviceIDList[ctx[i].deviceIdx];
+	}
+
+	cl_context opencl_ctx = clCreateContext(NULL, num_gpus, TempDeviceList.data(), NULL, NULL, &ret);
+	if(ret != CL_SUCCESS)
+	{
+		printer::inst()->print_msg(L1,"Error %s when calling clCreateContext.", err_to_str(ret));
+		return ERR_OCL_API;
 	}
 
 	const char *fastIntMathV2CL =
@@ -847,22 +852,9 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 
 	std::vector<std::shared_ptr<InterleaveData>> interleaveData(num_gpus, nullptr);
 
-	std::vector<cl_context> context_vec(entries, nullptr);
 	for(int i = 0; i < num_gpus; ++i)
 	{
-		if(context_vec[ctx[i].deviceIdx] == nullptr)
-		{
-			context_vec[ctx[i].deviceIdx] = clCreateContext(NULL, 1, &(ctx[i].DeviceID), NULL, NULL, &ret);
-			if(ret != CL_SUCCESS)
-			{
-				printer::inst()->print_msg(L1,"Error %s when calling clCreateContext.", err_to_str(ret));
-				return ERR_OCL_API;
-			}
-		}
-	}
-
-	for(int i = 0; i < num_gpus; ++i)
-	{
+		printer::inst()->print_msg(LDEBUG,"OpenCL Init device %d", ctx[i].deviceIdx);
 		const size_t devIdx = ctx[i].deviceIdx;
 		if(interleaveData.size() <= devIdx)
 		{
@@ -879,7 +871,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 		ctx[i].interleaveData = interleaveData[devIdx];
 		ctx[i].interleaveData->adjustThreshold = static_cast<double>(ctx[i].interleave)/100.0;
 		ctx[i].interleaveData->startAdjustThreshold = ctx[i].interleaveData->adjustThreshold;
-		ctx[i].opencl_ctx = context_vec[ctx[i].deviceIdx];
+		ctx[i].opencl_ctx = opencl_ctx;
 
 		if((ret = InitOpenCLGpu(ctx->opencl_ctx, &ctx[i], source_code.c_str())) != ERR_SUCCESS)
 		{
