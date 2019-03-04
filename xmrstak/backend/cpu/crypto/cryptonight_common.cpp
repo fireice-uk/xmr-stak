@@ -261,6 +261,13 @@ cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, al
 #else
 	ptr->long_state = (uint8_t*)mmap(NULL, hashMemSize, PROT_READ | PROT_WRITE,
 		MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, -1, 0);
+	if (ptr->long_state == MAP_FAILED)
+	{
+		// try without MAP_HUGETLB for crappy kernels
+		msg->warning = "mmap with HUGETLB failed, attempting without it (you should fix your kernel)";
+		ptr->long_state = (uint8_t*)mmap(NULL, hashMemSize, PROT_READ | PROT_WRITE,
+			MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE, -1, 0);
+	}
 #endif
 
 	if (ptr->long_state == MAP_FAILED)
