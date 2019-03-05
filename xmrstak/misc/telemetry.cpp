@@ -47,6 +47,21 @@ telemetry::telemetry(size_t iThd)
 		memset(ppTimestamps[i], 0, sizeof(uint64_t) * iBucketSize);
 	}
 }
+	
+telemetry::~telemetry()
+{
+	for (size_t i = 0; i < num; ++i) {
+		delete[] ppHashCounts[i];
+		delete[] ppTimestamps[i];
+	}
+	
+		delete[] iBucketTop;
+		delete[] ppHashCounts;
+		delete[] ppTimestamps;
+		delete[] mtx;
+	
+}
+		
 
 double telemetry::calc_telemetry_data(size_t iLastMillisec, size_t iThread)
 {
