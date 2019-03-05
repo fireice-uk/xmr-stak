@@ -36,12 +36,28 @@ public:
 		return env.pExecutor;
 	};
 
-	void ex_start(bool daemon) { daemon ? ex_main() : std::thread(&executor::ex_main, this).detach(); }
-
+	void ex_start(bool daemon) {
+		if (daemon) ex_main(); // this should be removed , why the miner will ever run in this way !!
+		else main_executor_thread = std::thread(&executor::ex_main, this); // must be called only for first time or after stop()
+	}
+	
 	void get_http_report(ex_event_name ev_id, std::string& data);
 
 	inline void push_event(ex_event&& ev) { oEventQ.push(std::move(ev)); }
 	void push_timed_event(ex_event&& ev, size_t sec);
+	
+	void stop();
+	~executor();
+	void pause();
+	void resume();
+
+
+	std::atomic<bool> bQuit;
+	std::atomic<bool> bSuspended;
+	std::thread main_executor_thread;
+	bool isIdle;
+	bool exit_pending;
+
 
 private:
 	struct timed_event
