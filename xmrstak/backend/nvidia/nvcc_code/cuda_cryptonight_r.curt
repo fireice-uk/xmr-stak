@@ -1,10 +1,27 @@
+R"===(
 
-#pragma once
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 
-#include <stdint.h>
+#define cryptonight_r_wow 15
+#define cryptonight_r 16
 
-#define N_COLS          4
-#define WPOLY           0x011b
+typedef unsigned char uint8_t;
+typedef unsigned int uint32_t;
+typedef unsigned long long int uint64_t;
 
 static __constant__ uint32_t d_t_fn[1024] =
 {
@@ -271,41 +288,331 @@ static __constant__ uint32_t d_t_fn[1024] =
 #define t_fn2(x) (sharedMemory[512 + (x)])
 #define t_fn3(x) (sharedMemory[768 + (x)])
 
-
-#define round(dummy,y,x,k) \
-	y[0] = (k)[0]  ^ (t_fn0(x[0] & 0xff) ^ t_fn1((x[1] >> 8) & 0xff) ^ t_fn2((x[2] >> 16) & 0xff) ^ t_fn3((x[3] >> 24))); \
-	y[1] = (k)[1]  ^ (t_fn0(x[1] & 0xff) ^ t_fn1((x[2] >> 8) & 0xff) ^ t_fn2((x[3] >> 16) & 0xff) ^ t_fn3((x[0] >> 24))); \
-	y[2] = (k)[2]  ^ (t_fn0(x[2] & 0xff) ^ t_fn1((x[3] >> 8) & 0xff) ^ t_fn2((x[0] >> 16) & 0xff) ^ t_fn3((x[1] >> 24))); \
-	y[3] = (k)[3]  ^ (t_fn0(x[3] & 0xff) ^ t_fn1((x[0] >> 8) & 0xff) ^ t_fn2((x[1] >> 16) & 0xff) ^ t_fn3((x[2] >> 24) ));
-
-__device__ __forceinline__ static void cn_aes_single_round(uint32_t * __restrict__ sharedMemory, const uint32_t * __restrict__ in, uint32_t * __restrict__ out, const uint32_t * __restrict__ expandedKey)
-{
-	round(sharedMemory, out, in, expandedKey);
-}
-
-__device__ __forceinline__ static void cn_aes_pseudo_round_mut(const uint32_t * __restrict__ sharedMemory, uint32_t * __restrict__ val, const uint32_t * __restrict__ expandedKey)
-{
-	uint32_t b1[4];
-	round(sharedMemory, b1, val, expandedKey);
-	round(sharedMemory, val, b1, expandedKey + 1 * N_COLS);
-	round(sharedMemory, b1, val, expandedKey + 2 * N_COLS);
-	round(sharedMemory, val, b1, expandedKey + 3 * N_COLS);
-	round(sharedMemory, b1, val, expandedKey + 4 * N_COLS);
-	round(sharedMemory, val, b1, expandedKey + 5 * N_COLS);
-	round(sharedMemory, b1, val, expandedKey + 6 * N_COLS);
-	round(sharedMemory, val, b1, expandedKey + 7 * N_COLS);
-	round(sharedMemory, b1, val, expandedKey + 8 * N_COLS);
-	round(sharedMemory, val, b1, expandedKey + 9 * N_COLS);
-}
-
 __device__ __forceinline__ static void cn_aes_gpu_init(uint32_t *sharedMemory)
 {
 	for(int i = threadIdx.x; i < 1024; i += blockDim.x)
 		sharedMemory[i] = d_t_fn[i];
 }
 
-__device__ __forceinline__ static void cn_aes_gpu_init_half(uint32_t *sharedMemory)
+)==="
+R"===(
+
+template< typename T >
+__forceinline__ __device__ void unusedVar( const T& )
 {
-        for(int i = threadIdx.x; i < 512; i += blockDim.x)
-                sharedMemory[i] = d_t_fn[i];
 }
+
+template<size_t group_n>
+__forceinline__ __device__ uint32_t shuffle(volatile uint32_t* ptr,const uint32_t sub,const int val,const uint32_t src)
+{
+#   if ( __CUDA_ARCH__ < 300 )
+    ptr[sub] = val;
+    return ptr[src & (group_n-1)];
+#   else
+    unusedVar( ptr );
+    unusedVar( sub );
+#   if (__CUDACC_VER_MAJOR__ >= 9)
+    return __shfl_sync(__activemask(), val, src, group_n);
+#   else
+    return __shfl( val, src, group_n );
+#   endif
+#   endif
+}
+
+
+template<size_t group_n>
+__forceinline__ __device__ uint64_t shuffle64(volatile uint32_t* ptr,const uint32_t sub,const uint64_t val,const uint32_t src, const uint32_t src2)
+{
+    uint64_t tmp;
+    ((uint32_t*)&tmp)[0] = shuffle<group_n>(ptr, sub, static_cast<uint32_t>(val), src);
+    ((uint32_t*)&tmp)[1] = shuffle<group_n>(ptr, sub, static_cast<uint32_t>(val >> 32), src2);
+    return tmp;
+}
+
+struct u64 : public uint2
+{
+
+    __forceinline__ __device__ u64(){}
+
+    __forceinline__ __device__ u64( const uint32_t x0, const uint32_t x1)
+    {
+        uint2::x = x0;
+        uint2::y = x1;
+    }
+
+    __forceinline__ __device__ operator uint64_t() const
+    {
+        return *((uint64_t*)this);
+    }
+
+    __forceinline__ __device__ u64( const uint64_t x0)
+    {
+        ((uint64_t*)&this->x)[0] = x0;
+    }
+
+    __forceinline__ __device__ u64 operator^=(const u64& other)
+    {
+        uint2::x ^= other.x;
+        uint2::y ^= other.y;
+
+        return *this;
+    }
+
+    __forceinline__ __device__ u64 operator^=(const uint64_t& other)
+    {
+        uint2::x ^= static_cast<uint32_t>(other);
+        uint2::y ^= static_cast<uint32_t>(other >> 32);
+
+        return *this;
+    }
+
+    __forceinline__ __device__ u64 operator+(const u64& other) const
+    {
+        u64 tmp;
+        ((uint64_t*)&tmp.x)[0] = ((uint64_t*)&(this->x))[0] + ((uint64_t*)&(other.x))[0];
+
+        return tmp;
+    }
+
+    __forceinline__ __device__ u64 operator+=(const uint64_t& other)
+    {
+        return ((uint64_t*)&this->x)[0] += other;
+    }
+};
+
+#ifdef RANDOM_MATH_64_BIT
+
+__device__ __forceinline__ static uint64_t rotate_left(uint64_t a, uint64_t b)
+{
+    const int shift = b & 63;
+    return (a << shift) | (a >> (64 - shift));
+}
+
+__device__ __forceinline__ static uint64_t rotate_right(uint64_t a, uint64_t b)
+{
+    const int shift = b & 63;
+    return (a >> shift) | (a << (64 - shift));
+}
+
+#else
+
+__device__ __forceinline__ static uint32_t rotate_left(uint32_t a, uint32_t b) { 
+#if __CUDA_ARCH__ < 350
+    const uint32_t shift = b & 31;
+    return (a << shift) | (a >> (32 - shift));
+#else
+    return __funnelshift_l(a, a, b); 
+#endif
+}
+__device__ __forceinline__ static uint32_t rotate_right(uint32_t a, uint32_t b) { 
+#if __CUDA_ARCH__ < 350
+    const uint32_t shift = b & 31;
+    return (a >> shift) | (a << (32 - shift));
+#else
+    return __funnelshift_r(a, a, b);
+#endif
+}
+
+#endif
+
+__global__ void CryptonightR_phase2(
+		const uint32_t ITERATIONS,
+		const size_t MEMORY,
+		const uint32_t MASK,
+        int threads,
+        int bfactor,
+        int partidx,
+        uint32_t *d_long_state,
+        uint32_t *d_ctx_a,
+        uint32_t *d_ctx_b,
+        uint32_t * d_ctx_state,
+        uint32_t startNonce,
+        uint32_t * __restrict__ d_input
+        )
+{
+    __shared__ uint32_t sharedMemory[1024];
+
+    cn_aes_gpu_init( sharedMemory );
+
+#   if( __CUDA_ARCH__ < 300 )
+    extern __shared__ uint64_t externShared[];
+    // 8 x 64bit values
+    volatile uint64_t* myChunks = (volatile uint64_t*)(externShared + (threadIdx.x >> 1) * 8);
+    volatile uint32_t* sPtr = (volatile uint32_t*)(externShared + (blockDim.x >> 1) * 8)  + (threadIdx.x & 0xFFFFFFFE);
+#   else
+    extern __shared__ uint64_t chunkMem[];
+    volatile uint32_t* sPtr = NULL;
+    // 8 x 64bit values
+    volatile uint64_t* myChunks = (volatile uint64_t*)(chunkMem + (threadIdx.x >> 1) * 8);
+#   endif
+
+    __syncthreads( );
+
+    const uint64_t tid    = (blockDim.x * blockIdx.x + threadIdx.x);
+    const uint32_t thread = tid >> 1;
+    const uint32_t sub    = tid & 1;
+
+    if (thread >= threads) {
+        return;
+    }
+
+    uint8_t *l0              = (uint8_t*)&d_long_state[((uint64_t)thread) * MEMORY];
+    uint64_t ax0             = ((uint64_t*)(d_ctx_a + thread * 4))[sub];
+    uint32_t idx0            = shuffle<2>(sPtr, sub, static_cast<uint32_t>(ax0), 0);
+    uint64_t bx0             = ((uint64_t*)(d_ctx_b + thread * 16))[sub];
+    uint64_t bx1             = ((uint64_t*)(d_ctx_b + thread * 16 + 4))[sub];
+
+    uint32_t r0 = d_ctx_b[thread * 16 + 4 * 2];
+    uint32_t r1 = d_ctx_b[thread * 16 + 4 * 2 + 1];
+    uint32_t r2 = d_ctx_b[thread * 16 + 4 * 2 + 2];
+    uint32_t r3 = d_ctx_b[thread * 16 + 4 * 2 + 3];
+
+    const int batchsize      = (ITERATIONS * 2) >> ( 1 + bfactor );
+    const int start          = partidx * batchsize;
+    const int end            = start + batchsize;
+
+    uint64_t* ptr0;
+    for (int i = start; i < end; ++i) {
+        ptr0 = (uint64_t *)&l0[idx0 & MASK & 0x1FFFC0];
+
+        ((ulonglong4*)myChunks)[sub] = ((ulonglong4*)ptr0)[sub];
+
+        uint32_t idx1 = (idx0 & 0x30) >> 3;
+        const u64 cx  = myChunks[ idx1 + sub ];
+        const u64 cx2 = myChunks[ idx1 + ((sub + 1) & 1) ];
+
+        u64 cx_aes = ax0 ^ u64(
+            t_fn0( cx.x & 0xff ) ^ t_fn1( (cx.y >> 8) & 0xff ) ^ t_fn2( (cx2.x >> 16) & 0xff ) ^ t_fn3( (cx2.y >> 24 ) ),
+            t_fn0( cx.y & 0xff ) ^ t_fn1( (cx2.x >> 8) & 0xff ) ^ t_fn2( (cx2.y >> 16) & 0xff ) ^ t_fn3( (cx.x >> 24 ) )
+        );
+
+        {
+            const uint64_t chunk1 = myChunks[idx1 ^ 2 + sub];
+            const uint64_t chunk2 = myChunks[idx1 ^ 4 + sub];
+            const uint64_t chunk3 = myChunks[idx1 ^ 6 + sub];
+
+#if(ALGO == cryptonight_r)
+            cx_aes ^= chunk1 ^ chunk2 ^ chunk3;
+#endif
+
+#if (__CUDACC_VER_MAJOR__ >= 9)
+            __syncwarp();
+#else
+            __syncthreads();
+#endif
+
+            myChunks[idx1 ^ 2 + sub] = chunk3 + bx1;
+            myChunks[idx1 ^ 4 + sub] = chunk1 + bx0;
+            myChunks[idx1 ^ 6 + sub] = chunk2 + ax0;
+        }
+
+        myChunks[idx1 + sub] = cx_aes ^ bx0;
+
+        ((ulonglong4*)ptr0)[sub] = ((ulonglong4*)myChunks)[sub];
+
+        idx0 = shuffle<2>(sPtr, sub, cx_aes.x, 0);
+        idx1 = (idx0 & 0x30) >> 3;
+        ptr0 = (uint64_t *)&l0[idx0 & MASK & 0x1FFFC0];
+
+        ((ulonglong4*)myChunks)[sub] = ((ulonglong4*)ptr0)[sub];
+
+        uint64_t cx_mul;
+        ((uint32_t*)&cx_mul)[0] = shuffle<2>(sPtr, sub, cx_aes.x , 0);
+        ((uint32_t*)&cx_mul)[1] = shuffle<2>(sPtr, sub, cx_aes.y , 0);
+
+        const uint32_t r4 = shuffle<2>(sPtr, sub, static_cast<uint32_t>(ax0), 0);
+        const uint32_t r6 = shuffle<2>(sPtr, sub, static_cast<uint32_t>(bx0), 0);
+        const uint32_t r7 = shuffle<2>(sPtr, sub, static_cast<uint32_t>(bx1), 0);
+
+        const uint64_t ax0_saved = ax0;
+
+        if (sub == 1) 
+        {
+            ((uint32_t*)&myChunks[idx1])[0] ^= r0 + r1;
+            ((uint32_t*)&myChunks[idx1])[1] ^= r2 + r3;
+
+            const uint32_t r5 = static_cast<uint32_t>(ax0);
+#if(ALGO == cryptonight_r)
+            const uint32_t r8 = static_cast<uint32_t>(bx1);
+#endif
+
+            XMRSTAK_INCLUDE_RANDOM_MATH
+        }
+
+#if(ALGO == cryptonight_r)
+        r0 = shuffle<2>(sPtr, sub, r0, 1);
+        r1 = shuffle<2>(sPtr, sub, r1, 1);
+        r2 = shuffle<2>(sPtr, sub, r2, 1);
+        r3 = shuffle<2>(sPtr, sub, r3, 1);
+        ax0 ^= (sub == 0) ? (r2 | ((uint64_t)(r3) << 32)) : (r0 | ((uint64_t)(r1) << 32));
+#endif
+
+#if (__CUDACC_VER_MAJOR__ >= 9)
+        __syncwarp();
+#else
+        __syncthreads( );
+#endif
+
+        uint64_t c = ((uint64_t*)myChunks)[idx1 + sub];
+
+        {
+            uint64_t cl = ((uint64_t*)myChunks)[idx1];
+            // sub 0 -> hi, sub 1 -> lo
+            uint64_t res = sub == 0 ? __umul64hi( cx_mul, cl ) : cx_mul * cl;
+
+            const uint64_t chunk1 = myChunks[ idx1 ^ 2 + sub ]
+#if(ALGO == cryptonight_r_wow)
+            ^ res
+#endif
+            ;
+            uint64_t chunk2       = myChunks[ idx1 ^ 4 + sub ];
+#if(ALGO == cryptonight_r_wow)
+            res ^= ((uint64_t*)&chunk2)[0];
+#endif
+            const uint64_t chunk3 = myChunks[ idx1 ^ 6 + sub ];
+
+#if(ALGO == cryptonight_r)
+            cx_aes ^= chunk1 ^ chunk2 ^ chunk3;
+#endif
+
+#           if (__CUDACC_VER_MAJOR__ >= 9)
+            __syncwarp();
+#           else
+            __syncthreads( );
+#           endif
+
+            myChunks[idx1 ^ 2 + sub] = chunk3 + bx1;
+            myChunks[idx1 ^ 4 + sub] = chunk1 + bx0;
+            myChunks[idx1 ^ 6 + sub] = chunk2 + ax0_saved;
+
+            ax0 += res;
+        }
+
+        bx1 = bx0;
+        bx0 = cx_aes;
+
+        myChunks[idx1 + sub] = ax0;
+
+        ((ulonglong4*)ptr0)[sub] = ((ulonglong4*)myChunks)[sub];
+
+        ax0 ^= c;
+        idx0 = shuffle<2>(sPtr, sub, static_cast<uint32_t>(ax0), 0);
+    }
+
+    if (bfactor > 0) 
+    {
+        ((uint64_t*)(d_ctx_a + thread * 4))[sub]      = ax0;
+        ((uint64_t*)(d_ctx_b + thread * 16))[sub]     = bx0;
+        ((uint64_t*)(d_ctx_b + thread * 16 + 4))[sub] = bx1;
+
+        if (sub == 1) 
+        {
+            // must be valid only for `sub == 1`
+            d_ctx_b[thread * 16 + 4 * 2] = r0;
+            d_ctx_b[thread * 16 + 4 * 2 + 1] = r1;
+            d_ctx_b[thread * 16 + 4 * 2 + 2] = r2;
+            d_ctx_b[thread * 16 + 4 * 2 + 3] = r3;
+        }
+    }
+}
+)==="

@@ -83,10 +83,13 @@ private:
 
 		constexpr size_t byteToMiB = 1024u * 1024u;
 
-		size_t hashMemSize = std::max(
-			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo()),
-			cn_select_memory(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot())
-		);
+		auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
+
+		size_t hashMemSize = 0;
+		for(const auto algo : neededAlgorithms)
+		{
+			hashMemSize = std::max(hashMemSize, algo.Mem());
+		}
 
 		std::string conf;
 		for(auto& ctx : devVec)
@@ -128,11 +131,17 @@ private:
 			}
 
 			// check if cryptonight_monero_v8 is selected for the user or dev pool
-			bool useCryptonight_v8 =
-				::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_monero_v8 ||
-				::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot() == cryptonight_monero_v8 ||
-				::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgo() == cryptonight_monero_v8 ||
-				::jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgoRoot() == cryptonight_monero_v8;
+			bool useCryptonight_v8 = (std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_monero_v8) != neededAlgorithms.end());
+
+			// true for all cryptonight_heavy derivates since we check the user and dev pool
+			bool useCryptonight_heavy = std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_heavy) != neededAlgorithms.end();
+
+			// true for cryptonight_gpu as main user pool algorithm
+			bool useCryptonight_gpu = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_gpu;
+
+			bool useCryptonight_r = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_r;
+
+			bool useCryptonight_r_wow = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_r_wow;
 
 			// set strided index to default
 			ctx.stridedIndex = 1;
@@ -142,21 +151,52 @@ private:
 				ctx.stridedIndex = 0;
 
 			// use chunked (4x16byte) scratchpad for all backends. Default `mem_chunk` is `2`
-			if(useCryptonight_v8)
+			if(useCryptonight_v8 || useCryptonight_r || useCryptonight_r_wow)
 				ctx.stridedIndex = 2;
+			else if(useCryptonight_heavy)
+				ctx.stridedIndex = 3;
 
-			// increase all intensity limits by two for aeon
-			if(::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_lite)
-				maxThreads *= 2u;
+			if(hashMemSize < CN_MEMORY)
+			{
+				size_t factor = CN_MEMORY / hashMemSize;
+				// increase all intensity relative to the original scratchpad size
+				maxThreads *= factor;
+			}
 
-			// keep 128MiB memory free (value is randomly chosen)
-			size_t availableMem = ctx.freeMem - minFreeMem;
+			uint32_t numUnroll = 8;
+
+			if(useCryptonight_gpu)
+			{
+				// 6 waves per compute unit are a good value (based on profiling)
+				// @todo check again after all optimizations
+				maxThreads = ctx.computeUnits * 6 * 8;
+				ctx.stridedIndex = 0;
+				numUnroll = 1;
+			}
+
+			// keep 128MiB memory free (value is randomly chosen) from the max available memory
+			const size_t maxAvailableFreeMem = ctx.freeMem - minFreeMem;
+
+			size_t memPerThread = std::min(ctx.maxMemPerAlloc, maxAvailableFreeMem);
+
+			uint32_t numThreads = 1u;
+			if(ctx.isAMD && !useCryptonight_gpu)
+			{
+				numThreads = 2;
+				size_t memDoubleThread = maxAvailableFreeMem / numThreads;
+				memPerThread = std::min(memPerThread, memDoubleThread);
+			}
+
 			// 224byte extra memory is used per thread for meta data
 			size_t perThread = hashMemSize + 224u;
-			size_t maxIntensity = availableMem / perThread;
+			size_t maxIntensity = memPerThread / perThread;
 			size_t possibleIntensity = std::min( maxThreads , maxIntensity );
 			// map intensity to a multiple of the compute unit count, 8 is the number of threads per work group
 			size_t intensity = (possibleIntensity / (8 * ctx.computeUnits)) * ctx.computeUnits * 8;
+			// in the case we use two threads per gpu we can be relax and need no multiple of the number of compute units
+			if(numThreads == 2)
+				intensity = (possibleIntensity / 8) * 8;
+
 			//If the intensity is 0, then it's because the multiple of the unit count is greater than intensity
 			if (intensity == 0)
 			{
@@ -166,18 +206,22 @@ private:
 			}
 			if (intensity != 0)
 			{
-				conf += std::string("  // gpu: ") + ctx.name + " memory:" + std::to_string(availableMem / byteToMiB) + "\n";
-				conf += std::string("  // compute units: ") + std::to_string(ctx.computeUnits) + "\n";
-				// set 8 threads per block (this is a good value for the most gpus)
-				conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
-					"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
-					"    \"affine_to_cpu\" : false, \"strided_index\" : " + std::to_string(ctx.stridedIndex) + ", \"mem_chunk\" : 2,\n"
-					"    \"unroll\" : 8, \"comp_mode\" : true\n" +
-					"  },\n";
+				for(uint32_t thd = 0; thd < numThreads; ++thd)
+				{
+					conf += "  // gpu: " + ctx.name + std::string("  compute units: ") + std::to_string(ctx.computeUnits) + "\n";
+					conf += "  // memory:" + std::to_string(memPerThread / byteToMiB) + "|" +
+						std::to_string(ctx.maxMemPerAlloc / byteToMiB) + "|" +  std::to_string(maxAvailableFreeMem / byteToMiB) + " MiB (used per thread|max per alloc|total free)\n";
+					// set 8 threads per block (this is a good value for the most gpus)
+					conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
+						"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(8) + ",\n" +
+						"    \"affine_to_cpu\" : false, \"strided_index\" : " + std::to_string(ctx.stridedIndex) + ", \"mem_chunk\" : 2,\n"
+						"    \"unroll\" : " + std::to_string(numUnroll) + ", \"comp_mode\" : true, \"interleave\" : " + std::to_string(ctx.interleave) + "\n" +
+						"  },\n";
+				}
 			}
 			else
 			{
-				printer::inst()->print_msg(L0, "WARNING: Ignore gpu %s, %s MiB free memory is not enough to suggest settings.", ctx.name.c_str(), std::to_string(availableMem / byteToMiB).c_str());
+				printer::inst()->print_msg(L0, "WARNING: Ignore gpu %s, %s MiB free memory is not enough to suggest settings.", ctx.name.c_str(), std::to_string(memPerThread / byteToMiB).c_str());
 			}
 		}
 

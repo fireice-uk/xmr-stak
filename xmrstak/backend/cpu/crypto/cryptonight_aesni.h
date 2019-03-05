@@ -17,6 +17,8 @@
 
 #include "cryptonight.h"
 #include "xmrstak/backend/cryptonight.hpp"
+#include "../../miner_work.hpp"
+#include "cn_gpu.hpp"
 #include <memory.h>
 #include <stdio.h>
 #include <cfenv>
@@ -164,9 +166,11 @@ inline void mix_and_propagate(__m128i& x0, __m128i& x1, __m128i& x2, __m128i& x3
 	x7 = _mm_xor_si128(x7, tmp0);
 }
 
-template<size_t MEM, bool SOFT_AES, bool PREFETCH, xmrstak_algo ALGO>
-void cn_explode_scratchpad(const __m128i* input, __m128i* output)
+template<bool SOFT_AES, bool PREFETCH, xmrstak_algo_id ALGO>
+void cn_explode_scratchpad(const __m128i* input, __m128i* output, const xmrstak_algo& algo)
 {
+	constexpr bool HEAVY_MIX = ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast;
+
 	// This is more than we have registers, compiler will assign 2 keys on the stack
 	__m128i xin0, xin1, xin2, xin3, xin4, xin5, xin6, xin7;
 	__m128i k0, k1, k2, k3, k4, k5, k6, k7, k8, k9;
@@ -182,7 +186,7 @@ void cn_explode_scratchpad(const __m128i* input, __m128i* output)
 	xin6 = _mm_load_si128(input + 10);
 	xin7 = _mm_load_si128(input + 11);
 
-	if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2)
+	if(HEAVY_MIX)
 	{
 		for(size_t i=0; i < 16; i++)
 		{
@@ -216,6 +220,7 @@ void cn_explode_scratchpad(const __m128i* input, __m128i* output)
 		}
 	}
 
+	const size_t MEM = algo.Mem();
 	for (size_t i = 0; i < MEM / sizeof(__m128i); i += 8)
 	{
 		if(SOFT_AES)
@@ -263,9 +268,46 @@ void cn_explode_scratchpad(const __m128i* input, __m128i* output)
 	}
 }
 
-template<size_t MEM, bool SOFT_AES, bool PREFETCH, xmrstak_algo ALGO>
-void cn_implode_scratchpad(const __m128i* input, __m128i* output)
+template<bool PREFETCH, xmrstak_algo_id ALGO>
+void cn_explode_scratchpad_gpu(const uint8_t* input, uint8_t* output, const xmrstak_algo& algo)
 {
+	constexpr size_t hash_size = 200; // 25x8 bytes
+	alignas(128) uint64_t hash[25];
+	const size_t mem = algo.Mem();
+
+	for (uint64_t i = 0; i < mem / 512; i++)
+	{
+		memcpy(hash, input, hash_size);
+		hash[0] ^= i;
+
+		keccakf(hash, 24);
+		memcpy(output, hash, 160);
+		output+=160;
+
+		keccakf(hash, 24);
+		memcpy(output, hash, 176);
+		output+=176;
+
+		keccakf(hash, 24);
+		memcpy(output, hash, 176);
+		output+=176;
+
+		if(PREFETCH)
+		{
+			_mm_prefetch((const char*)output - 512, _MM_HINT_T2);
+			_mm_prefetch((const char*)output - 384, _MM_HINT_T2);
+			_mm_prefetch((const char*)output - 256, _MM_HINT_T2);
+			_mm_prefetch((const char*)output - 128, _MM_HINT_T2);
+		}
+	}
+}
+
+template<bool SOFT_AES, bool PREFETCH, xmrstak_algo_id ALGO>
+void cn_implode_scratchpad(const __m128i* input, __m128i* output, const xmrstak_algo& algo)
+{
+	constexpr bool HEAVY_MIX = ALGO == cryptonight_heavy || ALGO == cryptonight_haven ||
+		ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast || ALGO == cryptonight_gpu;
+
 	// This is more than we have registers, compiler will assign 2 keys on the stack
 	__m128i xout0, xout1, xout2, xout3, xout4, xout5, xout6, xout7;
 	__m128i k0, k1, k2, k3, k4, k5, k6, k7, k8, k9;
@@ -281,6 +323,7 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 	xout6 = _mm_load_si128(output + 10);
 	xout7 = _mm_load_si128(output + 11);
 
+	const size_t MEM = algo.Mem();
 	for (size_t i = 0; i < MEM / sizeof(__m128i); i += 8)
 	{
 		if(PREFETCH)
@@ -326,11 +369,11 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 			aes_round(k9, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
 		}
 
-		if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2)
+		if(HEAVY_MIX)
 			mix_and_propagate(xout0, xout1, xout2, xout3, xout4, xout5, xout6, xout7);
 	}
 
-	if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2)
+	if(HEAVY_MIX)
 	{
 		for (size_t i = 0; i < MEM / sizeof(__m128i); i += 8)
 		{
@@ -377,7 +420,7 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output)
 				aes_round(k9, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
 			}
 
-			if(ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2)
+			if(HEAVY_MIX)
 				mix_and_propagate(xout0, xout1, xout2, xout3, xout4, xout5, xout6, xout7);
 		}
 
@@ -465,7 +508,7 @@ inline __m128i aes_round_bittube2(const __m128i& val, const __m128i& key)
 	return _mm_load_si128((__m128i*)k);
 }
 
-template<xmrstak_algo ALGO>
+template<xmrstak_algo_id ALGO>
 inline void cryptonight_monero_tweak(uint64_t* mem_out, __m128i tmp)
 {
 	mem_out[0] = _mm_cvtsi128_si64(tmp);
@@ -543,9 +586,39 @@ inline void set_float_rounding_mode()
 #endif
 }
 
-#define CN_MONERO_V8_SHUFFLE_0(n, l0, idx0, ax0, bx0, bx1) \
+inline void set_float_rounding_mode_nearest()
+{
+#ifdef _MSC_VER
+	_control87(RC_NEAR, MCW_RC);
+#else
+	std::fesetround(FE_TONEAREST);
+#endif
+}
+
+inline __m128 _mm_set1_ps_epi32(uint32_t x)
+{
+	return _mm_castsi128_ps(_mm_set1_epi32(x));
+}
+
+inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
+{
+	__m128 r = _mm_cvtepi32_ps(cx);
+	__m128 c_old = conc_var;
+	r = _mm_add_ps(r, conc_var);
+	r = _mm_mul_ps(r, _mm_mul_ps(r, r));
+	r = _mm_and_ps(_mm_set1_ps_epi32(0x807FFFFF), r);
+	r = _mm_or_ps(_mm_set1_ps_epi32(0x40000000), r);
+	conc_var = _mm_add_ps(conc_var, r);
+
+	c_old = _mm_and_ps(_mm_set1_ps_epi32(0x807FFFFF), c_old);
+	c_old = _mm_or_ps(_mm_set1_ps_epi32(0x40000000), c_old);
+	__m128 nc = _mm_mul_ps(c_old, _mm_set1_ps(536870880.0f));
+	cx = _mm_xor_si128(cx, _mm_cvttps_epi32(nc));
+}
+
+#define CN_MONERO_V8_SHUFFLE_0(n, l0, idx0, ax0, bx0, bx1, cx) \
 	/* Shuffle the other 3x16 byte chunks in the current 64-byte cache line */ \
-	if(ALGO == cryptonight_monero_v8) \
+	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_r || ALGO == cryptonight_r_wow) \
 	{ \
 		const uint64_t idx1 = idx0 & MASK; \
 		const __m128i chunk1 = _mm_load_si128((__m128i *)&l0[idx1 ^ 0x10]); \
@@ -554,11 +627,13 @@ inline void set_float_rounding_mode()
 		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x10], _mm_add_epi64(chunk3, bx1)); \
 		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x20], _mm_add_epi64(chunk1, bx0)); \
 		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x30], _mm_add_epi64(chunk2, ax0)); \
+		if (ALGO == cryptonight_r) \
+			cx = _mm_xor_si128(_mm_xor_si128(cx, chunk3), _mm_xor_si128(chunk1, chunk2)); \
 	}
 
 #define CN_MONERO_V8_SHUFFLE_1(n, l0, idx0, ax0, bx0, bx1, lo, hi) \
 	/* Shuffle the other 3x16 byte chunks in the current 64-byte cache line */ \
-	if(ALGO == cryptonight_monero_v8) \
+	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_r_wow) \
 	{ \
 		const uint64_t idx1 = idx0 & MASK; \
 		const __m128i chunk1 = _mm_xor_si128(_mm_load_si128((__m128i *)&l0[idx1 ^ 0x10]), _mm_set_epi64x(lo, hi)); \
@@ -595,6 +670,23 @@ inline void set_float_rounding_mode()
 		assign(sqrt_result, int_sqrt33_1_double_precision(cx_64 + division_result)); \
 	}
 
+#define CN_R_RANDOM_MATH(n, al, ah, cl, bx0, bx1, cn_r_data) \
+	if (ALGO == cryptonight_r || ALGO == cryptonight_r_wow) \
+	{ \
+		cl ^= (cn_r_data[0] + cn_r_data[1]) | ((uint64_t)(cn_r_data[2] + cn_r_data[3]) << 32); \
+		cn_r_data[4] = static_cast<uint32_t>(al); \
+		cn_r_data[5] = static_cast<uint32_t>(ah); \
+		cn_r_data[6] = static_cast<uint32_t>(_mm_cvtsi128_si32(bx0)); \
+		cn_r_data[7] = static_cast<uint32_t>(_mm_cvtsi128_si32(bx1)); \
+		cn_r_data[8] = static_cast<uint32_t>(_mm_cvtsi128_si32(_mm_srli_si128(bx1, 8))); \
+		v4_random_math(ctx[n]->cn_r_ctx.code, cn_r_data); \
+	} \
+	if (ALGO == cryptonight_r) \
+	{ \
+		al ^= cn_r_data[2] | ((uint64_t)(cn_r_data[3]) << 32); \
+		ah ^= cn_r_data[0] | ((uint64_t)(cn_r_data[1]) << 32); \
+	}
+
 #define CN_INIT_SINGLE \
 	if((ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2) && len < 43) \
 	{ \
@@ -602,7 +694,7 @@ inline void set_float_rounding_mode()
 		return; \
 	}
 
-#define CN_INIT(n, monero_const, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm) \
+#define CN_INIT(n, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm, cn_r_data) \
 	keccak((const uint8_t *)input + len * n, len, ctx[n]->hash_state, 200); \
 	uint64_t monero_const; \
 	if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2) \
@@ -611,7 +703,7 @@ inline void set_float_rounding_mode()
 		monero_const ^=  *(reinterpret_cast<const uint64_t*>(ctx[n]->hash_state) + 24); \
 	} \
 	/* Optim - 99% time boundary */ \
-	cn_explode_scratchpad<MEM, SOFT_AES, PREFETCH, ALGO>((__m128i*)ctx[n]->hash_state, (__m128i*)ctx[n]->long_state); \
+	cn_explode_scratchpad<SOFT_AES, PREFETCH, ALGO>((__m128i*)ctx[n]->hash_state, (__m128i*)ctx[n]->long_state, algo); \
 	\
 	__m128i ax0; \
 	uint64_t idx0; \
@@ -620,7 +712,14 @@ inline void set_float_rounding_mode()
 	/* BEGIN cryptonight_monero_v8 variables */ \
 	__m128i bx1; \
 	__m128i division_result_xmm; \
+	__m128 conc_var; \
+	if(ALGO == cryptonight_conceal || ALGO == cryptonight_gpu) \
+	{\
+		set_float_rounding_mode_nearest(); \
+		conc_var = _mm_setzero_ps(); \
+	}\
 	GetOptimalSqrtType_t<N> sqrt_result; \
+	uint32_t cn_r_data[9]; \
 	/* END cryptonight_monero_v8 variables */ \
 	{ \
 		uint64_t* h0 = (uint64_t*)ctx[n]->hash_state; \
@@ -634,13 +733,23 @@ inline void set_float_rounding_mode()
 			assign(sqrt_result, h0[13]); \
 			set_float_rounding_mode(); \
 		} \
+		if (ALGO == cryptonight_r || ALGO == cryptonight_r_wow) \
+		{ \
+			bx1 = _mm_set_epi64x(h0[9] ^ h0[11], h0[8] ^ h0[10]); \
+			cn_r_data[0] = (uint32_t)(h0[12]); \
+			cn_r_data[1] = (uint32_t)(h0[12] >> 32); \
+			cn_r_data[2] = (uint32_t)(h0[13]); \
+			cn_r_data[3] = (uint32_t)(h0[13] >> 32); \
+		} \
 	} \
 	__m128i *ptr0
 
-#define CN_STEP1(n, monero_const, l0, ax0, bx0, idx0, ptr0, cx, bx1) \
+#define CN_STEP1(n, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, cx, bx1) \
 	__m128i cx; \
 	ptr0 = (__m128i *)&l0[idx0 & MASK]; \
 	cx = _mm_load_si128(ptr0); \
+	if (ALGO == cryptonight_conceal) \
+		cryptonight_conceal_tweak(cx, conc_var); \
 	if (ALGO == cryptonight_bittube2) \
 	{ \
 		cx = aes_round_bittube2(cx, ax0); \
@@ -652,7 +761,7 @@ inline void set_float_rounding_mode()
 		else \
 			cx = _mm_aesenc_si128(cx, ax0); \
 	} \
-	CN_MONERO_V8_SHUFFLE_0(n, l0, idx0, ax0, bx0, bx1)
+	CN_MONERO_V8_SHUFFLE_0(n, l0, idx0, ax0, bx0, bx1, cx)
 
 #define CN_STEP2(n, monero_const, l0, ax0, bx0, idx0, ptr0, cx) \
 	if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2) \
@@ -664,24 +773,32 @@ inline void set_float_rounding_mode()
 	ptr0 = (__m128i *)&l0[idx0 & MASK]; \
 	if(PREFETCH) \
 		_mm_prefetch((const char*)ptr0, _MM_HINT_T0); \
-	if(ALGO != cryptonight_monero_v8) \
+	if(ALGO != cryptonight_monero_v8 && ALGO != cryptonight_r && ALGO != cryptonight_r_wow) \
 		bx0 = cx
 
-#define CN_STEP3(n, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm) \
+#define CN_STEP3(n, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm, cn_r_data) \
 	uint64_t lo, cl, ch; \
 	uint64_t al0 = _mm_cvtsi128_si64(ax0); \
 	uint64_t ah0 = ((uint64_t*)&ax0)[1]; \
 	cl = ((uint64_t*)ptr0)[0]; \
 	ch = ((uint64_t*)ptr0)[1]; \
+	CN_R_RANDOM_MATH(n, al0, ah0, cl, bx0, bx1, cn_r_data); \
 	CN_MONERO_V8_DIV(n, cx, sqrt_result, division_result_xmm, cl); \
 	{ \
 		uint64_t hi; \
 		lo = _umul128(idx0, cl, &hi); \
-		CN_MONERO_V8_SHUFFLE_1(n, l0, idx0, ax0, bx0, bx1, lo, hi); \
+		if(ALGO == cryptonight_r) \
+		{ \
+			CN_MONERO_V8_SHUFFLE_0(n, l0, idx0, ax0, bx0, bx1, cx); \
+		} \
+		else \
+		{ \
+			CN_MONERO_V8_SHUFFLE_1(n, l0, idx0, ax0, bx0, bx1, lo, hi); \
+		} \
 		ah0 += lo; \
 		al0 += hi; \
 	} \
-	if(ALGO == cryptonight_monero_v8) \
+	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_r || ALGO != cryptonight_r_wow) \
 	{ \
 		bx1 = bx0; \
 		bx0 = cx; \
@@ -716,7 +833,7 @@ inline void set_float_rounding_mode()
 		((int64_t*)ptr0)[0] = u ^ q; \
 		idx0 = d ^ q; \
 	} \
-	else if(ALGO == cryptonight_haven) \
+	else if(ALGO == cryptonight_haven || ALGO == cryptonight_superfast) \
 	{ \
 		ptr0 = (__m128i *)&l0[idx0 & MASK]; \
 		int64_t u  = ((int64_t*)ptr0)[0]; \
@@ -729,7 +846,7 @@ inline void set_float_rounding_mode()
 
 #define CN_FINALIZE(n) \
 	/* Optim - 90% time boundary */ \
-	cn_implode_scratchpad<MEM, SOFT_AES, PREFETCH, ALGO>((__m128i*)ctx[n]->long_state, (__m128i*)ctx[n]->hash_state); \
+	cn_implode_scratchpad<SOFT_AES, PREFETCH, ALGO>((__m128i*)ctx[n]->long_state, (__m128i*)ctx[n]->hash_state, algo); \
 	/* Optim - 99% time boundary */ \
 	keccakf((uint64_t*)ctx[n]->hash_state, 24); \
 	extra_hashes[ctx[n]->hash_state[0] & 3](ctx[n]->hash_state, 200, (char*)output + 32 * n)
@@ -771,6 +888,7 @@ inline void set_float_rounding_mode()
 #define CN_ENUM_13(n, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13) n, x1 ## n, x2 ## n, x3 ## n, x4 ## n, x5 ## n, x6 ## n, x7 ## n, x8 ## n, x9 ## n, x10 ## n, x11 ## n, x12 ## n, x13 ## n
 #define CN_ENUM_14(n, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14) n, x1 ## n, x2 ## n, x3 ## n, x4 ## n, x5 ## n, x6 ## n, x7 ## n, x8 ## n, x9 ## n, x10 ## n, x11 ## n, x12 ## n, x13 ## n, x14 ## n
 #define CN_ENUM_15(n, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15) n, x1 ## n, x2 ## n, x3 ## n, x4 ## n, x5 ## n, x6 ## n, x7 ## n, x8 ## n, x9 ## n, x10 ## n, x11 ## n, x12 ## n, x13 ## n, x14 ## n, x15 ## n
+#define CN_ENUM_16(n, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16) n, x1 ## n, x2 ## n, x3 ## n, x4 ## n, x5 ## n, x6 ## n, x7 ## n, x8 ## n, x9 ## n, x10 ## n, x11 ## n, x12 ## n, x13 ## n, x14 ## n, x15 ## n, x16 ## n
 
 /** repeat a macro call multiple times
  *
@@ -798,22 +916,22 @@ struct Cryptonight_hash<1>
 {
 	static constexpr size_t N = 1;
 
-	template<xmrstak_algo ALGO, bool SOFT_AES, bool PREFETCH>
-	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+	template<xmrstak_algo_id ALGO, bool SOFT_AES, bool PREFETCH>
+	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
 	{
-		constexpr size_t MASK = cn_select_mask<ALGO>();
-		constexpr size_t ITERATIONS = cn_select_iter<ALGO>();
-		constexpr size_t MEM = cn_select_memory<ALGO>();
+		const uint32_t MASK = algo.Mask();
+		const uint32_t ITERATIONS = algo.Iter();
+		const size_t MEM = algo.Mem();
 
 		CN_INIT_SINGLE;
-		REPEAT_1(9, CN_INIT, monero_const, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm);
+		REPEAT_1(11, CN_INIT, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm, cn_r_data);
 
 		// Optim - 90% time boundary
 		for(size_t i = 0; i < ITERATIONS; i++)
 		{
-			REPEAT_1(8, CN_STEP1, monero_const, l0, ax0, bx0, idx0, ptr0, cx, bx1);
+			REPEAT_1(9, CN_STEP1, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, cx, bx1);
 			REPEAT_1(7, CN_STEP2, monero_const, l0, ax0, bx0, idx0, ptr0, cx);
-			REPEAT_1(15, CN_STEP3, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm);
+			REPEAT_1(16, CN_STEP3, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm, cn_r_data);
 			REPEAT_1(11, CN_STEP4, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0);
 			REPEAT_1(6, CN_STEP5, monero_const, l0, ax0, bx0, idx0, ptr0);
 		}
@@ -827,22 +945,22 @@ struct Cryptonight_hash<2>
 {
 	static constexpr size_t N = 2;
 
-	template<xmrstak_algo ALGO, bool SOFT_AES, bool PREFETCH>
-	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+	template<xmrstak_algo_id ALGO, bool SOFT_AES, bool PREFETCH>
+	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
 	{
-		constexpr size_t MASK = cn_select_mask<ALGO>();
-		constexpr size_t ITERATIONS = cn_select_iter<ALGO>();
-		constexpr size_t MEM = cn_select_memory<ALGO>();
+		const uint32_t MASK = algo.Mask();
+		const uint32_t ITERATIONS = algo.Iter();
+		const size_t MEM = algo.Mem();
 
 		CN_INIT_SINGLE;
-		REPEAT_2(9, CN_INIT, monero_const, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm);
+		REPEAT_2(11, CN_INIT, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm, cn_r_data);
 
 		// Optim - 90% time boundary
 		for(size_t i = 0; i < ITERATIONS; i++)
 		{
-			REPEAT_2(8, CN_STEP1, monero_const, l0, ax0, bx0, idx0, ptr0, cx, bx1);
+			REPEAT_2(9, CN_STEP1, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, cx, bx1);
 			REPEAT_2(7, CN_STEP2, monero_const, l0, ax0, bx0, idx0, ptr0, cx);
-			REPEAT_2(15, CN_STEP3, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm);
+			REPEAT_2(16, CN_STEP3, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm, cn_r_data);
 			REPEAT_2(11, CN_STEP4, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0);
 			REPEAT_2(6, CN_STEP5, monero_const, l0, ax0, bx0, idx0, ptr0);
 		}
@@ -856,22 +974,22 @@ struct Cryptonight_hash<3>
 {
 	static constexpr size_t N = 3;
 
-	template<xmrstak_algo ALGO, bool SOFT_AES, bool PREFETCH>
-	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+	template<xmrstak_algo_id ALGO, bool SOFT_AES, bool PREFETCH>
+	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
 	{
-		constexpr size_t MASK = cn_select_mask<ALGO>();
-		constexpr size_t ITERATIONS = cn_select_iter<ALGO>();
-		constexpr size_t MEM = cn_select_memory<ALGO>();
+		const uint32_t MASK = algo.Mask();
+		const uint32_t ITERATIONS = algo.Iter();
+		const size_t MEM = algo.Mem();
 
 		CN_INIT_SINGLE;
-		REPEAT_3(9, CN_INIT, monero_const, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm);
+		REPEAT_3(11, CN_INIT, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm, cn_r_data);
 
 		// Optim - 90% time boundary
 		for(size_t i = 0; i < ITERATIONS; i++)
 		{
-			REPEAT_3(8, CN_STEP1, monero_const, l0, ax0, bx0, idx0, ptr0, cx, bx1);
+			REPEAT_3(9, CN_STEP1, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, cx, bx1);
 			REPEAT_3(7, CN_STEP2, monero_const, l0, ax0, bx0, idx0, ptr0, cx);
-			REPEAT_3(15, CN_STEP3, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm);
+			REPEAT_3(16, CN_STEP3, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm, cn_r_data);
 			REPEAT_3(11, CN_STEP4, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0);
 			REPEAT_3(6, CN_STEP5, monero_const, l0, ax0, bx0, idx0, ptr0);
 		}
@@ -885,22 +1003,22 @@ struct Cryptonight_hash<4>
 {
 	static constexpr size_t N = 4;
 
-	template<xmrstak_algo ALGO, bool SOFT_AES, bool PREFETCH>
-	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+	template<xmrstak_algo_id ALGO, bool SOFT_AES, bool PREFETCH>
+	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
 	{
-		constexpr size_t MASK = cn_select_mask<ALGO>();
-		constexpr size_t ITERATIONS = cn_select_iter<ALGO>();
-		constexpr size_t MEM = cn_select_memory<ALGO>();
+		const uint32_t MASK = algo.Mask();
+		const uint32_t ITERATIONS = algo.Iter();
+		const size_t MEM = algo.Mem();
 
 		CN_INIT_SINGLE;
-		REPEAT_4(9, CN_INIT, monero_const, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm);
+		REPEAT_4(11, CN_INIT, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm, cn_r_data);
 
 		// Optim - 90% time boundary
 		for(size_t i = 0; i < ITERATIONS; i++)
 		{
-			REPEAT_4(8, CN_STEP1, monero_const, l0, ax0, bx0, idx0, ptr0, cx, bx1);
+			REPEAT_4(9, CN_STEP1, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, cx, bx1);
 			REPEAT_4(7, CN_STEP2, monero_const, l0, ax0, bx0, idx0, ptr0, cx);
-			REPEAT_4(15, CN_STEP3, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm);
+			REPEAT_4(16, CN_STEP3, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm, cn_r_data);
 			REPEAT_4(11, CN_STEP4, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0);
 			REPEAT_4(6, CN_STEP5, monero_const, l0, ax0, bx0, idx0, ptr0);
 		}
@@ -914,22 +1032,22 @@ struct Cryptonight_hash<5>
 {
 	static constexpr size_t N = 5;
 
-	template<xmrstak_algo ALGO, bool SOFT_AES, bool PREFETCH>
-	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+	template<xmrstak_algo_id ALGO, bool SOFT_AES, bool PREFETCH>
+	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
 	{
-		constexpr size_t MASK = cn_select_mask<ALGO>();
-		constexpr size_t ITERATIONS = cn_select_iter<ALGO>();
-		constexpr size_t MEM = cn_select_memory<ALGO>();
+		const uint32_t MASK = algo.Mask();
+		const uint32_t ITERATIONS = algo.Iter();
+		const size_t MEM = algo.Mem();
 
 		CN_INIT_SINGLE;
-		REPEAT_5(9, CN_INIT, monero_const, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm);
+		REPEAT_5(11, CN_INIT, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm, cn_r_data);
 
 		// Optim - 90% time boundary
 		for(size_t i = 0; i < ITERATIONS; i++)
 		{
-			REPEAT_5(8, CN_STEP1, monero_const, l0, ax0, bx0, idx0, ptr0, cx, bx1);
+			REPEAT_5(9, CN_STEP1, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, cx, bx1);
 			REPEAT_5(7, CN_STEP2, monero_const, l0, ax0, bx0, idx0, ptr0, cx);
-			REPEAT_5(15, CN_STEP3, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm);
+			REPEAT_5(16, CN_STEP3, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm, cn_r_data);
 			REPEAT_5(11, CN_STEP4, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0);
 			REPEAT_5(6, CN_STEP5, monero_const, l0, ax0, bx0, idx0, ptr0);
 		}
@@ -951,20 +1069,18 @@ struct Cryptonight_hash_asm<1, asm_version>
 {
 	static constexpr size_t N = 1;
 
-	template<xmrstak_algo ALGO>
-	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+	template<xmrstak_algo_id ALGO>
+	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
 	{
-		constexpr size_t MEM = cn_select_memory<ALGO>();
-
 		keccak((const uint8_t *)input, len, ctx[0]->hash_state, 200);
-		cn_explode_scratchpad<MEM, false, false, ALGO>((__m128i*)ctx[0]->hash_state, (__m128i*)ctx[0]->long_state);
+		cn_explode_scratchpad<false, false, ALGO>((__m128i*)ctx[0]->hash_state, (__m128i*)ctx[0]->long_state, algo);
 
 		if(asm_version == 0)
 			cryptonight_v8_mainloop_ivybridge_asm(ctx[0]);
 		else if(asm_version == 1)
 			cryptonight_v8_mainloop_ryzen_asm(ctx[0]);
 
-		cn_implode_scratchpad<MEM, false, false, ALGO>((__m128i*)ctx[0]->long_state, (__m128i*)ctx[0]->hash_state);
+		cn_implode_scratchpad<false, false, ALGO>((__m128i*)ctx[0]->long_state, (__m128i*)ctx[0]->hash_state, algo);
 		keccakf((uint64_t*)ctx[0]->hash_state, 24);
 		extra_hashes[ctx[0]->hash_state[0] & 3](ctx[0]->hash_state, 200, (char*)output);
 	}
@@ -976,16 +1092,16 @@ struct Cryptonight_hash_asm<2, 0>
 {
 	static constexpr size_t N = 2;
 
-	template<xmrstak_algo ALGO>
-	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx)
+	template<xmrstak_algo_id ALGO>
+	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
 	{
-		constexpr size_t MEM = cn_select_memory<ALGO>();
+		const size_t MEM = algo.Mem();
 
 		for(size_t i = 0; i < N; ++i)
 		{
 			keccak((const uint8_t *)input + len * i, len, ctx[i]->hash_state, 200);
 			/* Optim - 99% time boundary */
-			cn_explode_scratchpad<MEM, false, false, ALGO>((__m128i*)ctx[i]->hash_state, (__m128i*)ctx[i]->long_state);
+			cn_explode_scratchpad<false, false, ALGO>((__m128i*)ctx[i]->hash_state, (__m128i*)ctx[i]->long_state, algo);
 		}
 
 		cryptonight_v8_double_mainloop_sandybridge_asm(ctx[0], ctx[1]);
@@ -993,10 +1109,48 @@ struct Cryptonight_hash_asm<2, 0>
 		for(size_t i = 0; i < N; ++i)
 		{
 			/* Optim - 90% time boundary */
-			cn_implode_scratchpad<MEM, false, false, ALGO>((__m128i*)ctx[i]->long_state, (__m128i*)ctx[i]->hash_state);
+			cn_implode_scratchpad<false, false, ALGO>((__m128i*)ctx[i]->long_state, (__m128i*)ctx[i]->hash_state, algo);
 			/* Optim - 99% time boundary */
 			keccakf((uint64_t*)ctx[i]->hash_state, 24);
 			extra_hashes[ctx[i]->hash_state[0] & 3](ctx[i]->hash_state, 200, (char*)output + 32 * i);
 		}
+	}
+};
+
+struct Cryptonight_hash_gpu
+{
+	static constexpr size_t N = 1;
+
+	template<xmrstak_algo_id ALGO, bool SOFT_AES, bool PREFETCH>
+	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
+	{
+		keccak((const uint8_t *)input, len, ctx[0]->hash_state, 200);
+		cn_explode_scratchpad_gpu<PREFETCH, ALGO>(ctx[0]->hash_state, ctx[0]->long_state, algo);
+
+		if(cngpu_check_avx2())
+			cn_gpu_inner_avx(ctx[0]->hash_state, ctx[0]->long_state, algo);
+		else
+			cn_gpu_inner_ssse3(ctx[0]->hash_state, ctx[0]->long_state, algo);
+
+		cn_implode_scratchpad<SOFT_AES, PREFETCH, ALGO>((__m128i*)ctx[0]->long_state, (__m128i*)ctx[0]->hash_state, algo);
+		keccakf((uint64_t*)ctx[0]->hash_state, 24);
+		memcpy(output, ctx[0]->hash_state, 32);
+	}
+};
+
+template<size_t N>
+struct Cryptonight_R_generator
+{
+	template<xmrstak_algo_id ALGO>
+	static void cn_on_new_job(const xmrstak::miner_work& work, cryptonight_ctx** ctx)
+	{
+		if(ctx[0]->cn_r_ctx.height == work.iBlockHeight)
+			return;
+
+		ctx[0]->cn_r_ctx.height = work.iBlockHeight;
+		v4_random_math_init<ALGO>(ctx[0]->cn_r_ctx.code, work.iBlockHeight);
+
+		for(size_t i=1; i < N; i++)
+			ctx[i]->cn_r_ctx = ctx[0]->cn_r_ctx;
 	}
 };

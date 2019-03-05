@@ -24,7 +24,7 @@ public:
 	static bool init_gpus();
 
 private:
-	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**);
+	typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**, const xmrstak_algo&);
 
 	minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::thd_cfg cfg);
 
@@ -39,6 +39,7 @@ private:
 
 	std::thread oWorkThd;
 	int64_t affinity;
+	uint32_t autoTune;
 
 	bool bQuit;
 	bool bNoPrefetch;

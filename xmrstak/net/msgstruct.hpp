@@ -16,6 +16,7 @@ struct pool_job
 	uint64_t	iTarget;
 	uint32_t	iWorkLen;
 	uint32_t	iSavedNonce;
+	uint64_t	iBlockHeight = uint64_t(-1);
 
 	pool_job() : iWorkLen(0), iSavedNonce(0) {}
 	pool_job(const char* sJobID, uint64_t iTarget, const uint8_t* bWorkBlob, uint32_t iWorkLen) :
@@ -33,10 +34,10 @@ struct job_result
 	char		sJobID[64];
 	uint32_t	iNonce;
 	uint32_t	iThreadId;
-	xmrstak_algo algorithm = invalid_algo;
+	xmrstak_algo algorithm = {invalid_algo};
 
 	job_result() {}
-	job_result(const char* sJobID, uint32_t iNonce, const uint8_t* bResult, uint32_t iThreadId, xmrstak_algo algo) :
+	job_result(const char* sJobID, uint32_t iNonce, const uint8_t* bResult, uint32_t iThreadId, const xmrstak_algo& algo) :
 		iNonce(iNonce), iThreadId(iThreadId), algorithm(algo)
 	{
 		memcpy(this->sJobID, sJobID, sizeof(job_result::sJobID));
@@ -174,6 +175,10 @@ struct ex_event
 			oSocketError.~sock_err();
 	}
 };
+
+inline uint64_t t32_to_t64(uint32_t t) { return 0xFFFFFFFFFFFFFFFFULL / (0xFFFFFFFFULL / ((uint64_t)t)); }
+inline uint64_t t64_to_diff(uint64_t t) { return 0xFFFFFFFFFFFFFFFFULL / t; }
+inline uint64_t diff_to_t64(uint64_t d) { return 0xFFFFFFFFFFFFFFFFULL / d; }
 
 #include <chrono>
 //Get steady_clock timestamp - misc helper function

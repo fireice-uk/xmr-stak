@@ -35,7 +35,7 @@ public:
 	void disconnect(bool quiet = false);
 
 	bool cmd_login();
-	bool cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult, const char* backend_name, uint64_t backend_hashcount, uint64_t total_hashcount, xmrstak_algo algo);
+	bool cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult, const char* backend_name, uint64_t backend_hashcount, uint64_t total_hashcount, const xmrstak_algo& algo);
 
 	static bool hex2bin(const char* in, unsigned int len, unsigned char* out);
 	static void bin2hex(const unsigned char* in, unsigned int len, char* out);
@@ -58,6 +58,7 @@ public:
 	inline bool get_disconnects(size_t& att, size_t& time) { att = connect_attempts; time = disconnect_time != 0 ? get_timestamp() - disconnect_time + 1 : 0; return pool && usr_login[0]; }
 	inline const char* get_pool_addr() { return net_addr.c_str(); }
 	inline const char* get_tls_fp() { return tls_fp.c_str(); }
+	inline const char* get_rigid() { return usr_rigid.c_str(); }
 	inline bool is_nicehash() { return nicehash; }
 
 	bool get_pool_motd(std::string& strin);
@@ -65,11 +66,6 @@ public:
 	std::string&& get_call_error();
 	bool have_call_error() { return call_error; }
 	bool have_sock_error() { return bHaveSocketError; }
-
-	inline static uint64_t t32_to_t64(uint32_t t) { return 0xFFFFFFFFFFFFFFFFULL / (0xFFFFFFFFULL / ((uint64_t)t)); }
-	inline static uint64_t t64_to_diff(uint64_t t) { return 0xFFFFFFFFFFFFFFFFULL / t; }
-	inline static uint64_t diff_to_t64(uint64_t d) { return 0xFFFFFFFFFFFFFFFFULL / d; }
-
 	inline uint64_t get_current_diff() { return iJobDiff; }
 
 	void save_nonce(uint32_t nonce);

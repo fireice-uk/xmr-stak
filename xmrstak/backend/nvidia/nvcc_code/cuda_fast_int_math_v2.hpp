@@ -7,8 +7,7 @@ __device__ __forceinline__ uint32_t get_reciprocal(uint32_t a)
 	const float a_hi = __uint_as_float((a >> 8) + ((126U + 31U) << 23));
 	const float a_lo = __uint2float_rn(a & 0xFF);
 
-	float r;
-	asm("rcp.approx.f32 %0, %1;" : "=f"(r) : "f"(a_hi));
+	float r = __frcp_rn(a_hi);
 	const float r_scaled = __uint_as_float(__float_as_uint(r) + (64U << 23));
 
 	const float h = __fmaf_rn(a_lo, r, __fmaf_rn(a_hi, r, -1.0f));
@@ -18,21 +17,22 @@ __device__ __forceinline__ uint32_t get_reciprocal(uint32_t a)
 __device__ __forceinline__ uint64_t fast_div_v2(uint64_t a, uint32_t b)
 {
 	const uint32_t r = get_reciprocal(b);
-	const uint64_t k = __umulhi(((uint32_t*)&a)[0], r) + ((uint64_t)(r) * ((uint32_t*)&a)[1]) + a;
+	const uint32_t a1 = ((uint32_t*)&a)[1];
+	const uint64_t k = __umulhi(((uint32_t*)&a)[0], r) + ((uint64_t)(r) * a1) + a;
 
-	uint32_t q[2];
-	q[0] = ((uint32_t*)&k)[1];
+	const uint32_t q = ((uint32_t*)&k)[1];
+	int64_t tmp = a - ((uint64_t)(q) * b);
+	((int32_t*)(&tmp))[1] -= q < a1 ? b : 0;
+	
+	const int overshoot = ((int*)(&tmp))[1] >> 31;
+	const int64_t tmp_u = (uint32_t)(b - 1) - tmp;
+	const int undershoot = ((int*)&tmp_u)[1] >> 31;
 
-	int64_t tmp = a - (uint64_t)(q[0]) * b;
-	((int32_t*)(&tmp))[1] -= (k < a) ? b : 0;
+	uint64_t result;
+	((uint32_t*)&result)[0] = q + overshoot - undershoot;
+	((uint32_t*)&result)[1] = ((uint32_t*)(&tmp))[0] + ((uint32_t)(overshoot) & b) - ((uint32_t)(undershoot) & b);
 
-	const bool overshoot = ((int32_t*)(&tmp))[1] < 0;
-	const bool undershoot = tmp >= b;
-
-	q[0] += (undershoot ? 1U : 0U) - (overshoot ? 1U : 0U);
-	q[1] = ((uint32_t*)(&tmp))[0] + (overshoot ? b : 0U) - (undershoot ? b : 0U);
-
-	return *((uint64_t*)(q));
+	return result;
 }
 
 __device__ __forceinline__ uint32_t fast_sqrt_v2(const uint64_t n1)

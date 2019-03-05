@@ -9,10 +9,8 @@
 - run `./amdgpu-pro-install --opencl=legacy,pal` from the unzipped folder
 - set the environment variable to opencl `export AMDAPPSDKROOT=/opt/amdgpu-pro/`
 
-**ATTENTION** The linux driver 18.3 creating invalid shares. 
-If you have an issue with `invalid shares` please downgrade your driver or switch to ROCm.
-
 For linux also the OpenSource driver ROCm 1.9.X+ is a well working alternative, see https://rocm.github.io/ROCmInstall.html
+ROCm is not supporting old GPUs please check if your GPU is supported https://rocm.github.io/hardware.html.
 
 ### Cuda 8.0+ (only needed to use NVIDIA GPUs)
 

@@ -804,7 +804,7 @@ int main(int argc, char *argv[])
 	printer::inst()->print_str("This currency is a way for us to implement the ideas that we were unable to in\n");
 	printer::inst()->print_str("Monero. See https://github.com/fireice-uk/cryptonote-speedup-demo for details.\n");
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
-	printer::inst()->print_msg(L0, "Mining coin: %s", jconf::inst()->GetMiningCoin().c_str());
+	printer::inst()->print_msg(L0, "Mining coin: %s", ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo().Name().c_str());
 
 	if(params::inst().benchmark_block_version >= 0)
 	{
@@ -868,13 +868,12 @@ int do_benchmark(int block_version, int wait_sec, int work_sec)
 	/* AMD and NVIDIA is currently only supporting work sizes up to 84byte
 	 * \todo fix this issue
 	 */
-	xmrstak::miner_work benchWork = xmrstak::miner_work("", work, 84, 0, false, 0);
 	printer::inst()->print_msg(L0, "Start a %d second benchmark...",work_sec);
-	xmrstak::globalStates::inst().switch_work(benchWork, dat);
+	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work("", work, 84, 0, false, 0, 0), dat);
 	uint64_t iStartStamp = get_timestamp_ms();
 
 	std::this_thread::sleep_for(std::chrono::seconds(work_sec));
-	xmrstak::globalStates::inst().switch_work(oWork, dat);
+	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work("", work, 84, 0, false, 0, 0), dat);
 
 	double fTotalHps = 0.0;
 	for (uint32_t i = 0; i < pvThreads->size(); i++)

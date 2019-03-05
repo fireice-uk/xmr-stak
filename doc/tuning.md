@@ -10,6 +10,7 @@
   * [Choose `intensity` and `worksize`](#choose-intensity-and-worksize)
   * [Add more GPUs](#add-more-gpus)
   * [Two Threads per GPU](two-threads-per-gpu)
+  * [Interleave Tuning](interleave-tuning )
   * [disable comp_mode](#disable-comp_mode)
   * [change the scratchpad memory pattern](change-the-scratchpad-memory-pattern)
   * [Increase Memory Pool](#increase-memory-pool)
@@ -83,13 +84,13 @@ If you are unsure of either GPU or platform index value, you can use `clinfo` to
 ```
 "gpu_threads_conf" :
 [
-    {
-      "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false,
-      "strided_index" : true, "mem_chunk" : 2, "unroll" : 8, "comp_mode" : true
+    { "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false,
+      "strided_index" : true, "mem_chunk" : 2, "unroll" : 8, "comp_mode" : true,
+      "interleave" : 40
     },
-    {
-      "index" : 1, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false,
-      "strided_index" : true, "mem_chunk" : 2, "unroll" : 8, "comp_mode" : true
+    { "index" : 1, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false,
+      "strided_index" : true, "mem_chunk" : 2, "unroll" : 8, "comp_mode" : true,
+      "interleave" : 40
     },
 ],
 
@@ -107,18 +108,48 @@ Therefore adjust your intensity by hand.
 ```
 "gpu_threads_conf" :
 [
-    {
-      "index" : 0, "intensity" : 768, "worksize" : 8, "affine_to_cpu" : false,
-      "strided_index" : true, "mem_chunk" : 2, "unroll" : 8, "comp_mode" : true
+    { "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false,
+      "strided_index" : true, "mem_chunk" : 2, "unroll" : 8, "comp_mode" : true,
+      "interleave" : 40
     },
-    {
-      "index" : 0, "intensity" : 768, "worksize" : 8, "affine_to_cpu" : false,
-      "strided_index" : true, "mem_chunk" : 2, "unroll" : 8, "comp_mode" : true
+    { "index" : 0, "intensity" : 1000, "worksize" : 8, "affine_to_cpu" : false,
+      "strided_index" : true, "mem_chunk" : 2, "unroll" : 8, "comp_mode" : true,
+      "interleave" : 40
     },
 ],
 
 "platform_index" : 0,
 ```
+
+### Interleave Tuning
+
+Interleave controls when a worker thread is starting to calculate a bunch of hashes 
+if two worker threads are used to utilize one GPU.
+This option has no effect if only one worker thread is used per GPU.
+
+![Interleave](img/interleave.png) 
+
+Interleave defines how long a thread needs to wait to start the next hash calculation relative to the last started worker thread.
+To choose a interleave value larger than 50% makes no sense because than the gpu will not be utilized well enough.
+In the most cases the default 40 is a good value but on some systems e.g. Linux Rocm 1.9.1 driver with RX5XX you need to adjust the value.
+If you get many interleave message in a row (over 1 minute) you should adjust the value.
+
+```
+OpenCL Interleave 0|1: 642/2400.50 ms - 30.1
+OpenCL Interleave 0|0: 355/2265.05 ms - 30.2
+OpenCL Interleave 0|1: 221/2215.65 ms - 30.2
+```
+
+description:
+```
+<gpu id>|<thread id on the gpu>: <last delay>/<average calculation per hash bunch> ms - <interleave value>
+
+```
+`last delay` should gou slowly to 0.
+If it goes down and than jumps to a very large value multiple times within a minute you should reduce the intensity by 5.
+The `intensity value` will automatically go up and down within the range of +-5% to adjust kernel run-time fluctuations.
+Automatic adjustment is disabled as long as `auto-tuning` is active and will be started after it is finished. 
+If `last delay` goes down to 10ms and the messages stops and repeated from time to time with delays up to 15ms you will have already a good value.
 
 ### disable comp_mode
 
