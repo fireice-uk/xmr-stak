@@ -754,142 +754,293 @@ void minethd::prep_multiway_work(uint8_t *bWorkBlob, uint32_t **piNonce)
 }
 
 template<uint32_t N>
+
 void minethd::multiway_work_main()
+
 {
+
+#ifdef _WIN32
+	mining_thread_id = GetCurrentThreadId();
+#else
+        mining_thread_id = pthread_self();
+#endif
+
 	if(affinity >= 0) //-1 means no affinity
+
 		bindMemoryToNUMANode(affinity);
 
+
 	order_fix.set_value();
+
 	std::unique_lock<std::mutex> lck(thd_aff_set);
+
 	lck.release();
+
 	std::this_thread::yield();
 
+
 	cryptonight_ctx *ctx[MAX_N];
+
 	uint64_t iCount = 0;
+
 	uint64_t *piHashVal[MAX_N];
+
 	uint32_t *piNonce[MAX_N];
+
 	uint8_t bHashOut[MAX_N * 32];
+
 	uint8_t bWorkBlob[sizeof(miner_work::bWorkBlob) * MAX_N];
+
 	uint32_t iNonce;
+
 	job_result res;
 
+
 	for (size_t i = 0; i < N; i++)
+
 	{
+
 		ctx[i] = minethd_alloc_ctx();
+
 		if(ctx[i] == nullptr)
+
 		{
+
 			printer::inst()->print_msg(L0, "ERROR: miner was not able to allocate memory.");
+
 			for (int j = 0; j < i; j++)
+
 				cryptonight_free_ctx(ctx[j]);
+
 			win_exit(1);
+
 		}
+
 		piHashVal[i] = (uint64_t*)(bHashOut + 32 * i + 24);
+
 		piNonce[i] = (i == 0) ? (uint32_t*)(bWorkBlob + 39) : nullptr;
+
 	}
 
+
 	if(!oWork.bStall)
+
 		prep_multiway_work<N>(bWorkBlob, piNonce);
+
 
 	globalStates::inst().iConsumeCnt++;
 
+
 	// start with root algorithm and switch later if fork version is reached
+
 	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
+
 	cn_hash_fun hash_fun_multi;
+
 	cn_on_new_job on_new_job;
+
 	uint8_t version = 0;
+
 	size_t lastPoolId = 0;
 
+        bool stop_mining = false;
+	bool stop_mining2 = false;
+
+	std::atomic<bool>& bQuit = executor::inst()->bQuit;
+	std::atomic<bool>& bSuspend = executor::inst()->bSuspended;
+
 	func_multi_selector<N>(hash_fun_multi, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
-	while (bQuit == 0)
+
+	while (!bQuit)
+
 	{
+
 		if (oWork.bStall)
+
 		{
+
 			/*	We are stalled here because the executor didn't find a job for us yet,
+
 			either because of network latency, or a socket problem. Since we are
+
 			raison d'etre of this software it us sensible to just wait until we have something*/
 
+
 			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        {
+                               std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                               if (bQuit) 
+			       {
+					break;
+			       }
+                        }
+
+                        if (bQuit) continue;
 
 			globalStates::inst().consume_work(oWork, iJobNo);
+
 			prep_multiway_work<N>(bWorkBlob, piNonce);
+
 			continue;
+
 		}
 
+
 		constexpr uint32_t nonce_chunk = 4096;
+
 		int64_t nonce_ctr = 0;
+
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
+
 		if(oWork.bNiceHash)
+
 			iNonce = *piNonce[0];
 
+
 		uint8_t new_version = oWork.getVersion();
+
 		if(new_version != version || oWork.iPoolId != lastPoolId)
+
 		{
+
 			coinDescription coinDesc = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(oWork.iPoolId);
+
 			if(new_version >= coinDesc.GetMiningForkVersion())
+
 			{
+
 				miner_algo = coinDesc.GetMiningAlgo();
+
 				func_multi_selector<N>(hash_fun_multi, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
+
 			}
+
 			else
+
 			{
+
 				miner_algo = coinDesc.GetMiningAlgoRoot();
+
 				func_multi_selector<N>(hash_fun_multi, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
+
 			}
+
 			lastPoolId = oWork.iPoolId;
+
 			version = new_version;
+
 		}
 
+
 		if(on_new_job != nullptr)
+
 			on_new_job(oWork, ctx);
 
+
 		while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+
 		{
-			if ((iCount++ & 0x7) == 0)  //Store stats every 8*N hashes
-			{
-				uint64_t iStamp = get_timestamp_ms();
-				iHashCount.store(iCount * N, std::memory_order_relaxed);
-				iTimestamp.store(iStamp, std::memory_order_relaxed);
+
+                        if (bSuspend) {
+				while (1)
+                                {
+					if (bQuit) {
+						stop_mining = true;
+						stop_mining2 = true;
+						break;
+					}
+					if (!bSuspend) break;
+	                       		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			       }
 			}
+			else if (bQuit) {
+				stop_mining = true;
+				stop_mining2 = true;
+				break;
+			}
+			if (stop_mining || stop_mining2) break;
+
+			if ((iCount++ & 0x7) == 0) //Store stats every 8*N hashes
+
+			{
+
+				uint64_t iStamp = get_timestamp_ms();
+
+				iHashCount.store(iCount * N, std::memory_order_relaxed);
+
+				iTimestamp.store(iStamp, std::memory_order_relaxed);
+
+			}
+
 
 			nonce_ctr -= N;
+
 			if(nonce_ctr <= 0)
+
 			{
+
 				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, nonce_chunk);
+
 				nonce_ctr = nonce_chunk;
+
 				// check if the job is still valid, there is a small posibility that the job is switched
+
 				if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo)
+
 					break;
+
 			}
 
+
 			for (size_t i = 0; i < N; i++)
+
 				*piNonce[i] = iNonce++;
+
 
 			hash_fun_multi(bWorkBlob, oWork.iWorkSize, bHashOut, ctx, miner_algo);
 
+
 			for (size_t i = 0; i < N; i++)
+
 			{
+
 				if (*piHashVal[i] < oWork.iTarget)
+
 				{
+
 					executor::inst()->push_event(
+
 						ex_event(job_result(oWork.sJobID, iNonce - N + i, bHashOut + 32 * i, iThreadNo, miner_algo),
+
 						oWork.iPoolId)
+
 					);
+
 				}
+
 			}
 
+
 			std::this_thread::yield();
+
 		}
 
+                if (stop_mining || stop_mining2) break;
+
 		globalStates::inst().consume_work(oWork, iJobNo);
+
 		prep_multiway_work<N>(bWorkBlob, piNonce);
+
 	}
 
-	for (int i = 0; i < N; i++)
-		cryptonight_free_ctx(ctx[i]);
-}
 
+	for (int i = 0; i < N; i++)
+
+		cryptonight_free_ctx(ctx[i]);
+
+}
+	
 } // namespace cpu
 } // namespace xmrstak
