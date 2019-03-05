@@ -44,7 +44,7 @@ public:
 	
 	void clear()
 	{
-		std::unique_lock<std::mutex> mlock(mutex_);
+		std::lock_guard<std::mutex> mlock(mutex_);
 		while (!queue_.empty())
 			queue_.pop();
 	}
