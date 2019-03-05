@@ -62,7 +62,7 @@ executor::~executor()
 	stop();
 }
 
-bool executor::stop()
+void executor::stop()
 {
 	push_event(ex_event(EV_EXIT_SIGNAL));
 	if (main_executor_thread.joinable()) main_executor_thread.join();	
