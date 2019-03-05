@@ -53,12 +53,13 @@ namespace xmrstak
 		pthread_t mining_thread_id;
 #endif // _WIN32
 
-		iBackend() : iHashCount(0), iTimestamp(0)
+		iBackend() : iHashCount(0), iTimestamp(0), mining_thread_id(0)
 		{
 		}
 		
 		void wait()
 		{
+			
 #ifdef _WIN32
 			HANDLE hThread = OpenThread(SYNCHRONIZE, FALSE, mining_thread_id);
 			if (hThread)
@@ -69,7 +70,7 @@ namespace xmrstak
 #else 
 			pthread_join(mining_thread_id, NULL);
 #endif // _WIN32
-
+                        mining_thread_id = 0;
 		}
 		
 		~iBackend()
