@@ -52,7 +52,32 @@
 
 executor::executor()
 {
+	bQuit = false;
+	bSuspended = false;
+	isIdle = false;
 }
+
+executor::~executor()
+{
+	stop();
+}
+
+bool executor::stop()
+{
+	push_event(ex_event(EV_EXIT_SIGNAL));
+	if (main_executor_thread.joinable()) main_executor_thread.join();	
+}
+
+void executor::pause()
+{
+	bSuspended = true;
+}
+
+void executor::resume()
+{
+	bSuspended = false;
+}
+
 
 void executor::push_timed_event(ex_event&& ev, size_t sec)
 {
@@ -63,7 +88,7 @@ void executor::push_timed_event(ex_event&& ev, size_t sec)
 void executor::ex_clock_thd()
 {
 	size_t tick = 0;
-	while (true)
+	while (!exit_pending)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(size_t(iTickTime)));
 
@@ -488,7 +513,11 @@ inline void disable_sigpipe() {}
 void executor::ex_main()
 {
 	disable_sigpipe();
-
+	
+	exit_pending = false;
+	bQuit = false;
+	bSuspended = false;
+	
 	assert(1000 % iTickTime == 0);
 
 	xmrstak::miner_work oWork = xmrstak::miner_work();
@@ -609,6 +638,19 @@ void executor::ex_main()
 		ev = oEventQ.pop();
 		switch (ev.iName)
 		{
+		case EV_EXIT_SIGNAL:
+			exit_pending = true;
+			bQuit = true;	
+			clock_thd.join();
+			for (auto & pool : pools) pool.disconnect();
+			pools.clear();
+			for (auto & Thread : (*pvThreads)) delete Thread;
+			pvThreads->clear();
+			oEventQ.clear();
+			delete telem;
+			telem = 0;
+			return;
+				
 		case EV_SOCK_READY:
 			on_sock_ready(ev.iPoolId);
 			break;
