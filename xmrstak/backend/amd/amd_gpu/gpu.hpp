@@ -218,3 +218,4 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, const xmrstak_algo& miner_algo);
 uint64_t interleaveAdjustDelay(GpuContext* ctx, const bool enableAutoAdjustment = true);
 uint64_t updateTimings(GpuContext* ctx, const uint64_t t);
+size_t FinalizeOpenCL(GpuContext* ctx);
