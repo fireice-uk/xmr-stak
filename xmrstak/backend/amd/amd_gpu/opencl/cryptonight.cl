@@ -30,7 +30,7 @@ R"===(
 #define cryptonight_superfast 12
 #define cryptonight_gpu 13
 #define cryptonight_conceal 14
-#define cryptonight_v8_reversewaltz 15
+#define cryptonight_v8_reversewaltz 17
 
 /* For Mesa clover support */
 #ifdef cl_clang_storage_class_specifiers
@@ -864,14 +864,12 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			result_mul ^= chunk2;
 			ulong2 chunk3 = as_ulong2(SCRATCHPAD_CHUNK(3));
 #if(ALGO == cryptonight_v8_reversewaltz)
-			{
-				ulong2 chunk_tmp = chunk3;
-				chunk3 = chunk1;
-				chunk1 = chunk_tmp;
-			}
-#endif
+			SCRATCHPAD_CHUNK(1) = as_uint4(chunk1 + ((ulong2 *)(b_x + 1))[0]);
+			SCRATCHPAD_CHUNK(2) = as_uint4(chunk3 + ((ulong2 *)b_x)[0]);
+#else
 			SCRATCHPAD_CHUNK(1) = as_uint4(chunk3 + ((ulong2 *)(b_x + 1))[0]);
 			SCRATCHPAD_CHUNK(2) = as_uint4(chunk1 + ((ulong2 *)b_x)[0]);
+#endif
 			SCRATCHPAD_CHUNK(3) = as_uint4(chunk2 + ((ulong2 *)a)[0]);
 			a[0] += result_mul.s0;
 			a[1] += result_mul.s1;
