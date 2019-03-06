@@ -826,7 +826,7 @@ int main(int argc, char *argv[])
 			executor::inst()->stop();
 			return;
 		case 'p':
-			executor::inst()->pasue();
+			executor::inst()->pause();
 			break;
 		case 'j':
 			executor::inst()->resume();
