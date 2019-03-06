@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include "../../cryptonight.hpp"
+#include "xmrstak/misc/console.hpp"
 
 extern "C"
 {
@@ -190,6 +191,7 @@ static FORCEINLINE void check_data(size_t* data_index, const size_t bytes_needed
 template<xmrstak_algo_id ALGO>
 static int v4_random_math_init(struct V4_Instruction* code, const uint64_t height)
 {
+	printer::inst()->print_msg(LDEBUG, "CryptonightR create random math for block %llu", height);
 	// MUL is 3 cycles, 3-way addition and rotations are 2 cycles, SUB/XOR are 1 cycle
 	// These latencies match real-life instruction latencies for Intel CPUs starting from Sandy Bridge and up to Skylake/Coffee lake
 	//

@@ -508,18 +508,23 @@ if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
     # asm optimized monero v8 code
     enable_language(ASM_MASM)
     set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.asm" PROPERTY ASM_MASM)
+    set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.asm" PROPERTY ASM_MASM)
     add_library(xmr-stak-asm
         STATIC
         "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.asm"
+        "xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.asm"
     )
 else()
     # asm optimized monero v8 code
     enable_language(ASM)
     set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S" PROPERTY CPP)
+    set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.S" PROPERTY CPP)
     set_source_files_properties("xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S" PROPERTIES COMPILE_FLAGS "-x assembler-with-cpp")
+    set_source_files_properties("xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.S" PROPERTIES COMPILE_FLAGS "-x assembler-with-cpp")
     add_library(xmr-stak-asm
         STATIC
         "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S"
+        "xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.S"
     )
 endif()
 

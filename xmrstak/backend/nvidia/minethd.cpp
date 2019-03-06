@@ -104,28 +104,7 @@ void minethd::start_mining()
 
 bool minethd::self_test()
 {
-	cryptonight_ctx* ctx0;
-	unsigned char out[32];
-	bool bResult = true;
-
-	ctx0 = new cryptonight_ctx;
-	if(::jconf::inst()->HaveHardwareAes())
-	{
-		//cryptonight_hash_ctx("This is a test", 14, out, ctx0);
-		bResult = memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
-	}
-	else
-	{
-		//cryptonight_hash_ctx_soft("This is a test", 14, out, ctx0);
-		bResult = memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
-	}
-	delete ctx0;
-
-	//if(!bResult)
-	//	printer::inst()->print_msg(L0,
-	//	"Cryptonight hash self-test failed. This might be caused by bad compiler optimizations.");
-
-	return bResult;
+	return true;
 }
 
 
@@ -229,9 +208,8 @@ void minethd::work_main()
 	// start with root algorithm and switch later if fork version is reached
 	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
 
-	cn_hash_fun hash_fun;
 	cpu::minethd::cn_on_new_job set_job;
-	cpu::minethd::func_multi_selector<1>(hash_fun, set_job, ::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
+	cpu::minethd::func_multi_selector<1>(&cpu_ctx, set_job, ::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
 
 	uint32_t iNonce;
 
@@ -260,12 +238,12 @@ void minethd::work_main()
 			if(new_version >= coinDesc.GetMiningForkVersion())
 			{
 				miner_algo = coinDesc.GetMiningAlgo();
-				cpu::minethd::func_multi_selector<1>(hash_fun, set_job, ::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
+				cpu::minethd::func_multi_selector<1>(&cpu_ctx, set_job, ::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
 			}
 			else
 			{
 				miner_algo = coinDesc.GetMiningAlgoRoot();
-				cpu::minethd::func_multi_selector<1>(hash_fun, set_job, ::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
+				cpu::minethd::func_multi_selector<1>(&cpu_ctx, set_job, ::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
 			}
 			lastPoolId = oWork.iPoolId;
 			version = new_version;
@@ -315,7 +293,7 @@ void minethd::work_main()
 
 				*(uint32_t*)(bWorkBlob + 39) = foundNonce[i];
 
-				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, &cpu_ctx, miner_algo);
+				cpu_ctx->hash_fn(bWorkBlob, oWork.iWorkSize, bResult, &cpu_ctx, miner_algo);
 				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
 					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, foundNonce[i], bResult, iThreadNo, miner_algo), oWork.iPoolId));
 				else
