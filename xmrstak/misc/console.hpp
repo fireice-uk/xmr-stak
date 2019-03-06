@@ -1,7 +1,7 @@
 #pragma once
 
 #include "xmrstak/misc/environment.hpp"
-
+#include <string>
 #include <mutex>
 
 
@@ -41,10 +41,26 @@ public:
 
 private:
 	printer();
+	
+	~printer();
 
 	std::mutex print_mutex;
 	verbosity verbose_level;
 	FILE* logfile;
 };
+
+class command_line_parser 
+{
+public:
+	command_line_parser();
+	void parse(char **argv, int argc);
+	void parse(std::string & cmd);
+	bool valid();
+
+private:
+	bool isValid;
+
+};
+
 
 void win_exit(int code = 1);
