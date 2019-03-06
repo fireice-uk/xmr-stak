@@ -30,6 +30,35 @@ struct environment
 	environment()
 	{
 	}
+	
+	void clean() 
+        {
+		if (pPrinter)
+		{
+			delete pPrinter;
+			pPrinter = nullptr;	
+		}
+		if (pglobalStates)
+		{
+			delete pglobalStates;
+			pglobalStates = nullptr;
+		}
+		if (pJconfConfig)
+		{
+			delete pJconfConfig;
+			pJconfConfig = nullptr;
+		}
+		if (pExecutor)
+		{
+			delete pExecutor;
+			pExecutor = nullptr;
+		}
+		if (pParams)
+		{
+			delete pParams;
+			pParams = nullptr;
+		}
+        }
 
 	printer* pPrinter = nullptr;
 	globalStates* pglobalStates = nullptr;
