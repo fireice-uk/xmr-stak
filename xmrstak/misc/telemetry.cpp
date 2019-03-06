@@ -50,16 +50,16 @@ telemetry::telemetry(size_t iThd)
 	
 telemetry::~telemetry()
 {
-	for (size_t i = 0; i < num; ++i) {
+	for (size_t i = 0; i < num; ++i)
+	 {
 		delete[] ppHashCounts[i];
 		delete[] ppTimestamps[i];
-	}
+	 }
 	
-		delete[] iBucketTop;
-		delete[] ppHashCounts;
-		delete[] ppTimestamps;
-		delete[] mtx;
-	
+	delete[] iBucketTop;
+        delete[] ppHashCounts;
+	delete[] ppTimestamps;
+	delete[] mtx;	
 }
 		
 
