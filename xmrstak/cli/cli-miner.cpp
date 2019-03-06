@@ -788,6 +788,9 @@ int main(int argc, char *argv[])
 	printer::inst()->print_str("'h' - hashrate\n");
 	printer::inst()->print_str("'r' - results\n");
 	printer::inst()->print_str("'c' - connection\n");
+	printer::inst()->print_str("'p' - pause\n");
+	printer::inst()->print_str("'j' - return to job \n");
+	printer::inst()->print_str("'q' - quit\n");
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_str("Upcoming xmr-stak-gui is sponsored by:\n");
 	printer::inst()->print_str("   #####   ______               ____\n");
@@ -819,6 +822,15 @@ int main(int argc, char *argv[])
 
 		switch(key)
 		{
+		case 'q':
+			executor::inst()->stop();
+			return;
+		case 'p':
+			executor::inst()->pasue();
+			break;
+		case 'j':
+			executor::inst()->resume();
+			break;		
 		case 'h':
 			executor::inst()->push_event(ex_event(EV_USR_HASHRATE));
 			break;
