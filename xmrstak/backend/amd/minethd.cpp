@@ -50,8 +50,7 @@ namespace amd
 minethd::minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::thd_cfg cfg)
 {
 	this->backendType = iBackend::AMD;
-	oWork = pWork;
-	bQuit = 0;
+	oWork = pWork;	
 	iThreadNo = (uint8_t)iNo;
 	iJobNo = 0;
 	iHashCount = 0;
@@ -163,6 +162,12 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 	
 void minethd::work_main()
 {
+#ifdef _WIN32	
+	mining_thread_id = GetCurrentThreadId();
+#else
+        mining_thread_id = pthread_self();
+#endif
+
 	if(affinity >= 0) //-1 means no affinity
 		bindMemoryToNUMANode(affinity);
 
