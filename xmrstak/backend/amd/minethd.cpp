@@ -203,8 +203,8 @@ void minethd::work_main()
 	uint64_t accRuntime = 0;
 	double bestHashrate = 0.0;
 	uint32_t bestIntensity = pGpuCtx->maxRawIntensity;
-	std::atomic<bool>& bQuit = &executor::inst()->bQuit;
-	std::atomic<bool>& bSuspend = &executor::inst()->bSuspended;
+	std::atomic<bool>& bQuit = executor::inst()->bQuit;
+	std::atomic<bool>& bSuspend = executor::inst()->bSuspended;
 
 	while (!bQuit)
 	{
