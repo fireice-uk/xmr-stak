@@ -88,7 +88,7 @@ void executor::push_timed_event(ex_event&& ev, size_t sec)
 void executor::ex_clock_thd()
 {
 	size_t tick = 0;
-	while (!exit_pending)
+	while (!bQuit)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(size_t(iTickTime)));
 
@@ -513,8 +513,7 @@ inline void disable_sigpipe() {}
 void executor::ex_main()
 {
 	disable_sigpipe();
-	
-	exit_pending = false;
+		
 	bQuit = false;
 	bSuspended = false;
 	
@@ -638,8 +637,7 @@ void executor::ex_main()
 		ev = oEventQ.pop();
 		switch (ev.iName)
 		{
-		case EV_EXIT_SIGNAL:
-			exit_pending = true;
+		case EV_EXIT_SIGNAL:			
 			bQuit = true;	
 			clock_thd.join();
 			for (auto & pool : pools) pool.disconnect();
