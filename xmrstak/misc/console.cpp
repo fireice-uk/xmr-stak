@@ -160,6 +160,14 @@ printer::printer()
 	setvbuf(stdout, NULL, _IOFBF, BUFSIZ);
 }
 
+printer::~printer()
+{
+    if(logfile)
+    {
+        fclose(logfile);
+    }
+}
+
 bool printer::open_logfile(const char* file)
 {
 	logfile = fopen(file, "ab+");
