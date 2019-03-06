@@ -51,13 +51,10 @@ public:
 	void pause();
 	void resume();
 
-
 	std::atomic<bool> bQuit;
 	std::atomic<bool> bSuspended;
 	std::thread main_executor_thread;
-	bool isIdle;
-	bool exit_pending;
-
+	bool isIdle;	
 
 private:
 	struct timed_event
