@@ -67,8 +67,6 @@
 
 #endif //_WIN32
 
-// well quick way to expose this it will live somewhere in memory, defined in cli-miner.cpp
-extern bool benchmark_mode;
 
 namespace xmrstak
 {
@@ -499,7 +497,8 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 
 		// this might freeze the whole system
 #ifdef _WIN32
-		if (benchmark_mode) {
+		if (params::inst().benchmark_block_version != -1) {
+			printer::inst()->print_msg(L1, "WARNING benchmarking on Windows setting THREAD_PRIORITY_HIGHEST");
 			SetThreadPriority(thd->oWorkThd.native_handle(), THREAD_PRIORITY_HIGHEST);
 		}
 #endif // _WIN32
