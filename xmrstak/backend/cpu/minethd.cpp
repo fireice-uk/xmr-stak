@@ -110,7 +110,6 @@ minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch,
 {
 	this->backendType = iBackend::CPU;
 	oWork = pWork;
-	bQuit = 0;
 	iThreadNo = (uint8_t)iNo;
 	iJobNo = 0;
 	bNoPrefetch = no_prefetch;
@@ -842,10 +841,7 @@ void minethd::multiway_work_main()
 	uint8_t version = 0;
 
 	size_t lastPoolId = 0;
-
-        bool stop_mining = false;
-	bool stop_mining2 = false;
-
+       
 	std::atomic<bool>& bQuit = executor::inst()->bQuit;
 	std::atomic<bool>& bSuspend = executor::inst()->bSuspended;
 
@@ -866,16 +862,10 @@ void minethd::multiway_work_main()
 			raison d'etre of this software it us sensible to just wait until we have something*/
 
 
-			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
-                        {
-                               std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                               if (bQuit) 
-			       {
-					break;
-			       }
-                        }
-
-                        if (bQuit) continue;
+			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo && !bQuit)
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    
+                        if (bQuit) break;
 
 			globalStates::inst().consume_work(oWork, iJobNo);
 
@@ -939,29 +929,18 @@ void minethd::multiway_work_main()
 			on_new_job(oWork, ctx);
 
 
-		while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo && !bQuit)
 
 		{
-
-                        if (bSuspend) {
-				while (1)
-                                {
-					if (bQuit) {
-						stop_mining = true;
-						stop_mining2 = true;
-						break;
-					}
-					if (!bSuspend) break;
-	                       		std::this_thread::sleep_for(std::chrono::milliseconds(500));
-			       }
+                        while(bSuspend)
+			{
+				if (bSuspend || bQuit)
+					break;
+				std::this_thread::sleep_for(std::chrono::milliseconds(500));
 			}
-			else if (bQuit) {
-				stop_mining = true;
-				stop_mining2 = true;
+			if (bQuit)
 				break;
-			}
-			if (stop_mining || stop_mining2) break;
-
+			
 			if ((iCount++ & 0x7) == 0) //Store stats every 8*N hashes
 
 			{
@@ -987,8 +966,7 @@ void minethd::multiway_work_main()
 
 				// check if the job is still valid, there is a small posibility that the job is switched
 
-				if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo)
-
+				if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo || bQuit)
 					break;
 
 			}
@@ -1026,8 +1004,6 @@ void minethd::multiway_work_main()
 			std::this_thread::yield();
 
 		}
-
-                if (stop_mining || stop_mining2) break;
 
 		globalStates::inst().consume_work(oWork, iJobNo);
 
