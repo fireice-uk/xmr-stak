@@ -161,7 +161,6 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 	return pvThreads;
 }
 	
-	
 void minethd::work_main()
 {
 	if(affinity >= 0) //-1 means no affinity
@@ -218,8 +217,9 @@ void minethd::work_main()
 
 			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo && !bQuit)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
-				if (bQuit)
-					break;
+
+			if(bQuit)
+				break;
 			globalStates::inst().consume_work(oWork, iJobNo);
 			continue;
 		}
@@ -264,6 +264,7 @@ void minethd::work_main()
 				std::this_thread::sleep_for(std::chrono::milliseconds(500));
 			}
 			if (bQuit)
+				break;
 			//Allocate a new nonce every 16 rounds
 			if((round_ctr++ & 0xF) == 0)
 			{
@@ -365,8 +366,6 @@ void minethd::work_main()
 	FinalizeOpenCL(pGpuCtx);
 	
 }
-
-
-
+	
 } // namespace amd
 } // namespace xmrstak
