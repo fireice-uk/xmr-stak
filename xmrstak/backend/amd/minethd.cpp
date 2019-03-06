@@ -160,8 +160,8 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 
 	return pvThreads;
 }
-
-
+	
+	
 void minethd::work_main()
 {
 	if(affinity >= 0) //-1 means no affinity
@@ -204,8 +204,10 @@ void minethd::work_main()
 	uint64_t accRuntime = 0;
 	double bestHashrate = 0.0;
 	uint32_t bestIntensity = pGpuCtx->maxRawIntensity;
+	std::atomic<bool>& bQuit = &executor::inst()->bQuit;
+	std::atomic<bool>& bSuspend = &executor::inst()->bSuspended;
 
-	while (bQuit == 0)
+	while (!bQuit)
 	{
 		if (oWork.bStall)
 		{
@@ -214,9 +216,10 @@ void minethd::work_main()
 			 * raison d'etre of this software it us sensible to just wait until we have something
 			 */
 
-			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo && !bQuit)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
+				if (bQuit)
+					break;
 			globalStates::inst().consume_work(oWork, iJobNo);
 			continue;
 		}
@@ -252,14 +255,21 @@ void minethd::work_main()
 		if(oWork.bNiceHash)
 			pGpuCtx->Nonce = *(uint32_t*)(oWork.bWorkBlob + 39);
 
-		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo && !bQuit)
 		{
+			while(bSuspend)
+			{
+				if (bSuspend || bQuit)
+					break;
+				std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			}
+			if (bQuit)
 			//Allocate a new nonce every 16 rounds
 			if((round_ctr++ & 0xF) == 0)
 			{
 				globalStates::inst().calc_start_nonce(pGpuCtx->Nonce, oWork.bNiceHash, pGpuCtx->rawIntensity * 16);
 				// check if the job is still valid, there is a small possibility that the job is switched
-				if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo)
+				if(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) != iJobNo || bQuit)
 					break;
 			}
 
@@ -350,7 +360,13 @@ void minethd::work_main()
 
 		globalStates::inst().consume_work(oWork, iJobNo);
 	}
+	
+	cryptonight_free_ctx(cpu_ctx);
+	FinalizeOpenCL(pGpuCtx);
+	
 }
+
+
 
 } // namespace amd
 } // namespace xmrstak
