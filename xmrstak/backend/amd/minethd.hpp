@@ -40,12 +40,11 @@ private:
 	std::thread oWorkThd;
 	int64_t affinity;
 	uint32_t autoTune;
-
-	bool bQuit;
+	
 	bool bNoPrefetch;
 
 	//Mutable ptr to vector below, different for each thread
-	GpuContext* pGpuCtx;
+	GpuContext* pGpuCtx = nullptr;
 
 	// WARNING - this vector (but not its contents) must be immutable
 	// once the threads are started
