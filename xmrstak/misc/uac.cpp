@@ -50,6 +50,10 @@ BOOL SelfElevate(const std::string& my_path, const std::string& params)
 
 VOID RequestElevation()
 {
+	// SKIP Elevation
+	printer::inst()->print_msg(L0, "Skipping RequestElevation. Run NiceHashMinerLegacy as administrator to use fast memory.");
+	return;
+
 	if(IsElevated())
 		return;
 
