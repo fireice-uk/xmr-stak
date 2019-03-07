@@ -19,6 +19,7 @@
 #include "xmrstak/params.hpp"
 #include "xmrstak/version.hpp"
 #include "xmrstak/net/msgstruct.hpp"
+#include "xmrstak/backend/amd/OclCryptonightR_gen.hpp"
 
 #include <stdio.h>
 #include <string.h>
@@ -103,143 +104,6 @@ static inline long long unsigned int int_port(size_t i)
 #endif
 
 #include "gpu.hpp"
-
-const char* err_to_str(cl_int ret)
-{
-	switch(ret)
-	{
-	case CL_SUCCESS:
-		return "CL_SUCCESS";
-	case CL_DEVICE_NOT_FOUND:
-		return "CL_DEVICE_NOT_FOUND";
-	case CL_DEVICE_NOT_AVAILABLE:
-		return "CL_DEVICE_NOT_AVAILABLE";
-	case CL_COMPILER_NOT_AVAILABLE:
-		return "CL_COMPILER_NOT_AVAILABLE";
-	case CL_MEM_OBJECT_ALLOCATION_FAILURE:
-		return "CL_MEM_OBJECT_ALLOCATION_FAILURE";
-	case CL_OUT_OF_RESOURCES:
-		return "CL_OUT_OF_RESOURCES";
-	case CL_OUT_OF_HOST_MEMORY:
-		return "CL_OUT_OF_HOST_MEMORY";
-	case CL_PROFILING_INFO_NOT_AVAILABLE:
-		return "CL_PROFILING_INFO_NOT_AVAILABLE";
-	case CL_MEM_COPY_OVERLAP:
-		return "CL_MEM_COPY_OVERLAP";
-	case CL_IMAGE_FORMAT_MISMATCH:
-		return "CL_IMAGE_FORMAT_MISMATCH";
-	case CL_IMAGE_FORMAT_NOT_SUPPORTED:
-		return "CL_IMAGE_FORMAT_NOT_SUPPORTED";
-	case CL_BUILD_PROGRAM_FAILURE:
-		return "CL_BUILD_PROGRAM_FAILURE";
-	case CL_MAP_FAILURE:
-		return "CL_MAP_FAILURE";
-	case CL_MISALIGNED_SUB_BUFFER_OFFSET:
-		return "CL_MISALIGNED_SUB_BUFFER_OFFSET";
-	case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST:
-		return "CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST";
-#ifdef CL_VERSION_1_2
-	case CL_COMPILE_PROGRAM_FAILURE:
-		return "CL_COMPILE_PROGRAM_FAILURE";
-	case CL_LINKER_NOT_AVAILABLE:
-		return "CL_LINKER_NOT_AVAILABLE";
-	case CL_LINK_PROGRAM_FAILURE:
-		return "CL_LINK_PROGRAM_FAILURE";
-	case CL_DEVICE_PARTITION_FAILED:
-		return "CL_DEVICE_PARTITION_FAILED";
-	case CL_KERNEL_ARG_INFO_NOT_AVAILABLE:
-		return "CL_KERNEL_ARG_INFO_NOT_AVAILABLE";
-#endif
-	case CL_INVALID_VALUE:
-		return "CL_INVALID_VALUE";
-	case CL_INVALID_DEVICE_TYPE:
-		return "CL_INVALID_DEVICE_TYPE";
-	case CL_INVALID_PLATFORM:
-		return "CL_INVALID_PLATFORM";
-	case CL_INVALID_DEVICE:
-		return "CL_INVALID_DEVICE";
-	case CL_INVALID_CONTEXT:
-		return "CL_INVALID_CONTEXT";
-	case CL_INVALID_QUEUE_PROPERTIES:
-		return "CL_INVALID_QUEUE_PROPERTIES";
-	case CL_INVALID_COMMAND_QUEUE:
-		return "CL_INVALID_COMMAND_QUEUE";
-	case CL_INVALID_HOST_PTR:
-		return "CL_INVALID_HOST_PTR";
-	case CL_INVALID_MEM_OBJECT:
-		return "CL_INVALID_MEM_OBJECT";
-	case CL_INVALID_IMAGE_FORMAT_DESCRIPTOR:
-		return "CL_INVALID_IMAGE_FORMAT_DESCRIPTOR";
-	case CL_INVALID_IMAGE_SIZE:
-		return "CL_INVALID_IMAGE_SIZE";
-	case CL_INVALID_SAMPLER:
-		return "CL_INVALID_SAMPLER";
-	case CL_INVALID_BINARY:
-		return "CL_INVALID_BINARY";
-	case CL_INVALID_BUILD_OPTIONS:
-		return "CL_INVALID_BUILD_OPTIONS";
-	case CL_INVALID_PROGRAM:
-		return "CL_INVALID_PROGRAM";
-	case CL_INVALID_PROGRAM_EXECUTABLE:
-		return "CL_INVALID_PROGRAM_EXECUTABLE";
-	case CL_INVALID_KERNEL_NAME:
-		return "CL_INVALID_KERNEL_NAME";
-	case CL_INVALID_KERNEL_DEFINITION:
-		return "CL_INVALID_KERNEL_DEFINITION";
-	case CL_INVALID_KERNEL:
-		return "CL_INVALID_KERNEL";
-	case CL_INVALID_ARG_INDEX:
-		return "CL_INVALID_ARG_INDEX";
-	case CL_INVALID_ARG_VALUE:
-		return "CL_INVALID_ARG_VALUE";
-	case CL_INVALID_ARG_SIZE:
-		return "CL_INVALID_ARG_SIZE";
-	case CL_INVALID_KERNEL_ARGS:
-		return "CL_INVALID_KERNEL_ARGS";
-	case CL_INVALID_WORK_DIMENSION:
-		return "CL_INVALID_WORK_DIMENSION";
-	case CL_INVALID_WORK_GROUP_SIZE:
-		return "CL_INVALID_WORK_GROUP_SIZE";
-	case CL_INVALID_WORK_ITEM_SIZE:
-		return "CL_INVALID_WORK_ITEM_SIZE";
-	case CL_INVALID_GLOBAL_OFFSET:
-		return "CL_INVALID_GLOBAL_OFFSET";
-	case CL_INVALID_EVENT_WAIT_LIST:
-		return "CL_INVALID_EVENT_WAIT_LIST";
-	case CL_INVALID_EVENT:
-		return "CL_INVALID_EVENT";
-	case CL_INVALID_OPERATION:
-		return "CL_INVALID_OPERATION";
-	case CL_INVALID_GL_OBJECT:
-		return "CL_INVALID_GL_OBJECT";
-	case CL_INVALID_BUFFER_SIZE:
-		return "CL_INVALID_BUFFER_SIZE";
-	case CL_INVALID_MIP_LEVEL:
-		return "CL_INVALID_MIP_LEVEL";
-	case CL_INVALID_GLOBAL_WORK_SIZE:
-		return "CL_INVALID_GLOBAL_WORK_SIZE";
-	case CL_INVALID_PROPERTY:
-		return "CL_INVALID_PROPERTY";
-#ifdef CL_VERSION_1_2
-	case CL_INVALID_IMAGE_DESCRIPTOR:
-		return "CL_INVALID_IMAGE_DESCRIPTOR";
-	case CL_INVALID_COMPILER_OPTIONS:
-		return "CL_INVALID_COMPILER_OPTIONS";
-	case CL_INVALID_LINKER_OPTIONS:
-		return "CL_INVALID_LINKER_OPTIONS";
-	case CL_INVALID_DEVICE_PARTITION_COUNT:
-		return "CL_INVALID_DEVICE_PARTITION_COUNT";
-#endif
-#if defined(CL_VERSION_2_0) && !defined(CONF_ENFORCE_OpenCL_1_2)
-	case CL_INVALID_PIPE_SIZE:
-		return "CL_INVALID_PIPE_SIZE";
-	case CL_INVALID_DEVICE_QUEUE:
-		return "CL_INVALID_DEVICE_QUEUE";
-#endif
-	default:
-		return "UNKNOWN_ERROR";
-	}
-}
 
 #if 0
 void printer::inst()->print_msg(L1,const char* fmt, ...);
@@ -437,9 +301,18 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 			if(strided_index == 1)
 				strided_index = 0;
 		}
+
 		if(miner_algo == cryptonight_gpu)
 		{
 			strided_index = 0;
+		}
+
+		if(miner_algo == cryptonight_r || miner_algo == cryptonight_r_wow)
+		{
+			if(ctx->memChunk < 2)
+				mem_chunk_exp = 1u << 2;
+			if(strided_index == 1)
+				strided_index = 0;
 		}
 
 		// if intensity is a multiple of worksize than comp mode is not needed
@@ -853,8 +726,6 @@ int getAMDPlatformIdx()
 // Returns 0 on success, -1 on stupid params, -2 on OpenCL API error
 size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 {
-
-	cl_context opencl_ctx;
 	cl_int ret;
 	cl_uint entries;
 
@@ -903,7 +774,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	// Same as the platform index sanity check, except we must check all requested device indexes
 	for(int i = 0; i < num_gpus; ++i)
 	{
-		if(entries <= ctx[i].deviceIdx)
+		if(ctx[i].deviceIdx >= entries)
 		{
 			printer::inst()->print_msg(L1,"Selected OpenCL device index %lu doesn't exist.\n", ctx[i].deviceIdx);
 			return ERR_STUPID_PARAMS;
@@ -922,25 +793,21 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	}
 
 	// Indexes sanity checked above
-#ifdef __GNUC__
-	cl_device_id TempDeviceList[num_gpus];
-#else
-	cl_device_id* TempDeviceList = (cl_device_id*)_alloca(entries * sizeof(cl_device_id));
-#endif
+	std::vector<cl_device_id> TempDeviceList(num_gpus, nullptr);
+
+	printer::inst()->print_msg(LDEBUG, "Number of OpenCL GPUs %d", entries);
 	for(int i = 0; i < num_gpus; ++i)
 	{
 		ctx[i].DeviceID = DeviceIDList[ctx[i].deviceIdx];
 		TempDeviceList[i] = DeviceIDList[ctx[i].deviceIdx];
 	}
 
-	opencl_ctx = clCreateContext(NULL, num_gpus, TempDeviceList, NULL, NULL, &ret);
+	cl_context opencl_ctx = clCreateContext(NULL, num_gpus, TempDeviceList.data(), NULL, NULL, &ret);
 	if(ret != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clCreateContext.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
-
-	//char* source_code = LoadTextFile(sSourcePath);
 
 	const char *fastIntMathV2CL =
 			#include "./opencl/fast_int_math_v2.cl"
@@ -987,6 +854,7 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 
 	for(int i = 0; i < num_gpus; ++i)
 	{
+		printer::inst()->print_msg(LDEBUG,"OpenCL Init device %d", ctx[i].deviceIdx);
 		const size_t devIdx = ctx[i].deviceIdx;
 		if(interleaveData.size() <= devIdx)
 		{
@@ -1003,8 +871,9 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 		ctx[i].interleaveData = interleaveData[devIdx];
 		ctx[i].interleaveData->adjustThreshold = static_cast<double>(ctx[i].interleave)/100.0;
 		ctx[i].interleaveData->startAdjustThreshold = ctx[i].interleaveData->adjustThreshold;
+		ctx[i].opencl_ctx = opencl_ctx;
 
-		if((ret = InitOpenCLGpu(opencl_ctx, &ctx[i], source_code.c_str())) != ERR_SUCCESS)
+		if((ret = InitOpenCLGpu(ctx->opencl_ctx, &ctx[i], source_code.c_str())) != ERR_SUCCESS)
 		{
 			return ret;
 		}
@@ -1013,10 +882,10 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	return ERR_SUCCESS;
 }
 
-size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target, const xmrstak_algo& miner_algo)
+size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t target, const xmrstak_algo& miner_algo, uint64_t height)
 {
 
-	const auto & Kernels = ctx->Kernels[miner_algo.Id()];
+	auto & Kernels = ctx->Kernels[miner_algo.Id()];
 
 	cl_int ret;
 
@@ -1079,7 +948,41 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 		}
 	}
 
-	// CN1 Kernel
+    // CN1 Kernel
+
+    if ((miner_algo == cryptonight_r) || (miner_algo == cryptonight_r_wow)) {
+
+        // Get new kernel
+        cl_program program = xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height);
+
+        if (program != ctx->ProgramCryptonightR) {
+            cl_int ret;
+            cl_kernel kernel = clCreateKernel(program, "cn1_cryptonight_r", &ret);
+
+            cl_kernel old_kernel = nullptr;
+            if (ret != CL_SUCCESS) {
+                printer::inst()->print_msg(LDEBUG, "CryptonightR: clCreateKernel returned error %s", err_to_str(ret));
+            }
+            else {
+                old_kernel = Kernels[1];
+                Kernels[1] = kernel;
+            }
+            ctx->ProgramCryptonightR = program;
+
+			uint32_t PRECOMPILATION_DEPTH = 4;
+
+            // Precompile next program in background
+            xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height + 1, true, old_kernel);
+            for (int i = 2; i <= PRECOMPILATION_DEPTH; ++i)
+                xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height + i, true, nullptr);
+
+            printer::inst()->print_msg(LDEBUG, "Thread #%zu updated CryptonightR", ctx->deviceIdx);
+        }
+		else
+		{
+			printer::inst()->print_msg(LDEBUG, "Thread #%zu found CryptonightR", ctx->deviceIdx);
+		}
+    }
 
 	// Scratchpads
 	if((ret = clSetKernelArg(Kernels[1], 0, sizeof(cl_mem), ctx->ExtraBuffers + 0)) != CL_SUCCESS)

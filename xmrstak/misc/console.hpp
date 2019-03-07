@@ -21,7 +21,7 @@ inline long long unsigned int int_port(size_t i)
 	return i;
 }
 
-enum verbosity : size_t { L0 = 0, L1 = 1, L2 = 2, L3 = 3, L4 = 4, LINF = 100};
+enum verbosity : size_t { L0 = 0, L1 = 1, L2 = 2, L3 = 3, L4 = 4, LDEBUG = 10, LINF = 100};
 
 class printer
 {

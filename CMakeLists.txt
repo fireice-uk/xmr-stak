@@ -70,6 +70,42 @@ if(CUDA_ENABLE)
     find_package(CUDA 7.5)
 
     if(CUDA_FOUND)
+        # required for monero's cryptonight_r
+        # libcuda
+        find_library(CUDA_LIB 
+        NAMES
+            libcuda 
+            cuda 
+            cuda.lib
+        HINTS
+            ${CUDA_TOOLKIT_ROOT_DIR}
+            ${LIBCUDA_LIBRARY_DIR}
+            ${CUDA_TOOLKIT_ROOT_DIR}
+            /usr
+            /usr/local/cuda
+        PATH_SUFFIXES
+            lib64	
+            lib/x64
+            lib/Win32
+            lib64/stubs)
+
+        #nvrtc
+        find_library(CUDA_NVRTC_LIB 
+        NAMES
+            libnvrtc 
+            nvrtc 
+            nvrtc.lib
+        HINTS 
+            ${CUDA_TOOLKIT_ROOT_DIR} 
+            ${LIBNVRTC_LIBRARY_DIR}
+            ${CUDA_TOOLKIT_ROOT_DIR}
+            /usr 
+            /usr/local/cuda
+        PATH_SUFFIXES
+            lib64
+            lib/x64
+            lib/Win32)
+
         list(APPEND BACKEND_TYPES "nvidia")
         option(XMR-STAK_LARGEGRID "Support large CUDA block count > 128" ON)
         if(XMR-STAK_LARGEGRID)
@@ -200,16 +236,11 @@ if(CUDA_ENABLE)
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" "-D_MWAITXINTRIN_H_INCLUDED")
             endif()
 
-            if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND
-                (CUDA_VERSION VERSION_EQUAL 9.0 OR
-                CUDA_VERSION VERSION_EQUAL 9.1 OR
-                CUDA_VERSION VERSION_EQUAL 9.2 OR
-                CUDA_VERSION VERSION_EQUAL 10.0)
-            )
-                # workaround find_package(CUDA) is using the wrong path to the CXX host compiler
-                # overwrite the CUDA host compiler variable with the used CXX MSVC
-                set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE FILEPATH "Host side compiler used by NVCC" FORCE)
-            endif()
+            # workaround find_package(CUDA) is using the wrong path to the CXX host compiler
+            # overwrite the CUDA host compiler variable with the used CXX MSVC
+            # in linux where clang and gcc is installed it also helps to select the correct host compiler
+            set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE FILEPATH "Host side compiler used by NVCC" FORCE)
+
         else()
             message(FATAL_ERROR "selected CUDA compiler '${CUDA_COMPILER}' is not supported")
         endif()
@@ -477,18 +508,23 @@ if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
     # asm optimized monero v8 code
     enable_language(ASM_MASM)
     set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.asm" PROPERTY ASM_MASM)
+    set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.asm" PROPERTY ASM_MASM)
     add_library(xmr-stak-asm
         STATIC
         "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.asm"
+        "xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.asm"
     )
 else()
     # asm optimized monero v8 code
     enable_language(ASM)
     set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S" PROPERTY CPP)
+    set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.S" PROPERTY CPP)
     set_source_files_properties("xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S" PROPERTIES COMPILE_FLAGS "-x assembler-with-cpp")
+    set_source_files_properties("xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.S" PROPERTIES COMPILE_FLAGS "-x assembler-with-cpp")
     add_library(xmr-stak-asm
         STATIC
         "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S"
+        "xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.S"
     )
 endif()
 
@@ -547,6 +583,8 @@ if(CUDA_FOUND)
             ${CUDASRCFILES}
         )
     endif()
+
+    set(CUDA_LIBRARIES ${CUDA_LIB} ${CUDA_NVRTC_LIB} ${CUDA_LIBRARIES})
     target_link_libraries(xmrstak_cuda_backend ${CUDA_LIBRARIES})
     target_link_libraries(xmrstak_cuda_backend xmr-stak-backend xmr-stak-asm)
 endif()

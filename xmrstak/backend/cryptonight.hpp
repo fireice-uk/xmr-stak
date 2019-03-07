@@ -24,6 +24,8 @@ enum xmrstak_algo_id
 	cryptonight_superfast = 12,
 	cryptonight_gpu = 13,
 	cryptonight_conceal = 14,
+	cryptonight_r_wow = 15,
+	cryptonight_r = 16,
 
 	cryptonight_turtle = start_derived_algo_id,
 	cryptonight_v8_half = (start_derived_algo_id + 1),
@@ -37,7 +39,7 @@ enum xmrstak_algo_id
  */
 inline std::string get_algo_name(xmrstak_algo_id algo_id)
 {
-	static std::array<std::string, 15> base_algo_names =
+	static std::array<std::string, 17> base_algo_names =
 	{{
 		"invalid_algo",
 		"cryptonight",
@@ -53,7 +55,9 @@ inline std::string get_algo_name(xmrstak_algo_id algo_id)
 		"cryptonight_v8",
 		"cryptonight_superfast",
 		"cryptonight_gpu",
-		"cryptonight_conceal"
+		"cryptonight_conceal",
+		"cryptonight_r_wow",
+		"cryptonight_r"
 	}};
 
 	static std::array<std::string, 3> derived_algo_names =
@@ -162,6 +166,7 @@ struct xmrstak_algo
 // default cryptonight
 constexpr size_t CN_MEMORY = 2 * 1024 * 1024;
 constexpr uint32_t CN_ITER = 0x80000;
+constexpr uint32_t CN_MASK = ((CN_MEMORY - 1) / 16) * 16;
 
 // crptonight gpu
 constexpr uint32_t CN_GPU_MASK = 0x1FFFC0;
@@ -174,7 +179,7 @@ constexpr uint32_t CN_ZELERIUS_ITER = 0x60000;
 
 inline xmrstak_algo POW(xmrstak_algo_id algo_id)
 {
-	static std::array<xmrstak_algo, 15> pow = {{
+	static std::array<xmrstak_algo, 17> pow = {{
 		{invalid_algo, invalid_algo},
 		{cryptonight, cryptonight, CN_ITER, CN_MEMORY},
 		{cryptonight_lite, cryptonight_lite, CN_ITER/2, CN_MEMORY/2},
@@ -189,7 +194,9 @@ inline xmrstak_algo POW(xmrstak_algo_id algo_id)
 		{cryptonight_monero_v8, cryptonight_monero_v8, CN_ITER, CN_MEMORY},
 		{cryptonight_superfast, cryptonight_superfast, CN_ITER/4, CN_MEMORY},
 		{cryptonight_gpu, cryptonight_gpu, CN_GPU_ITER, CN_MEMORY, CN_GPU_MASK},
-		{cryptonight_conceal, cryptonight_conceal, CN_ITER/2, CN_MEMORY}
+		{cryptonight_conceal, cryptonight_conceal, CN_ITER/2, CN_MEMORY},
+		{cryptonight_r_wow, cryptonight_r_wow, CN_ITER, CN_MEMORY},
+		{cryptonight_r, cryptonight_r, CN_ITER, CN_MEMORY}
 	}};
 
 	static std::array<xmrstak_algo, 3> derived_pow =

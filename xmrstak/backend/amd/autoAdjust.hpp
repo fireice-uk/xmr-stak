@@ -139,6 +139,10 @@ private:
 			// true for cryptonight_gpu as main user pool algorithm
 			bool useCryptonight_gpu = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_gpu;
 
+			bool useCryptonight_r = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_r;
+
+			bool useCryptonight_r_wow = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_r_wow;
+
 			// set strided index to default
 			ctx.stridedIndex = 1;
 
@@ -147,7 +151,7 @@ private:
 				ctx.stridedIndex = 0;
 
 			// use chunked (4x16byte) scratchpad for all backends. Default `mem_chunk` is `2`
-			if(useCryptonight_v8)
+			if(useCryptonight_v8 || useCryptonight_r || useCryptonight_r_wow)
 				ctx.stridedIndex = 2;
 			else if(useCryptonight_heavy)
 				ctx.stridedIndex = 3;

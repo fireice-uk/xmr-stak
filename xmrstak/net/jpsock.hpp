@@ -66,11 +66,6 @@ public:
 	std::string&& get_call_error();
 	bool have_call_error() { return call_error; }
 	bool have_sock_error() { return bHaveSocketError; }
-
-	inline static uint64_t t32_to_t64(uint32_t t) { return 0xFFFFFFFFFFFFFFFFULL / (0xFFFFFFFFULL / ((uint64_t)t)); }
-	inline static uint64_t t64_to_diff(uint64_t t) { return 0xFFFFFFFFFFFFFFFFULL / t; }
-	inline static uint64_t diff_to_t64(uint64_t d) { return 0xFFFFFFFFFFFFFFFFULL / d; }
-
 	inline uint64_t get_current_diff() { return iJobDiff; }
 
 	void save_nonce(uint32_t nonce);

@@ -183,7 +183,10 @@ void minethd::work_main()
 	}
 	// start with root algorithm and switch later if fork version is reached
 	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
-	cn_hash_fun hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
+
+	cpu::minethd::cn_on_new_job set_job;
+
+	cpu::minethd::func_multi_selector<1>(&cpu_ctx, set_job, ::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
 
 	uint8_t version = 0;
 	size_t lastPoolId = 0;
@@ -224,23 +227,26 @@ void minethd::work_main()
 			if(new_version >= coinDesc.GetMiningForkVersion())
 			{
 				miner_algo = coinDesc.GetMiningAlgo();
-				hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
+				cpu::minethd::func_multi_selector<1>(&cpu_ctx, set_job, ::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
 			}
 			else
 			{
 				miner_algo = coinDesc.GetMiningAlgoRoot();
-				hash_fun = cpu::minethd::func_selector(::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
+				cpu::minethd::func_multi_selector<1>(&cpu_ctx, set_job, ::jconf::inst()->HaveHardwareAes(), true /*bNoPrefetch*/, miner_algo);
 			}
 			lastPoolId = oWork.iPoolId;
 			version = new_version;
 		}
+
+		if(set_job != nullptr)
+			set_job(oWork, &cpu_ctx);
 
 		size_t round_ctr = 0;
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		uint64_t target = oWork.iTarget;
 
-		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo);
+		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo, cpu_ctx->cn_r_ctx.height);
 
 		if(oWork.bNiceHash)
 			pGpuCtx->Nonce = *(uint32_t*)(oWork.bWorkBlob + 39);
@@ -275,7 +281,7 @@ void minethd::work_main()
 
 				*(uint32_t*)(bWorkBlob + 39) = results[i];
 
-				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, &cpu_ctx, miner_algo);
+				cpu_ctx->hash_fn(bWorkBlob, oWork.iWorkSize, bResult, &cpu_ctx, miner_algo);
 				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
 					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, results[i], bResult, iThreadNo, miner_algo), oWork.iPoolId));
 				else
@@ -327,7 +333,7 @@ void minethd::work_main()
 						);
 					}
 					// update gpu with new intensity
-					XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo);
+					XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo, cpu_ctx->cn_r_ctx.height);
 				}
 				// use 3 rounds to warm up with the new intensity
 				else if(cntTestRounds == autoTune + 3)
