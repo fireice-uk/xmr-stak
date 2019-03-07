@@ -30,6 +30,7 @@ R"===(
 #define cryptonight_superfast 12
 #define cryptonight_gpu 13
 #define cryptonight_conceal 14
+#define cryptonight_v8_reversewaltz 17
 
 /* For Mesa clover support */
 #ifdef cl_clang_storage_class_specifiers
@@ -639,7 +640,7 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 R"===(
 
 // __NV_CL_C_VERSION checks if NVIDIA opencl is used
-#if(ALGO == cryptonight_monero_v8 && defined(__NV_CL_C_VERSION))
+#if((ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz) && defined(__NV_CL_C_VERSION))
 #	define SCRATCHPAD_CHUNK(N) (*(__local uint4*)((__local uchar*)(scratchpad_line) + (idxS ^ (N << 4))))
 #	define SCRATCHPAD_CHUNK_GLOBAL (*((__global uint16*)(Scratchpad + (IDX((idx0 & 0x1FFFC0U) >> 4)))))
 #else
@@ -659,7 +660,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 	float4 conc_var = (float4)(0.0f);
 #endif
 
-#if(ALGO == cryptonight_monero_v8)
+#if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz)
 	ulong b[4];
 	uint4 b_x[2];
 // NVIDIA
@@ -673,7 +674,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 #endif
 	__local uint AES0[256], AES1[256];
 
-#if(ALGO == cryptonight_monero_v8)
+#if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz)
 #	if defined(__clang__) && !defined(__NV_CL_C_VERSION)
 	__local uint RCP[256];
 #	endif
@@ -689,7 +690,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 		AES0[i] = tmp;
 		AES1[i] = rotate(tmp, 8U);
 
-#if(ALGO == cryptonight_monero_v8 && (defined(__clang__) && !defined(__NV_CL_C_VERSION)))
+#if((ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz) && (defined(__clang__) && !defined(__NV_CL_C_VERSION)))
 		RCP[i] = RCP_C[i];
 #endif
 	}
@@ -723,7 +724,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
 		b_x[0] = ((uint4 *)b)[0];
 
-#if(ALGO == cryptonight_monero_v8)
+#if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz)
 		a[1] = states[1] ^ states[5];
 		b[2] = states[8] ^ states[10];
 		b[3] = states[9] ^ states[11];
@@ -755,7 +756,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 	{
 			ulong c[2];
 
-#if(ALGO == cryptonight_monero_v8 && defined(__NV_CL_C_VERSION))
+#if((ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz) && defined(__NV_CL_C_VERSION))
 			uint idxS = idx0 & 0x30U;
  			*scratchpad_line = SCRATCHPAD_CHUNK_GLOBAL;
 #endif
@@ -792,6 +793,15 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			SCRATCHPAD_CHUNK(2) = as_uint4(chunk1 + ((ulong2 *)b_x)[0]);
 			SCRATCHPAD_CHUNK(3) = as_uint4(chunk2 + ((ulong2 *)a)[0]);
 		}
+#elif(ALGO == cryptonight_v8_reversewaltz)
+		{
+			ulong2 chunk3 = as_ulong2(SCRATCHPAD_CHUNK(1));
+			ulong2 chunk2 = as_ulong2(SCRATCHPAD_CHUNK(2));
+			ulong2 chunk1 = as_ulong2(SCRATCHPAD_CHUNK(3));
+			SCRATCHPAD_CHUNK(1) = as_uint4(chunk3 + ((ulong2 *)(b_x + 1))[0]);
+			SCRATCHPAD_CHUNK(2) = as_uint4(chunk1 + ((ulong2 *)b_x)[0]);
+			SCRATCHPAD_CHUNK(3) = as_uint4(chunk2 + ((ulong2 *)a)[0]);
+		}
 #endif
 
 #if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
@@ -807,7 +817,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			SCRATCHPAD_CHUNK(0) = b_x[0];
 			idx0 = as_uint2(c[0]).s0 & MASK;
 
-#elif(ALGO == cryptonight_monero_v8)
+#elif(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz)
 			SCRATCHPAD_CHUNK(0) = b_x[0] ^ ((uint4 *)c)[0];
 #	ifdef __NV_CL_C_VERSION
 			// flush shuffled data
@@ -826,7 +836,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			uint4 tmp;
 			tmp = SCRATCHPAD_CHUNK(0);
 
-#if(ALGO == cryptonight_monero_v8)
+#if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz)
 			// Use division and square root results from the _previous_ iteration to hide the latency
 			tmp.s0 ^= division_result.s0;
 			tmp.s1 ^= division_result.s1 ^ sqrt_result;
@@ -853,8 +863,13 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			ulong2 chunk2 = as_ulong2(SCRATCHPAD_CHUNK(2));
 			result_mul ^= chunk2;
 			ulong2 chunk3 = as_ulong2(SCRATCHPAD_CHUNK(3));
+#if(ALGO == cryptonight_v8_reversewaltz)
+			SCRATCHPAD_CHUNK(1) = as_uint4(chunk1 + ((ulong2 *)(b_x + 1))[0]);
+			SCRATCHPAD_CHUNK(2) = as_uint4(chunk3 + ((ulong2 *)b_x)[0]);
+#else
 			SCRATCHPAD_CHUNK(1) = as_uint4(chunk3 + ((ulong2 *)(b_x + 1))[0]);
 			SCRATCHPAD_CHUNK(2) = as_uint4(chunk1 + ((ulong2 *)b_x)[0]);
+#endif
 			SCRATCHPAD_CHUNK(3) = as_uint4(chunk2 + ((ulong2 *)a)[0]);
 			a[0] += result_mul.s0;
 			a[1] += result_mul.s1;
@@ -882,7 +897,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 
 		((uint4 *)a)[0] ^= tmp;
 
-#if (ALGO == cryptonight_monero_v8)
+#if (ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz)
 #	if defined(__NV_CL_C_VERSION)
 			// flush shuffled data
 			SCRATCHPAD_CHUNK_GLOBAL = *scratchpad_line;
