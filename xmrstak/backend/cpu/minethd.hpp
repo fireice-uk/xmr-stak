@@ -34,7 +34,7 @@ public:
 			bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo, const std::string& asm_version_str = "off");
 
 	private:
-
+		
 	minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity, const std::string& asm_version);
 
 	template<uint32_t N>
