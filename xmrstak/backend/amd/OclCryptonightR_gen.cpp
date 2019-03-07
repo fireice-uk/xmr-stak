@@ -282,7 +282,7 @@ cl_program CryptonightR_get_program(GpuContext* ctx, xmrstak_algo algo, uint64_t
         code_size = v4_random_math_init<cryptonight_r>(code, height);
         break;
     default:
-        printer::inst()->print_msg(LDEBUG, "CryptonightR_get_program: invalid algo %d", algo);
+        printer::inst()->print_msg(L0, "CryptonightR_get_program: invalid algo %d", algo);
         return nullptr;
     }
 

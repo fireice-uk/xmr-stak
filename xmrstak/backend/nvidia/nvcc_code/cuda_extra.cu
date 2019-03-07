@@ -267,9 +267,6 @@ extern "C" void cryptonight_extra_cpu_set_data( nvid_ctx* ctx, const void *data,
 
 extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 {
-	CU_CHECK(ctx->device_id, cuDeviceGet(&ctx->cuDevice, ctx->device_id));
-    CU_CHECK(ctx->device_id, cuCtxCreate(&ctx->cuContext, 0, ctx->cuDevice));
-
 	cudaError_t err;
 	err = cudaSetDevice(ctx->device_id);
 	if(err != cudaSuccess)
@@ -309,6 +306,9 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 
 	size_t wsize = ctx->device_blocks * ctx->device_threads;
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_state, 50 * sizeof(uint32_t) * wsize));
+	// get the cudaRT context
+	CU_CHECK(ctx->device_id, cuCtxGetCurrent(&ctx->cuContext));
+
 	size_t ctx_b_size = 4 * sizeof(uint32_t) * wsize;
 	if(
 		std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_heavy) != neededAlgorithms.end() ||
