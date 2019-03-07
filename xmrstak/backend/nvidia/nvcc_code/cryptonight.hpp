@@ -36,7 +36,6 @@ typedef struct {
 	size_t free_device_memory;
 	size_t total_device_memory;
 
-	CUdevice cuDevice;
 	CUcontext cuContext;
 	CUmodule module = nullptr;
 	CUfunction kernel = nullptr;

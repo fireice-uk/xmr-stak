@@ -71,6 +71,7 @@ If your prefered coin is not listed, you can choose one of the following algorit
     - cryptonight_v7_stellite
     - cryptonight_v8
     - cryptonight_v8_half (used by masari and stellite)
+    - cryptonight_v8_reversewaltz (used by graft)
     - cryptonight_v8_zelerius
 - 4MiB scratchpad memory
     - cryptonight_haven
