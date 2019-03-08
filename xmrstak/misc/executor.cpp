@@ -368,7 +368,7 @@ void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 	dat.iSavedNonce = oPoolJob.iSavedNonce;
 	dat.pool_id = pool_id;
 
-	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work(oPoolJob.sJobID, oPoolJob.bWorkBlob, 
+	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work(oPoolJob.sJobID, oPoolJob.bWorkBlob,
 		oPoolJob.iWorkLen, oPoolJob.iTarget, pool->is_nicehash(), pool_id, oPoolJob.iBlockHeight), dat);
 
 	if(dat.pool_id != pool_id)
@@ -584,9 +584,9 @@ void executor::ex_main()
 		break;
 	default:
 		if(dev_tls)
-			pools.emplace_front(0, "donate.xmr-stak.net:6666", "", "", "", 0.0, true, true, "", false);
+			pools.emplace_front(0, "donate.xmr-stak.net:6666", "", "", "", 0.0, true, true, "", true);
 		else
-			pools.emplace_front(0, "donate.xmr-stak.net:3333", "", "", "", 0.0, true, false, "", false);
+			pools.emplace_front(0, "donate.xmr-stak.net:3333", "", "", "", 0.0, true, false, "", true);
 		break;
 	}
 

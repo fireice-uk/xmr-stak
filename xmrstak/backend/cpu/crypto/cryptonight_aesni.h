@@ -24,6 +24,15 @@
 #include <cfenv>
 #include <utility>
 
+#ifdef _WIN64
+#	include <winsock2.h>
+#	include <windows.h>
+#	include <ntsecapi.h>
+#	include <tchar.h>
+#else
+#	include <sys/mman.h>
+#endif
+
 #ifdef __GNUC__
 #include <x86intrin.h>
 static inline uint64_t _umul128(uint64_t a, uint64_t b, uint64_t* hi)
@@ -629,6 +638,16 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x30], _mm_add_epi64(chunk2, ax0)); \
 		if (ALGO == cryptonight_r) \
 			cx = _mm_xor_si128(_mm_xor_si128(cx, chunk3), _mm_xor_si128(chunk1, chunk2)); \
+	} \
+	if(ALGO == cryptonight_v8_reversewaltz) \
+	{ \
+		const uint64_t idx1 = idx0 & MASK; \
+		const __m128i chunk3 = _mm_load_si128((__m128i *)&l0[idx1 ^ 0x10]); \
+		const __m128i chunk2 = _mm_load_si128((__m128i *)&l0[idx1 ^ 0x20]); \
+		const __m128i chunk1 = _mm_load_si128((__m128i *)&l0[idx1 ^ 0x30]); \
+		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x10], _mm_add_epi64(chunk3, bx1)); \
+		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x20], _mm_add_epi64(chunk1, bx0)); \
+		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x30], _mm_add_epi64(chunk2, ax0)); \
 	}
 
 #define CN_MONERO_V8_SHUFFLE_1(n, l0, idx0, ax0, bx0, bx1, lo, hi) \
@@ -644,10 +663,22 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x10], _mm_add_epi64(chunk3, bx1)); \
 		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x20], _mm_add_epi64(chunk1, bx0)); \
 		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x30], _mm_add_epi64(chunk2, ax0)); \
+	} \
+	if(ALGO == cryptonight_v8_reversewaltz) \
+	{ \
+		const uint64_t idx1 = idx0 & MASK; \
+		const __m128i chunk3 = _mm_xor_si128(_mm_load_si128((__m128i *)&l0[idx1 ^ 0x10]), _mm_set_epi64x(lo, hi)); \
+		const __m128i chunk2 = _mm_load_si128((__m128i *)&l0[idx1 ^ 0x20]); \
+		hi ^= ((uint64_t*)&chunk2)[0]; \
+		lo ^= ((uint64_t*)&chunk2)[1]; \
+		const __m128i chunk1 = _mm_load_si128((__m128i *)&l0[idx1 ^ 0x30]); \
+		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x10], _mm_add_epi64(chunk3, bx1)); \
+		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x20], _mm_add_epi64(chunk1, bx0)); \
+		_mm_store_si128((__m128i *)&l0[idx1 ^ 0x30], _mm_add_epi64(chunk2, ax0)); \
 	}
 
 #define CN_MONERO_V8_DIV(n, cx, sqrt_result, division_result_xmm, cl) \
-	if(ALGO == cryptonight_monero_v8) \
+	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz) \
 	{ \
 		uint64_t sqrt_result_tmp; \
 		assign(sqrt_result_tmp, sqrt_result); \
@@ -726,7 +757,7 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 		idx0 = h0[0] ^ h0[4]; \
 		ax0 = _mm_set_epi64x(h0[1] ^ h0[5], idx0); \
 		bx0 = _mm_set_epi64x(h0[3] ^ h0[7], h0[2] ^ h0[6]); \
-		if(ALGO == cryptonight_monero_v8) \
+		if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz) \
 		{ \
 			bx1 = _mm_set_epi64x(h0[9] ^ h0[11], h0[8] ^ h0[10]); \
 			division_result_xmm = _mm_cvtsi64_si128(h0[12]); \
@@ -773,7 +804,7 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 	ptr0 = (__m128i *)&l0[idx0 & MASK]; \
 	if(PREFETCH) \
 		_mm_prefetch((const char*)ptr0, _MM_HINT_T0); \
-	if(ALGO != cryptonight_monero_v8 && ALGO != cryptonight_r && ALGO != cryptonight_r_wow) \
+	if(ALGO != cryptonight_monero_v8 && ALGO != cryptonight_r && ALGO != cryptonight_r_wow && ALGO != cryptonight_v8_reversewaltz) \
 		bx0 = cx
 
 #define CN_STEP3(n, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm, cn_r_data) \
@@ -798,7 +829,7 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 		ah0 += lo; \
 		al0 += hi; \
 	} \
-	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_r || ALGO != cryptonight_r_wow) \
+	if(ALGO == cryptonight_monero_v8 || ALGO == cryptonight_r || ALGO == cryptonight_r_wow || ALGO == cryptonight_v8_reversewaltz) \
 	{ \
 		bx1 = bx0; \
 		bx0 = cx; \
@@ -1056,37 +1087,45 @@ struct Cryptonight_hash<5>
 	}
 };
 
-extern "C" void cryptonight_v8_mainloop_ivybridge_asm(cryptonight_ctx* ctx0);
-extern "C" void cryptonight_v8_mainloop_ryzen_asm(cryptonight_ctx* ctx0);
+extern "C" void  cryptonight_v8_mainloop_ivybridge_asm(cryptonight_ctx* ctx0);
+extern "C" void  cryptonight_v8_mainloop_ryzen_asm(cryptonight_ctx* ctx0);
 extern "C" void cryptonight_v8_double_mainloop_sandybridge_asm(cryptonight_ctx* ctx0, cryptonight_ctx* ctx1);
 
 
 template< size_t N, size_t asm_version>
-struct Cryptonight_hash_asm;
-
-template<size_t asm_version>
-struct Cryptonight_hash_asm<1, asm_version>
+struct Cryptonight_hash_asm
 {
-	static constexpr size_t N = 1;
-
 	template<xmrstak_algo_id ALGO>
 	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
 	{
-		keccak((const uint8_t *)input, len, ctx[0]->hash_state, 200);
-		cn_explode_scratchpad<false, false, ALGO>((__m128i*)ctx[0]->hash_state, (__m128i*)ctx[0]->long_state, algo);
+		for(size_t i = 0; i < N; ++i)
+		{
+			keccak((const uint8_t *)input + len * i, len, ctx[i]->hash_state, 200);
+			cn_explode_scratchpad<false, false, ALGO>((__m128i*)ctx[i]->hash_state, (__m128i*)ctx[i]->long_state, algo);
+		}
+		if(ALGO == cryptonight_r)
+		{
+			// API ATTRIBUTE is only required for cryptonight_r
+			typedef void ABI_ATTRIBUTE (*cn_r_mainloop_fun)(cryptonight_ctx *ctx);
+			for(size_t i = 0; i < N; ++i)
+				reinterpret_cast<cn_r_mainloop_fun>(ctx[0]->loop_fn)(ctx[i]); // use always loop_fn from ctx[0]!!
+		}
+		else
+		{
+			for(size_t i = 0; i < N; ++i)
+				ctx[0]->loop_fn(ctx[i]); // use always loop_fn from ctx[0]!!
+		}
 
-		if(asm_version == 0)
-			cryptonight_v8_mainloop_ivybridge_asm(ctx[0]);
-		else if(asm_version == 1)
-			cryptonight_v8_mainloop_ryzen_asm(ctx[0]);
-
-		cn_implode_scratchpad<false, false, ALGO>((__m128i*)ctx[0]->long_state, (__m128i*)ctx[0]->hash_state, algo);
-		keccakf((uint64_t*)ctx[0]->hash_state, 24);
-		extra_hashes[ctx[0]->hash_state[0] & 3](ctx[0]->hash_state, 200, (char*)output);
+		for(size_t i = 0; i < N; ++i)
+		{
+			cn_implode_scratchpad<false, false, ALGO>((__m128i*)ctx[i]->long_state, (__m128i*)ctx[i]->hash_state, algo);
+			keccakf((uint64_t*)ctx[i]->hash_state, 24);
+			extra_hashes[ctx[i]->hash_state[0] & 3](ctx[i]->hash_state, 200, (char*)output + 32 * i);
+		}
 	}
 };
 
-// double hash only for intel
+// double hash with specialized asm only for intel
 template< >
 struct Cryptonight_hash_asm<2, 0>
 {
@@ -1104,7 +1143,7 @@ struct Cryptonight_hash_asm<2, 0>
 			cn_explode_scratchpad<false, false, ALGO>((__m128i*)ctx[i]->hash_state, (__m128i*)ctx[i]->long_state, algo);
 		}
 
-		cryptonight_v8_double_mainloop_sandybridge_asm(ctx[0], ctx[1]);
+		reinterpret_cast<cn_double_mainloop_fun>(ctx[0]->loop_fn)(ctx[0], ctx[1]);
 
 		for(size_t i = 0; i < N; ++i)
 		{
@@ -1116,6 +1155,141 @@ struct Cryptonight_hash_asm<2, 0>
 		}
 	}
 };
+
+namespace
+{
+
+template<typename T, typename U>
+static void patchCode(T dst, U src, const uint32_t iterations, const uint32_t mask)
+{
+    const uint8_t* p = reinterpret_cast<const uint8_t*>(src);
+
+    // Workaround for Visual Studio placing trampoline in debug builds.
+#   if defined(_MSC_VER)
+    if (p[0] == 0xE9) {
+        p += *(int32_t*)(p + 1) + 5;
+    }
+#   endif
+
+    size_t size = 0;
+    while (*(uint32_t*)(p + size) != 0xDEADC0DE) {
+        ++size;
+    }
+    size += sizeof(uint32_t);
+
+    memcpy((void*) dst, (const void*) src, size);
+
+    uint8_t* patched_data = reinterpret_cast<uint8_t*>(dst);
+    for (size_t i = 0; i + sizeof(uint32_t) <= size; ++i) {
+        switch (*(uint32_t*)(patched_data + i)) {
+        case CN_ITER:
+            *(uint32_t*)(patched_data + i) = iterations;
+            break;
+
+        case CN_MASK:
+            *(uint32_t*)(patched_data + i) = mask;
+            break;
+        }
+    }
+}
+
+
+void* allocateExecutableMemory(size_t size)
+{
+
+#ifdef _WIN64
+return VirtualAlloc(0, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+#else
+#   if defined(__APPLE__)
+    return mmap(0, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANON, -1, 0);
+#   else
+    return mmap(0, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#   endif
+#endif
+}
+
+
+void protectExecutableMemory(void *p, size_t size)
+{
+#ifdef _WIN64
+    DWORD oldProtect;
+    VirtualProtect(p, size, PAGE_EXECUTE_READ, &oldProtect);
+#else
+    mprotect(p, size, PROT_READ | PROT_EXEC);
+#endif
+}
+
+void unprotectExecutableMemory(void *p, size_t size)
+{
+#ifdef _WIN64
+    DWORD oldProtect;
+    VirtualProtect(p, size, PAGE_EXECUTE_READWRITE, &oldProtect);
+#else
+    mprotect(p, size, PROT_WRITE | PROT_EXEC);
+#endif
+}
+
+
+void flushInstructionCache(void *p, size_t size)
+{
+#ifdef _WIN64
+    ::FlushInstructionCache(GetCurrentProcess(), p, size);
+#else
+#   ifndef __FreeBSD__
+    __builtin___clear_cache(reinterpret_cast<char*>(p), reinterpret_cast<char*>(p) + size);
+#   endif
+#endif
+}
+
+template<size_t N>
+void patchAsmVariants(std::string selected_asm, cryptonight_ctx** ctx, const xmrstak_algo& algo)
+{
+	const uint32_t Iter = algo.Iter();
+	const uint32_t Mask = algo.Mask();
+
+	const int allocation_size = 65536;
+
+	if(ctx[0]->fun_data == nullptr)
+		ctx[0]->fun_data = static_cast<uint8_t*>(allocateExecutableMemory(allocation_size));
+	else
+		unprotectExecutableMemory(ctx[0]->fun_data, allocation_size);
+
+	cn_mainloop_fun src_code = nullptr;
+
+	if(selected_asm == "intel_avx")
+	{
+		// Intel Ivy Bridge (Xeon v2, Core i7/i5/i3 3xxx, Pentium G2xxx, Celeron G1xxx)
+		if(N == 2)
+			src_code = reinterpret_cast<cn_mainloop_fun>(cryptonight_v8_double_mainloop_sandybridge_asm);
+		else
+			src_code = cryptonight_v8_mainloop_ivybridge_asm;;
+	}
+	// supports only 1 thread per hash
+	if(selected_asm == "amd_avx")
+	{
+		// AMD Ryzen (1xxx and 2xxx series)
+		src_code = cryptonight_v8_mainloop_ryzen_asm;
+	}
+
+	if(src_code != nullptr && ctx[0]->fun_data != nullptr)
+	{
+		patchCode(ctx[0]->fun_data, src_code, Iter, Mask);
+		ctx[0]->loop_fn = reinterpret_cast<cn_mainloop_fun>(ctx[0]->fun_data);
+		for(size_t i = 1; i < N; ++i)
+			ctx[i]->loop_fn = ctx[0]->loop_fn;
+
+		if(selected_asm == "intel_avx" && N == 2)
+			ctx[0]->hash_fn = Cryptonight_hash_asm<2u, 0u>::template hash<cryptonight_monero_v8>;
+		else
+			ctx[0]->hash_fn = Cryptonight_hash_asm<N, 1u>::template hash<cryptonight_monero_v8>;
+
+		protectExecutableMemory(ctx[0]->fun_data, allocation_size);
+		flushInstructionCache(ctx[0]->fun_data, allocation_size);
+	}
+}
+} // namespace (anonymous)
+
+
 
 struct Cryptonight_hash_gpu
 {
@@ -1144,13 +1318,24 @@ struct Cryptonight_R_generator
 	template<xmrstak_algo_id ALGO>
 	static void cn_on_new_job(const xmrstak::miner_work& work, cryptonight_ctx** ctx)
 	{
-		if(ctx[0]->cn_r_ctx.height == work.iBlockHeight)
+		if(ctx[0]->cn_r_ctx.height == work.iBlockHeight && ctx[0]->last_algo == POW(cryptonight_r))
 			return;
 
+		ctx[0]->last_algo = POW(cryptonight_r);
+
 		ctx[0]->cn_r_ctx.height = work.iBlockHeight;
-		v4_random_math_init<ALGO>(ctx[0]->cn_r_ctx.code, work.iBlockHeight);
+		int code_size = v4_random_math_init<ALGO>(ctx[0]->cn_r_ctx.code, work.iBlockHeight);
+		if(ctx[0]->asm_version != 0)
+		{
+			v4_compile_code(ctx[0], code_size);
+			ctx[0]->hash_fn = Cryptonight_hash_asm<N, 1u>::template hash<cryptonight_r>;
+		}
 
 		for(size_t i=1; i < N; i++)
+		{
 			ctx[i]->cn_r_ctx = ctx[0]->cn_r_ctx;
+			ctx[i]->loop_fn = ctx[0]->loop_fn;
+			ctx[i]->hash_fn = ctx[0]->hash_fn;
+		}
 	}
 };
