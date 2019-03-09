@@ -850,8 +850,8 @@ int do_benchmark(int block_version, int wait_sec, int work_sec)
 
 	printer::inst()->print_msg(L0, "Prepare benchmark for block version %d", block_version);
 
-	uint8_t work[112];
-	memset(work,0,112);
+	uint8_t work[128];
+	memset(work,0,128);
 	work[0] = static_cast<uint8_t>(block_version);
 
 	xmrstak::pool_data dat;
@@ -862,15 +862,14 @@ int do_benchmark(int block_version, int wait_sec, int work_sec)
 	printer::inst()->print_msg(L0, "Wait %d sec until all backends are initialized",wait_sec);
 	std::this_thread::sleep_for(std::chrono::seconds(wait_sec));
 
-	/* AMD and NVIDIA is currently only supporting work sizes up to 84byte
-	 * \todo fix this issue
+	/* AMD and NVIDIA is currently only supporting work sizes up to 128byte
 	 */
 	printer::inst()->print_msg(L0, "Start a %d second benchmark...",work_sec);
-	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work("", work, 84, 0, false, 0, 0), dat);
+	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work("", work, 128, 0, false, 0, 0), dat);
 	uint64_t iStartStamp = get_timestamp_ms();
 
 	std::this_thread::sleep_for(std::chrono::seconds(work_sec));
-	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work("", work, 84, 0, false, 0, 0), dat);
+	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work("", work, 128, 0, false, 0, 0), dat);
 
 	double fTotalHps = 0.0;
 	for (uint32_t i = 0; i < pvThreads->size(); i++)

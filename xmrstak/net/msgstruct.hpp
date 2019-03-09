@@ -12,7 +12,7 @@
 struct pool_job
 {
 	char		sJobID[64];
-	uint8_t		bWorkBlob[112];
+	uint8_t		bWorkBlob[128];
 	uint64_t	iTarget;
 	uint32_t	iWorkLen;
 	uint32_t	iSavedNonce;

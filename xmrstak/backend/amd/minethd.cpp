@@ -273,7 +273,7 @@ void minethd::work_main()
 
 			for(size_t i = 0; i < results[0xFF]; i++)
 			{
-				uint8_t	bWorkBlob[112];
+				uint8_t	bWorkBlob[128];
 				uint8_t	bResult[32];
 
 				memcpy(bWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
