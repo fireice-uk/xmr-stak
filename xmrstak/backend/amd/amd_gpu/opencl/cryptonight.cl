@@ -1361,7 +1361,7 @@ __kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global
 		states += 25 * BranchBuf[idx];
 
 		ulong State[8] = { 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0x0001000000000000UL };
-#if defined(__clang__) && !defined(__NV_CL_C_VERSION)
+#if defined(__clang__) && !defined(__NV_CL_C_VERSION) && (IS_WINDOWS_OS != 1)
 		// on ROCM we need volatile for AMD RX5xx cards to avoid invalid shares
 		volatile
 #endif
