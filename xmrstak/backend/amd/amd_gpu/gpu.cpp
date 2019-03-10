@@ -958,8 +958,10 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 
     if ((miner_algo == cryptonight_r) || (miner_algo == cryptonight_r_wow)) {
 
+		uint32_t PRECOMPILATION_DEPTH = 4;
+
         // Get new kernel
-        cl_program program = xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height);
+        cl_program program = xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height, PRECOMPILATION_DEPTH);
 
         if (program != ctx->ProgramCryptonightR) {
             cl_int ret;
@@ -975,12 +977,10 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
             }
             ctx->ProgramCryptonightR = program;
 
-			uint32_t PRECOMPILATION_DEPTH = 4;
-
             // Precompile next program in background
-            xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height + 1, true, old_kernel);
+            xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height + 1, PRECOMPILATION_DEPTH, true, old_kernel);
             for (int i = 2; i <= PRECOMPILATION_DEPTH; ++i)
-                xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height + i, true, nullptr);
+                xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height + i, PRECOMPILATION_DEPTH, true, nullptr);
 
             printer::inst()->print_msg(LDEBUG, "Thread #%zu updated CryptonightR", ctx->deviceIdx);
         }
