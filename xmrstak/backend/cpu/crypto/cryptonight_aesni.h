@@ -744,7 +744,7 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 	__m128i bx1; \
 	__m128i division_result_xmm; \
 	__m128 conc_var; \
-	if(ALGO == cryptonight_conceal || ALGO == cryptonight_gpu) \
+	if(ALGO == cryptonight_conceal) \
 	{\
 		set_float_rounding_mode_nearest(); \
 		conc_var = _mm_setzero_ps(); \
@@ -1306,6 +1306,7 @@ struct Cryptonight_hash_gpu
 	template<xmrstak_algo_id ALGO, bool SOFT_AES, bool PREFETCH>
 	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
 	{
+		set_float_rounding_mode_nearest();
 		keccak((const uint8_t *)input, len, ctx[0]->hash_state, 200);
 		cn_explode_scratchpad_gpu<PREFETCH, ALGO>(ctx[0]->hash_state, ctx[0]->long_state, algo);
 
