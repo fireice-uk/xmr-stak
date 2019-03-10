@@ -334,6 +334,12 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		 */
 		options += " -DOPENCL_DRIVER_MAJOR=" + std::to_string(std::stoi(openCLDriverVer.data()) / 100);
 
+		uint32_t isWindowsOs = 0;
+#ifdef _WIN32
+		isWindowsOs = 1;
+#endif
+		options += " -DIS_WINDOWS_OS=" + std::to_string(isWindowsOs);
+		
 		if(miner_algo == cryptonight_gpu)
 			options += " -cl-fp32-correctly-rounded-divide-sqrt";
 
