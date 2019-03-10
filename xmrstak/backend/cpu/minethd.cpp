@@ -738,9 +738,17 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 		std::string selected_asm = asm_version_str;
 		if(selected_asm == "auto")
 				selected_asm = cpu::getAsmName(N);
-		printer::inst()->print_msg(L0, "enable cryptonight_r asm '%s' cpu's", selected_asm.c_str());
-		for(int h = 0; h < N; ++h)
-			ctx[h]->asm_version = selected_asm == "intel_avx" ? 1 : 2; // 1 == Intel; 2 == AMD
+		if(selected_asm == "off")
+		{
+			for(int h = 0; h < N; ++h)
+				ctx[h]->asm_version = 0;
+		}
+		else
+		{
+			printer::inst()->print_msg(L0, "enable cryptonight_r asm '%s' cpu's", selected_asm.c_str());
+			for(int h = 0; h < N; ++h)
+				ctx[h]->asm_version = selected_asm == "intel_avx" ? 1 : 2; // 1 == Intel; 2 == AMD
+		}
 	}
 
 	for(int h = 1; h < N; ++h)
