@@ -103,54 +103,7 @@ __device__ __forceinline__ void cn_keccakf(uint64_t *s)
 {
 	uint64_t bc[5], tmpxor[5], tmp1, tmp2;
 
-	tmpxor[0] = s[0] ^ s[5];
-	tmpxor[1] = s[1] ^ s[6] ^ 0x8000000000000000ULL;
-	tmpxor[2] = s[2] ^ s[7];
-	tmpxor[3] = s[3] ^ s[8];
-	tmpxor[4] = s[4] ^ s[9];
-
-	bc[0] = tmpxor[0] ^ rotl64_1(tmpxor[2], 1);
-	bc[1] = tmpxor[1] ^ rotl64_1(tmpxor[3], 1);
-	bc[2] = tmpxor[2] ^ rotl64_1(tmpxor[4], 1);
-	bc[3] = tmpxor[3] ^ rotl64_1(tmpxor[0], 1);
-	bc[4] = tmpxor[4] ^ rotl64_1(tmpxor[1], 1);
-
-	tmp1 = s[1] ^ bc[0];
-
-	s[0] ^= bc[4];
-	s[1] = rotl64_2(s[6] ^ bc[0], 12);
-	s[6] = rotl64_1(s[9] ^ bc[3], 20);
-	s[9] = rotl64_2(bc[1], 29);
-	s[22] = rotl64_2(bc[3], 7);
-	s[14] = rotl64_1(bc[4], 18);
-	s[20] = rotl64_2(s[2] ^ bc[1], 30);
-	s[2] = rotl64_2(bc[1], 11);
-	s[12] = rotl64_1(bc[2], 25);
-	s[13] = rotl64_1(bc[3], 8);
-	s[19] = rotl64_2(bc[2], 24);
-	s[23] = rotl64_2(bc[4], 9);
-	s[15] = rotl64_1(s[4] ^ bc[3], 27);
-	s[4] = rotl64_1(bc[3], 14);
-	s[24] = rotl64_1(bc[0], 2);
-	s[21] = rotl64_2(s[8] ^ bc[2], 23);
-	s[8] = rotl64_2(0x8000000000000000ULL ^ bc[0], 13);
-	s[16] = rotl64_2(s[5] ^ bc[4], 4);
-	s[5] = rotl64_1(s[3] ^ bc[2], 28);
-	s[3] = rotl64_1(bc[2], 21);
-	s[18] = rotl64_1(bc[1], 15);
-	s[17] = rotl64_1(bc[0], 10);
-	s[11] = rotl64_1(s[7] ^ bc[1], 6);
-	s[7] = rotl64_1(bc[4], 3);
-	s[10] = rotl64_1(tmp1, 1);
-
-	tmp1 = s[0]; tmp2 = s[1]; s[0] = bitselect(s[0] ^ s[2], s[0], s[1]); s[1] = bitselect(s[1] ^ s[3], s[1], s[2]); s[2] = bitselect(s[2] ^ s[4], s[2], s[3]); s[3] = bitselect(s[3] ^ tmp1, s[3], s[4]); s[4] = bitselect(s[4] ^ tmp2, s[4], tmp1);
-	tmp1 = s[5]; tmp2 = s[6]; s[5] = bitselect(s[5] ^ s[7], s[5], s[6]); s[6] = bitselect(s[6] ^ s[8], s[6], s[7]); s[7] = bitselect(s[7] ^ s[9], s[7], s[8]); s[8] = bitselect(s[8] ^ tmp1, s[8], s[9]); s[9] = bitselect(s[9] ^ tmp2, s[9], tmp1);
-	tmp1 = s[10]; tmp2 = s[11]; s[10] = bitselect(s[10] ^ s[12], s[10], s[11]); s[11] = bitselect(s[11] ^ s[13], s[11], s[12]); s[12] = bitselect(s[12] ^ s[14], s[12], s[13]); s[13] = bitselect(s[13] ^ tmp1, s[13], s[14]); s[14] = bitselect(s[14] ^ tmp2, s[14], tmp1);
-	tmp1 = s[15]; tmp2 = s[16]; s[15] = bitselect(s[15] ^ s[17], s[15], s[16]); s[16] = bitselect(s[16] ^ s[18], s[16], s[17]); s[17] = bitselect(s[17] ^ s[19], s[17], s[18]); s[18] = bitselect(s[18] ^ tmp1, s[18], s[19]); s[19] = bitselect(s[19] ^ tmp2, s[19], tmp1);
-	tmp1 = s[20]; tmp2 = s[21]; s[20] = bitselect(s[20] ^ s[22], s[20], s[21]); s[21] = bitselect(s[21] ^ s[23], s[21], s[22]); s[22] = bitselect(s[22] ^ s[24], s[22], s[23]); s[23] = bitselect(s[23] ^ tmp1, s[23], s[24]); s[24] = bitselect(s[24] ^ tmp2, s[24], tmp1);
-	s[0] ^= 0x0000000000000001;
-
-	for(int i = 1; i < 24; ++i)
+	for(int i = 0; i < 24; ++i)
 	{
 		tmpxor[0] = s[0] ^ s[5] ^ s[10] ^ s[15] ^ s[20];
 		tmpxor[1] = s[1] ^ s[6] ^ s[11] ^ s[16] ^ s[21];

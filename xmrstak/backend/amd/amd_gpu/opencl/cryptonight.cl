@@ -539,6 +539,11 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 			State[8]  = input[8];
 			State[9]  = input[9];
 			State[10] = input[10];
+			State[11] = input[11];
+			State[12] = input[12];
+			State[13] = input[13];
+			State[14] = input[14];
+			State[15] = input[15];
 
 			((__local uint *)State)[9]  &= 0x00FFFFFFU;
 			((__local uint *)State)[9]  |= (((uint)get_global_id(0)) & 0xFF) << 24;
@@ -550,12 +555,12 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 			 */
 			((__local uint *)State)[10] |= (((uint)get_global_id(0) >> 8));
 
-			for (int i = 11; i < 25; ++i) {
-			    State[i] = 0x00UL;
-			}
-
 			// Last bit of padding
 			State[16] = 0x8000000000000000UL;
+
+			for (int i = 17; i < 25; ++i) {
+			    State[i] = 0x00UL;
+			}
 
 			keccakf1600_2(State);
 
