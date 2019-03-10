@@ -1143,7 +1143,15 @@ struct Cryptonight_hash_asm<2, 0>
 			cn_explode_scratchpad<false, false, ALGO>((__m128i*)ctx[i]->hash_state, (__m128i*)ctx[i]->long_state, algo);
 		}
 
-		reinterpret_cast<cn_double_mainloop_fun>(ctx[0]->loop_fn)(ctx[0], ctx[1]);
+		if(ALGO == cryptonight_r)
+		{
+			typedef void ABI_ATTRIBUTE (*cn_r_double_mainloop_fun)(cryptonight_ctx*, cryptonight_ctx*);
+			reinterpret_cast<cn_r_double_mainloop_fun>(ctx[0]->loop_fn)(ctx[0], ctx[1]);
+		}
+		else
+		{
+			reinterpret_cast<cn_double_mainloop_fun>(ctx[0]->loop_fn)(ctx[0], ctx[1]);
+		}
 
 		for(size_t i = 0; i < N; ++i)
 		{
@@ -1327,8 +1335,11 @@ struct Cryptonight_R_generator
 		int code_size = v4_random_math_init<ALGO>(ctx[0]->cn_r_ctx.code, work.iBlockHeight);
 		if(ctx[0]->asm_version != 0)
 		{
-			v4_compile_code(ctx[0], code_size);
-			ctx[0]->hash_fn = Cryptonight_hash_asm<N, 1u>::template hash<cryptonight_r>;
+			v4_compile_code(N, ctx[0], code_size);
+			if(N == 2)
+				ctx[0]->hash_fn = Cryptonight_hash_asm<2u, 0u>::template hash<cryptonight_r>;
+			else
+				ctx[0]->hash_fn = Cryptonight_hash_asm<N, 1u>::template hash<cryptonight_r>;
 		}
 
 		for(size_t i=1; i < N; i++)

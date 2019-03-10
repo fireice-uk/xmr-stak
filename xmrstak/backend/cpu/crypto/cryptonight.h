@@ -16,7 +16,7 @@ typedef void  (*cn_mainloop_fun)(cryptonight_ctx *ctx);
 typedef void  (*cn_double_mainloop_fun)(cryptonight_ctx*, cryptonight_ctx*);
 typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**, const xmrstak_algo&);
 
-void v4_compile_code(cryptonight_ctx* ctx, int code_size);
+void v4_compile_code(size_t N, cryptonight_ctx* ctx, int code_size);
 
 struct extra_ctx_r
 {

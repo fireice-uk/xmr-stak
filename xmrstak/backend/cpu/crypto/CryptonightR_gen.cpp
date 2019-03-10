@@ -74,7 +74,7 @@ static inline void add_random_math(uint8_t* &p, const V4_Instruction* code, int 
     }
 }
 
-void v4_compile_code(cryptonight_ctx* ctx, int code_size)
+void v4_compile_code(size_t N, cryptonight_ctx* ctx, int code_size)
 {
 	printer::inst()->print_msg(LDEBUG, "CryptonightR update ASM code");
 	const int allocation_size = 65536;
@@ -89,12 +89,24 @@ void v4_compile_code(cryptonight_ctx* ctx, int code_size)
 	if(ctx->fun_data != nullptr)
 	{
 
-		add_code(p, CryptonightR_template_part1, CryptonightR_template_part2);
-		add_random_math(p, ctx->cn_r_ctx.code, code_size, instructions, instructions_mov, false, ctx->asm_version);
-		add_code(p, CryptonightR_template_part2, CryptonightR_template_part3);
-		*(int*)(p - 4) = static_cast<int>((((const uint8_t*)CryptonightR_template_mainloop) - ((const uint8_t*)CryptonightR_template_part1)) - (p - p0));
-		add_code(p, CryptonightR_template_part3, CryptonightR_template_end);
-
+		if(N == 2)
+		{
+		    add_code(p, CryptonightR_template_double_part1, CryptonightR_template_double_part2);
+			add_random_math(p, ctx->cn_r_ctx.code, code_size, instructions, instructions_mov, false, ctx->asm_version);
+			add_code(p, CryptonightR_template_double_part2, CryptonightR_template_double_part3);
+			add_random_math(p, ctx->cn_r_ctx.code, code_size, instructions, instructions_mov, false, ctx->asm_version);
+			add_code(p, CryptonightR_template_double_part3, CryptonightR_template_double_part4);
+			*(int*)(p - 4) = static_cast<int>((((const uint8_t*)CryptonightR_template_double_mainloop) - ((const uint8_t*)CryptonightR_template_double_part1)) - (p - p0));
+			add_code(p, CryptonightR_template_double_part4, CryptonightR_template_double_end);
+		}
+		else
+		{
+			add_code(p, CryptonightR_template_part1, CryptonightR_template_part2);
+			add_random_math(p, ctx->cn_r_ctx.code, code_size, instructions, instructions_mov, false, ctx->asm_version);
+			add_code(p, CryptonightR_template_part2, CryptonightR_template_part3);
+			*(int*)(p - 4) = static_cast<int>((((const uint8_t*)CryptonightR_template_mainloop) - ((const uint8_t*)CryptonightR_template_part1)) - (p - p0));
+			add_code(p, CryptonightR_template_part3, CryptonightR_template_end);
+		}
 
 		ctx->loop_fn = reinterpret_cast<cn_mainloop_fun>(ctx->fun_data);
 		protectExecutableMemory(ctx->fun_data, allocation_size);
