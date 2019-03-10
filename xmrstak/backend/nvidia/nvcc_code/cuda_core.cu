@@ -1033,9 +1033,11 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, const xmrstak_algo& miner_algo, ui
 			 if(ctx->module)
 				cuModuleUnload(ctx->module);
 
+			uint32_t PRECOMPILATION_DEPTH = 4;
+
 			std::vector<char> ptx;
 			std::string lowered_name;
-			xmrstak::nvidia::CryptonightR_get_program(ptx, lowered_name, miner_algo, chain_height, ctx->device_arch[0], ctx->device_arch[1]);
+			xmrstak::nvidia::CryptonightR_get_program(ptx, lowered_name, miner_algo, chain_height, PRECOMPILATION_DEPTH, ctx->device_arch[0], ctx->device_arch[1]);
 
 			CU_CHECK(ctx->device_id, cuModuleLoadDataEx(&ctx->module, ptx.data(), 0, 0, 0));
 			CU_CHECK(ctx->device_id, cuModuleGetFunction(&ctx->kernel, ctx->module, lowered_name.c_str()));
@@ -1043,7 +1045,9 @@ void cryptonight_core_cpu_hash(nvid_ctx* ctx, const xmrstak_algo& miner_algo, ui
 			ctx->kernel_height = chain_height;
 			ctx->cached_algo = miner_algo;
 
-			xmrstak::nvidia::CryptonightR_get_program(ptx, lowered_name, miner_algo, chain_height + 1, ctx->device_arch[0], ctx->device_arch[1], true);
+			for (int i = 1; i <= PRECOMPILATION_DEPTH; ++i)
+				xmrstak::nvidia::CryptonightR_get_program(ptx, lowered_name, miner_algo,
+					chain_height + i, PRECOMPILATION_DEPTH, ctx->device_arch[0], ctx->device_arch[1], true);
 		}
 	}
 

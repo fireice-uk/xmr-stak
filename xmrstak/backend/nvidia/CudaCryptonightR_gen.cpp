@@ -153,6 +153,7 @@ static void CryptonightR_build_program(
     std::string& lowered_name,
     const xmrstak_algo& algo,
     uint64_t height,
+    uint32_t precompile_count,
     int arch_major,
     int arch_minor,
     std::string source)
@@ -164,7 +165,7 @@ static void CryptonightR_build_program(
         for (size_t i = 0; i < CryptonightR_cache.size();)
         {
             const CacheEntry& entry = CryptonightR_cache[i];
-            if ((entry.algo == algo) && (entry.height + 2 < height))
+            if ((entry.algo == algo) && (entry.height + 2 + precompile_count < height))
             {
                 printer::inst()->print_msg(LDEBUG, "CryptonightR: program for height %llu released (old program)", entry.height);
                 CryptonightR_cache[i] = std::move(CryptonightR_cache.back());
@@ -273,10 +274,10 @@ static void CryptonightR_build_program(
 	CryptonightR_cache_mutex.UnLock();
 }
 
-void CryptonightR_get_program(std::vector<char>& ptx, std::string& lowered_name, const xmrstak_algo algo, uint64_t height, int arch_major, int arch_minor, bool background)
+void CryptonightR_get_program(std::vector<char>& ptx, std::string& lowered_name, const xmrstak_algo algo, uint64_t height, uint32_t precompile_count, int arch_major, int arch_minor, bool background)
 {
     if (background) {
-        background_exec([=]() { std::vector<char> tmp; std::string s; CryptonightR_get_program(tmp, s, algo, height, arch_major, arch_minor, false); });
+        background_exec([=]() { std::vector<char> tmp; std::string s; CryptonightR_get_program(tmp, s, algo, height, precompile_count, arch_major, arch_minor, false); });
         return;
     }
 
@@ -329,7 +330,7 @@ void CryptonightR_get_program(std::vector<char>& ptx, std::string& lowered_name,
 		CryptonightR_cache_mutex.UnLock();
     }
 
-    CryptonightR_build_program(ptx, lowered_name, algo, height, arch_major, arch_minor, source_code);
+    CryptonightR_build_program(ptx, lowered_name, algo, height, precompile_count, arch_major, arch_minor, source_code);
 }
 
 } // namespace xmrstak
