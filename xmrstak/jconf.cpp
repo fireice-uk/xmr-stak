@@ -103,6 +103,7 @@ xmrstak::coin_selection coins[] = {
 	{ "cryptonight_turtle",      {POW(cryptonight_turtle)},    {POW(cryptonight_turtle)},    nullptr },
 	{ "cryptonight_v7",          {POW(cryptonight_monero)},    {POW(cryptonight_gpu)}, nullptr },
 	{ "cryptonight_v8",          {POW(cryptonight_monero_v8)}, {POW(cryptonight_r)}, nullptr },
+	{ "cryptonight_v8_double",   {POW(cryptonight_v8_double)}, {POW(cryptonight_gpu)}, nullptr },
 	{ "cryptonight_v8_half",     {POW(cryptonight_v8_half)},   {POW(cryptonight_gpu)}, nullptr },
 	{ "cryptonight_v8_reversewaltz", {POW(cryptonight_v8_reversewaltz)}, {POW(cryptonight_gpu)}, nullptr },
 	{ "cryptonight_v8_zelerius", {POW(cryptonight_v8_zelerius)},{POW(cryptonight_gpu)}, nullptr },
@@ -120,7 +121,8 @@ xmrstak::coin_selection coins[] = {
 	{ "stellite",                {POW(cryptonight_v8_half)},   {POW(cryptonight_gpu)}, nullptr },
 	{ "turtlecoin",              {POW(cryptonight_turtle), 6u,POW(cryptonight_aeon)}, {POW(cryptonight_aeon)}, nullptr },
 	{ "plenteum",			     {POW(cryptonight_turtle)},    {POW(cryptonight_turtle)},    nullptr },
-	{ "zelerius",                {POW(cryptonight_v8_zelerius), 7, POW(cryptonight_monero_v8)},   {POW(cryptonight_gpu)}, nullptr }
+	{ "zelerius",                {POW(cryptonight_v8_zelerius), 7, POW(cryptonight_monero_v8)},   {POW(cryptonight_gpu)}, nullptr },
+	{ "xcash",                   {POW(cryptonight_v8_double)}, {POW(cryptonight_gpu)}, nullptr }
 };
 
 constexpr size_t coin_algo_size = (sizeof(coins)/sizeof(coins[0]));
