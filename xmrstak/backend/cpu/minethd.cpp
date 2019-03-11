@@ -473,11 +473,21 @@ bool minethd::self_test()
 		{
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = memcmp(out, "\x32\xf7\x36\xec\x1d\x2f\x3f\xc5\x4c\x49\xbe\xb8\xa0\x47\x6c\xbf\xdd\x14\xc3\x51\xb9\xc6\xd7\x2c\x6f\x9f\xfc\xb5\x87\x5b\xe6\xb3", 32) == 0;
+			bResult = bResult && memcmp(out, "\x32\xf7\x36\xec\x1d\x2f\x3f\xc5\x4c\x49\xbe\xb8\xa0\x47\x6c\xbf\xdd\x14\xc3\x51\xb9\xc6\xd7\x2c\x6f\x9f\xfc\xb5\x87\x5b\xe6\xb3", 32) == 0;
 
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult &= memcmp(out, "\x32\xf7\x36\xec\x1d\x2f\x3f\xc5\x4c\x49\xbe\xb8\xa0\x47\x6c\xbf\xdd\x14\xc3\x51\xb9\xc6\xd7\x2c\x6f\x9f\xfc\xb5\x87\x5b\xe6\xb3", 32) == 0;
+			bResult = bResult && memcmp(out, "\x32\xf7\x36\xec\x1d\x2f\x3f\xc5\x4c\x49\xbe\xb8\xa0\x47\x6c\xbf\xdd\x14\xc3\x51\xb9\xc6\xd7\x2c\x6f\x9f\xfc\xb5\x87\x5b\xe6\xb3", 32) == 0;
+		}
+		else if(algo == POW(cryptonight_v8_double))
+		{
+			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
+			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
+			bResult = bResult && memcmp(out, "\x63\x43\x8e\xd\x5c\x18\xff\xca\xd5\xb5\xdf\xe0\x26\x8a\x5b\x3f\xe9\xbc\x1\xef\xe6\x3a\xd3\x4f\x2c\x57\x1c\xda\xb2\xc\x32\x31", 32) == 0;
+
+			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
+			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
+			bResult = bResult && memcmp(out, "\x63\x43\x8e\xd\x5c\x18\xff\xca\xd5\xb5\xdf\xe0\x26\x8a\x5b\x3f\xe9\xbc\x1\xef\xe6\x3a\xd3\x4f\x2c\x57\x1c\xda\xb2\xc\x32\x31", 32) == 0;
 		}
 		else
 			printer::inst()->print_msg(L0,
@@ -738,9 +748,17 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 		std::string selected_asm = asm_version_str;
 		if(selected_asm == "auto")
 				selected_asm = cpu::getAsmName(N);
-		printer::inst()->print_msg(L0, "enable cryptonight_r asm '%s' cpu's", selected_asm.c_str());
-		for(int h = 0; h < N; ++h)
-			ctx[h]->asm_version = selected_asm == "intel_avx" ? 1 : 2; // 1 == Intel; 2 == AMD
+		if(selected_asm == "off")
+		{
+			for(int h = 0; h < N; ++h)
+				ctx[h]->asm_version = 0;
+		}
+		else
+		{
+			printer::inst()->print_msg(L0, "enable cryptonight_r asm '%s' cpu's", selected_asm.c_str());
+			for(int h = 0; h < N; ++h)
+				ctx[h]->asm_version = selected_asm == "intel_avx" ? 1 : 2; // 1 == Intel; 2 == AMD
+		}
 	}
 
 	for(int h = 1; h < N; ++h)
