@@ -32,69 +32,6 @@ R"===(
 #define cryptonight_conceal 14
 #define cryptonight_v8_reversewaltz 17
 
-/* For Mesa clover support */
-#ifdef cl_clang_storage_class_specifiers
-#   pragma OPENCL EXTENSION cl_clang_storage_class_specifiers : enable
-#endif
-
-#ifdef cl_amd_media_ops
-#pragma OPENCL EXTENSION cl_amd_media_ops : enable
-#else
-/* taken from https://www.khronos.org/registry/OpenCL/extensions/amd/cl_amd_media_ops.txt
- * Build-in Function
- *     uintn  amd_bitalign (uintn src0, uintn src1, uintn src2)
- *   Description
- *     dst.s0 =  (uint) (((((ulong)src0.s0) << 32) | (ulong)src1.s0) >> (src2.s0 & 31))
- *     similar operation applied to other components of the vectors.
- *
- * The implemented function is modified because the last is in our case always a scalar.
- * We can ignore the bitwise AND operation.
- */
-inline uint2 amd_bitalign( const uint2 src0, const uint2 src1, const uint src2)
-{
-	uint2 result;
-	result.s0 =  (uint) (((((ulong)src0.s0) << 32) | (ulong)src1.s0) >> (src2));
-	result.s1 =  (uint) (((((ulong)src0.s1) << 32) | (ulong)src1.s1) >> (src2));
-	return result;
-}
-#endif
-
-#ifdef cl_amd_media_ops2
-#pragma OPENCL EXTENSION cl_amd_media_ops2 : enable
-#else
-/* taken from: https://www.khronos.org/registry/OpenCL/extensions/amd/cl_amd_media_ops2.txt
- *     Built-in Function:
- *     uintn amd_bfe (uintn src0, uintn src1, uintn src2)
- *   Description
- *     NOTE: operator >> below represent logical right shift
- *     offset = src1.s0 & 31;
- *     width = src2.s0 & 31;
- *     if width = 0
- *         dst.s0 = 0;
- *     else if (offset + width) < 32
- *         dst.s0 = (src0.s0 << (32 - offset - width)) >> (32 - width);
- *     else
- *         dst.s0 = src0.s0 >> offset;
- *     similar operation applied to other components of the vectors
- */
-inline int amd_bfe(const uint src0, const uint offset, const uint width)
-{
-	/* casts are removed because we can implement everything as uint
-	 * int offset = src1;
-	 * int width = src2;
-	 * remove check for edge case, this function is always called with
-	 * `width==8`
-	 * @code
-	 *   if ( width == 0 )
-	 *      return 0;
-	 * @endcode
-	 */
-	if ( (offset + width) < 32u )
-		return (src0 << (32u - offset - width)) >> (32u - width);
-
-	return src0 >> offset;
-}
-#endif
 
 static const __constant ulong keccakf_rndc[24] =
 {
@@ -128,6 +65,8 @@ static const __constant uchar sbox[256] =
 	0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
 };
 
+//#include "opencl/wolf-aes.cl"
+XMRSTAK_INCLUDE_WOLF_AES
 
 void keccakf1600(ulong *s)
 {
@@ -355,8 +294,6 @@ inline uint getIdx()
 XMRSTAK_INCLUDE_FAST_INT_MATH_V2
 //#include "fast_div_heavy.cl"
 XMRSTAK_INCLUDE_FAST_DIV_HEAVY
-//#include "opencl/wolf-aes.cl"
-XMRSTAK_INCLUDE_WOLF_AES
 //#include "opencl/wolf-skein.cl"
 XMRSTAK_INCLUDE_WOLF_SKEIN
 //#include "opencl/jh.cl"
@@ -460,8 +397,6 @@ void CNKeccak(ulong *output, ulong *input)
 }
 
 static const __constant uchar rcon[8] = { 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40 };
-
-#define BYTE(x, y)	(amd_bfe((x), (y) << 3U, 8U))
 
 #define SubWord(inw)		((sbox[BYTE(inw, 3)] << 24) | (sbox[BYTE(inw, 2)] << 16) | (sbox[BYTE(inw, 1)] << 8) | sbox[BYTE(inw, 0)])
 
