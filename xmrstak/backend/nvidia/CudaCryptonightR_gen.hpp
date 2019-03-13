@@ -29,7 +29,7 @@ namespace nvidia
 {
 
 void CryptonightR_get_program(std::vector<char>& ptx, std::string& lowered_name,
-	const xmrstak_algo algo, uint64_t height, int arch_major, int arch_minor, bool background = false);
+	const xmrstak_algo algo, uint64_t height,  uint32_t precompile_count, int arch_major, int arch_minor, bool background = false);
 
 
 } // namespace xmrstak

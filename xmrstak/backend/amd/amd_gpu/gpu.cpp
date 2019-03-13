@@ -199,7 +199,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		return ERR_OCL_API;
 	}
 
-	ctx->InputBuffer = clCreateBuffer(opencl_ctx, CL_MEM_READ_ONLY, 88, NULL, &ret);
+	ctx->InputBuffer = clCreateBuffer(opencl_ctx, CL_MEM_READ_ONLY, 128, NULL, &ret);
 	if(ret != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clCreateBuffer to create input buffer.", err_to_str(ret));
@@ -334,6 +334,12 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		 */
 		options += " -DOPENCL_DRIVER_MAJOR=" + std::to_string(std::stoi(openCLDriverVer.data()) / 100);
 
+		uint32_t isWindowsOs = 0;
+#ifdef _WIN32
+		isWindowsOs = 1;
+#endif
+		options += " -DIS_WINDOWS_OS=" + std::to_string(isWindowsOs);
+		
 		if(miner_algo == cryptonight_gpu)
 			options += " -cl-fp32-correctly-rounded-divide-sqrt";
 
@@ -889,15 +895,15 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 
 	cl_int ret;
 
-	if(input_len > 84)
+	if(input_len > 124)
 		return ERR_STUPID_PARAMS;
 
 	input[input_len] = 0x01;
-	memset(input + input_len + 1, 0, 88 - input_len - 1);
+	memset(input + input_len + 1, 0, 128 - input_len - 1);
 
 	cl_uint numThreads = ctx->rawIntensity;
 
-	if((ret = clEnqueueWriteBuffer(ctx->CommandQueues, ctx->InputBuffer, CL_TRUE, 0, 88, input, 0, NULL, NULL)) != CL_SUCCESS)
+	if((ret = clEnqueueWriteBuffer(ctx->CommandQueues, ctx->InputBuffer, CL_TRUE, 0, 128, input, 0, NULL, NULL)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1,"Error %s when calling clEnqueueWriteBuffer to fill input buffer.", err_to_str(ret));
 		return ERR_OCL_API;
@@ -952,8 +958,10 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 
     if ((miner_algo == cryptonight_r) || (miner_algo == cryptonight_r_wow)) {
 
+		uint32_t PRECOMPILATION_DEPTH = 4;
+
         // Get new kernel
-        cl_program program = xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height);
+        cl_program program = xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height, PRECOMPILATION_DEPTH);
 
         if (program != ctx->ProgramCryptonightR) {
             cl_int ret;
@@ -969,12 +977,10 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
             }
             ctx->ProgramCryptonightR = program;
 
-			uint32_t PRECOMPILATION_DEPTH = 4;
-
             // Precompile next program in background
-            xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height + 1, true, old_kernel);
+            xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height + 1, PRECOMPILATION_DEPTH, true, old_kernel);
             for (int i = 2; i <= PRECOMPILATION_DEPTH; ++i)
-                xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height + i, true, nullptr);
+                xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height + i, PRECOMPILATION_DEPTH, true, nullptr);
 
             printer::inst()->print_msg(LDEBUG, "Thread #%zu updated CryptonightR", ctx->deviceIdx);
         }

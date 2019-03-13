@@ -187,8 +187,8 @@ private:
 				memPerThread = std::min(memPerThread, memDoubleThread);
 			}
 
-			// 224byte extra memory is used per thread for meta data
-			size_t perThread = hashMemSize + 224u;
+			// 240byte extra memory is used per thread for meta data
+			size_t perThread = hashMemSize + 240u;
 			size_t maxIntensity = memPerThread / perThread;
 			size_t possibleIntensity = std::min( maxThreads , maxIntensity );
 			// map intensity to a multiple of the compute unit count, 8 is the number of threads per work group

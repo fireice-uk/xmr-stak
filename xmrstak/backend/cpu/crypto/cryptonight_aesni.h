@@ -744,7 +744,7 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 	__m128i bx1; \
 	__m128i division_result_xmm; \
 	__m128 conc_var; \
-	if(ALGO == cryptonight_conceal || ALGO == cryptonight_gpu) \
+	if(ALGO == cryptonight_conceal) \
 	{\
 		set_float_rounding_mode_nearest(); \
 		conc_var = _mm_setzero_ps(); \
@@ -1143,7 +1143,15 @@ struct Cryptonight_hash_asm<2, 0>
 			cn_explode_scratchpad<false, false, ALGO>((__m128i*)ctx[i]->hash_state, (__m128i*)ctx[i]->long_state, algo);
 		}
 
-		reinterpret_cast<cn_double_mainloop_fun>(ctx[0]->loop_fn)(ctx[0], ctx[1]);
+		if(ALGO == cryptonight_r)
+		{
+			typedef void ABI_ATTRIBUTE (*cn_r_double_mainloop_fun)(cryptonight_ctx*, cryptonight_ctx*);
+			reinterpret_cast<cn_r_double_mainloop_fun>(ctx[0]->loop_fn)(ctx[0], ctx[1]);
+		}
+		else
+		{
+			reinterpret_cast<cn_double_mainloop_fun>(ctx[0]->loop_fn)(ctx[0], ctx[1]);
+		}
 
 		for(size_t i = 0; i < N; ++i)
 		{
@@ -1298,6 +1306,7 @@ struct Cryptonight_hash_gpu
 	template<xmrstak_algo_id ALGO, bool SOFT_AES, bool PREFETCH>
 	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
 	{
+		set_float_rounding_mode_nearest();
 		keccak((const uint8_t *)input, len, ctx[0]->hash_state, 200);
 		cn_explode_scratchpad_gpu<PREFETCH, ALGO>(ctx[0]->hash_state, ctx[0]->long_state, algo);
 
@@ -1318,7 +1327,10 @@ struct Cryptonight_R_generator
 	template<xmrstak_algo_id ALGO>
 	static void cn_on_new_job(const xmrstak::miner_work& work, cryptonight_ctx** ctx)
 	{
-		if(ctx[0]->cn_r_ctx.height == work.iBlockHeight && ctx[0]->last_algo == POW(cryptonight_r))
+		if(ctx[0]->cn_r_ctx.height == work.iBlockHeight &&
+			ctx[0]->last_algo == POW(cryptonight_r) &&
+			reinterpret_cast<void*>(ctx[0]->hash_fn) == ctx[0]->fun_data
+		)
 			return;
 
 		ctx[0]->last_algo = POW(cryptonight_r);
@@ -1327,8 +1339,11 @@ struct Cryptonight_R_generator
 		int code_size = v4_random_math_init<ALGO>(ctx[0]->cn_r_ctx.code, work.iBlockHeight);
 		if(ctx[0]->asm_version != 0)
 		{
-			v4_compile_code(ctx[0], code_size);
-			ctx[0]->hash_fn = Cryptonight_hash_asm<N, 1u>::template hash<cryptonight_r>;
+			v4_compile_code(N, ctx[0], code_size);
+			if(N == 2)
+				ctx[0]->hash_fn = Cryptonight_hash_asm<2u, 0u>::template hash<cryptonight_r>;
+			else
+				ctx[0]->hash_fn = Cryptonight_hash_asm<N, 1u>::template hash<cryptonight_r>;
 		}
 
 		for(size_t i=1; i < N; i++)

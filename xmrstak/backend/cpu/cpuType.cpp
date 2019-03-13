@@ -37,9 +37,9 @@ namespace cpu
 	{
 		int32_t mask = 1 << bit;
 		return (val & mask) != 0u;
-		
+
 	}
-	
+
 	Model getModel()
 	{
 		int32_t cpu_info[4];
@@ -53,7 +53,7 @@ namespace cpu
 		Model result;
 
 		cpuid(1, 0, cpu_info);
-		
+
 		result.family = get_masked(cpu_info[0], 12, 8);
 		result.model = get_masked(cpu_info[0], 8, 4) | get_masked(cpu_info[0], 20, 16) << 4;
 		result.type_name = cpustr;
@@ -63,8 +63,8 @@ namespace cpu
 		result.sse2 = has_feature(cpu_info[3], 26);
 		// aes-ni
 		result.aes = has_feature(cpu_info[2], 25);
-		// avx
-		result.avx = has_feature(cpu_info[2], 28);	
+		// avx - 27 is the check if the OS overwrote cpu features
+		result.avx = has_feature(cpu_info[2], 28) && has_feature(cpu_info[2], 27) ;
 
 		if(strcmp(cpustr, "AuthenticAMD") == 0)
 		{

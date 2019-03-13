@@ -112,7 +112,7 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
 	uint32_t ctx_b[4];
 	uint32_t ctx_key1[40];
 	uint32_t ctx_key2[40];
-	uint32_t input[21];
+	uint32_t input[32];
 
 	memcpy( input, d_input, len );
 	//*((uint32_t *)(((char *)input) + 39)) = startNonce + thread;
@@ -349,7 +349,7 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_a, 4 * sizeof(uint32_t) * wsize));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_b, ctx_b_size));
 	// POW block format http://monero.wikia.com/wiki/PoW_Block_Header_Format
-	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_input, 21 * sizeof (uint32_t ) ));
+	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_input, 32 * sizeof (uint32_t ) ));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_count, sizeof (uint32_t ) ));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_nonce, 10 * sizeof (uint32_t ) ));
 	CUDA_CHECK_MSG(

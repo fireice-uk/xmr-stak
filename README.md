@@ -52,6 +52,7 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 - [Stellite](https://stellite.cash/)
 - [TurtleCoin](https://turtlecoin.lol)
 - [Zelerius](https://zelerius.org/)
+- [X-CASH](https://x-network.io/)
 
 Ryo currency is a way for us to implement the ideas that we were unable to in
 Monero. See [here](https://github.com/fireice-uk/cryptonote-speedup-demo/) for details.
@@ -70,6 +71,7 @@ If your prefered coin is not listed, you can choose one of the following algorit
     - cryptonight_v7
     - cryptonight_v7_stellite
     - cryptonight_v8
+    - cryptonight_v8_double (used by X-CASH)
     - cryptonight_v8_half (used by masari and stellite)
     - cryptonight_v8_reversewaltz (used by graft)
     - cryptonight_v8_zelerius
