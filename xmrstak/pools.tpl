@@ -19,6 +19,7 @@ POOLCONF],
 /*
  * Currency to mine. Supported values:
  *
+ *    2acoin
  *    aeon7 (use this for Aeon's new PoW)
  *    bbscoin (automatic switch with block version 3 to cryptonight_v7)
  *    bittube (uses cryptonight_bittube2 algorithm)
@@ -37,6 +38,7 @@ POOLCONF],
  * Native algorithms which do not depend on any block versions:
  *
  *    # 256KiB scratchpad memory
+ *    cryptonight_armor
  *    cryptonight_turtle
  *    # 1MiB scratchpad memory
  *    cryptonight_lite
