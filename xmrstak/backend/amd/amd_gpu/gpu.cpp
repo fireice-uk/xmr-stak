@@ -48,23 +48,10 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#include <Shlobj.h>
 
 static inline void create_directory(std::string dirname)
 {
     _mkdir(dirname.data());
-}
-
-static inline std::string get_home()
-{
-	char path[MAX_PATH + 1];
-	// get folder "appdata\local"
-	if (SHGetSpecialFolderPathA(HWND_DESKTOP, path, CSIDL_LOCAL_APPDATA, FALSE))
-	{
-		return path;
-	}
-	else
-		return ".";
 }
 
 static inline void port_sleep(size_t sec)
@@ -78,16 +65,6 @@ static inline void port_sleep(size_t sec)
 static inline void create_directory(std::string dirname)
 {
 	mkdir(dirname.data(), 0744);
-}
-
-static inline std::string get_home()
-{
-	const char *home = ".";
-
-	if ((home = getenv("HOME")) == nullptr)
-		home = getpwuid(getuid())->pw_dir;
-
-	return home;
 }
 
 static inline void port_sleep(size_t sec)
@@ -339,7 +316,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		isWindowsOs = 1;
 #endif
 		options += " -DIS_WINDOWS_OS=" + std::to_string(isWindowsOs);
-		
+
 		if(miner_algo == cryptonight_gpu)
 			options += " -cl-fp32-correctly-rounded-divide-sqrt";
 
@@ -358,7 +335,9 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		std::string hash_hex_str;
 		picosha2::hash256_hex_string(src_str, hash_hex_str);
 
-		std::string cache_file = get_home() + "/.openclcache/" + hash_hex_str + ".openclbin";
+		const std::string cache_dir = xmrstak::params::inst().rootAMDCacheDir;
+
+		std::string cache_file = cache_dir + hash_hex_str + ".openclbin";
 		std::ifstream clBinFile(cache_file, std::ofstream::in | std::ofstream::binary);
 		if(xmrstak::params::inst().AMDCache == false || !clBinFile.good())
 		{
@@ -854,7 +833,8 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 	source_code = std::regex_replace(source_code, std::regex("XMRSTAK_INCLUDE_CN_GPU"), cryptonight_gpu);
 
 	// create a directory  for the OpenCL compile cache
-	create_directory(get_home() + "/.openclcache");
+	const std::string cache_dir = xmrstak::params::inst().rootAMDCacheDir;
+	create_directory(cache_dir);
 
 	std::vector<std::shared_ptr<InterleaveData>> interleaveData(num_gpus, nullptr);
 
