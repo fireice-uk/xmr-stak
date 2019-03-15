@@ -947,20 +947,21 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
             cl_int ret;
             cl_kernel kernel = clCreateKernel(program, "cn1_cryptonight_r", &ret);
 
-            cl_kernel old_kernel = nullptr;
             if (ret != CL_SUCCESS) {
                 printer::inst()->print_msg(LDEBUG, "CryptonightR: clCreateKernel returned error %s", err_to_str(ret));
             }
-            else {
-                old_kernel = Kernels[1];
+            else
+			{
+                cl_kernel old_kernel = Kernels[1];
+				if(old_kernel)
+					clReleaseKernel(old_kernel);
                 Kernels[1] = kernel;
             }
             ctx->ProgramCryptonightR = program;
 
             // Precompile next program in background
-            xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height + 1, PRECOMPILATION_DEPTH, true, old_kernel);
-            for (int i = 2; i <= PRECOMPILATION_DEPTH; ++i)
-                xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height + i, PRECOMPILATION_DEPTH, true, nullptr);
+            for (int i = 1; i <= PRECOMPILATION_DEPTH; ++i)
+                xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height + i, PRECOMPILATION_DEPTH, true);
 
             printer::inst()->print_msg(LDEBUG, "Thread #%zu updated CryptonightR", ctx->deviceIdx);
         }
