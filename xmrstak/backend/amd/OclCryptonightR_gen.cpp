@@ -346,7 +346,7 @@ cl_program CryptonightR_get_program(GpuContext* ctx, xmrstak_algo algo, uint64_t
 
     }
 
-	return CryptonightR_build_program(ctx, algo, height, precompile_count, source, options);
+    return CryptonightR_build_program(ctx, algo, height, precompile_count, source, options);
 }
 
 } // namespace amd
