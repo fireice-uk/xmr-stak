@@ -1,7 +1,6 @@
 #pragma once
 
 #include "xmrstak/misc/environment.hpp"
-#include "xmrstak/misc/home_dir.hpp"
 
 #include <string>
 
@@ -59,6 +58,13 @@ struct params
 	int benchmark_wait_sec = 30;
 	int benchmark_work_sec = 60;
 
+	bool no_config_files;
+	size_t max_idle_cpu_threads;
+	size_t max_cpu_threads_count;
+	size_t max_idle_gpu_threads;
+	size_t max_gpu_threads_count;
+	size_t default_idle_time;
+
 	params() :
 		binaryName("xmr-stak"),
 		executablePrefix(""),
@@ -72,7 +78,13 @@ struct params
 		configFileAMD("amd.txt"),
 		rootAMDCacheDir(get_home() + "/.openclcache/"),
 		configFileCPU("cpu.txt"),
-		configFileNVIDIA("nvidia.txt")
+		configFileNVIDIA("nvidia.txt"),
+		max_idle_cpu_threads((size_t)-1),
+		max_cpu_threads_count((size_t)-1),
+		max_gpu_threads_count((size_t)-1),
+		max_idle_gpu_threads((size_t)-1),
+		default_idle_time((size_t)-1),
+		no_config_files(false)
 	{}
 
 };
