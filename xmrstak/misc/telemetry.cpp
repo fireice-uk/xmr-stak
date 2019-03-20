@@ -31,7 +31,7 @@
 namespace xmrstak
 {
 
-telemetry::telemetry(size_t iThd)
+telemetry::telemetry(size_t iThd) : num(iThd)
 {
 	ppHashCounts = new uint64_t*[iThd];
 	ppTimestamps = new uint64_t*[iThd];
@@ -99,6 +99,19 @@ double telemetry::calc_telemetry_data(size_t iLastMillisec, size_t iThread)
 	fTime /= 1000.0;
 
 	return fHashes / fTime;
+}
+
+telemetry::~telemetry()
+{
+	delete[] iBucketTop;
+	delete[] mtx;
+	for (size_t i = 0; i < num; ++i)
+	{
+		delete[] ppHashCounts[i];
+		delete[] ppTimestamps[i];
+	}
+	delete[] ppHashCounts;
+	delete[] ppTimestamps;
 }
 
 void telemetry::push_perf_value(size_t iThd, uint64_t iHashCount, uint64_t iTimestamp)
