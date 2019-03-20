@@ -138,6 +138,7 @@ static cl_program CryptonightR_build_program(
     std::string source_code,
     std::string options)
 {
+    
     std::vector<cl_program> old_programs;
     old_programs.reserve(32);
     {

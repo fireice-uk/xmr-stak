@@ -42,6 +42,13 @@ public:
 		cond_.notify_one();
 	}
 
+	void clear()
+	{
+		std::lock_guard<std::mutex> mlock(mutex_);
+		while (!queue_.empty())
+			queue_.pop();
+	}
+
 private:
 	std::queue<T> queue_;
 	std::mutex mutex_;

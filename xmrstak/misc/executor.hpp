@@ -36,12 +36,22 @@ public:
 		return env.pExecutor;
 	};
 
-	void ex_start(bool daemon) { daemon ? ex_main() : std::thread(&executor::ex_main, this).detach(); }
+	void ex_start(bool daemon) 
+	{ 
+		if (daemon) ex_main();
+		else MainThd = std::thread(&executor::ex_main, this);
+	}
 
 	void get_http_report(ex_event_name ev_id, std::string& data);
 
 	inline void push_event(ex_event&& ev) { oEventQ.push(std::move(ev)); }
 	void push_timed_event(ex_event&& ev, size_t sec);
+
+	void stop()
+	{
+		push_event(ex_event(EV_EXIT_SIGNAL));
+		if (MainThd.joinable()) MainThd.join();
+	}
 
 private:
 	struct timed_event
@@ -72,6 +82,9 @@ private:
 		return (get_timestamp() - dev_timestamp) % iDevDonatePeriod >= (iDevDonatePeriod - dev_portion);
 	};
 
+	std::thread MainThd;
+	std::atomic<bool> bQuit;
+	std::atomic<bool> isIdle;
 	std::list<timed_event> lTimedEvents;
 	std::mutex timed_event_mutex;
 	thdq<ex_event> oEventQ;
@@ -192,6 +205,8 @@ private:
 	void connect_to_pools(std::list<jpsock*>& eval_pools);
 	bool get_live_pools(std::vector<jpsock*>& eval_pools, bool is_dev);
 	void eval_pool_choice();
+
+	size_t calc_idle_time();
 
 	inline size_t sec_to_ticks(size_t sec) { return sec * (1000 / iTickTime); }
 };

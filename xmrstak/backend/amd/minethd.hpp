@@ -34,14 +34,9 @@ private:
 
 	miner_work oWork;
 
-	std::promise<void> order_fix;
-	std::mutex thd_aff_set;
-
-	std::thread oWorkThd;
 	int64_t affinity;
 	uint32_t autoTune;
 
-	bool bQuit;
 	bool bNoPrefetch;
 
 	//Mutable ptr to vector below, different for each thread

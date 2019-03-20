@@ -68,8 +68,8 @@ minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 {
 	this->backendType = iBackend::NVIDIA;
 	oWork = pWork;
-	bQuit = 0;
 	iThreadNo = (uint8_t)iNo;
+	thdNo = iNo;
 	iJobNo = 0;
 
 	ctx.device_id = (int)cfg.id;
@@ -126,7 +126,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 
 	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
 
-	if(!configEditor::file_exist(params::inst().configFileNVIDIA))
+	if(!configEditor::file_exist(params::inst().configFileNVIDIA) || params::inst().no_config_files)
 	{
 		autoAdjust adjust;
 		if(!adjust.printConfig())
@@ -225,8 +225,10 @@ void minethd::work_main()
 			 * raison d'etre of this software it us sensible to just wait until we have something
 			 */
 
-			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo && !bQuit)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			if (bQuit)
+				break;
 
 			globalStates::inst().consume_work(oWork, iJobNo);
 			continue;
@@ -262,8 +264,14 @@ void minethd::work_main()
 		if(oWork.bNiceHash)
 			iNonce = *(uint32_t*)(oWork.bWorkBlob + 39);
 
-		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo && !bQuit)
 		{
+			while ((bSuspend || pause_idle) && !bQuit)
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+			if (bQuit)
+				break;
+			
 			//Allocate a new nonce every 16 rounds
 			if((round_ctr++ & 0xF) == 0)
 			{
@@ -312,6 +320,9 @@ void minethd::work_main()
 
 		globalStates::inst().consume_work(oWork, iJobNo);
 	}
+	
+	cryptonight_free_ctx(cpu_ctx);
+	
 }
 
 } // namespace xmrstak

@@ -26,6 +26,7 @@ public:
 
 	static void func_selector(cryptonight_ctx**, bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo);
 	static bool thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id);
+	static bool thd_setlowpriority(std::thread::native_handle_type h);
 
 	static cryptonight_ctx* minethd_alloc_ctx();
 
@@ -35,7 +36,7 @@ public:
 
 	private:
 		
-	minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity, const std::string& asm_version);
+	minethd(miner_work& pWork, size_t iNo,size_t iOffset, int iMultiway, bool no_prefetch, int64_t affinity, const std::string& asm_version);
 
 	template<uint32_t N>
 	void multiway_work_main();
@@ -53,13 +54,8 @@ public:
 
 	miner_work oWork;
 
-	std::promise<void> order_fix;
-	std::mutex thd_aff_set;
-
-	std::thread oWorkThd;
 	int64_t affinity;
 
-	bool bQuit;
 	bool bNoPrefetch;
 	std::string asm_version_str = "off";
 };

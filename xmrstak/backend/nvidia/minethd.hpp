@@ -42,18 +42,10 @@ private:
 
 	miner_work oWork;
 
-	std::promise<void> numa_promise;
-	std::promise<void> thread_work_promise;
-
-	// block thread until all NVIDIA GPUs are initialized
-	std::future<void> thread_work_guard;
-
-	std::thread oWorkThd;
 	int64_t affinity;
 
 	nvid_ctx ctx;
 
-	bool bQuit;
 };
 
 } // namespace nvidia

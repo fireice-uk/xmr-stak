@@ -56,7 +56,7 @@
 #include <windows.h>
 #else
 #include <pthread.h>
-
+#include <unistd.h>
 #if defined(__APPLE__)
 #include <mach/thread_policy.h>
 #include <mach/thread_act.h>
@@ -71,6 +71,7 @@ namespace xmrstak
 {
 namespace cpu
 {
+
 
 bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id)
 {
@@ -106,12 +107,22 @@ bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 #endif
 }
 
-minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity, const std::string& asm_version)
+bool minethd::thd_setlowpriority(std::thread::native_handle_type h)
+{
+#ifdef _WIN32
+	return SetThreadPriority(h, THREAD_PRIORITY_IDLE);
+#else
+	return !pthread_setschedprio(h, SCHED_IDLE);
+#endif // WIN32
+}
+
+
+minethd::minethd(miner_work& pWork, size_t iNo,size_t iOffset, int iMultiway, bool no_prefetch, int64_t affinity, const std::string& asm_version)
 {
 	this->backendType = iBackend::CPU;
 	oWork = pWork;
-	bQuit = 0;
-	iThreadNo = (uint8_t)iNo;
+	iThreadNo = (uint8_t)(iNo + iOffset);
+	thdNo = iNo + 1;
 	iJobNo = 0;
 	bNoPrefetch = no_prefetch;
 	this->affinity = affinity;
@@ -145,6 +156,10 @@ minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch,
 	if(affinity >= 0) //-1 means no affinity
 		if(!thd_setaffinity(oWorkThd.native_handle(), affinity))
 			printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
+	
+	if (thdNo > params::inst().max_idle_cpu_threads)
+		if (!thd_setlowpriority(oWorkThd.native_handle()))
+			printer::inst()->print_msg(L1, "WARNING setting idle failed.");
 }
 
 cryptonight_ctx* minethd::minethd_alloc_ctx()
@@ -508,7 +523,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 {
 	std::vector<iBackend*> pvThreads;
 
-	if(!configEditor::file_exist(params::inst().configFileCPU))
+	if(!configEditor::file_exist(params::inst().configFileCPU) || params::inst().no_config_files)
 	{
 		autoAdjust adjust;
 		if(!adjust.printConfig())
@@ -542,7 +557,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		else
 			printer::inst()->print_msg(L1, "Starting %dx thread, no affinity.", cfg.iMultiway);
 
-		minethd* thd = new minethd(pWork, i + threadOffset, cfg.iMultiway, cfg.bNoPrefetch, cfg.iCpuAff, cfg.asm_version_str);
+		minethd* thd = new minethd(pWork, i, threadOffset, cfg.iMultiway, cfg.bNoPrefetch, cfg.iCpuAff, cfg.asm_version_str);
 		pvThreads.push_back(thd);
 	}
 
@@ -871,8 +886,9 @@ void minethd::multiway_work_main()
 			either because of network latency, or a socket problem. Since we are
 			raison d'etre of this software it us sensible to just wait until we have something*/
 
-			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo && !bQuit)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			if (bQuit) break;
 
 			globalStates::inst().consume_work(oWork, iJobNo);
 			prep_multiway_work<N>(bWorkBlob, piNonce);
@@ -884,14 +900,14 @@ void minethd::multiway_work_main()
 
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
-		if(oWork.bNiceHash)
+		if (oWork.bNiceHash)
 			iNonce = *piNonce[0];
 
 		uint8_t new_version = oWork.getVersion();
-		if(new_version != version || oWork.iPoolId != lastPoolId)
+		if (new_version != version || oWork.iPoolId != lastPoolId)
 		{
 			coinDescription coinDesc = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(oWork.iPoolId);
-			if(new_version >= coinDesc.GetMiningForkVersion())
+			if (new_version >= coinDesc.GetMiningForkVersion())
 			{
 				miner_algo = coinDesc.GetMiningAlgo();
 				func_multi_selector<N>(ctx, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
@@ -905,11 +921,17 @@ void minethd::multiway_work_main()
 			version = new_version;
 		}
 
-		if(on_new_job != nullptr)
+		if (on_new_job != nullptr)
 			on_new_job(oWork, ctx);
 
-		while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo && !bQuit)
 		{
+			while ((bSuspend || pause_idle) && !bQuit)
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+			if (bQuit)
+				break;
+
 			if ((iCount++ & 0x7) == 0)  //Store stats every 8*N hashes
 			{
 				uint64_t iStamp = get_timestamp_ms();

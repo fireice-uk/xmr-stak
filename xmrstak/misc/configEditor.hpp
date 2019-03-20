@@ -5,7 +5,7 @@
 #include <fstream>
 #include <streambuf>
 #include <regex>
-
+#include "xmrstak/params.hpp"
 #include "../version.hpp"
 
 namespace xmrstak
@@ -41,7 +41,7 @@ struct configEditor
 		return fstream.good();
 	}
 
-	void write(const std::string filename)
+	void write(std::string& filename)
 	{
 		// endmarks: for filtering full lines inside the template string
 		// Platform marks are done globally here
@@ -61,9 +61,16 @@ struct configEditor
 		replace("---LINUX\n", "\n");
 #endif
 		replace("XMRSTAK_VERSION", get_version_str());
-		std::ofstream out(filename);
-		out << m_fileContent;
-		out.close();
+		if (params::inst().no_config_files)
+		{
+			filename = m_fileContent;
+		}
+		else
+		{
+			std::ofstream out(filename);
+			out << m_fileContent;
+			out.close();
+		}
 	}
 
 	void replace(const std::string search, const std::string substring)

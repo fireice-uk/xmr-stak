@@ -151,52 +151,71 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 
 size_t jconf::GetThreadCount()
 {
+	size_t thdCnt = 0;
 	if(prv->configValues[aCpuThreadsConf]->IsArray())
-		return prv->configValues[aCpuThreadsConf]->Size();
+		thdCnt = prv->configValues[aCpuThreadsConf]->Size();
 	else
 		return 0;
+	if (thdCnt > params::inst().max_cpu_threads_count)
+		thdCnt = params::inst().max_cpu_threads_count;
+	return thdCnt;
 }
 
 bool jconf::parse_config(const char* sFilename)
 {
-	FILE * pFile;
 	char * buffer;
 	size_t flen;
 
-	pFile = fopen(sFilename, "rb");
-	if (pFile == NULL)
+	if (params::inst().no_config_files)
 	{
-		printer::inst()->print_msg(L0, "Failed to open config file %s.", sFilename);
-		return false;
+		if (params::inst().configFileCPU.size() <= 16)
+		{
+			printer::inst()->print_msg(L0, "File is empty or too short - %s.", sFilename);
+			return false;
+		}
+		flen = params::inst().configFileCPU.size();
+		buffer = (char*)malloc(flen + 3);
+		memcpy(buffer + 1, params::inst().configFileCPU.c_str(), flen);
 	}
-
-	fseek(pFile,0,SEEK_END);
-	flen = ftell(pFile);
-	rewind(pFile);
-
-	if(flen >= 64*1024)
+	else
 	{
+		FILE * pFile;
+
+		pFile = fopen(sFilename, "rb");
+		if (pFile == NULL)
+		{
+			printer::inst()->print_msg(L0, "Failed to open config file %s.", sFilename);
+			return false;
+		}
+
+		fseek(pFile, 0, SEEK_END);
+		flen = ftell(pFile);
+		rewind(pFile);
+
+		if (flen >= 64 * 1024)
+		{
+			fclose(pFile);
+			printer::inst()->print_msg(L0, "Oversized config file - %s.", sFilename);
+			return false;
+		}
+
+		if (flen <= 16)
+		{
+			fclose(pFile);
+			printer::inst()->print_msg(L0, "File is empty or too short - %s.", sFilename);
+			return false;
+		}
+
+		buffer = (char*)malloc(flen + 3);
+		if (fread(buffer + 1, flen, 1, pFile) != 1)
+		{
+			free(buffer);
+			fclose(pFile);
+			printer::inst()->print_msg(L0, "Read error while reading %s.", sFilename);
+			return false;
+		}
 		fclose(pFile);
-		printer::inst()->print_msg(L0, "Oversized config file - %s.", sFilename);
-		return false;
 	}
-
-	if(flen <= 16)
-	{
-		fclose(pFile);
-		printer::inst()->print_msg(L0, "File is empty or too short - %s.", sFilename);
-		return false;
-	}
-
-	buffer = (char*)malloc(flen + 3);
-	if(fread(buffer+1, flen, 1, pFile) != 1)
-	{
-		free(buffer);
-		fclose(pFile);
-		printer::inst()->print_msg(L0, "Read error while reading %s.", sFilename);
-		return false;
-	}
-	fclose(pFile);
 
 	//Replace Unicode BOM with spaces - we always use UTF-8
 	unsigned char* ubuffer = (unsigned char*)buffer;

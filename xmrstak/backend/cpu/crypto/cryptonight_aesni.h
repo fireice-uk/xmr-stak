@@ -1,18 +1,18 @@
 /*
-  * This program is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation, either version 3 of the License, or
-  * any later version.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-  *
-  */
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+*/
 #pragma once
 
 #include "cryptonight.h"
@@ -105,37 +105,105 @@ static inline void aes_genkey(const __m128i* memory, __m128i* k0, __m128i* k1, _
 	__m128i xout0, xout2;
 
 	xout0 = _mm_load_si128(memory);
-	xout2 = _mm_load_si128(memory+1);
+	xout2 = _mm_load_si128(memory + 1);
 	*k0 = xout0;
 	*k1 = xout2;
 
-	if(SOFT_AES)
+	if (SOFT_AES)
 		soft_aes_genkey_sub(&xout0, &xout2, 0x01);
 	else
 		aes_genkey_sub<0x01>(&xout0, &xout2);
 	*k2 = xout0;
 	*k3 = xout2;
 
-	if(SOFT_AES)
+	if (SOFT_AES)
 		soft_aes_genkey_sub(&xout0, &xout2, 0x02);
 	else
 		aes_genkey_sub<0x02>(&xout0, &xout2);
 	*k4 = xout0;
 	*k5 = xout2;
 
-	if(SOFT_AES)
+	if (SOFT_AES)
 		soft_aes_genkey_sub(&xout0, &xout2, 0x04);
 	else
 		aes_genkey_sub<0x04>(&xout0, &xout2);
 	*k6 = xout0;
 	*k7 = xout2;
 
-	if(SOFT_AES)
+	if (SOFT_AES)
 		soft_aes_genkey_sub(&xout0, &xout2, 0x08);
 	else
 		aes_genkey_sub<0x08>(&xout0, &xout2);
 	*k8 = xout0;
 	*k9 = xout2;
+}
+
+static inline void soft_aesenc(void* __restrict ptr, const void* __restrict key, const uint32_t* __restrict t)
+{
+	uint32_t x0 = ((const uint32_t*)(ptr))[0];
+	uint32_t x1 = ((const uint32_t*)(ptr))[1];
+	uint32_t x2 = ((const uint32_t*)(ptr))[2];
+	uint32_t x3 = ((const uint32_t*)(ptr))[3];
+
+	uint32_t y0 = t[x0 & 0xff]; x0 >>= 8;
+	uint32_t y1 = t[x1 & 0xff]; x1 >>= 8;
+	uint32_t y2 = t[x2 & 0xff]; x2 >>= 8;
+	uint32_t y3 = t[x3 & 0xff]; x3 >>= 8;
+	t += 256;
+
+	y0 ^= t[x1 & 0xff]; x1 >>= 8;
+	y1 ^= t[x2 & 0xff]; x2 >>= 8;
+	y2 ^= t[x3 & 0xff]; x3 >>= 8;
+	y3 ^= t[x0 & 0xff]; x0 >>= 8;
+	t += 256;
+
+	y0 ^= t[x2 & 0xff]; x2 >>= 8;
+	y1 ^= t[x3 & 0xff]; x3 >>= 8;
+	y2 ^= t[x0 & 0xff]; x0 >>= 8;
+	y3 ^= t[x1 & 0xff]; x1 >>= 8;
+	t += 256;
+
+	y0 ^= t[x3];
+	y1 ^= t[x0];
+	y2 ^= t[x1];
+	y3 ^= t[x2];
+
+	((uint32_t*)ptr)[0] = y0 ^ ((uint32_t*)key)[0];
+	((uint32_t*)ptr)[1] = y1 ^ ((uint32_t*)key)[1];
+	((uint32_t*)ptr)[2] = y2 ^ ((uint32_t*)key)[2];
+	((uint32_t*)ptr)[3] = y3 ^ ((uint32_t*)key)[3];
+}
+
+static inline __m128i soft_aesenc(const void* __restrict ptr, const __m128i key, const uint32_t* __restrict t)
+{
+	uint32_t x0 = ((const uint32_t*)(ptr))[0];
+	uint32_t x1 = ((const uint32_t*)(ptr))[1];
+	uint32_t x2 = ((const uint32_t*)(ptr))[2];
+	uint32_t x3 = ((const uint32_t*)(ptr))[3];
+
+	uint32_t y0 = t[x0 & 0xff]; x0 >>= 8;
+	uint32_t y1 = t[x1 & 0xff]; x1 >>= 8;
+	uint32_t y2 = t[x2 & 0xff]; x2 >>= 8;
+	uint32_t y3 = t[x3 & 0xff]; x3 >>= 8;
+	t += 256;
+
+	y0 ^= t[x1 & 0xff]; x1 >>= 8;
+	y1 ^= t[x2 & 0xff]; x2 >>= 8;
+	y2 ^= t[x3 & 0xff]; x3 >>= 8;
+	y3 ^= t[x0 & 0xff]; x0 >>= 8;
+	t += 256;
+
+	y0 ^= t[x2 & 0xff]; x2 >>= 8;
+	y1 ^= t[x3 & 0xff]; x3 >>= 8;
+	y2 ^= t[x0 & 0xff]; x0 >>= 8;
+	y3 ^= t[x1 & 0xff]; x1 >>= 8;
+
+	y0 ^= t[x3 + 256];
+	y1 ^= t[x0 + 256];
+	y2 ^= t[x1 + 256];
+	y3 ^= t[x2 + 256];
+
+	return _mm_xor_si128(_mm_set_epi32(y3, y2, y1, y0), key);
 }
 
 static inline void aes_round(__m128i key, __m128i* x0, __m128i* x1, __m128i* x2, __m128i* x3, __m128i* x4, __m128i* x5, __m128i* x6, __m128i* x7)
@@ -152,14 +220,14 @@ static inline void aes_round(__m128i key, __m128i* x0, __m128i* x1, __m128i* x2,
 
 static inline void soft_aes_round(__m128i key, __m128i* x0, __m128i* x1, __m128i* x2, __m128i* x3, __m128i* x4, __m128i* x5, __m128i* x6, __m128i* x7)
 {
-	*x0 = soft_aesenc(*x0, key);
-	*x1 = soft_aesenc(*x1, key);
-	*x2 = soft_aesenc(*x2, key);
-	*x3 = soft_aesenc(*x3, key);
-	*x4 = soft_aesenc(*x4, key);
-	*x5 = soft_aesenc(*x5, key);
-	*x6 = soft_aesenc(*x6, key);
-	*x7 = soft_aesenc(*x7, key);
+	*x0 = soft_aesenc((uint32_t*)x0, key, (const uint32_t*)saes_table);
+	*x1 = soft_aesenc((uint32_t*)x1, key, (const uint32_t*)saes_table);
+	*x2 = soft_aesenc((uint32_t*)x2, key, (const uint32_t*)saes_table);
+	*x3 = soft_aesenc((uint32_t*)x3, key, (const uint32_t*)saes_table);
+	*x4 = soft_aesenc((uint32_t*)x4, key, (const uint32_t*)saes_table);
+	*x5 = soft_aesenc((uint32_t*)x5, key, (const uint32_t*)saes_table);
+	*x6 = soft_aesenc((uint32_t*)x6, key, (const uint32_t*)saes_table);
+	*x7 = soft_aesenc((uint32_t*)x7, key, (const uint32_t*)saes_table);
 }
 
 inline void mix_and_propagate(__m128i& x0, __m128i& x1, __m128i& x2, __m128i& x3, __m128i& x4, __m128i& x5, __m128i& x6, __m128i& x7)
@@ -195,11 +263,11 @@ void cn_explode_scratchpad(const __m128i* input, __m128i* output, const xmrstak_
 	xin6 = _mm_load_si128(input + 10);
 	xin7 = _mm_load_si128(input + 11);
 
-	if(HEAVY_MIX)
+	if (HEAVY_MIX)
 	{
-		for(size_t i=0; i < 16; i++)
+		for (size_t i = 0; i < 16; i++)
 		{
-			if(SOFT_AES)
+			if (SOFT_AES)
 			{
 				soft_aes_round(k0, &xin0, &xin1, &xin2, &xin3, &xin4, &xin5, &xin6, &xin7);
 				soft_aes_round(k1, &xin0, &xin1, &xin2, &xin3, &xin4, &xin5, &xin6, &xin7);
@@ -232,7 +300,7 @@ void cn_explode_scratchpad(const __m128i* input, __m128i* output, const xmrstak_
 	const size_t MEM = algo.Mem();
 	for (size_t i = 0; i < MEM / sizeof(__m128i); i += 8)
 	{
-		if(SOFT_AES)
+		if (SOFT_AES)
 		{
 			soft_aes_round(k0, &xin0, &xin1, &xin2, &xin3, &xin4, &xin5, &xin6, &xin7);
 			soft_aes_round(k1, &xin0, &xin1, &xin2, &xin3, &xin4, &xin5, &xin6, &xin7);
@@ -264,7 +332,7 @@ void cn_explode_scratchpad(const __m128i* input, __m128i* output, const xmrstak_
 		_mm_store_si128(output + i + 2, xin2);
 		_mm_store_si128(output + i + 3, xin3);
 
-		if(PREFETCH)
+		if (PREFETCH)
 			_mm_prefetch((const char*)output + i + 0, _MM_HINT_T2);
 
 		_mm_store_si128(output + i + 4, xin4);
@@ -272,7 +340,7 @@ void cn_explode_scratchpad(const __m128i* input, __m128i* output, const xmrstak_
 		_mm_store_si128(output + i + 6, xin6);
 		_mm_store_si128(output + i + 7, xin7);
 
-		if(PREFETCH)
+		if (PREFETCH)
 			_mm_prefetch((const char*)output + i + 4, _MM_HINT_T2);
 	}
 }
@@ -291,17 +359,17 @@ void cn_explode_scratchpad_gpu(const uint8_t* input, uint8_t* output, const xmrs
 
 		keccakf(hash, 24);
 		memcpy(output, hash, 160);
-		output+=160;
+		output += 160;
 
 		keccakf(hash, 24);
 		memcpy(output, hash, 176);
-		output+=176;
+		output += 176;
 
 		keccakf(hash, 24);
 		memcpy(output, hash, 176);
-		output+=176;
+		output += 176;
 
-		if(PREFETCH)
+		if (PREFETCH)
 		{
 			_mm_prefetch((const char*)output - 512, _MM_HINT_T2);
 			_mm_prefetch((const char*)output - 384, _MM_HINT_T2);
@@ -335,7 +403,7 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output, const xmrstak_
 	const size_t MEM = algo.Mem();
 	for (size_t i = 0; i < MEM / sizeof(__m128i); i += 8)
 	{
-		if(PREFETCH)
+		if (PREFETCH)
 			_mm_prefetch((const char*)input + i + 0, _MM_HINT_NTA);
 
 		xout0 = _mm_xor_si128(_mm_load_si128(input + i + 0), xout0);
@@ -343,7 +411,7 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output, const xmrstak_
 		xout2 = _mm_xor_si128(_mm_load_si128(input + i + 2), xout2);
 		xout3 = _mm_xor_si128(_mm_load_si128(input + i + 3), xout3);
 
-		if(PREFETCH)
+		if (PREFETCH)
 			_mm_prefetch((const char*)input + i + 4, _MM_HINT_NTA);
 
 		xout4 = _mm_xor_si128(_mm_load_si128(input + i + 4), xout4);
@@ -351,7 +419,7 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output, const xmrstak_
 		xout6 = _mm_xor_si128(_mm_load_si128(input + i + 6), xout6);
 		xout7 = _mm_xor_si128(_mm_load_si128(input + i + 7), xout7);
 
-		if(SOFT_AES)
+		if (SOFT_AES)
 		{
 			soft_aes_round(k0, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
 			soft_aes_round(k1, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
@@ -378,15 +446,15 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output, const xmrstak_
 			aes_round(k9, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
 		}
 
-		if(HEAVY_MIX)
+		if (HEAVY_MIX)
 			mix_and_propagate(xout0, xout1, xout2, xout3, xout4, xout5, xout6, xout7);
 	}
 
-	if(HEAVY_MIX)
+	if (HEAVY_MIX)
 	{
 		for (size_t i = 0; i < MEM / sizeof(__m128i); i += 8)
 		{
-			if(PREFETCH)
+			if (PREFETCH)
 				_mm_prefetch((const char*)input + i + 0, _MM_HINT_NTA);
 
 			xout0 = _mm_xor_si128(_mm_load_si128(input + i + 0), xout0);
@@ -394,7 +462,7 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output, const xmrstak_
 			xout2 = _mm_xor_si128(_mm_load_si128(input + i + 2), xout2);
 			xout3 = _mm_xor_si128(_mm_load_si128(input + i + 3), xout3);
 
-			if(PREFETCH)
+			if (PREFETCH)
 				_mm_prefetch((const char*)input + i + 4, _MM_HINT_NTA);
 
 			xout4 = _mm_xor_si128(_mm_load_si128(input + i + 4), xout4);
@@ -402,7 +470,7 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output, const xmrstak_
 			xout6 = _mm_xor_si128(_mm_load_si128(input + i + 6), xout6);
 			xout7 = _mm_xor_si128(_mm_load_si128(input + i + 7), xout7);
 
-			if(SOFT_AES)
+			if (SOFT_AES)
 			{
 				soft_aes_round(k0, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
 				soft_aes_round(k1, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
@@ -429,13 +497,13 @@ void cn_implode_scratchpad(const __m128i* input, __m128i* output, const xmrstak_
 				aes_round(k9, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
 			}
 
-			if(HEAVY_MIX)
+			if (HEAVY_MIX)
 				mix_and_propagate(xout0, xout1, xout2, xout3, xout4, xout5, xout6, xout7);
 		}
 
-		for(size_t i=0; i < 16; i++)
+		for (size_t i = 0; i < 16; i++)
 		{
-			if(SOFT_AES)
+			if (SOFT_AES)
 			{
 				soft_aes_round(k0, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
 				soft_aes_round(k1, &xout0, &xout1, &xout2, &xout3, &xout4, &xout5, &xout6, &xout7);
@@ -505,7 +573,7 @@ inline __m128i aes_round_bittube2(const __m128i& val, const __m128i& key)
 	alignas(16) uint32_t x[4];
 	_mm_store_si128((__m128i*)k, key);
 	_mm_store_si128((__m128i*)x, _mm_xor_si128(val, _mm_cmpeq_epi32(_mm_setzero_si128(), _mm_setzero_si128()))); // x = ~val
-	#define BYTE(p, i) ((unsigned char*)&p)[i]
+#define BYTE(p, i) ((unsigned char*)&p)[i]
 	k[0] ^= saes_table[0][BYTE(x[0], 0)] ^ saes_table[1][BYTE(x[1], 1)] ^ saes_table[2][BYTE(x[2], 2)] ^ saes_table[3][BYTE(x[3], 3)];
 	x[0] ^= k[0];
 	k[1] ^= saes_table[0][BYTE(x[1], 0)] ^ saes_table[1][BYTE(x[2], 1)] ^ saes_table[2][BYTE(x[3], 2)] ^ saes_table[3][BYTE(x[0], 3)];
@@ -513,7 +581,7 @@ inline __m128i aes_round_bittube2(const __m128i& val, const __m128i& key)
 	k[2] ^= saes_table[0][BYTE(x[2], 0)] ^ saes_table[1][BYTE(x[3], 1)] ^ saes_table[2][BYTE(x[0], 2)] ^ saes_table[3][BYTE(x[1], 3)];
 	x[2] ^= k[2];
 	k[3] ^= saes_table[0][BYTE(x[3], 0)] ^ saes_table[1][BYTE(x[0], 1)] ^ saes_table[2][BYTE(x[1], 2)] ^ saes_table[3][BYTE(x[2], 3)];
-	#undef BYTE
+#undef BYTE
 	return _mm_load_si128((__m128i*)k);
 }
 
@@ -527,14 +595,14 @@ inline void cryptonight_monero_tweak(uint64_t* mem_out, __m128i tmp)
 
 	uint8_t x = static_cast<uint8_t>(vh >> 24);
 	static const uint16_t table = 0x7531;
-	if(ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
+	if (ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
 	{
 		const uint8_t index = (((x >> 3) & 6) | (x & 1)) << 1;
 		vh ^= ((table >> index) & 0x3) << 28;
 
 		mem_out[1] = vh;
 	}
-	else if(ALGO == cryptonight_stellite)
+	else if (ALGO == cryptonight_stellite)
 	{
 		const uint8_t index = (((x >> 4) & 6) | (x & 1)) << 1;
 		vh ^= ((table >> index) & 0x3) << 28;
@@ -545,11 +613,11 @@ inline void cryptonight_monero_tweak(uint64_t* mem_out, __m128i tmp)
 }
 
 /** optimal type for sqrt
- *
- * Depending on the number of hashes calculated the optimal type for the sqrt value will be selected.
- *
- * @tparam N number of hashes per thread
- */
+*
+* Depending on the number of hashes calculated the optimal type for the sqrt value will be selected.
+*
+* @tparam N number of hashes per thread
+*/
 template<size_t N>
 struct GetOptimalSqrtType
 {
@@ -565,11 +633,11 @@ template<size_t N>
 using GetOptimalSqrtType_t = typename GetOptimalSqrtType<N>::type;
 
 /** assign a value and convert if necessary
- *
- * @param output output type
- * @param input value which is assigned to output
- * @{
- */
+*
+* @param output output type
+* @param input value which is assigned to output
+* @{
+*/
 inline void assign(__m128i& output, const uint64_t input)
 {
 	output = _mm_cvtsi64_si128(input);
@@ -687,12 +755,12 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 		cl ^= static_cast<uint64_t>(_mm_cvtsi128_si64(division_result_xmm)) ^ (sqrt_result_tmp << 32); \
 		const uint32_t d = (cx_64 + (sqrt_result_tmp << 1)) | 0x80000001UL; \
 		/* Most and least significant bits in the divisor are set to 1 \
-		 * to make sure we don't divide by a small or even number, \
-		 * so there are no shortcuts for such cases \
-		 * \
-		 * Quotient may be as large as (2^64 - 1)/(2^31 + 1) = 8589934588 = 2^33 - 4 \
-		 * We drop the highest bit to fit both quotient and remainder in 32 bits \
-		 */  \
+				 * to make sure we don't divide by a small or even number, \
+				 		 * so there are no shortcuts for such cases \
+						 		 * \
+								 		 * Quotient may be as large as (2^64 - 1)/(2^31 + 1) = 8589934588 = 2^33 - 4 \
+										 		 * We drop the highest bit to fit both quotient and remainder in 32 bits \
+												 		 */  \
 		/* Compiler will optimize it to a single div instruction */ \
 		const uint64_t cx_s = _mm_cvtsi128_si64(_mm_srli_si128(cx, 8)); \
 		const uint64_t division_result = static_cast<uint32_t>(cx_s / d) + ((cx_s % d) << 32); \
@@ -788,7 +856,7 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 	else \
 	{ \
 		if(SOFT_AES) \
-			cx = soft_aesenc(cx, ax0); \
+			cx = soft_aesenc(ptr0, ax0,(const uint32_t*)saes_table); \
 		else \
 			cx = _mm_aesenc_si128(cx, ax0); \
 	} \
@@ -894,15 +962,15 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 #define CN_EXEC(f,...) CN_DEFER(f)(__VA_ARGS__)
 
 /** add append n to all arguments and keeps n as first argument
- *
- * @param n number which is appended to the arguments (expect the first argument n)
- *
- * @code{.cpp}
- * CN_ENUM_2(1, foo, bar)
- * // is transformed to
- * 1, foo1, bar1
- * @endcode
- */
+*
+* @param n number which is appended to the arguments (expect the first argument n)
+*
+* @code{.cpp}
+* CN_ENUM_2(1, foo, bar)
+* // is transformed to
+* 1, foo1, bar1
+* @endcode
+*/
 #define CN_ENUM_0(n, ...) n
 #define CN_ENUM_1(n, x1) n, x1 ## n
 #define CN_ENUM_2(n, x1, x2) n, x1 ## n, x2 ## n
@@ -922,22 +990,29 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 #define CN_ENUM_16(n, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16) n, x1 ## n, x2 ## n, x3 ## n, x4 ## n, x5 ## n, x6 ## n, x7 ## n, x8 ## n, x9 ## n, x10 ## n, x11 ## n, x12 ## n, x13 ## n, x14 ## n, x15 ## n, x16 ## n
 
 /** repeat a macro call multiple times
- *
- * @param n number of arguments followed after f
- * @param f name of the macro which should be executed
- * @param ... n parameter which name will get appended by a unique number
- *
- * @code{.cpp}
- * REPEAT_2(2, f, foo, bar)
- * // is transformed to
- * f(0, foo0, bar); f(1, foo1, bar1)
- * @endcode
- */
+*
+* @param n number of arguments followed after f
+* @param f name of the macro which should be executed
+* @param ... n parameter which name will get appended by a unique number
+*
+* @code{.cpp}
+* REPEAT_2(2, f, foo, bar)
+* // is transformed to
+* f(0, foo0, bar); f(1, foo1, bar1)
+* @endcode
+*/
 #define REPEAT_1(n, f, ...) CN_EXEC(f, CN_ENUM_ ## n(0, __VA_ARGS__))
 #define REPEAT_2(n, f, ...) CN_EXEC(f, CN_ENUM_ ## n(0, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(1, __VA_ARGS__))
 #define REPEAT_3(n, f, ...) CN_EXEC(f, CN_ENUM_ ## n(0, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(1, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(2, __VA_ARGS__))
 #define REPEAT_4(n, f, ...) CN_EXEC(f, CN_ENUM_ ## n(0, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(1, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(2, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(3, __VA_ARGS__))
 #define REPEAT_5(n, f, ...) CN_EXEC(f, CN_ENUM_ ## n(0, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(1, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(2, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(3, __VA_ARGS__)); CN_EXEC(f, CN_ENUM_ ## n(4, __VA_ARGS__))
+
+#ifdef _WIN32
+#define IS_WINDOWS true
+#else
+#define IS_WINDOWS false
+#endif // DEBUG
+
 
 template< size_t N>
 struct Cryptonight_hash;
@@ -955,16 +1030,36 @@ struct Cryptonight_hash<1>
 		const size_t MEM = algo.Mem();
 
 		CN_INIT_SINGLE;
-		REPEAT_1(11, CN_INIT, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm, cn_r_data);
 
-		// Optim - 90% time boundary
-		for(size_t i = 0; i < ITERATIONS; i++)
+		if (SOFT_AES && (ALGO == cryptonight_r || ALGO == cryptonight_r_wow ) && IS_WINDOWS)
 		{
-			REPEAT_1(9, CN_STEP1, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, cx, bx1);
-			REPEAT_1(7, CN_STEP2, monero_const, l0, ax0, bx0, idx0, ptr0, cx);
-			REPEAT_1(16, CN_STEP3, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm, cn_r_data);
-			REPEAT_1(11, CN_STEP4, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0);
-			REPEAT_1(6, CN_STEP5, monero_const, l0, ax0, bx0, idx0, ptr0);
+			keccak((const uint8_t *)input + len * 0, len, ctx[0]->hash_state, 200);
+			uint64_t monero_const;
+			if (ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
+			{
+				monero_const = *reinterpret_cast<const uint64_t*>(reinterpret_cast<const uint8_t*>(input) + len * 0 + 35);
+				monero_const ^= *(reinterpret_cast<const uint64_t*>(ctx[0]->hash_state) + 24);
+			}
+			/* Optim - 99% time boundary */
+			cn_explode_scratchpad<SOFT_AES, PREFETCH, ALGO>((__m128i*)ctx[0]->hash_state, (__m128i*)ctx[0]->long_state,algo);
+
+			ctx[0]->saes_table = (const uint32_t*)saes_table;
+			ctx[0]->loop_fn(ctx[0]);
+		}
+		else
+		{
+
+			REPEAT_1(11, CN_INIT, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm, cn_r_data);
+
+			// Optim - 90% time boundary
+			for (size_t i = 0; i < ITERATIONS; i++)
+			{
+				REPEAT_1(9, CN_STEP1, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, cx, bx1);
+				REPEAT_1(7, CN_STEP2, monero_const, l0, ax0, bx0, idx0, ptr0, cx);
+				REPEAT_1(16, CN_STEP3, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm, cn_r_data);
+				REPEAT_1(11, CN_STEP4, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0);
+				REPEAT_1(6, CN_STEP5, monero_const, l0, ax0, bx0, idx0, ptr0);
+			}
 		}
 
 		REPEAT_1(0, CN_FINALIZE);
@@ -987,7 +1082,7 @@ struct Cryptonight_hash<2>
 		REPEAT_2(11, CN_INIT, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm, cn_r_data);
 
 		// Optim - 90% time boundary
-		for(size_t i = 0; i < ITERATIONS; i++)
+		for (size_t i = 0; i < ITERATIONS; i++)
 		{
 			REPEAT_2(9, CN_STEP1, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, cx, bx1);
 			REPEAT_2(7, CN_STEP2, monero_const, l0, ax0, bx0, idx0, ptr0, cx);
@@ -1016,7 +1111,7 @@ struct Cryptonight_hash<3>
 		REPEAT_3(11, CN_INIT, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm, cn_r_data);
 
 		// Optim - 90% time boundary
-		for(size_t i = 0; i < ITERATIONS; i++)
+		for (size_t i = 0; i < ITERATIONS; i++)
 		{
 			REPEAT_3(9, CN_STEP1, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, cx, bx1);
 			REPEAT_3(7, CN_STEP2, monero_const, l0, ax0, bx0, idx0, ptr0, cx);
@@ -1045,7 +1140,7 @@ struct Cryptonight_hash<4>
 		REPEAT_4(11, CN_INIT, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm, cn_r_data);
 
 		// Optim - 90% time boundary
-		for(size_t i = 0; i < ITERATIONS; i++)
+		for (size_t i = 0; i < ITERATIONS; i++)
 		{
 			REPEAT_4(9, CN_STEP1, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, cx, bx1);
 			REPEAT_4(7, CN_STEP2, monero_const, l0, ax0, bx0, idx0, ptr0, cx);
@@ -1074,7 +1169,7 @@ struct Cryptonight_hash<5>
 		REPEAT_5(11, CN_INIT, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm, cn_r_data);
 
 		// Optim - 90% time boundary
-		for(size_t i = 0; i < ITERATIONS; i++)
+		for (size_t i = 0; i < ITERATIONS; i++)
 		{
 			REPEAT_5(9, CN_STEP1, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, cx, bx1);
 			REPEAT_5(7, CN_STEP2, monero_const, l0, ax0, bx0, idx0, ptr0, cx);
@@ -1098,25 +1193,25 @@ struct Cryptonight_hash_asm
 	template<xmrstak_algo_id ALGO>
 	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
 	{
-		for(size_t i = 0; i < N; ++i)
+		for (size_t i = 0; i < N; ++i)
 		{
 			keccak((const uint8_t *)input + len * i, len, ctx[i]->hash_state, 200);
 			cn_explode_scratchpad<false, false, ALGO>((__m128i*)ctx[i]->hash_state, (__m128i*)ctx[i]->long_state, algo);
 		}
-		if(ALGO == cryptonight_r)
+		if (ALGO == cryptonight_r)
 		{
 			// API ATTRIBUTE is only required for cryptonight_r
-			typedef void ABI_ATTRIBUTE (*cn_r_mainloop_fun)(cryptonight_ctx *ctx);
-			for(size_t i = 0; i < N; ++i)
+			typedef void ABI_ATTRIBUTE(*cn_r_mainloop_fun)(cryptonight_ctx *ctx);
+			for (size_t i = 0; i < N; ++i)
 				reinterpret_cast<cn_r_mainloop_fun>(ctx[0]->loop_fn)(ctx[i]); // use always loop_fn from ctx[0]!!
 		}
 		else
 		{
-			for(size_t i = 0; i < N; ++i)
+			for (size_t i = 0; i < N; ++i)
 				ctx[0]->loop_fn(ctx[i]); // use always loop_fn from ctx[0]!!
 		}
 
-		for(size_t i = 0; i < N; ++i)
+		for (size_t i = 0; i < N; ++i)
 		{
 			cn_implode_scratchpad<false, false, ALGO>((__m128i*)ctx[i]->long_state, (__m128i*)ctx[i]->hash_state, algo);
 			keccakf((uint64_t*)ctx[i]->hash_state, 24);
@@ -1136,16 +1231,16 @@ struct Cryptonight_hash_asm<2, 0>
 	{
 		const size_t MEM = algo.Mem();
 
-		for(size_t i = 0; i < N; ++i)
+		for (size_t i = 0; i < N; ++i)
 		{
 			keccak((const uint8_t *)input + len * i, len, ctx[i]->hash_state, 200);
 			/* Optim - 99% time boundary */
 			cn_explode_scratchpad<false, false, ALGO>((__m128i*)ctx[i]->hash_state, (__m128i*)ctx[i]->long_state, algo);
 		}
 
-		if(ALGO == cryptonight_r)
+		if (ALGO == cryptonight_r)
 		{
-			typedef void ABI_ATTRIBUTE (*cn_r_double_mainloop_fun)(cryptonight_ctx*, cryptonight_ctx*);
+			typedef void ABI_ATTRIBUTE(*cn_r_double_mainloop_fun)(cryptonight_ctx*, cryptonight_ctx*);
 			reinterpret_cast<cn_r_double_mainloop_fun>(ctx[0]->loop_fn)(ctx[0], ctx[1]);
 		}
 		else
@@ -1153,7 +1248,7 @@ struct Cryptonight_hash_asm<2, 0>
 			reinterpret_cast<cn_double_mainloop_fun>(ctx[0]->loop_fn)(ctx[0], ctx[1]);
 		}
 
-		for(size_t i = 0; i < N; ++i)
+		for (size_t i = 0; i < N; ++i)
 		{
 			/* Optim - 90% time boundary */
 			cn_implode_scratchpad<false, false, ALGO>((__m128i*)ctx[i]->long_state, (__m128i*)ctx[i]->hash_state, algo);
@@ -1167,134 +1262,134 @@ struct Cryptonight_hash_asm<2, 0>
 namespace
 {
 
-template<typename T, typename U>
-static void patchCode(T dst, U src, const uint32_t iterations, const uint32_t mask)
-{
-    const uint8_t* p = reinterpret_cast<const uint8_t*>(src);
+	template<typename T, typename U>
+	static void patchCode(T dst, U src, const uint32_t iterations, const uint32_t mask)
+	{
+		const uint8_t* p = reinterpret_cast<const uint8_t*>(src);
 
-    // Workaround for Visual Studio placing trampoline in debug builds.
+		// Workaround for Visual Studio placing trampoline in debug builds.
 #   if defined(_MSC_VER)
-    if (p[0] == 0xE9) {
-        p += *(int32_t*)(p + 1) + 5;
-    }
+		if (p[0] == 0xE9) {
+			p += *(int32_t*)(p + 1) + 5;
+		}
 #   endif
 
-    size_t size = 0;
-    while (*(uint32_t*)(p + size) != 0xDEADC0DE) {
-        ++size;
-    }
-    size += sizeof(uint32_t);
+		size_t size = 0;
+		while (*(uint32_t*)(p + size) != 0xDEADC0DE) {
+			++size;
+		}
+		size += sizeof(uint32_t);
 
-    memcpy((void*) dst, (const void*) src, size);
+		memcpy((void*)dst, (const void*)src, size);
 
-    uint8_t* patched_data = reinterpret_cast<uint8_t*>(dst);
-    for (size_t i = 0; i + sizeof(uint32_t) <= size; ++i) {
-        switch (*(uint32_t*)(patched_data + i)) {
-        case CN_ITER:
-            *(uint32_t*)(patched_data + i) = iterations;
-            break;
+		uint8_t* patched_data = reinterpret_cast<uint8_t*>(dst);
+		for (size_t i = 0; i + sizeof(uint32_t) <= size; ++i) {
+			switch (*(uint32_t*)(patched_data + i)) {
+			case CN_ITER:
+				*(uint32_t*)(patched_data + i) = iterations;
+				break;
 
-        case CN_MASK:
-            *(uint32_t*)(patched_data + i) = mask;
-            break;
-        }
-    }
-}
+			case CN_MASK:
+				*(uint32_t*)(patched_data + i) = mask;
+				break;
+			}
+		}
+	}
 
 
-void* allocateExecutableMemory(size_t size)
-{
+	void* allocateExecutableMemory(size_t size)
+	{
 
 #ifdef _WIN64
-return VirtualAlloc(0, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		return VirtualAlloc(0, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 #else
 #   if defined(__APPLE__)
-    return mmap(0, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANON, -1, 0);
+		return mmap(0, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANON, -1, 0);
 #   else
-    return mmap(0, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+		return mmap(0, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #   endif
 #endif
-}
+	}
 
 
-void protectExecutableMemory(void *p, size_t size)
-{
+	void protectExecutableMemory(void *p, size_t size)
+	{
 #ifdef _WIN64
-    DWORD oldProtect;
-    VirtualProtect(p, size, PAGE_EXECUTE_READ, &oldProtect);
+		DWORD oldProtect;
+		VirtualProtect(p, size, PAGE_EXECUTE_READ, &oldProtect);
 #else
-    mprotect(p, size, PROT_READ | PROT_EXEC);
+		mprotect(p, size, PROT_READ | PROT_EXEC);
 #endif
-}
+	}
 
-void unprotectExecutableMemory(void *p, size_t size)
-{
+	void unprotectExecutableMemory(void *p, size_t size)
+	{
 #ifdef _WIN64
-    DWORD oldProtect;
-    VirtualProtect(p, size, PAGE_EXECUTE_READWRITE, &oldProtect);
+		DWORD oldProtect;
+		VirtualProtect(p, size, PAGE_EXECUTE_READWRITE, &oldProtect);
 #else
-    mprotect(p, size, PROT_WRITE | PROT_EXEC);
+		mprotect(p, size, PROT_WRITE | PROT_EXEC);
 #endif
-}
+	}
 
 
-void flushInstructionCache(void *p, size_t size)
-{
+	void flushInstructionCache(void *p, size_t size)
+	{
 #ifdef _WIN64
-    ::FlushInstructionCache(GetCurrentProcess(), p, size);
+		::FlushInstructionCache(GetCurrentProcess(), p, size);
 #else
 #   ifndef __FreeBSD__
-    __builtin___clear_cache(reinterpret_cast<char*>(p), reinterpret_cast<char*>(p) + size);
+		__builtin___clear_cache(reinterpret_cast<char*>(p), reinterpret_cast<char*>(p) + size);
 #   endif
 #endif
-}
+	}
 
-template<size_t N>
-void patchAsmVariants(std::string selected_asm, cryptonight_ctx** ctx, const xmrstak_algo& algo)
-{
-	const uint32_t Iter = algo.Iter();
-	const uint32_t Mask = algo.Mask();
-
-	const int allocation_size = 65536;
-
-	if(ctx[0]->fun_data == nullptr)
-		ctx[0]->fun_data = static_cast<uint8_t*>(allocateExecutableMemory(allocation_size));
-	else
-		unprotectExecutableMemory(ctx[0]->fun_data, allocation_size);
-
-	cn_mainloop_fun src_code = nullptr;
-
-	if(selected_asm == "intel_avx")
+	template<size_t N>
+	void patchAsmVariants(std::string selected_asm, cryptonight_ctx** ctx, const xmrstak_algo& algo)
 	{
-		// Intel Ivy Bridge (Xeon v2, Core i7/i5/i3 3xxx, Pentium G2xxx, Celeron G1xxx)
-		if(N == 2)
-			src_code = reinterpret_cast<cn_mainloop_fun>(cryptonight_v8_double_mainloop_sandybridge_asm);
+		const uint32_t Iter = algo.Iter();
+		const uint32_t Mask = algo.Mask();
+
+		const int allocation_size = 65536;
+
+		if (ctx[0]->fun_data == nullptr)
+			ctx[0]->fun_data = static_cast<uint8_t*>(allocateExecutableMemory(allocation_size));
 		else
-			src_code = cryptonight_v8_mainloop_ivybridge_asm;;
-	}
-	// supports only 1 thread per hash
-	if(selected_asm == "amd_avx")
-	{
-		// AMD Ryzen (1xxx and 2xxx series)
-		src_code = cryptonight_v8_mainloop_ryzen_asm;
-	}
+			unprotectExecutableMemory(ctx[0]->fun_data, allocation_size);
 
-	if(src_code != nullptr && ctx[0]->fun_data != nullptr)
-	{
-		patchCode(ctx[0]->fun_data, src_code, Iter, Mask);
-		ctx[0]->loop_fn = reinterpret_cast<cn_mainloop_fun>(ctx[0]->fun_data);
-		for(size_t i = 1; i < N; ++i)
-			ctx[i]->loop_fn = ctx[0]->loop_fn;
+		cn_mainloop_fun src_code = nullptr;
 
-		if(selected_asm == "intel_avx" && N == 2)
-			ctx[0]->hash_fn = Cryptonight_hash_asm<2u, 0u>::template hash<cryptonight_monero_v8>;
-		else
-			ctx[0]->hash_fn = Cryptonight_hash_asm<N, 1u>::template hash<cryptonight_monero_v8>;
+		if (selected_asm == "intel_avx")
+		{
+			// Intel Ivy Bridge (Xeon v2, Core i7/i5/i3 3xxx, Pentium G2xxx, Celeron G1xxx)
+			if (N == 2)
+				src_code = reinterpret_cast<cn_mainloop_fun>(cryptonight_v8_double_mainloop_sandybridge_asm);
+			else
+				src_code = cryptonight_v8_mainloop_ivybridge_asm;;
+		}
+		// supports only 1 thread per hash
+		if (selected_asm == "amd_avx")
+		{
+			// AMD Ryzen (1xxx and 2xxx series)
+			src_code = cryptonight_v8_mainloop_ryzen_asm;
+		}
 
-		protectExecutableMemory(ctx[0]->fun_data, allocation_size);
-		flushInstructionCache(ctx[0]->fun_data, allocation_size);
+		if (src_code != nullptr && ctx[0]->fun_data != nullptr)
+		{
+			patchCode(ctx[0]->fun_data, src_code, Iter, Mask);
+			ctx[0]->loop_fn = reinterpret_cast<cn_mainloop_fun>(ctx[0]->fun_data);
+			for (size_t i = 1; i < N; ++i)
+				ctx[i]->loop_fn = ctx[0]->loop_fn;
+
+			if (selected_asm == "intel_avx" && N == 2)
+				ctx[0]->hash_fn = Cryptonight_hash_asm<2u, 0u>::template hash<cryptonight_monero_v8>;
+			else
+				ctx[0]->hash_fn = Cryptonight_hash_asm<N, 1u>::template hash<cryptonight_monero_v8>;
+
+			protectExecutableMemory(ctx[0]->fun_data, allocation_size);
+			flushInstructionCache(ctx[0]->fun_data, allocation_size);
+		}
 	}
-}
 } // namespace (anonymous)
 
 
@@ -1310,7 +1405,7 @@ struct Cryptonight_hash_gpu
 		keccak((const uint8_t *)input, len, ctx[0]->hash_state, 200);
 		cn_explode_scratchpad_gpu<PREFETCH, ALGO>(ctx[0]->hash_state, ctx[0]->long_state, algo);
 
-		if(cngpu_check_avx2())
+		if (cngpu_check_avx2())
 			cn_gpu_inner_avx(ctx[0]->hash_state, ctx[0]->long_state, algo);
 		else
 			cn_gpu_inner_ssse3(ctx[0]->hash_state, ctx[0]->long_state, algo);
@@ -1327,26 +1422,34 @@ struct Cryptonight_R_generator
 	template<xmrstak_algo_id ALGO>
 	static void cn_on_new_job(const xmrstak::miner_work& work, cryptonight_ctx** ctx)
 	{
-		if(ctx[0]->cn_r_ctx.height == work.iBlockHeight &&
+		if (ctx[0]->cn_r_ctx.height == work.iBlockHeight &&
 			ctx[0]->last_algo == POW(cryptonight_r) &&
 			reinterpret_cast<void*>(ctx[0]->hash_fn) == ctx[0]->fun_data
-		)
+			)
 			return;
 
 		ctx[0]->last_algo = POW(cryptonight_r);
 
 		ctx[0]->cn_r_ctx.height = work.iBlockHeight;
 		int code_size = v4_random_math_init<ALGO>(ctx[0]->cn_r_ctx.code, work.iBlockHeight);
-		if(ctx[0]->asm_version != 0)
+		if (ctx[0]->asm_version != 0)
 		{
 			v4_compile_code(N, ctx[0], code_size);
-			if(N == 2)
+			if (N == 2)
 				ctx[0]->hash_fn = Cryptonight_hash_asm<2u, 0u>::template hash<cryptonight_r>;
 			else
 				ctx[0]->hash_fn = Cryptonight_hash_asm<N, 1u>::template hash<cryptonight_r>;
 		}
+		else if (!ctx[0]->asm_version && ALGO == cryptonight_r && IS_WINDOWS)
+		{
+			v4_soft_aes_compile_code(ctx[0], code_size);
+		}
+		else if (!ctx[0]->asm_version && ALGO == cryptonight_r_wow && IS_WINDOWS)
+		{
+			wow_soft_aes_compile_code(ctx[0], code_size);
+		}
 
-		for(size_t i=1; i < N; i++)
+		for (size_t i = 1; i < N; i++)
 		{
 			ctx[i]->cn_r_ctx = ctx[0]->cn_r_ctx;
 			ctx[i]->loop_fn = ctx[0]->loop_fn;

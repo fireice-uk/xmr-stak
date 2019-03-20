@@ -48,10 +48,14 @@
 
 #ifdef _WIN32
 #define strncasecmp _strnicmp
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 #endif // _WIN32
 
 executor::executor()
 {
+	isIdle = false;
+	bQuit = false;
 }
 
 void executor::push_timed_event(ex_event&& ev, size_t sec)
@@ -63,10 +67,18 @@ void executor::push_timed_event(ex_event&& ev, size_t sec)
 void executor::ex_clock_thd()
 {
 	size_t tick = 0;
-	while (true)
+	while (!bQuit)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(size_t(iTickTime)));
-
+		
+		if (calc_idle_time() > xmrstak::params::inst().default_idle_time)
+		{
+			if (!isIdle)
+				push_event(ex_event(EV_IDLE_SIGNAL));
+		}
+		else if (isIdle = true)
+			push_event(ex_event(EV_NON_IDLE_SIGNAL));
+		
 		push_event(ex_event(EV_PERF_TICK));
 
 		//Eval pool choice every fourth tick
@@ -258,6 +270,22 @@ void executor::eval_pool_choice()
 				pool.disconnect(true);
 		}
 	}
+}
+
+size_t executor::calc_idle_time()
+{
+#ifdef _WIN32
+	size_t idle_time = 0;
+	LASTINPUTINFO last_input;
+	last_input.cbSize = sizeof(last_input);
+	GetLastInputInfo(&last_input);
+	idle_time = GetTickCount64() - last_input.dwTime;
+	return idle_time / 1000;
+#else
+	// Todo : implement proper idle time calclator for linux and mac
+	return 0;
+#endif _WIN32
+
 }
 
 void executor::log_socket_error(jpsock* pool, std::string&& sError)
@@ -488,6 +516,7 @@ inline void disable_sigpipe() {}
 void executor::ex_main()
 {
 	disable_sigpipe();
+	bQuit = false;
 
 	assert(1000 % iTickTime == 0);
 
@@ -501,6 +530,19 @@ void executor::ex_main()
 		printer::inst()->print_msg(L1, "ERROR: No miner backend enabled.");
 		win_exit();
 	}
+
+	for (auto& Thd : (*pvThreads))
+	{
+		if (Thd->backendType == xmrstak::iBackend::CPU)
+		{
+			if (Thd->thdNo > xmrstak::params::inst().max_idle_cpu_threads)
+				Thd->pause_idle = true;
+		}
+		else if (Thd->backendType == xmrstak::iBackend::AMD || Thd->backendType == xmrstak::iBackend::NVIDIA)
+			if (Thd->thdNo > xmrstak::params::inst().max_idle_gpu_threads)
+				Thd->pause_idle = true;
+	}
+		
 
 	telem = new xmrstak::telemetry(pvThreads->size());
 
@@ -609,10 +651,49 @@ void executor::ex_main()
 		ev = oEventQ.pop();
 		switch (ev.iName)
 		{
+		case EV_EXIT_SIGNAL:
+			bQuit = true;
+			clock_thd.join();
+			for (auto & pool : pools) pool.disconnect();
+			pools.clear();
+			for (auto & Thread : (*pvThreads)) delete Thread;
+			pvThreads->clear();
+			oEventQ.clear();
+			lTimedEvents.clear();
+			delete telem;
+			telem = nullptr;
+			return;
+
+		case EV_SUSPEND_SIGNAL:
+			for (auto& Thd : (*pvThreads))
+				Thd->bSuspend = true;
+			break;
+
+		case EV_RESUME_SIGNAL:
+			for (auto& Thd : (*pvThreads))
+				Thd->bSuspend = false;
+			break;
+
+		case EV_IDLE_SIGNAL:
+			printer::inst()->print_msg(L0, "The system is idle !");
+			isIdle = true;
+			for (auto& Thd : (*pvThreads))
+				Thd->pause_idle = false;
+			break;
+
+		case EV_NON_IDLE_SIGNAL:
+			isIdle = false;
+			for (auto& Thd : (*pvThreads))
+				if (Thd->backendType == xmrstak::iBackend::CPU && Thd->thdNo > xmrstak::params::inst().max_idle_cpu_threads)
+					Thd->pause_idle = true;
+				else if ((Thd->backendType == xmrstak::iBackend::AMD || Thd->backendType == xmrstak::iBackend::NVIDIA) && Thd->iThreadNo > xmrstak::params::inst().max_idle_gpu_threads)
+					Thd->pause_idle = true;
+			break;
+
 		case EV_SOCK_READY:
 			on_sock_ready(ev.iPoolId);
 			break;
-
+		
 		case EV_SOCK_ERROR:
 			on_sock_error(ev.iPoolId, std::move(ev.oSocketError.sSocketError), ev.oSocketError.silent);
 			break;

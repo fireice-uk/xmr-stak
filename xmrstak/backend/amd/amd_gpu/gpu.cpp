@@ -488,7 +488,8 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		{
 			KernelNames.push_back(std::string("cn00_cn_gpu") + std::to_string(miner_algo));
 		}
-
+		
+		ctx->Kernels[miner_algo] = {};
 		for(int i = 0; i < KernelNames.size(); ++i)
 		{
 			ctx->Kernels[miner_algo][i] = clCreateKernel(ctx->Program[miner_algo], KernelNames[i].c_str(), &ret);
@@ -501,6 +502,32 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	}
 	ctx->Nonce = 0;
 	return 0;
+}
+
+size_t FinalizeOpenCL(GpuContext* ctx)
+{
+	auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
+
+	for (auto algo : neededAlgorithms)
+	{
+		for (int i = 0; i < 8; ++i)
+			if (ctx->Kernels[algo][i])
+				clReleaseKernel(ctx->Kernels[algo][i]);
+	}
+
+	ctx->Kernels.clear();
+
+	for (size_t i = 0; i < 6; ++i)
+		clReleaseMemObject(ctx->ExtraBuffers[i]);
+	clReleaseMemObject(ctx->InputBuffer);
+	clReleaseMemObject(ctx->OutputBuffer);
+
+	for (auto algo : neededAlgorithms)
+		clReleaseProgram(ctx->Program[algo]);
+	ctx->Program.clear();
+
+	clReleaseCommandQueue(ctx->CommandQueues);
+	clReleaseDevice(ctx->DeviceID);
 }
 
 const cl_platform_info attributeTypes[5] = {
