@@ -51,8 +51,8 @@ minethd::minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::th
 {
 	this->backendType = iBackend::AMD;
 	oWork = pWork;
-	bQuit = 0;
 	iThreadNo = (uint8_t)iNo;
+	thdNo = iNo;
 	iJobNo = 0;
 	iHashCount = 0;
 	iTimestamp = 0;
@@ -113,7 +113,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 {
 	std::vector<iBackend*>* pvThreads = new std::vector<iBackend*>();
 
-	if(!configEditor::file_exist(params::inst().configFileAMD))
+	if(!configEditor::file_exist(params::inst().configFileAMD) || params::inst().no_config_files)
 	{
 		autoAdjust adjust;
 		if(!adjust.printConfig())
@@ -160,7 +160,6 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 
 	return pvThreads;
 }
-
 
 void minethd::work_main()
 {
@@ -213,8 +212,10 @@ void minethd::work_main()
 			 * raison d'etre of this software it us sensible to just wait until we have something
 			 */
 
-			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo && !bQuit)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			if (bQuit)
+				break;
 
 			globalStates::inst().consume_work(oWork, iJobNo);
 			continue;
@@ -251,8 +252,14 @@ void minethd::work_main()
 		if(oWork.bNiceHash)
 			pGpuCtx->Nonce = *(uint32_t*)(oWork.bWorkBlob + 39);
 
-		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo && !bQuit)
 		{
+			while ((bSuspend || pause_idle) && !bQuit)
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+			if (bQuit)
+				break;
+
 			//Allocate a new nonce every 16 rounds
 			if((round_ctr++ & 0xF) == 0)
 			{
@@ -349,6 +356,11 @@ void minethd::work_main()
 
 		globalStates::inst().consume_work(oWork, iJobNo);
 	}
+
+	FinalizeOpenCL(pGpuCtx);
+
+	cryptonight_free_ctx(cpu_ctx);
+
 }
 
 } // namespace amd
