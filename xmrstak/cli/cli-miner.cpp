@@ -62,60 +62,69 @@ void help()
 	using namespace std;
 	using namespace xmrstak;
 
-	cout<<"Usage: "<<params::inst().binaryName<<" [OPTION]..."<<endl;
-	cout<<" "<<endl;
-	cout<<"  -h, --help                 show this help"<<endl;
-	cout<<"  -v, --version              show version number"<<endl;
-	cout<<"  -V, --version-long         show long version number"<<endl;
-	cout<<"  -c, --config FILE          common miner configuration file"<<endl;
-	cout<<"  -C, --poolconf FILE        pool configuration file"<<endl;
+	printer::inst()->print_str("Usage: ");
+	printer::inst()->print_str(params::inst().binaryName.c_str());
+	printer::inst()->print_str(" [OPTION]...\n");
+	printer::inst()->print_str("  \n");
+	printer::inst()->print_str("  -h, --help                 show this help\n");
+	printer::inst()->print_str("  -v, --version              show version number\n");
+	printer::inst()->print_str("  -V, --version-long         show long version number\n");
+	printer::inst()->print_str("  -c, --config FILE          common miner configuration file\n");
+	printer::inst()->print_str("  -C, --poolconf FILE        pool configuration file\n");
+	printer::inst()->print_str("  --no-config-file           don't generate or use config files\n");
+	printer::inst()->print_str("  --max-cpu-usage            max cpu usage percent (0 - 100)\n");
+	printer::inst()->print_str("  --max-idle-cpu-usage       max cpu usage when system isn't idle (0 - 100)\n");
+	printer::inst()->print_str("  --max-gpu-usage            max gpu usage perecnt (0 - 100)\n");
+	printer::inst()->print_str("  --max-idle-cpu-usage       max gpu usage when system isn't idle (0 - 100)\n");
+	printer::inst()->print_str("  --idle-time                the time in seconds which system is considered idle after\n");
 #ifdef _WIN32
-	cout<<"  --noUAC                    disable the UAC dialog"<<endl;
+	printer::inst()->print_str("  --noUAC                    disable the UAC dialog\n");
 #endif
-	cout<<"  --benchmark BLOCKVERSION   ONLY do a benchmark and exit"<<endl;
-	cout<<"  --benchwait WAIT_SEC             ... benchmark wait time"<<endl;
-	cout<<"  --benchwork WORK_SEC             ... benchmark work time"<<endl;
+	printer::inst()->print_str("  --benchmark BLOCKVERSION   ONLY do a benchmark and exit\n");
+	printer::inst()->print_str("  --benchwait WAIT_SEC             ... benchmark wait time\n");
+	printer::inst()->print_str("  --benchwork WORK_SEC             ... benchmark work time\n");
 #ifndef CONF_NO_CPU
-	cout<<"  --noCPU                    disable the CPU miner backend"<<endl;
-	cout<<"  --cpu FILE                 CPU backend miner config file"<<endl;
+	printer::inst()->print_str("  --noCPU                    disable the CPU miner backend\n");
+	printer::inst()->print_str("  --cpu FILE                 CPU backend miner config file\n");
 #endif
 #ifndef CONF_NO_OPENCL
-	cout<<"  --noAMD                    disable the AMD miner backend"<<endl;
-	cout<<"  --noAMDCache               disable the AMD(OpenCL) cache for precompiled binaries"<<endl;
-	cout<<"  --openCLVendor VENDOR      use OpenCL driver of VENDOR and devices [AMD,NVIDIA]"<<endl;
-	cout<<"                             default: AMD"<<endl;
-	cout<<"  --amdCacheDir DIRECTORY    directory to store AMD binary files"<<endl;
-	cout<<"  --amd FILE                 AMD backend miner config file"<<endl;
+	printer::inst()->print_str("  --noAMD                    disable the AMD miner backend\n");
+	printer::inst()->print_str("  --noAMDCache               disable the AMD(OpenCL) cache for precompiled binaries\n");
+	printer::inst()->print_str("  --openCLVendor VENDOR      use OpenCL driver of VENDOR and devices [AMD,NVIDIA]\n");
+	printer::inst()->print_str("                             default: AMD\n");
+	printer::inst()->print_str("  --amd FILE                 AMD backend miner config file\n");
 #endif
 #ifndef CONF_NO_CUDA
-	cout<<"  --noNVIDIA                 disable the NVIDIA miner backend"<<endl;
-	cout<<"  --nvidia FILE              NVIDIA backend miner config file"<<endl;
+	printer::inst()->print_str("  --noNVIDIA                 disable the NVIDIA miner backend\n");
+	printer::inst()->print_str("  --nvidia FILE              NVIDIA backend miner config file\n");
 #endif
 #ifndef CONF_NO_HTTPD
-	cout<<"  -i --httpd HTTP_PORT       HTTP interface port"<<endl;
+	printer::inst()->print_str("  -i --httpd HTTP_PORT       HTTP interface port\n");
 #endif
-	cout<<" "<<endl;
-	cout<<"The following options can be used for automatic start without a guided config,"<<endl;
-	cout<<"If config exists then this pool will be top priority."<<endl;
-	cout<<"  -o, --url URL              pool url and port, e.g. pool.usxmrpool.com:3333"<<endl;
-	cout<<"  -O, --tls-url URL          TLS pool url and port, e.g. pool.usxmrpool.com:10443"<<endl;
-	cout<<"  -u, --user USERNAME        pool user name or wallet address"<<endl;
-	cout<<"  -r, --rigid RIGID          rig identifier for pool-side statistics (needs pool support)"<<endl;
-	cout<<"  -p, --pass PASSWD          pool password, in the most cases x or empty \"\""<<endl;
-	cout<<"  --use-nicehash             the pool should run in nicehash mode"<<endl;
-	cout<<"  --currency NAME            currency to mine"<<endl;
-	cout<< endl;
+	printer::inst()->print_str("  \n");
+	printer::inst()->print_str("The following options can be used for automatic start without a guided config,\n");
+	printer::inst()->print_str("If config exists and config files aren't disabled then this pool will be top priority.\n");
+	printer::inst()->print_str("  -o, --url URL              pool url and port, e.g. pool.usxmrpool.com:3333\n");
+	printer::inst()->print_str("  -O, --tls-url URL          TLS pool url and port, e.g. pool.usxmrpool.com:10443\n");
+	printer::inst()->print_str("  -u, --user USERNAME        pool user name or wallet address\n");
+	printer::inst()->print_str("  -r, --rigid RIGID          rig identifier for pool-side statistics (needs pool support)\n");
+	printer::inst()->print_str("  -p, --pass PASSWD          pool password, in the most cases x or empty \"\"\n");
+	printer::inst()->print_str("  --use-nicehash             the pool should run in nicehash mode\n");
+	printer::inst()->print_str("  --currency NAME            currency to mine\n\n");
 #ifdef _WIN32
-	cout<<"Environment variables:\n"<<endl;
-	cout<<"  XMRSTAK_NOWAIT             disable the dialog `Press any key to exit."<<std::endl;
-	cout<<"                	            for non UAC execution"<<endl;
-	cout<< endl;
+	printer::inst()->print_str("Environment variables:\n\n");
+	printer::inst()->print_str("  XMRSTAK_NOWAIT             disable the dialog `Press any key to exit.\n");
+	printer::inst()->print_str("                	            for non UAC execution\n\n");
 #endif
 	std::string algos;
 	jconf::GetAlgoList(algos);
-	cout<< "Supported coin options: " << endl << algos << endl;
-	cout<< "Version: " << get_version_str_short() << endl;
-	cout<<"Brought to by fireice_uk and psychocrypt under GPLv3."<<endl;
+	printer::inst()->print_str("Supported coin options: ");
+	printer::inst()->print_str(algos.c_str());
+	printer::inst()->print_str("\n");
+	printer::inst()->print_str("Version: ");
+	printer::inst()->print_str(get_version_str_short().c_str());
+	printer::inst()->print_str("\n");
+
 }
 
 bool read_yes_no(const char* str)
@@ -333,7 +342,7 @@ void do_guided_pool_config()
 	configTpl.replace("CURRENCY", currency);
 	configTpl.replace("POOLCONF", pool_table);
 	configTpl.write(params::inst().configFilePools);
-	std::cout<<"Pool configuration stored in file '"<<params::inst().configFilePools<<"'"<<std::endl;
+	if (!params::inst().no_config_files) std::cout<<"Pool configuration stored in file '"<<params::inst().configFilePools<<"'"<<std::endl;
 }
 
 void do_guided_config()
@@ -375,7 +384,19 @@ void do_guided_config()
 
 	configTpl.replace("HTTP_PORT", std::to_string(http_port));
 	configTpl.write(params::inst().configFile);
-	std::cout<<"Configuration stored in file '"<<params::inst().configFile<<"'"<<std::endl;
+	if (!params::inst().no_config_files) std::cout<<"Configuration stored in file '"<<params::inst().configFile<<"'"<<std::endl;
+}
+
+size_t cores_num()
+{
+#ifdef _WIN32
+	SYSTEM_INFO info;
+	GetSystemInfo(&info);
+	return info.dwNumberOfProcessors;
+#else
+#include <unistd.h>
+	return sysconf(_SC_NPROCESSORS_ONLN);
+#endif // _WIN32
 }
 
 int main(int argc, char *argv[])
@@ -392,394 +413,475 @@ int main(int argc, char *argv[])
 	srand(time(0));
 
 	using namespace xmrstak;
-
-	std::string pathWithName(argv[0]);
-	std::string separator("/");
-	auto pos = pathWithName.rfind(separator);
-
-	if(pos == std::string::npos)
+	
+	auto parse_and_configure = [](int argc, char **argv)
 	{
-		// try windows "\"
-		separator = "\\";
-		pos = pathWithName.rfind(separator);
-	}
-	params::inst().binaryName = std::string(pathWithName, pos + 1, std::string::npos);
-	if(params::inst().binaryName.compare(pathWithName) != 0)
-	{
-		params::inst().executablePrefix = std::string(pathWithName, 0, pos);
-		params::inst().executablePrefix += separator;
-	}
+		std::string pathWithName(argv[0]);
+		std::string separator("/");
+		auto pos = pathWithName.rfind(separator);
 
-	params::inst().minerArg0 = argv[0];
-	params::inst().minerArgs.reserve(argc * 16);
-	for(int i = 1; i < argc; i++)
-	{
-		params::inst().minerArgs += " ";
-		params::inst().minerArgs += argv[i];
-	}
+		if (pos == std::string::npos)
+		{
+			// try windows "\"
+			separator = "\\";
+			pos = pathWithName.rfind(separator);
+		}
+		params::inst().binaryName = std::string(pathWithName, pos + 1, std::string::npos);
+		if (params::inst().binaryName.compare(pathWithName) != 0)
+		{
+			params::inst().executablePrefix = std::string(pathWithName, 0, pos);
+			params::inst().executablePrefix += separator;
+		}
 
-	bool pool_url_set = false;
-	for(size_t i = 1; i < argc-1; i++)
-	{
-		std::string opName(argv[i]);
-		if(opName == "-o" || opName == "-O" || opName == "--url" || opName == "--tls-url")
-			pool_url_set = true;
-	}
+		params::inst().minerArg0 = argv[0];
+		params::inst().minerArgs.reserve(argc * 16);
+		for (int i = 1; i < argc; i++)
+		{
+			params::inst().minerArgs += " ";
+			params::inst().minerArgs += argv[i];
+		}
 
-	for(size_t i = 1; i < argc; ++i)
-	{
-		std::string opName(argv[i]);
-		if(opName.compare("-h") == 0 || opName.compare("--help") == 0)
+		bool pool_url_set = false;
+		for (size_t i = 1; i < argc - 1; i++)
 		{
-			help();
-			win_exit(0);
-			return 0;
+			std::string opName(argv[i]);
+			if (opName == "-o" || opName == "-O" || opName == "--url" || opName == "--tls-url")
+				pool_url_set = true;
 		}
-		if(opName.compare("-v") == 0 || opName.compare("--version") == 0)
-		{
-			std::cout<< "Version: " << get_version_str_short() << std::endl;
-			win_exit();
-			return 0;
-		}
-		else if(opName.compare("-V") == 0 || opName.compare("--version-long") == 0)
-		{
-			std::cout<< "Version: " << get_version_str() << std::endl;
-			win_exit();
-			return 0;
-		}
-		else if(opName.compare("--noCPU") == 0)
-		{
-			params::inst().useCPU = false;
-		}
-		else if(opName.compare("--noAMD") == 0)
-		{
-			params::inst().useAMD = false;
-		}
-		else if(opName.compare("--openCLVendor") == 0)
-		{
-			++i;
-			if( i >=argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '--openCLVendor' given");
-				win_exit();
-				return 1;
-			}
-			std::string vendor(argv[i]);
-			params::inst().openCLVendor = vendor;
-			if(vendor != "AMD" && vendor != "NVIDIA")
-			{
-				printer::inst()->print_msg(L0, "'--openCLVendor' must be 'AMD' or 'NVIDIA'");
-				win_exit();
-				return 1;
-			}
-		}
-		else if(opName.compare("--noAMDCache") == 0)
-		{
-			params::inst().AMDCache = false;
-		}
-		else if(opName.compare("--noNVIDIA") == 0)
-		{
-			params::inst().useNVIDIA = false;
-		}
-		else if(opName.compare("--cpu") == 0)
-		{
-			++i;
-			if( i >=argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '--cpu' given");
-				win_exit();
-				return 1;
-			}
-			params::inst().configFileCPU = argv[i];
-		}
-		else if(opName.compare("--amd") == 0)
-		{
-			++i;
-			if( i >=argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '--amd' given");
-				win_exit();
-				return 1;
-			}
-			params::inst().configFileAMD = argv[i];
-		}
-		else if(opName.compare("--amdCacheDir") == 0)
-		{
-			++i;
-			if( i >=argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '--amdCacheDir' given");
-				win_exit();
-				return 1;
-			}
-			params::inst().rootAMDCacheDir = std::string(argv[i]) + "/";
-		}
-		else if(opName.compare("--nvidia") == 0)
-		{
-			++i;
-			if( i >=argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '--nvidia' given");
-				win_exit();
-				return 1;
-			}
-			params::inst().configFileNVIDIA = argv[i];
-		}
-		else if(opName.compare("--currency") == 0)
-		{
-			++i;
-			if( i >=argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '--currency' given");
-				win_exit();
-				return 1;
-			}
-			params::inst().currency = argv[i];
-		}
-		else if(opName.compare("-o") == 0 || opName.compare("--url") == 0)
-		{
-			++i;
-			if( i >=argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '-o/--url' given");
-				win_exit();
-				return 1;
-			}
-			params::inst().poolURL = argv[i];
-			params::inst().poolUseTls = false;
-		}
-		else if(opName.compare("-O") == 0 || opName.compare("--tls-url") == 0)
-		{
-			++i;
-			if( i >=argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '-O/--tls-url' given");
-				win_exit();
-				return 1;
-			}
-			params::inst().poolURL = argv[i];
-			params::inst().poolUseTls = true;
-		}
-		else if(opName.compare("-u") == 0 || opName.compare("--user") == 0)
-		{
-			if(!pool_url_set)
-			{
-				printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify username and password.");
-				win_exit();
-				return 1;
-			}
 
-			++i;
-			if( i >=argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '-u/--user' given");
-				win_exit();
-				return 1;
-			}
-			params::inst().poolUsername = argv[i];
-		}
-		else if(opName.compare("-p") == 0 || opName.compare("--pass") == 0)
+		for (size_t i = 1; i < argc; ++i)
 		{
-			if(!pool_url_set)
+			std::string opName(argv[i]);
+			if (opName.compare("-h") == 0 || opName.compare("--help") == 0)
 			{
-				printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify username and password.");
-				win_exit();
-				return 1;
+				help();
+				win_exit(0);
+				return 0;
 			}
+			if (opName.compare("-v") == 0 || opName.compare("--version") == 0)
+			{
+				std::cout << "Version: " << get_version_str_short() << std::endl;
+				win_exit();
+				return 0;
+			}
+			else if (opName.compare("-V") == 0 || opName.compare("--version-long") == 0)
+			{
+				std::cout << "Version: " << get_version_str() << std::endl;
+				win_exit();
+				return 0;
+			}
+			else if (opName.compare("--noCPU") == 0)
+			{
+				params::inst().useCPU = false;
+			}
+			else if (opName.compare("--noAMD") == 0)
+			{
+				params::inst().useAMD = false;
+			}
+			else if (opName.compare("--openCLVendor") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '--openCLVendor' given");
+					win_exit();
+					return 1;
+				}
+				std::string vendor(argv[i]);
+				params::inst().openCLVendor = vendor;
+				if (vendor != "AMD" && vendor != "NVIDIA")
+				{
+					printer::inst()->print_msg(L0, "'--openCLVendor' must be 'AMD' or 'NVIDIA'");
+					win_exit();
+					return 1;
+				}
+			}
+			else if (opName.compare("--noAMDCache") == 0)
+			{
+				params::inst().AMDCache = false;
+			}
+			else if (opName.compare("--noNVIDIA") == 0)
+			{
+				params::inst().useNVIDIA = false;
+			}
+			else if (opName.compare("--cpu") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '--cpu' given");
+					win_exit();
+					return 1;
+				}
+				params::inst().configFileCPU = argv[i];
+			}
+			else if (opName.compare("--amd") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '--amd' given");
+					win_exit();
+					return 1;
+				}
+				params::inst().configFileAMD = argv[i];
+			}
+			else if (opName.compare("--amdCacheDir") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '--amdCacheDir' given");
+					win_exit();
+					return 1;
+				}
+				params::inst().rootAMDCacheDir = std::string(argv[i]) + "/";
+			}
+			else if (opName.compare("--nvidia") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '--nvidia' given");
+					win_exit();
+					return 1;
+				}
+				params::inst().configFileNVIDIA = argv[i];
+			}
+			else if (opName.compare("--currency") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '--currency' given");
+					win_exit();
+					return 1;
+				}
+				params::inst().currency = argv[i];
+			}
+			else if (opName.compare("-o") == 0 || opName.compare("--url") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '-o/--url' given");
+					win_exit();
+					return 1;
+				}
+				params::inst().poolURL = argv[i];
+				params::inst().poolUseTls = false;
+			}
+			else if (opName.compare("-O") == 0 || opName.compare("--tls-url") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '-O/--tls-url' given");
+					win_exit();
+					return 1;
+				}
+				params::inst().poolURL = argv[i];
+				params::inst().poolUseTls = true;
+			}
+			else if (opName.compare("-u") == 0 || opName.compare("--user") == 0)
+			{
+				if (!pool_url_set)
+				{
+					printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify username and password.");
+					win_exit();
+					return 1;
+				}
 
-			++i;
-			if( i >=argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '-p/--pass' given");
-				win_exit();
-				return 1;
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '-u/--user' given");
+					win_exit();
+					return 1;
+				}
+				params::inst().poolUsername = argv[i];
 			}
-			params::inst().userSetPwd = true;
-			params::inst().poolPasswd = argv[i];
-		}
-		else if(opName.compare("-r") == 0 || opName.compare("--rigid") == 0)
-		{
-			if(!pool_url_set)
+			else if (opName.compare("-p") == 0 || opName.compare("--pass") == 0)
 			{
-				printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify rigid.");
-				win_exit();
-				return 1;
-			}
+				if (!pool_url_set)
+				{
+					printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify username and password.");
+					win_exit();
+					return 1;
+				}
 
-			++i;
-			if( i >=argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '-r/--rigid' given");
-				win_exit();
-				return 1;
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '-p/--pass' given");
+					win_exit();
+					return 1;
+				}
+				params::inst().userSetPwd = true;
+				params::inst().poolPasswd = argv[i];
 			}
+			else if (opName.compare("-r") == 0 || opName.compare("--rigid") == 0)
+			{
+				if (!pool_url_set)
+				{
+					printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify rigid.");
+					win_exit();
+					return 1;
+				}
 
-			params::inst().userSetRigid = true;
-			params::inst().poolRigid = argv[i];
-		}
-		else if(opName.compare("--use-nicehash") == 0)
-		{
-			params::inst().nicehashMode = true;
-		}
-		else if(opName.compare("-c") == 0 || opName.compare("--config") == 0)
-		{
-			++i;
-			if( i >=argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '-c/--config' given");
-				win_exit();
-				return 1;
-			}
-			params::inst().configFile = argv[i];
-		}
-		else if(opName.compare("-C") == 0 || opName.compare("--poolconf") == 0)
-		{
-			++i;
-			if( i >=argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '-C/--poolconf' given");
-				win_exit();
-				return 1;
-			}
-			params::inst().configFilePools = argv[i];
-		}
-		else if(opName.compare("-i") == 0 || opName.compare("--httpd") == 0)
-		{
-			++i;
-			if( i >=argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '-i/--httpd' given");
-				win_exit();
-				return 1;
-			}
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '-r/--rigid' given");
+					win_exit();
+					return 1;
+				}
 
-			char* endp = nullptr;
-			long int ret = strtol(argv[i], &endp, 10);
-
-			if(endp == nullptr || ret < 0 || ret > 65535)
+				params::inst().userSetRigid = true;
+				params::inst().poolRigid = argv[i];
+			}
+			else if (opName.compare("--use-nicehash") == 0)
 			{
-				printer::inst()->print_msg(L0, "Argument for parameter '-i/--httpd' must be a number between 0 and 65535");
+				params::inst().nicehashMode = true;
+			}
+			else if (opName.compare("-c") == 0 || opName.compare("--config") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '-c/--config' given");
+					win_exit();
+					return 1;
+				}
+				params::inst().configFile = argv[i];
+			}
+			else if (opName.compare("-C") == 0 || opName.compare("--poolconf") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '-C/--poolconf' given");
+					win_exit();
+					return 1;
+				}
+				params::inst().configFilePools = argv[i];
+			}
+			else if (opName.compare("-i") == 0 || opName.compare("--httpd") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '-i/--httpd' given");
+					win_exit();
+					return 1;
+				}
+
+				char* endp = nullptr;
+				long int ret = strtol(argv[i], &endp, 10);
+
+				if (endp == nullptr || ret < 0 || ret > 65535)
+				{
+					printer::inst()->print_msg(L0, "Argument for parameter '-i/--httpd' must be a number between 0 and 65535");
+					win_exit();
+					return 1;
+				}
+
+				params::inst().httpd_port = ret;
+			}
+			else if (opName.compare("--noUAC") == 0)
+			{
+				params::inst().allowUAC = false;
+			}
+			else if (opName.compare("--benchmark") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '--benchmark' given");
+					win_exit();
+					return 1;
+				}
+				char* block_version = nullptr;
+				long int bversion = strtol(argv[i], &block_version, 10);
+
+				if (bversion < 0 || bversion >= 256)
+				{
+					printer::inst()->print_msg(L0, "Benchmark block version must be in the range [0,255]");
+					return 1;
+				}
+				params::inst().benchmark_block_version = bversion;
+			}
+			else if (opName.compare("--benchwait") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '--benchwait' given");
+					win_exit();
+					return 1;
+				}
+				char* wait_sec = nullptr;
+				long int waitsec = strtol(argv[i], &wait_sec, 10);
+
+				if (waitsec < 0 || waitsec >= 300)
+				{
+					printer::inst()->print_msg(L0, "Benchmark wait seconds must be in the range [0,300]");
+					return 1;
+				}
+				params::inst().benchmark_wait_sec = waitsec;
+			}
+			else if (opName.compare("--benchwork") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '--benchwork' given");
+					win_exit();
+					return 1;
+				}
+				char* work_sec = nullptr;
+				long int worksec = strtol(argv[i], &work_sec, 10);
+
+				if (worksec < 10 || worksec >= 300)
+				{
+					printer::inst()->print_msg(L0, "Benchmark work seconds must be in the range [10,300]");
+					return 1;
+				}
+				params::inst().benchmark_work_sec = worksec;
+			}
+			else if (opName.compare("--max-cpu-usage") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '--max-cpu-usage' given");
+					win_exit();
+					return 1;
+				}
+				size_t max_cpu_percent = strtoull(argv[i], 0, 10);
+				params::inst().max_cpu_threads_count = (size_t)ceil((float)cores_num() * (max_cpu_percent / 100.0));
+			}
+			else if (opName.compare("--max-idle-cpu-usage") == 0)
+			{
+				++i;
+#ifdef _WIN32
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '--max-idle-cpu-usage' given");
+					win_exit();
+					return 1;
+				}
+				size_t max_idle_percent = strtoull(argv[i], 0, 10);
+				params::inst().max_idle_cpu_threads = (size_t)ceil((float)cores_num() * (max_idle_percent / 100.0));
+#else
+				printer::inst()->print_msg(L0, "Idle options is supported only on windows currently");
+#endif
+			}
+			else if (opName.compare("--max-gpu-usage") == 0)
+			{
+				++i;
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '--max-gpu-usage' given");
+					win_exit();
+					return 1;
+				}
+				params::inst().max_gpu_threads_count = strtoull(argv[i], 0, 10);
+			}
+			else if (opName.compare("--max-idle-gpu-usage") == 0)
+			{
+				++i;
+#ifdef _WIN32
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '--max-idle-gpu-usage' given");
+					win_exit();
+					return 1;
+				}
+				params::inst().max_idle_gpu_threads = strtoull(argv[i], 0, 10);
+#else
+				printer::inst()->print_msg(L0, "Idle options is supported only on windows currently");
+#endif
+			}
+			else if (opName.compare("--idle-time") == 0)
+			{
+				++i;
+#ifdef _WIN32
+				if (i >= argc)
+				{
+					printer::inst()->print_msg(L0, "No argument for parameter '--idle-time' given");
+					win_exit();
+					return 1;
+				}
+				params::inst().default_idle_time = strtoull(argv[i], 0, 10);
+#else
+				printer::inst()->print_msg(L0, "Idle options is supported only on windows currently");
+#endif
+			}
+			else if (opName.compare("--no-config-file") == 0)
+			{
+				printer::inst()->print_msg(L0, "WARNING the miner won't use or generate config files. \
+					Use this option if you want to compare the default configulraion with your config files");
+				params::inst().no_config_files = true;
+			}
+			else
+			{
+				printer::inst()->print_msg(L0, "Parameter unknown '%s'", argv[i]);
 				win_exit();
 				return 1;
 			}
+		}
 
-			params::inst().httpd_port = ret;
-		}
-		else if(opName.compare("--noUAC") == 0)
-		{
-			params::inst().allowUAC = false;
-		}
-		else if(opName.compare("--benchmark") == 0)
-		{
-			++i;
-			if( i >= argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '--benchmark' given");
-				win_exit();
-				return 1;
-			}
-			char* block_version = nullptr;
-			long int bversion = strtol(argv[i], &block_version, 10);
+		// check if we need a guided start
+		if (!configEditor::file_exist(params::inst().configFile) || params::inst().no_config_files)
+			do_guided_config();
 
-			if(bversion < 0 || bversion >= 256)
-			{
-				printer::inst()->print_msg(L0, "Benchmark block version must be in the range [0,255]");
-				return 1;
-			}
-			params::inst().benchmark_block_version = bversion;
-		}
-		else if(opName.compare("--benchwait") == 0)
-		{
-			++i;
-			if( i >= argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '--benchwait' given");
-				win_exit();
-				return 1;
-			}
-			char* wait_sec = nullptr;
-			long int waitsec = strtol(argv[i], &wait_sec, 10);
+		if (!configEditor::file_exist(params::inst().configFilePools) || params::inst().no_config_files)
+			do_guided_pool_config();
 
-			if(waitsec < 0 || waitsec >= 300)
-			{
-				printer::inst()->print_msg(L0, "Benchmark wait seconds must be in the range [0,300]");
-				return 1;
-			}
-			params::inst().benchmark_wait_sec = waitsec;
-		}
-		else if(opName.compare("--benchwork") == 0)
+		if (!jconf::inst()->parse_config(params::inst().configFile.c_str(), params::inst().configFilePools.c_str()))
 		{
-			++i;
-			if( i >= argc )
-			{
-				printer::inst()->print_msg(L0, "No argument for parameter '--benchwork' given");
-				win_exit();
-				return 1;
-			}
-			char* work_sec = nullptr;
-			long int worksec = strtol(argv[i], &work_sec, 10);
-
-			if(worksec < 10 || worksec >= 300)
-			{
-				printer::inst()->print_msg(L0, "Benchmark work seconds must be in the range [10,300]");
-				return 1;
-			}
-			params::inst().benchmark_work_sec = worksec;
-		}
-		else
-		{
-			printer::inst()->print_msg(L0, "Parameter unknown '%s'",argv[i]);
 			win_exit();
 			return 1;
 		}
-	}
-
-	// check if we need a guided start
-	if(!configEditor::file_exist(params::inst().configFile))
-		do_guided_config();
-
-	if(!configEditor::file_exist(params::inst().configFilePools))
-		do_guided_pool_config();
-
-	if(!jconf::inst()->parse_config(params::inst().configFile.c_str(), params::inst().configFilePools.c_str()))
-	{
-		win_exit();
-		return 1;
-	}
 
 #ifdef _WIN32
-	/* For Windows 7 and 8 request elevation at all times unless we are using slow memory */
-	if(jconf::inst()->GetSlowMemSetting() != jconf::slow_mem_cfg::always_use && !IsWindows10OrNewer())
-	{
-		printer::inst()->print_msg(L0, "Elevating due to Windows 7 or 8. You need Windows 10 to use fast memory without UAC elevation.");
-		RequestElevation();
-	}
+		/* For Windows 7 and 8 request elevation at all times unless we are using slow memory */
+		if (jconf::inst()->GetSlowMemSetting() != jconf::slow_mem_cfg::always_use && !IsWindows10OrNewer())
+		{
+			printer::inst()->print_msg(L0, "Elevating due to Windows 7 or 8. You need Windows 10 to use fast memory without UAC elevation.");
+			RequestElevation();
+		}
 #endif
 
-	if(strlen(jconf::inst()->GetOutputFile()) != 0)
-		printer::inst()->open_logfile(jconf::inst()->GetOutputFile());
+		if (strlen(jconf::inst()->GetOutputFile()) != 0)
+			printer::inst()->open_logfile(jconf::inst()->GetOutputFile());
 
-	if (!BackendConnector::self_test())
-	{
-		printer::inst()->print_msg(L0, "Self test not passed!");
-		win_exit();
-		return 1;
-	}
-
-	if(jconf::inst()->GetHttpdPort() != uint16_t(params::httpd_port_disabled))
-	{
-#ifdef CONF_NO_HTTPD
-		printer::inst()->print_msg(L0, "HTTPD port is enabled but this binary was compiled without HTTP support!");
-		win_exit();
-		return 1;
-#else
-		if (!httpd::inst()->start_daemon())
+		if (!BackendConnector::self_test())
 		{
+			printer::inst()->print_msg(L0, "Self test not passed!");
 			win_exit();
 			return 1;
 		}
+
+		if (jconf::inst()->GetHttpdPort() != uint16_t(params::httpd_port_disabled))
+		{
+#ifdef CONF_NO_HTTPD
+			printer::inst()->print_msg(L0, "HTTPD port is enabled but this binary was compiled without HTTP support!");
+			win_exit();
+			return 1;
+#else
+			if (!httpd::inst()->start_daemon())
+			{
+				win_exit();
+				return 1;
+		}
 #endif
 	}
+
+	};
+	
+	parse_and_configure(argc, argv);
 
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_str(get_version_str_short().c_str());
@@ -798,8 +900,11 @@ int main(int argc, char *argv[])
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_str("You can use following keys to display reports:\n");
 	printer::inst()->print_str("'h' - hashrate\n");
-	printer::inst()->print_str("'r' - results\n");
+	printer::inst()->print_str("'s' - summary of results");
+	printer::inst()->print_str("'p' - pause\n");
+	printer::inst()->print_str("'r' - resume\n");
 	printer::inst()->print_str("'c' - connection\n");
+	printer::inst()->print_str("'q' - exit\n");
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_str("Upcoming xmr-stak-gui is sponsored by:\n");
 	printer::inst()->print_str("   #####   ______               ____\n");
@@ -828,18 +933,31 @@ int main(int argc, char *argv[])
 	while(true)
 	{
 		key = get_key();
-
+		
 		switch(key)
 		{
 		case 'h':
 			executor::inst()->push_event(ex_event(EV_USR_HASHRATE));
 			break;
-		case 'r':
+		case 's':
 			executor::inst()->push_event(ex_event(EV_USR_RESULTS));
+			break;
+		case 'p':
+			executor::inst()->push_event(ex_event(EV_SUSPEND_SIGNAL));
+			printer::inst()->print_msg(L0,"paused the miner , press 'r' to resume");
+			break;
+		case 'r':
+			executor::inst()->push_event(ex_event(EV_RESUME_SIGNAL));
+			printer::inst()->print_msg(L0,"resumed the miner");
 			break;
 		case 'c':
 			executor::inst()->push_event(ex_event(EV_USR_CONNSTAT));
 			break;
+		case 'q':
+			executor::inst()->stop();
+			printer::inst()->print_msg(L0, "stopped the miner ! press any key to exit");
+			getchar();
+			return 0;
 		default:
 			break;
 		}
