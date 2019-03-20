@@ -320,8 +320,7 @@ void minethd::work_main()
 
 		globalStates::inst().consume_work(oWork, iJobNo);
 	}
-
-	cryptonight_extra_cpu_finalize(&ctx);
+	
 	cryptonight_free_ctx(cpu_ctx);
 	
 }
