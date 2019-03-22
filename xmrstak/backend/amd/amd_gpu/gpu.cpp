@@ -938,14 +938,17 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
 
     if ((miner_algo == cryptonight_r) || (miner_algo == cryptonight_r_wow)) {
 
-		uint32_t PRECOMPILATION_DEPTH = 4;
+		uint32_t PRECOMPILATION_DEPTH = 1;
+		constexpr uint64_t height_chunk_size = 25;
+		uint64_t height_offset = (height / height_chunk_size) * height_chunk_size;
 
         // Get new kernel
-        cl_program program = xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height, PRECOMPILATION_DEPTH);
+        cl_program program = xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height_offset, height_chunk_size, PRECOMPILATION_DEPTH);
 
-        if (program != ctx->ProgramCryptonightR) {
+        if (program != ctx->ProgramCryptonightR || ctx->last_block_height != height) {
             cl_int ret;
-            cl_kernel kernel = clCreateKernel(program, "cn1_cryptonight_r", &ret);
+			std::string kernel_name = "cn1_cryptonight_r_" + std::to_string(height);
+            cl_kernel kernel = clCreateKernel(program, kernel_name.c_str(), &ret);
 
             if (ret != CL_SUCCESS) {
                 printer::inst()->print_msg(LDEBUG, "CryptonightR: clCreateKernel returned error %s", err_to_str(ret));
@@ -958,10 +961,12 @@ size_t XMRSetJob(GpuContext* ctx, uint8_t* input, size_t input_len, uint64_t tar
                 Kernels[1] = kernel;
             }
             ctx->ProgramCryptonightR = program;
+			ctx->last_block_height = height;
+			printer::inst()->print_msg(LDEBUG, "Set height %llu", height);
 
             // Precompile next program in background
             for (int i = 1; i <= PRECOMPILATION_DEPTH; ++i)
-                xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height + i, PRECOMPILATION_DEPTH, true);
+                xmrstak::amd::CryptonightR_get_program(ctx, miner_algo, height_offset + i * height_chunk_size, height_chunk_size, PRECOMPILATION_DEPTH, true);
 
             printer::inst()->print_msg(LDEBUG, "Thread #%zu updated CryptonightR", ctx->deviceIdx);
         }
