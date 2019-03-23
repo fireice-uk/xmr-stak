@@ -1,8 +1,6 @@
 # Latest version of ubuntu
 FROM nvidia/cuda:9.0-base
 
-LABEL xmr-stak:latest
-
 # Default git repository
 ENV GIT_REPOSITORY https://github.com/fireice-uk/xmr-stak.git
 ENV XMRSTAK_CMAKE_FLAGS -DXMR-STAK_COMPILE=generic -DCUDA_ENABLE=OFF -DOpenSSL_ENABLE=OFF -DOpenCL_ENABLE=OFF
