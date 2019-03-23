@@ -3,7 +3,7 @@ FROM nvidia/cuda:9.0-base
 
 # Default git repository
 ENV GIT_REPOSITORY https://github.com/fireice-uk/xmr-stak.git
-ENV XMRSTAK_CMAKE_FLAGS -DXMR-STAK_COMPILE=generic -DCUDA_ENABLE=ON -DOpenCL_ENABLE=OFF
+ENV XMRSTAK_CMAKE_FLAGS -DXMR-STAK_COMPILE=generic -DCUDA_ENABLE=OFF -DOpenSSL_ENABLE=OFF -DOpenCL_ENABLE=OFF
 
 # Innstall packages
 RUN apt-get update \
@@ -22,5 +22,3 @@ RUN apt-get update \
 VOLUME /mnt
 
 WORKDIR /mnt
-
-ENTRYPOINT ["/usr/local/bin/xmr-stak"]
