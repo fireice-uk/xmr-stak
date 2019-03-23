@@ -7,7 +7,7 @@ orbs:
 workflows:
   build_test_deploy:
     jobs:
-      - build_test
+      - build
       - aws-ecr/build_and_push_image:
           region: us-east-1
           account-url: "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
@@ -16,10 +16,25 @@ workflows:
           repo: ${CIRCLE_PROJECT_REPONAME}
           tag: ${CIRCLE_BUILD_NUM}
           requires:
-            - build_test
+            - build
+
+  build_benchmark:
+    jobs:
+      - build
+      - benchmark
+
 jobs:
 
-  build_test:
+  build:
+    machine: true
+    working_directory: /home/circleci/project
+    steps:
+      - checkout
+      - run:
+          name: Build the docker image
+          command: docker build -t xmr-stak:$CIRCLE_SHA1 /home/circleci/project
+
+  benchmark:
     machine: true
     working_directory: /home/circleci/project
     steps:
