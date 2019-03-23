@@ -8,12 +8,7 @@ workflows:
     jobs:
       - build
       - aws-ecr/build_and_push_image:
-          region: us-east-1
-          account-url: "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
-          aws-access-key-id: ${AWS_ACCESS_KEY_ID}
-          aws-secret-access-key: ${AWS_SECRET_ACCESS_KEY}
           repo: ${CIRCLE_PROJECT_REPONAME}
-          tag: ${CIRCLE_BUILD_NUM}
           requires:
             - build
 
