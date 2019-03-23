@@ -12,4 +12,4 @@ jobs:
 
       - run:
           name: Run a benchmark with Monero V8
-          command: docker run --rm -t xmr-stak:$CIRCLE_BRANCH /usr/local/bin/xmr-stak --benchmark 8 --currency monero --httpd 0 --url pool.usxmrpool.com:3333 --user x --pass x --rigid x
+          command: docker run --rm -t xmr-stak:$CIRCLE_BRANCH /usr/local/bin/xmr-benchmark.sh
