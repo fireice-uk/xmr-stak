@@ -1,17 +1,15 @@
 version: 2
 jobs:
   build:
-    docker:
-      - image: debian:stretch
+    machine: true
 
     steps:
       - checkout
 
       - run:
-          name: Greeting
-          command: echo Hello, world.
+          name: Build the docker image
+          command: docker build -t xmr-stak:$CIRCLE_BRANCH .
 
       - run:
-          name: Print the Current Time
-          command: date
-          
+          name: Run a benchmark with Monero V8
+          command: docker run --rm -t xmr-stak:$CIRCLE_BRANCH /usr/local/bin/xmr-stak --benchmark 8 --currency monero --httpd 0 --url pool.usxmrpool.com:3333 --user x --pass x --rigid x
