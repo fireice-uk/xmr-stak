@@ -24,7 +24,7 @@ jobs:
       - checkout
       - run:
           name: Build the docker image
-          command: docker build -t xmr-stak:$CIRCLE_BRANCH /home/circleci/project
+          command: docker build -t xmr-stak:$CIRCLE_SHA1 /home/circleci/project
       - run:
           name: Run a benchmark with Monero V8
-          command: docker run --rm -t xmr-stak:$CIRCLE_BRANCH /usr/local/bin/xmr-benchmark.sh
+          command: docker run --rm -t xmr-stak:$CIRCLE_SHA1 /usr/local/bin/xmr-benchmark.sh
