@@ -56,6 +56,7 @@ struct GpuContext
 	std::map<xmrstak_algo_id, cl_program> Program;
 	std::map<xmrstak_algo_id, std::array<cl_kernel,8>> Kernels;
 	cl_program ProgramCryptonightR = nullptr;
+	uint64_t last_block_height = 0u;
 	size_t freeMem;
 	size_t maxMemPerAlloc;
 	int computeUnits;

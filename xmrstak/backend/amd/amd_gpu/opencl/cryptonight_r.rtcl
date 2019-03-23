@@ -1,4 +1,5 @@
 R"===(
+
 /*
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,29 +16,15 @@ R"===(
  *
  */
 
-#define cryptonight_r_wow 15
-#define cryptonight_r 16
-
-#define MEM_CHUNK (1 << MEM_CHUNK_EXPONENT)
-
-#if(STRIDED_INDEX==0)
-#   define IDX(x)	(x)
-#elif(STRIDED_INDEX==1)
-#	define IDX(x)   (mul24(((uint)(x)), Threads))
-#elif(STRIDED_INDEX==2)
-#   define IDX(x)	(((x) % MEM_CHUNK) + ((x) / MEM_CHUNK) * WORKSIZE * MEM_CHUNK)
-#elif(STRIDED_INDEX==3)
-#	define IDX(x)   ((x) * WORKSIZE)
-#endif
-
+#ifndef SCRATCHPAD_CHUNK
 // __NV_CL_C_VERSION checks if NVIDIA opencl is used
-#if(ALGO == cryptonight_monero_v8 && defined(__NV_CL_C_VERSION))
-#	define SCRATCHPAD_CHUNK(N) (*(__local uint4*)((__local uchar*)(scratchpad_line) + (idx1 ^ (N << 4))))
-#	define SCRATCHPAD_CHUNK_GLOBAL (*((__global uint16*)(Scratchpad + (IDX((idx0 & 0x1FFFC0U) >> 4)))))
-#else
-#	define SCRATCHPAD_CHUNK(N) (Scratchpad[IDX(((idx) >> 4) ^ N)])
+#	if((ALGO == cryptonight_r_wow || ALGO == cryptonight_r) && defined(__NV_CL_C_VERSION))
+#		define SCRATCHPAD_CHUNK(N) (*(__local uint4*)((__local uchar*)(scratchpad_line) + (idx1 ^ (N << 4))))
+#		define SCRATCHPAD_CHUNK_GLOBAL (*((__global uint16*)(Scratchpad + (IDX((idx0 & 0x1FFFC0U) >> 4)))))
+#	else
+#		define SCRATCHPAD_CHUNK(N) (Scratchpad[IDX(((idx) >> 4) ^ N)])
+#	endif
 #endif
-
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
 __kernel void cn1_cryptonight_r(__global uint4 *Scratchpad, __global ulong *states, uint Threads)
 {
@@ -162,7 +149,9 @@ __kernel void cn1_cryptonight_r(__global uint4 *Scratchpad, __global ulong *stat
 #endif
 #define ROT_BITS 32
 
-	XMRSTAK_INCLUDE_RANDOM_MATH
+XMRSTAK_INCLUDE_RANDOM_MATH
+
+#undef ROT_BITS
 
 #if (ALGO == cryptonight_r)
 
