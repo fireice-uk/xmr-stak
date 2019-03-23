@@ -17,7 +17,7 @@ RUN cd /app \
     && make \
     && cd - \
     && mv /app/bin/* /usr/local/bin/ \
-    && cp /appscripts/xmr-benchmark.sh /usr/local/bin/xmr-benchmark.sh \
+    && cp /app/scripts/xmr-benchmark.sh /usr/local/bin/xmr-benchmark.sh \
     && chmod a+x /usr/local/bin/xmr-benchmark.sh
 
 RUN apt-get purge -y -qq build-essential cmake cuda-core-9-0 git cuda-cudart-dev-9-0 libhwloc-dev libmicrohttpd-dev libssl-dev \
