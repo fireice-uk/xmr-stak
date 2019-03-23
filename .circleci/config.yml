@@ -1,38 +1,33 @@
 version: 2.1
 
 orbs:
-  aws-ecr: circleci/aws-ecr@0.0.2
+  aws-ecr: circleci/aws-ecr@0.0.4
   aws-ecs: circleci/aws-ecs@0.0.3
 
+workflows:
+  build_test_deploy:
+    jobs:
+      - build_test
+      - docker_hub_build_push_image:
+          requires:
+          - build_test
+      - aws-ecr/build_and_push_image:
+          region: us-east-1
+          account-url: "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+          repo: ${CIRCLE_PROJECT_REPONAME}
+          tag: ${CIRCLE_BUILD_NUM}
+          requires:
+            - build_test
 jobs:
 
-  build:
+  build_test:
     machine: true
     working_directory: /home/circleci/project
-
     steps:
       - checkout
-
       - run:
           name: Build the docker image
           command: docker build -t xmr-stak:$CIRCLE_BRANCH /home/circleci/project
-
-  benchmark:
-    machine: true
-    working_directory: /home/circleci/project
-    steps:
-      - checkout
       - run:
           name: Run a benchmark with Monero V8
           command: docker run --rm -t xmr-stak:$CIRCLE_BRANCH /usr/local/bin/xmr-benchmark.sh
-
-workflows:
-  build-and-deploy:
-    jobs:
-      - build:
-      - benchmark:
-      - aws-ecr/build_and_push_image:
-          account-url: "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
-          repo: "${AWS_RESOURCE_NAME_PREFIX}"
-          region: ${AWS_DEFAULT_REGION}
-          tag: "${CIRCLE_SHA1}"
