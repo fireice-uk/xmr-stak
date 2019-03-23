@@ -10,14 +10,14 @@ RUN apt-get update \
     && set -x \
     && apt-get install -qq --no-install-recommends -y build-essential ca-certificates cmake cuda-core-9-0 git cuda-cudart-dev-9-0 libhwloc-dev libmicrohttpd-dev libssl-dev
 
-COPY ./xmr-stak /xmr-stak
-COPY ./scripts/xmr-benchmark.sh /usr/local/bin/xmr-benchmark.sh
+COPY . /app
 
-RUN cd /xmr-stak \
+RUN cd /app \
     && cmake ${XMRSTAK_CMAKE_FLAGS} . \
     && make \
     && cd - \
-    && mv /xmr-stak/bin/* /usr/local/bin/ \
+    && mv /app/bin/* /usr/local/bin/ \
+    && cp /appscripts/xmr-benchmark.sh /usr/local/bin/xmr-benchmark.sh \
     && chmod a+x /usr/local/bin/xmr-benchmark.sh
 
 RUN apt-get purge -y -qq build-essential cmake cuda-core-9-0 git cuda-cudart-dev-9-0 libhwloc-dev libmicrohttpd-dev libssl-dev \

@@ -2,13 +2,14 @@ version: 2
 jobs:
   build:
     machine: true
+    working_directory: /home/circleci/project
 
     steps:
       - checkout
 
       - run:
           name: Build the docker image
-          command: docker build -t xmr-stak:$CIRCLE_BRANCH .
+          command: docker build -t xmr-stak:$CIRCLE_BRANCH /home/circleci/project
 
       - run:
           name: Run a benchmark with Monero V8
