@@ -118,13 +118,15 @@ void help()
 	cout<<"Brought to by fireice_uk and psychocrypt under GPLv3."<<endl;
 }
 
-bool read_yes_no(const char* str)
+bool read_yes_no(const char* str, std::string default_value = "")
 {
 	std::string tmp;
 	do
 	{
 		std::cout << str << std::endl;
-		std::cin >> tmp;
+		getline(std::cin, tmp);
+		if(tmp.empty())
+			tmp = default_value;
 		std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
 	}
 	while(tmp != "y" && tmp != "n" && tmp != "yes" && tmp != "no");
@@ -161,9 +163,9 @@ std::string get_multipool_entry(bool& final)
 #ifdef CONF_NO_TLS
 	bool tls = false;
 #else
-	bool tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)");
+	bool tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)", "N");
 #endif
-	bool nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/n)");
+	bool nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/N)", "N");
 
 	int64_t pool_weight;
 	std::cout << "- Please enter a weight for this pool: "<<std::endl;
@@ -174,7 +176,7 @@ std::string get_multipool_entry(bool& final)
 		std::cout << "Invalid weight.  Try 1, 10, 100, etc:" << std::endl;
 	}
 
-	final = !read_yes_no("- Do you want to add another pool? (y/n)");
+	final = !read_yes_no("- Do you want to add another pool? (y/N)", "N");
 
 	return "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName + "\", \"rig_id\" : \"" + rigid +
 		"\", \"pool_password\" : \"" + passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " +
@@ -190,7 +192,7 @@ inline void prompt_once(bool& prompted)
 	}
 }
 
-void do_guided_pool_config()
+void do_guided_pool_config(const bool use_simple_start)
 {
 	using namespace xmrstak;
 
@@ -255,7 +257,7 @@ void do_guided_pool_config()
 	}
 
 	auto& rigid = params::inst().poolRigid;
-	if(rigid.empty() && !params::inst().userSetRigid)
+	if(!use_simple_start && rigid.empty() && !params::inst().userSetRigid)
 	{
 		prompt_once(prompted);
 
@@ -269,35 +271,30 @@ void do_guided_pool_config()
 		getline(std::cin, rigid);
 	}
 
-	bool tls;
+	bool tls = params::inst().poolUseTls;
 #ifdef CONF_NO_TLS
 	tls = false;
 #else
 	if(!userSetPool)
 	{
 		prompt_once(prompted);
-		tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)");
+		tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)", "N");
 	}
-	else
-		tls = params::inst().poolUseTls;
+
 #endif
 
-	bool nicehash;
-	if(!userSetPool)
+	bool nicehash = params::inst().nicehashMode;
+	if(!use_simple_start && !userSetPool)
 	{
 		prompt_once(prompted);
-		nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/n)");
+		nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/N)", "N");
 	}
-	else
-		nicehash = params::inst().nicehashMode;
 
-	bool multipool;
-	if(!userSetPool)
-		multipool = read_yes_no("- Do you want to use multiple pools? (y/n)");
-	else
-		multipool = false;
+	bool multipool = false;
+	if(!use_simple_start && !userSetPool)
+		multipool = read_yes_no("- Do you want to use multiple pools? (y/N)", "N");
 
-	int64_t pool_weight;
+	int64_t pool_weight = 1;
 	if(multipool)
 	{
 		std::cout << "Pool weight is a number telling the miner how important the pool is." << std::endl;
@@ -312,8 +309,6 @@ void do_guided_pool_config()
 			std::cout << "Invalid weight.  Try 1, 10, 100, etc:" << std::endl;
 		}
 	}
-	else
-		pool_weight = 1;
 
 	std::string pool_table;
 	pool_table += "\t{\"pool_address\" : \"" + pool +"\", \"wallet_address\" : \"" + userName +  "\", \"rig_id\" : \"" + rigid +
@@ -336,7 +331,7 @@ void do_guided_pool_config()
 	std::cout<<"Pool configuration stored in file '"<<params::inst().configFilePools<<"'"<<std::endl;
 }
 
-void do_guided_config()
+void do_guided_config(const bool use_simple_start)
 {
 	using namespace xmrstak;
 
@@ -352,24 +347,25 @@ void do_guided_config()
 	auto& http_port = params::inst().httpd_port;
 	if(http_port == params::httpd_port_unset)
 	{
-#if defined(CONF_NO_HTTPD)
 		http_port = params::httpd_port_disabled;
-#else
-		prompt_once(prompted);
-
-		std::cout<<"- Do you want to use the HTTP interface?" <<std::endl;
-		std::cout<<"Unlike the screen display, browser interface is not affected by the GPU lag." <<std::endl;
-		std::cout<<"If you don't want to use it, please enter 0, otherwise enter port number that the miner should listen on" <<std::endl;
-
-		int32_t port;
-		while(!(std::cin >> port) || port < 0 || port > 65535)
+#ifndef CONF_NO_HTTPD
+		if(!use_simple_start)
 		{
-			std::cin.clear();
-			std::cin.ignore(INT_MAX, '\n');
-			std::cout << "Invalid port number. Please enter a number between 0 and 65535." << std::endl;
-		}
+			prompt_once(prompted);
 
-		http_port = port;
+			std::cout<<"- Do you want to use the HTTP interface?" <<std::endl;
+			std::cout<<"Unlike the screen display, browser interface is not affected by the GPU lag." <<std::endl;
+			std::cout<<"If you don't want to use it, please enter 0, otherwise enter port number that the miner should listen on" <<std::endl;
+
+			int32_t port;
+			while(!(std::cin >> port) || port < 0 || port > 65535)
+			{
+				std::cin.clear();
+				std::cin.ignore(INT_MAX, '\n');
+				std::cout << "Invalid port number. Please enter a number between 0 and 65535." << std::endl;
+			}
+			http_port = port;
+		}
 #endif
 	}
 
@@ -734,13 +730,20 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	// check if we need a guided start
-	if(!configEditor::file_exist(params::inst().configFile))
-		do_guided_config();
+	bool hasConfigFile = configEditor::file_exist(params::inst().configFile);
+	bool hasPoolConfig = configEditor::file_exist(params::inst().configFilePools);
 
-	if(!configEditor::file_exist(params::inst().configFilePools))
-		do_guided_pool_config();
+	if(!hasConfigFile || !hasPoolConfig)
+	{
+		bool use_simple_start = read_yes_no("\nUse simple setup method? (Y/n)", "Y");
 
+		// check if we need a guided start
+		if(!hasConfigFile)
+			do_guided_config(use_simple_start);
+
+		if(!hasPoolConfig)
+			do_guided_pool_config(use_simple_start);
+	}
 	if(!jconf::inst()->parse_config(params::inst().configFile.c_str(), params::inst().configFilePools.c_str()))
 	{
 		win_exit();
