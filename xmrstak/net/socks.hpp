@@ -2,18 +2,19 @@
 
 #ifdef _WIN32
 #ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0601  /* Windows 7 */
+#define _WIN32_WINNT 0x0601 /* Windows 7 */
 #endif
+
 #include <winsock2.h>
 #include <ws2tcpip.h>
+// this comment disable clang include reordering for windows.h
 #include <windows.h>
-
 
 inline void sock_init()
 {
 	static bool bWSAInit = false;
 
-	if (!bWSAInit)
+	if(!bWSAInit)
 	{
 		WSADATA wsaData;
 		WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -56,20 +57,20 @@ inline const char* sock_gai_strerror(int err, char* buf, size_t len)
 #else
 
 /* Assume that any non-Windows platform uses POSIX-style sockets instead. */
-#include <sys/socket.h>
 #include <arpa/inet.h>
-#include <netdb.h>  /* Needed for getaddrinfo() and freeaddrinfo() */
-#include <unistd.h> /* Needed for close() */
 #include <errno.h>
-#include <string.h>
+#include <netdb.h>		/* Needed for getaddrinfo() and freeaddrinfo() */
 #include <netinet/in.h> /* Needed for IPPROTO_TCP */
 #include <netinet/tcp.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h> /* Needed for close() */
 
 inline void sock_init() {}
 typedef int SOCKET;
 
-#define INVALID_SOCKET  (-1)
-#define SOCKET_ERROR    (-1)
+#define INVALID_SOCKET (-1)
+#define SOCKET_ERROR (-1)
 
 inline void sock_close(SOCKET s)
 {

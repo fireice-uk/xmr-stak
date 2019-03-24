@@ -21,14 +21,13 @@
   *
   */
 
-#include "miner_work.hpp"
 #include "globalStates.hpp"
+#include "miner_work.hpp"
 
 #include <assert.h>
-#include <cmath>
 #include <chrono>
+#include <cmath>
 #include <cstring>
-
 
 namespace xmrstak
 {

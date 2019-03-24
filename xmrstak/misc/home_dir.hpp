@@ -4,39 +4,40 @@
 
 #ifdef _WIN32
 #include <WinSock2.h>
+// this comment avoid that clang format reorders the includes
 #include <Shlobj.h>
 
 namespace
 {
-	inline std::string get_home()
+inline std::string get_home()
+{
+	char path[MAX_PATH + 1];
+	// get folder "appdata\local"
+	if(SHGetSpecialFolderPathA(HWND_DESKTOP, path, CSIDL_LOCAL_APPDATA, FALSE))
 	{
-		char path[MAX_PATH + 1];
-		// get folder "appdata\local"
-		if (SHGetSpecialFolderPathA(HWND_DESKTOP, path, CSIDL_LOCAL_APPDATA, FALSE))
-		{
-			return path;
-		}
-		else
-			return ".";
+		return path;
 	}
-} // namespace anonymous
+	else
+		return ".";
+}
+} // namespace
 
 #else
-#include <unistd.h>
-#include <pwd.h>
 #include <cstdlib>
+#include <pwd.h>
+#include <unistd.h>
 
 namespace
 {
-	inline std::string get_home()
-	{
-		const char *home = ".";
+inline std::string get_home()
+{
+	const char* home = ".";
 
-		if ((home = getenv("HOME")) == nullptr)
-			home = getpwuid(getuid())->pw_dir;
+	if((home = getenv("HOME")) == nullptr)
+		home = getpwuid(getuid())->pw_dir;
 
-		return home;
-	}
-} // namespace anonymous
+	return home;
+}
+} // namespace
 
 #endif // _WIN32

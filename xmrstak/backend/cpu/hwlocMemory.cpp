@@ -13,7 +13,7 @@
  *
  * @param puId core id
  */
-void bindMemoryToNUMANode( size_t puId )
+void bindMemoryToNUMANode(size_t puId)
 {
 	int depth;
 	hwloc_topology_t topology;
@@ -30,18 +30,18 @@ void bindMemoryToNUMANode( size_t puId )
 
 	depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PU);
 
-	for( uint32_t i = 0;
+	for(uint32_t i = 0;
 		i < hwloc_get_nbobjs_by_depth(topology, depth);
-		i++ )
+		i++)
 	{
 		hwloc_obj_t pu = hwloc_get_obj_by_depth(topology, depth, i);
-		if(  pu->os_index == puId )
+		if(pu->os_index == puId)
 		{
-			if( 0 > hwloc_set_membind_nodeset(
-				topology,
-				pu->nodeset,
-				HWLOC_MEMBIND_BIND,
-				HWLOC_MEMBIND_THREAD))
+			if(0 > hwloc_set_membind_nodeset(
+					   topology,
+					   pu->nodeset,
+					   HWLOC_MEMBIND_BIND,
+					   HWLOC_MEMBIND_THREAD))
 			{
 				printer::inst()->print_msg(L0, "hwloc: can't bind memory");
 			}
@@ -57,7 +57,7 @@ void bindMemoryToNUMANode( size_t puId )
 }
 #else
 
-void bindMemoryToNUMANode( size_t )
+void bindMemoryToNUMANode(size_t)
 {
 }
 

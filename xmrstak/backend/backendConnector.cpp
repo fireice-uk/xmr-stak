@@ -21,31 +21,30 @@
   *
   */
 
-#include "iBackend.hpp"
 #include "backendConnector.hpp"
-#include "miner_work.hpp"
 #include "globalStates.hpp"
+#include "iBackend.hpp"
+#include "miner_work.hpp"
 #include "plugin.hpp"
-#include "xmrstak/misc/environment.hpp"
 #include "xmrstak/misc/console.hpp"
+#include "xmrstak/misc/environment.hpp"
 #include "xmrstak/params.hpp"
 
 #include "cpu/minethd.hpp"
 #ifndef CONF_NO_CUDA
-#	include "nvidia/minethd.hpp"
+#include "nvidia/minethd.hpp"
 #endif
 #ifndef CONF_NO_OPENCL
-#	include "amd/minethd.hpp"
+#include "amd/minethd.hpp"
 #endif
 
-#include <cstdlib>
 #include <assert.h>
-#include <cmath>
+#include <bitset>
 #include <chrono>
+#include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <thread>
-#include <bitset>
-
 
 namespace xmrstak
 {
@@ -86,7 +85,7 @@ std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 		std::vector<std::string> libNames = {"xmrstak_cuda_backend_cuda10_0", "xmrstak_cuda_backend_cuda9_2", "xmrstak_cuda_backend"};
 		size_t numWorkers = 0u;
 
-		for( const auto & name : libNames)
+		for(const auto& name : libNames)
 		{
 			printer::inst()->print_msg(L0, "NVIDIA: try to load library '%s'", name.c_str());
 			nvidiaplugin.load("NVIDIA", name);

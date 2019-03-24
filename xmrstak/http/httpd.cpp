@@ -23,16 +23,15 @@
 
 #ifndef CONF_NO_HTTPD
 
-
 #include "httpd.hpp"
 #include "webdesign.hpp"
-#include "xmrstak/net/msgstruct.hpp"
+#include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/misc/executor.hpp"
-#include "xmrstak/jconf.hpp"
+#include "xmrstak/net/msgstruct.hpp"
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <string>
 
@@ -45,21 +44,20 @@ httpd* httpd::oInst = nullptr;
 
 httpd::httpd()
 {
-
 }
 
-int httpd::req_handler(void * cls,
-			MHD_Connection* connection,
-			const char* url,
-			const char* method,
-			const char* version,
-			const char* upload_data,
-			size_t* upload_data_size,
-			void ** ptr)
+int httpd::req_handler(void* cls,
+	MHD_Connection* connection,
+	const char* url,
+	const char* method,
+	const char* version,
+	const char* upload_data,
+	size_t* upload_data_size,
+	void** ptr)
 {
-	struct MHD_Response * rsp;
+	struct MHD_Response* rsp;
 
-	if (strcmp(method, "GET") != 0)
+	if(strcmp(method, "GET") != 0)
 		return MHD_NO;
 
 	if(strlen(jconf::inst()->GetHttpUsername()) != 0)
@@ -68,7 +66,7 @@ int httpd::req_handler(void * cls,
 		int ret;
 
 		username = MHD_digest_auth_get_username(connection);
-		if (username == NULL)
+		if(username == NULL)
 		{
 			rsp = MHD_create_response_from_buffer(sHtmlAccessDeniedSize, (void*)sHtmlAccessDenied, MHD_RESPMEM_PERSISTENT);
 			ret = MHD_queue_auth_fail_response(connection, sHttpAuthRealm, sHttpAuthOpaque, rsp, MHD_NO);
@@ -78,7 +76,7 @@ int httpd::req_handler(void * cls,
 		free(username);
 
 		ret = MHD_digest_auth_check(connection, sHttpAuthRealm, jconf::inst()->GetHttpUsername(), jconf::inst()->GetHttpPassword(), 300);
-		if (ret == MHD_INVALID_NONCE || ret == MHD_NO)
+		if(ret == MHD_INVALID_NONCE || ret == MHD_NO)
 		{
 			rsp = MHD_create_response_from_buffer(sHtmlAccessDeniedSize, (void*)sHtmlAccessDenied, MHD_RESPMEM_PERSISTENT);
 			ret = MHD_queue_auth_fail_response(connection, sHttpAuthRealm, sHttpAuthOpaque, rsp, (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO);
@@ -174,4 +172,3 @@ bool httpd::start_daemon()
 }
 
 #endif
-

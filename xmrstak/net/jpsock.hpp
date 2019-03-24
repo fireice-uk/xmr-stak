@@ -1,15 +1,14 @@
 #pragma once
 
-#include "xmrstak/backend/iBackend.hpp"
 #include "msgstruct.hpp"
+#include "xmrstak/backend/iBackend.hpp"
 #include "xmrstak/jconf.hpp"
 
-#include <mutex>
 #include <atomic>
 #include <condition_variable>
-#include <thread>
+#include <mutex>
 #include <string>
-
+#include <thread>
 
 /* Our pool can have two kinds of errors:
 	- Parsing or connection error
@@ -27,7 +26,7 @@ class base_socket;
 
 class jpsock
 {
-public:
+  public:
 	jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sRigId, const char* sPassword, double pool_weight, bool dev_pool, bool tls, const char* tls_fp, bool nicehash);
 	~jpsock();
 
@@ -55,7 +54,12 @@ public:
 	inline bool is_logged_in() { return bLoggedIn; }
 	inline bool is_dev_pool() { return pool; }
 	inline size_t get_pool_id() { return pool_id; }
-	inline bool get_disconnects(size_t& att, size_t& time) { att = connect_attempts; time = disconnect_time != 0 ? get_timestamp() - disconnect_time + 1 : 0; return pool && usr_login[0]; }
+	inline bool get_disconnects(size_t& att, size_t& time)
+	{
+		att = connect_attempts;
+		time = disconnect_time != 0 ? get_timestamp() - disconnect_time + 1 : 0;
+		return pool && usr_login[0];
+	}
 	inline const char* get_pool_addr() { return net_addr.c_str(); }
 	inline const char* get_tls_fp() { return tls_fp.c_str(); }
 	inline const char* get_rigid() { return usr_rigid.c_str(); }
@@ -77,7 +81,7 @@ public:
 	bool set_socket_error_strerr(const char* a);
 	bool set_socket_error_strerr(const char* a, int res);
 
-private:
+  private:
 	std::string net_addr;
 	std::string usr_login;
 	std::string usr_rigid;
@@ -142,4 +146,3 @@ private:
 	uint64_t iMessageCnt = 0;
 	uint64_t iLastMessageId = 0;
 };
-

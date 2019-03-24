@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 
-
 __device__ __forceinline__ int64_t fast_div_heavy(int64_t _a, int _b)
 {
 

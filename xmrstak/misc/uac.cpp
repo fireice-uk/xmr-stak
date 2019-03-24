@@ -9,24 +9,24 @@ BOOL IsElevated()
 {
 	BOOL fRet = FALSE;
 	HANDLE hToken = NULL;
-	if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken))
+	if(OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken))
 	{
 		TOKEN_ELEVATION Elevation;
 		DWORD cbSize = sizeof(TOKEN_ELEVATION);
-		if (GetTokenInformation(hToken, TokenElevation, &Elevation, sizeof(Elevation), &cbSize))
+		if(GetTokenInformation(hToken, TokenElevation, &Elevation, sizeof(Elevation), &cbSize))
 			fRet = Elevation.TokenIsElevated;
 	}
-	if (hToken)
+	if(hToken)
 		CloseHandle(hToken);
 	return fRet;
 }
 
 BOOL SelfElevate(const std::string& my_path, const std::string& params)
 {
-	if (IsElevated())
+	if(IsElevated())
 		return FALSE;
 
-	SHELLEXECUTEINFO shExecInfo = { 0 };
+	SHELLEXECUTEINFO shExecInfo = {0};
 	shExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
 	shExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
 	shExecInfo.hwnd = NULL;
@@ -37,7 +37,7 @@ BOOL SelfElevate(const std::string& my_path, const std::string& params)
 	shExecInfo.nShow = SW_SHOW;
 	shExecInfo.hInstApp = NULL;
 
-	if (!ShellExecuteEx(&shExecInfo))
+	if(!ShellExecuteEx(&shExecInfo))
 		return FALSE;
 
 	// Loiter in the background to make scripting easier
@@ -65,13 +65,13 @@ VOID RequestElevation()
 
 BOOL IsWindows10OrNewer()
 {
-    OSVERSIONINFOEX osvi = { 0 };
-    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-    osvi.dwMajorVersion = 10;
-    osvi.dwMinorVersion = 0;
-    DWORDLONG dwlConditionMask = 0;
-    VER_SET_CONDITION(dwlConditionMask, VER_MAJORVERSION, VER_GREATER_EQUAL);
-    VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
-    return ::VerifyVersionInfo(&osvi, VER_MAJORVERSION | VER_MINORVERSION, dwlConditionMask);
+	OSVERSIONINFOEX osvi = {0};
+	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+	osvi.dwMajorVersion = 10;
+	osvi.dwMinorVersion = 0;
+	DWORDLONG dwlConditionMask = 0;
+	VER_SET_CONDITION(dwlConditionMask, VER_MAJORVERSION, VER_GREATER_EQUAL);
+	VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
+	return ::VerifyVersionInfo(&osvi, VER_MAJORVERSION | VER_MINORVERSION, dwlConditionMask);
 }
 #endif

@@ -23,23 +23,23 @@
 
 #include "minethd.hpp"
 #include "autoAdjust.hpp"
-#include "xmrstak/misc/console.hpp"
-#include "xmrstak/backend/cpu/crypto/cryptonight_aesni.h"
 #include "xmrstak/backend/cpu/crypto/cryptonight.h"
-#include "xmrstak/backend/cpu/minethd.hpp"
-#include "xmrstak/params.hpp"
-#include "xmrstak/misc/executor.hpp"
-#include "xmrstak/jconf.hpp"
-#include "xmrstak/misc/environment.hpp"
+#include "xmrstak/backend/cpu/crypto/cryptonight_aesni.h"
 #include "xmrstak/backend/cpu/hwlocMemory.hpp"
+#include "xmrstak/backend/cpu/minethd.hpp"
 #include "xmrstak/backend/cryptonight.hpp"
+#include "xmrstak/jconf.hpp"
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/misc/environment.hpp"
+#include "xmrstak/misc/executor.hpp"
 #include "xmrstak/misc/utility.hpp"
+#include "xmrstak/params.hpp"
 
 #include <assert.h>
-#include <cmath>
-#include <chrono>
-#include <thread>
 #include <bitset>
+#include <chrono>
+#include <cmath>
+#include <thread>
 #include <vector>
 
 #ifndef USE_PRECOMPILED_HEADERS
@@ -47,8 +47,8 @@
 #include <direct.h>
 #include <windows.h>
 #else
-#include <sys/types.h>
 #include <dlfcn.h>
+#include <sys/types.h>
 #endif
 #include <iostream>
 #endif
@@ -59,9 +59,9 @@ namespace nvidia
 {
 
 #ifdef WIN32
-	HINSTANCE lib_handle;
+HINSTANCE lib_handle;
 #else
-	void *lib_handle;
+void* lib_handle;
 #endif
 
 minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
@@ -101,23 +101,21 @@ void minethd::start_mining()
 			printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
 }
 
-
 bool minethd::self_test()
 {
 	return true;
 }
 
-
 extern "C"
 {
 #ifdef WIN32
-__declspec(dllexport)
+	__declspec(dllexport)
 #endif
-std::vector<iBackend*>* xmrstak_start_backend(uint32_t threadOffset, miner_work& pWork, environment& env)
-{
-	environment::inst(&env);
-	return nvidia::minethd::thread_starter(threadOffset, pWork);
-}
+		std::vector<iBackend*>* xmrstak_start_backend(uint32_t threadOffset, miner_work& pWork, environment& env)
+	{
+		environment::inst(&env);
+		return nvidia::minethd::thread_starter(threadOffset, pWork);
+	}
 } // extern "C"
 
 std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_work& pWork)
@@ -141,12 +139,12 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 	int deviceCount = 0;
 	if(cuda_get_devicecount(&deviceCount) != 1)
 	{
-		std::cout<<"WARNING: NVIDIA no device found"<<std::endl;
+		std::cout << "WARNING: NVIDIA no device found" << std::endl;
 		return pvThreads;
 	}
 	else
 	{
-		std::cout<<"NVIDIA: found "<< deviceCount <<" potential device's"<<std::endl;
+		std::cout << "NVIDIA: found " << deviceCount << " potential device's" << std::endl;
 	}
 
 	size_t i, n = jconf::inst()->GetGPUThreadCount();
@@ -155,7 +153,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 	cuInit(0);
 
 	jconf::thd_cfg cfg;
-	for (i = 0; i < n; i++)
+	for(i = 0; i < n; i++)
 	{
 		jconf::inst()->GetGPUThreadConfig(i, cfg);
 
@@ -172,10 +170,9 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 
 		minethd* thd = new minethd(pWork, i + threadOffset, cfg);
 		pvThreads->push_back(thd);
-
 	}
 
-	for (i = 0; i < n; i++)
+	for(i = 0; i < n; i++)
 	{
 		static_cast<minethd*>((*pvThreads)[i])->start_mining();
 	}
@@ -216,16 +213,16 @@ void minethd::work_main()
 	uint8_t version = 0;
 	size_t lastPoolId = 0;
 
-	while (bQuit == 0)
+	while(bQuit == 0)
 	{
-		if (oWork.bStall)
+		if(oWork.bStall)
 		{
 			/* We are stalled here because the executor didn't find a job for us yet,
 			 * either because of network latency, or a socket problem. Since we are
 			 * raison d'etre of this software it us sensible to just wait until we have something
 			 */
 
-			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			globalStates::inst().consume_work(oWork, iJobNo);
@@ -285,8 +282,8 @@ void minethd::work_main()
 			for(size_t i = 0; i < foundCount; i++)
 			{
 
-				uint8_t	bWorkBlob[128];
-				uint8_t	bResult[32];
+				uint8_t bWorkBlob[128];
+				uint8_t bResult[32];
 
 				memcpy(bWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
 				memset(bResult, 0, sizeof(job_result::bResult));
@@ -294,7 +291,7 @@ void minethd::work_main()
 				*(uint32_t*)(bWorkBlob + 39) = foundNonce[i];
 
 				cpu_ctx->hash_fn(bWorkBlob, oWork.iWorkSize, bResult, &cpu_ctx, miner_algo);
-				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
+				if((*((uint64_t*)(bResult + 24))) < oWork.iTarget)
 					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, foundNonce[i], bResult, iThreadNo, miner_algo), oWork.iPoolId));
 				else
 					executor::inst()->push_event(ex_event("NVIDIA Invalid Result", ctx.device_id, oWork.iPoolId));
@@ -314,5 +311,5 @@ void minethd::work_main()
 	}
 }
 
+} // namespace nvidia
 } // namespace xmrstak
-} //namespace nvidia
