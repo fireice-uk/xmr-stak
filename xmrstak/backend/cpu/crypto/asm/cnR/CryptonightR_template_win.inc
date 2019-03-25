@@ -60,8 +60,9 @@ CryptonightR_template_part1:
 	mov	edi, [rdx+104]
 	mov	ebp, [rdx+108]
 
-	ALIGN(64)
+ALIGN(64)
 CryptonightR_template_mainloop:
+CryptonightR_template_mainloop2:
 	movdqa	xmm5, XMMWORD PTR [r9+r11]
 	movd	xmm0, r15
 	movd	xmm4, rsp
@@ -70,28 +71,29 @@ CryptonightR_template_mainloop:
 
 	aesenc	xmm5, xmm4
 
-	mov	r12d, r9d
+	mov	r13d, r9d
 	mov	eax, r9d
 	xor	r9d, 48
-	xor	r12d, 16
+	xor	r13d, 16
 	xor	eax, 32
 	movdqu	xmm0, XMMWORD PTR [r9+r11]
 	movaps xmm3, xmm0
-	movdqu	xmm2, XMMWORD PTR [r12+r11]
+	movdqu	xmm2, XMMWORD PTR [r13+r11]
 	movdqu	xmm1, XMMWORD PTR [rax+r11]
 	pxor xmm0, xmm2
 	pxor xmm5, xmm1
 	pxor xmm5, xmm0
-	paddq	xmm3, xmm7
-	paddq	xmm2, xmm6
-	paddq	xmm1, xmm4
-	movdqu	XMMWORD PTR [r12+r11], xmm3
-	movdqu	XMMWORD PTR [rax+r11], xmm2
-	movdqu	XMMWORD PTR [r9+r11], xmm1
 
 	movd	r12, xmm5
 	movd	r10d, xmm5
 	and	r10d, 2097136
+
+	paddq	xmm3, xmm7
+	paddq	xmm2, xmm6
+	paddq	xmm1, xmm4
+	movdqu	XMMWORD PTR [r13+r11], xmm3
+	movdqu	XMMWORD PTR [rax+r11], xmm2
+	movdqu	XMMWORD PTR [r9+r11], xmm1
 
 	movdqa	xmm0, xmm5
 	pxor	xmm0, xmm6
@@ -102,14 +104,16 @@ CryptonightR_template_mainloop:
 	shl rdx, 32
 	or	r13, rdx
 
-	xor	r13, QWORD PTR [r10+r11]
-	mov	r14, QWORD PTR [r10+r11+8]
-
 	movd eax, xmm6
 	movd edx, xmm7
 	pextrd r9d, xmm7, 2
 
+	xor	r13, QWORD PTR [r10+r11]
+	mov	r14, QWORD PTR [r10+r11+8]
+
 CryptonightR_template_part2:
+	lea	rcx, [r10+r11]
+
 	mov eax, edi
 	mov edx, ebp
 	shl rdx, 32
@@ -124,6 +128,8 @@ CryptonightR_template_part2:
 
 	mov	rax, r13
 	mul	r12
+	add	r15, rax
+	add	rsp, rdx
 
 	mov	r9d, r10d
 	mov	r12d, r10d
@@ -145,18 +151,15 @@ CryptonightR_template_part2:
 	movdqu	XMMWORD PTR [r10+r11], xmm3
 
 	movdqa	xmm7, xmm6
-	add	r15, rax
-	add	rsp, rdx
-	xor	r10, 48
-	mov	QWORD PTR [r10+r11], rsp
+	mov	QWORD PTR [rcx], rsp
 	xor	rsp, r13
 	mov	r9d, esp
-	mov	QWORD PTR [r10+r11+8], r15
+	mov	QWORD PTR [rcx+8], r15
 	and	r9d, 2097136
 	xor	r15, r14
 	movdqa	xmm6, xmm5
 	dec	r8d
-	jnz	CryptonightR_template_mainloop
+	jnz	CryptonightR_template_mainloop2
 
 CryptonightR_template_part3:
 	movd	rsp, xmm9
@@ -256,8 +259,9 @@ CryptonightR_template_double_part1:
 	movd xmm14, QWORD PTR [rsp+128]
 	movd xmm15, QWORD PTR [rsp+136]
 
-	ALIGN(64)
+ALIGN(64)
 CryptonightR_template_double_mainloop:
+CryptonightR_template_double_mainloop2:
 	movdqu	xmm6, XMMWORD PTR [rbx+rsi]
 	movd	xmm0, r12
 	mov	ecx, ebx
@@ -502,7 +506,7 @@ CryptonightR_template_double_part3:
 	xor	r13, r9
 	and	r8d, 2097136
 	dec r11d
-	jnz	CryptonightR_template_double_mainloop
+	jnz	CryptonightR_template_double_mainloop2
 
 CryptonightR_template_double_part4:
 

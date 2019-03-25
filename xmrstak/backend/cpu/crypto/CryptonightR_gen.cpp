@@ -127,3 +127,61 @@ void v4_compile_code(size_t N, cryptonight_ctx* ctx, int code_size)
 		printer::inst()->print_msg(L0, "Error: CPU CryptonightR update ASM code ctx->fun_data is a nullptr");
 	}
 }
+
+void v4_soft_aes_compile_code(cryptonight_ctx* ctx, int code_size)
+{
+	printer::inst()->print_msg(LDEBUG, "CryptonightR update ASM code");
+	const int allocation_size = 65536;
+
+	if (ctx->fun_data == nullptr)
+		ctx->fun_data = static_cast<uint8_t*>(allocateExecutableMemory(allocation_size));
+	else
+		unprotectExecutableMemory(ctx->fun_data, allocation_size);
+
+	uint8_t* p0 = ctx->fun_data;
+	uint8_t* p = p0;
+	if (ctx->fun_data != nullptr)
+	{
+		add_code(p, CryptonightR_soft_aes_template_part1, CryptonightR_soft_aes_template_part2);
+		add_random_math(p, ctx->cn_r_ctx.code, code_size, instructions, instructions_mov, false, ctx->asm_version);
+		add_code(p, CryptonightR_soft_aes_template_part2, CryptonightR_soft_aes_template_part3);
+		*(int*)(p - 4) = static_cast<int>((((const uint8_t*)CryptonightR_soft_aes_template_mainloop) - ((const uint8_t*)CryptonightR_soft_aes_template_part1)) - (p - p0));
+		add_code(p, CryptonightR_soft_aes_template_part3, CryptonightR_soft_aes_template_end);
+		ctx->loop_fn = reinterpret_cast<cn_mainloop_fun>(ctx->fun_data);
+		protectExecutableMemory(ctx->fun_data, allocation_size);
+		flushInstructionCache(ctx->fun_data, p - p0);
+	}
+	else
+	{
+		printer::inst()->print_msg(L0, "Error: CPU CryptonightR update ASM code ctx->fun_data is a nullptr");
+	}
+}
+
+void wow_soft_aes_compile_code(cryptonight_ctx* ctx, int code_size)
+{
+	printer::inst()->print_msg(LDEBUG, "CryptonightR update ASM code");
+	const int allocation_size = 65536;
+
+	if (ctx->fun_data == nullptr)
+		ctx->fun_data = static_cast<uint8_t*>(allocateExecutableMemory(allocation_size));
+	else
+		unprotectExecutableMemory(ctx->fun_data, allocation_size);
+
+	uint8_t* p0 = ctx->fun_data;
+	uint8_t* p = p0;
+	if (ctx->fun_data != nullptr)
+	{
+		add_code(p, CryptonightWOW_soft_aes_template_part1, CryptonightWOW_soft_aes_template_part2);
+		add_random_math(p, ctx->cn_r_ctx.code, code_size, instructions, instructions_mov, false, ctx->asm_version);
+		add_code(p, CryptonightWOW_soft_aes_template_part2, CryptonightWOW_soft_aes_template_part3);
+		*(int*)(p - 4) = static_cast<int>((((const uint8_t*)CryptonightWOW_soft_aes_template_mainloop) - ((const uint8_t*)CryptonightWOW_soft_aes_template_part1)) - (p - p0));
+		add_code(p, CryptonightWOW_soft_aes_template_part3, CryptonightWOW_soft_aes_template_end);
+		ctx->loop_fn = reinterpret_cast<cn_mainloop_fun>(ctx->fun_data);
+		protectExecutableMemory(ctx->fun_data, allocation_size);
+		flushInstructionCache(ctx->fun_data, p - p0);
+	}
+	else
+	{
+		printer::inst()->print_msg(L0, "Error: CPU CryptonightR update ASM code ctx->fun_data is a nullptr");
+	}
+}
