@@ -12,6 +12,8 @@ PUBLIC CryptonightWOW_template_double_end
 
 ALIGN(64)
 CryptonightWOW_template_part1:
+	mov	rcx, [rcx]
+
 	mov	QWORD PTR [rsp+16], rbx
 	mov	QWORD PTR [rsp+24], rbp
 	mov	QWORD PTR [rsp+32], rsi
@@ -60,7 +62,7 @@ CryptonightWOW_template_part1:
 	mov	edi, [rdx+104]
 	mov	ebp, [rdx+108]
 
-	ALIGN(64)
+ALIGN(64)
 CryptonightWOW_template_mainloop:
 	movdqa	xmm5, XMMWORD PTR [r9+r11]
 	movd	xmm0, r15
@@ -165,6 +167,9 @@ CryptonightWOW_template_end:
 
 ALIGN(64)
 CryptonightWOW_template_double_part1:
+	mov	rdx, [rcx+8]
+	mov	rcx, [rcx]
+
 	mov	QWORD PTR [rsp+24], rbx
 	push	rbp
 	push	rsi
@@ -240,7 +245,7 @@ CryptonightWOW_template_double_part1:
 	movd xmm14, QWORD PTR [rsp+128]
 	movd xmm15, QWORD PTR [rsp+136]
 
-	ALIGN(64)
+ALIGN(64)
 CryptonightWOW_template_double_mainloop:
 	movdqu	xmm6, XMMWORD PTR [rbx+rsi]
 	movd	xmm0, r12

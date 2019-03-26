@@ -12,6 +12,8 @@ PUBLIC CryptonightR_template_double_end
 
 ALIGN(64)
 CryptonightR_template_part1:
+	mov	rcx, [rcx]
+
 	mov	QWORD PTR [rsp+16], rbx
 	mov	QWORD PTR [rsp+24], rbp
 	mov	QWORD PTR [rsp+32], rsi
@@ -62,7 +64,6 @@ CryptonightR_template_part1:
 
 ALIGN(64)
 CryptonightR_template_mainloop:
-CryptonightR_template_mainloop2:
 	movdqa	xmm5, XMMWORD PTR [r9+r11]
 	movd	xmm0, r15
 	movd	xmm4, rsp
@@ -159,7 +160,7 @@ CryptonightR_template_part2:
 	xor	r15, r14
 	movdqa	xmm6, xmm5
 	dec	r8d
-	jnz	CryptonightR_template_mainloop2
+	jnz	CryptonightR_template_mainloop
 
 CryptonightR_template_part3:
 	movd	rsp, xmm9
@@ -184,6 +185,9 @@ CryptonightR_template_end:
 
 ALIGN(64)
 CryptonightR_template_double_part1:
+	mov	rdx, [rcx+8]
+	mov	rcx, [rcx]
+
 	mov	QWORD PTR [rsp+24], rbx
 	push	rbp
 	push	rsi
@@ -261,7 +265,6 @@ CryptonightR_template_double_part1:
 
 ALIGN(64)
 CryptonightR_template_double_mainloop:
-CryptonightR_template_double_mainloop2:
 	movdqu	xmm6, XMMWORD PTR [rbx+rsi]
 	movd	xmm0, r12
 	mov	ecx, ebx
@@ -506,7 +509,7 @@ CryptonightR_template_double_part3:
 	xor	r13, r9
 	and	r8d, 2097136
 	dec r11d
-	jnz	CryptonightR_template_double_mainloop2
+	jnz	CryptonightR_template_double_mainloop
 
 CryptonightR_template_double_part4:
 

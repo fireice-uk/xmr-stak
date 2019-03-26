@@ -1,3 +1,5 @@
+	mov	rcx, [rcx]
+
 	mov	 QWORD PTR [rsp+24], rbx
 	push	 rbp
 	push	 rsi
@@ -50,7 +52,7 @@
 	punpcklqdq xmm5, xmm0
 	movdqu	 xmm6, XMMWORD PTR [r10+rbx]
 
-	ALIGN(64)
+ALIGN(64)
 main_loop_ivybridge:
 	lea	 rdx, QWORD PTR [r10+rbx]
 	mov	 ecx, r10d
@@ -111,7 +113,6 @@ main_loop_ivybridge:
 	test	 edx, 524287
 	je	 sqrt_fixup_ivybridge
 	psrlq	 xmm3, 19
-	psubq	 xmm3, XMMWORD PTR [rsp+16]
 sqrt_fixup_ivybridge_ret:
 
 	mov	 ecx, r10d
@@ -163,7 +164,7 @@ sqrt_fixup_ivybridge_ret:
 	pop	 rdi
 	pop	 rsi
 	pop	 rbp
-	jmp cnv2_main_loop_ivybridge_endp
+	jmp cryptonight_v8_main_loop_ivybridge_endp
 
 sqrt_fixup_ivybridge:
 	dec	 rdx
@@ -184,4 +185,4 @@ sqrt_fixup_ivybridge:
 	movq	 xmm3, rdx
 	jmp	 sqrt_fixup_ivybridge_ret
 
-cnv2_main_loop_ivybridge_endp:
+cryptonight_v8_main_loop_ivybridge_endp:

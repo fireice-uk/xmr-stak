@@ -1455,11 +1455,11 @@ struct Cryptonight_R_generator
 		}
 		else if(!ctx[0]->asm_version && ALGO == cryptonight_r && IS_WINDOWS)
 		{
-			v4_soft_aes_compile_code(ctx[0], code_size);
+			v4_soft_aes_compile_code(N, ctx[0], code_size);
 		}
 		else if(!ctx[0]->asm_version && ALGO == cryptonight_r_wow && IS_WINDOWS)
 		{
-			wow_soft_aes_compile_code(ctx[0], code_size);
+			wow_soft_aes_compile_code(N, ctx[0], code_size);
 		}
 
 		for(size_t i = 1; i < N; i++)

@@ -12,6 +12,8 @@ PUBLIC FN_PREFIX(CryptonightWOW_template_double_end)
 
 ALIGN(64)
 FN_PREFIX(CryptonightWOW_template_part1):
+	mov	rcx, [rcx]
+
 	mov	QWORD PTR [rsp+16], rbx
 	mov	QWORD PTR [rsp+24], rbp
 	mov	QWORD PTR [rsp+32], rsi
@@ -62,7 +64,6 @@ FN_PREFIX(CryptonightWOW_template_part1):
 
 ALIGN(64)
 FN_PREFIX(CryptonightWOW_template_mainloop):
-FN_PREFIX(CryptonightWOW_template_mainloop2):
 	movdqa	xmm5, XMMWORD PTR [r9+r11]
 	movq	xmm0, r15
 	movq	xmm4, rsp
@@ -141,7 +142,7 @@ FN_PREFIX(CryptonightWOW_template_part2):
 	xor	r15, r14
 	movdqa	xmm6, xmm5
 	dec	r8d
-	jnz	FN_PREFIX(CryptonightWOW_template_mainloop2)
+	jnz	FN_PREFIX(CryptonightWOW_template_mainloop)
 
 FN_PREFIX(CryptonightWOW_template_part3):
 	movq	rsp, xmm9
@@ -166,6 +167,9 @@ FN_PREFIX(CryptonightWOW_template_end):
 
 ALIGN(64)
 FN_PREFIX(CryptonightWOW_template_double_part1):
+	mov	rdx, [rcx+8]
+	mov	rcx, [rcx]
+
 	mov	QWORD PTR [rsp+24], rbx
 	push	rbp
 	push	rsi
@@ -243,7 +247,6 @@ FN_PREFIX(CryptonightWOW_template_double_part1):
 
 ALIGN(64)
 FN_PREFIX(CryptonightWOW_template_double_mainloop):
-FN_PREFIX(CryptonightWOW_template_double_mainloop2):
 	movdqu	xmm6, XMMWORD PTR [rbx+rsi]
 	movq	xmm0, r12
 	mov	ecx, ebx
@@ -461,7 +464,7 @@ FN_PREFIX(CryptonightWOW_template_double_part3):
 	xor	r13, r9
 	and	r8d, 2097136
 	dec r11d
-	jnz	FN_PREFIX(CryptonightWOW_template_double_mainloop2)
+	jnz	FN_PREFIX(CryptonightWOW_template_double_mainloop)
 
 FN_PREFIX(CryptonightWOW_template_double_part4):
 
