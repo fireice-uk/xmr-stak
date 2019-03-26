@@ -37,11 +37,16 @@
 #include <numeric>
 #include <algorithm>
 
+#ifdef __CYGWIN__
+#include <strings.h>
+#include <cpuid.h>
+#else
 #ifdef _WIN32
 #define strcasecmp _stricmp
 #include <intrin.h>
 #else
 #include <cpuid.h>
+#endif
 #endif
 
 

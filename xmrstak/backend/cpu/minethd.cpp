@@ -52,6 +52,13 @@
 #include <bitset>
 #include <unordered_map>
 
+#ifdef __CYGWIN__
+#define _WIN32
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#endif
+
 #ifdef _WIN32
 #include <windows.h>
 #else
