@@ -1198,8 +1198,12 @@ struct Cryptonight_hash<5>
 };
 
 extern "C" void cryptonight_v8_mainloop_ivybridge_asm(cryptonight_ctx* ctx0);
-extern "C" void cryptonight_v8_mainloop_ryzen_asm(cryptonight_ctx* ctx0);
 extern "C" void cryptonight_v8_double_mainloop_sandybridge_asm(cryptonight_ctx* ctx0, cryptonight_ctx* ctx1);
+extern "C" void cryptonight_v8_mainloop_bulldozer_asm(cryptonight_ctx* ctx0);
+extern "C" void cryptonight_v8_mainloop_ryzen_asm(cryptonight_ctx* ctx0);
+extern "C" void cryptonight_v8_rwz_mainloop_asm(cryptonight_ctx* ctx0);
+extern "C" void cryptonight_v8_rwz_double_mainloop_asm(cryptonight_ctx* ctx0, cryptonight_ctx* ctx1);
+
 
 template <size_t N, size_t asm_version>
 struct Cryptonight_hash_asm
@@ -1318,7 +1322,7 @@ void* allocateExecutableMemory(size_t size)
 {
 
 #ifdef _WIN64
-	return VirtualAlloc(0, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+	return VirtualAlloc(nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 #else
 #if defined(__APPLE__)
 	return mmap(0, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANON, -1, 0);
@@ -1374,19 +1378,23 @@ void patchAsmVariants(std::string selected_asm, cryptonight_ctx** ctx, const xmr
 
 	cn_mainloop_fun src_code = nullptr;
 
-	if(selected_asm == "intel_avx")
+	if(selected_asm == "intel_avx" || selected_asm == "ivybridge" || selected_asm == "sandybridge")
 	{
 		// Intel Ivy Bridge (Xeon v2, Core i7/i5/i3 3xxx, Pentium G2xxx, Celeron G1xxx)
 		if(N == 2)
 			src_code = reinterpret_cast<cn_mainloop_fun>(cryptonight_v8_double_mainloop_sandybridge_asm);
 		else
 			src_code = cryptonight_v8_mainloop_ivybridge_asm;
-		;
 	}
 	// supports only 1 thread per hash
-	if(selected_asm == "amd_avx")
+	if(selected_asm == "bulldozer")
 	{
-		// AMD Ryzen (1xxx and 2xxx series)
+		// AMD 15h "Bulldozer" - Orochi/Vishera etc; Bulldozer/Piledriver/Steamroller/Excavator 
+		src_code = cryptonight_v8_mainloop_bulldozer_asm;
+	}
+	if(selected_asm == "amd_avx" || selected_asm == "zen")
+	{
+		// AMD 17h "Zen" - Ryzen (1xxx and 2xxx series)
 		src_code = cryptonight_v8_mainloop_ryzen_asm;
 	}
 

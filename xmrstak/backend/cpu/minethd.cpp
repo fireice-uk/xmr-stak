@@ -582,9 +582,9 @@ static std::string getAsmName(const uint32_t num_hashes)
 
 		if(cpu_model.avx && cpu_model.aes)
 		{
-			if(cpu_model.type_name.find("Intel") != std::string::npos)
+			if(cpu_model.isIntelXBridge || cpu_model.isIntelXWell || cpu_model.isIntelXLake)
 				asm_type = "intel_avx";
-			else if(cpu_model.type_name.find("AMD") != std::string::npos)
+			else if(cpu_model.isAMDBulldozer || cpu_model.isAMDZen)
 				asm_type = "amd_avx";
 		}
 	}
