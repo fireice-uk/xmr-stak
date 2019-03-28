@@ -3,22 +3,22 @@
 #include "xmrstak/misc/environment.hpp"
 #include "xmrstak/params.hpp"
 
-#include <thread>
-#include <atomic>
-#include <vector>
-#include <string>
 #include "iBackend.hpp"
+#include <atomic>
 #include <iostream>
+#include <string>
+#include <thread>
+#include <vector>
 
 #ifndef USE_PRECOMPILED_HEADERS
-#	ifdef WIN32
-#		include <direct.h>
-#		include <windows.h>
-#	else
-#		include <sys/types.h>
-#		include <dlfcn.h>
-#	endif
-#	include <iostream>
+#ifdef WIN32
+#include <direct.h>
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#include <sys/types.h>
+#endif
+#include <iostream>
 #endif
 
 namespace xmrstak
@@ -36,16 +36,16 @@ struct plugin
 		libBackend = LoadLibrary(TEXT((libName + ".dll").c_str()));
 		if(!libBackend)
 		{
-			std::cerr << "WARNING: "<< m_backendName <<" cannot load backend library: " << (libName + ".dll") << std::endl;
+			std::cerr << "WARNING: " << m_backendName << " cannot load backend library: " << (libName + ".dll") << std::endl;
 			return;
 		}
 #else
 		// `.so` linux file extention for dynamic libraries
 		std::string fileExtension = ".so";
-#	if defined(__APPLE__)
+#if defined(__APPLE__)
 		// `.dylib` Mac OS X file extention for dynamic libraries
 		fileExtension = ".dylib";
-#	endif
+#endif
 		// search library in working directory
 		libBackend = dlopen(("./lib" + libName + fileExtension).c_str(), RTLD_LAZY);
 		// fallback to binary directory
@@ -56,21 +56,21 @@ struct plugin
 			libBackend = dlopen(("lib" + libName + fileExtension).c_str(), RTLD_LAZY);
 		if(!libBackend)
 		{
-			std::cerr << "WARNING: "<< m_backendName <<" cannot load backend library: " << dlerror() << std::endl;
+			std::cerr << "WARNING: " << m_backendName << " cannot load backend library: " << dlerror() << std::endl;
 			return;
 		}
 #endif
 
 #ifdef WIN32
-		fn_startBackend = (startBackend_t) GetProcAddress(libBackend, "xmrstak_start_backend");
-		if (!fn_startBackend)
+		fn_startBackend = (startBackend_t)GetProcAddress(libBackend, "xmrstak_start_backend");
+		if(!fn_startBackend)
 		{
-			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'xmrstak_start_backend': " <<GetLastError()<< std::endl;
+			std::cerr << "WARNING: backend plugin " << libName << " contains no entry 'xmrstak_start_backend': " << GetLastError() << std::endl;
 		}
 #else
 		// reset last error
 		dlerror();
-		fn_startBackend = (startBackend_t) dlsym(libBackend, "xmrstak_start_backend");
+		fn_startBackend = (startBackend_t)dlsym(libBackend, "xmrstak_start_backend");
 		const char* dlsym_error = dlerror();
 		if(dlsym_error)
 		{
@@ -112,7 +112,7 @@ struct plugin
 #ifdef WIN32
 	HINSTANCE libBackend;
 #else
-	void *libBackend = nullptr;
+	void* libBackend = nullptr;
 #endif
 };
 

@@ -3,8 +3,8 @@
 #include "xmrstak/backend/cryptonight.hpp"
 
 #include <stdint.h>
-#include <vector>
 #include <string>
+#include <vector>
 
 #if defined(__APPLE__)
 #include <OpenCL/cl.h>

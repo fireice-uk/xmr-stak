@@ -1,10 +1,10 @@
 #pragma once
 
 #include <atomic>
-#include <string>
 #include <fstream>
-#include <streambuf>
 #include <regex>
+#include <streambuf>
+#include <string>
 
 #include "../version.hpp"
 
@@ -17,16 +17,15 @@ struct configEditor
 
 	configEditor()
 	{
-
 	}
 
-	static bool file_exist( const std::string filename)
+	static bool file_exist(const std::string filename)
 	{
 		std::ifstream fstream(filename);
 		return fstream.good();
 	}
 
-	void set( const std::string && content)
+	void set(const std::string&& content)
 	{
 		m_fileContent = content;
 	}
@@ -36,8 +35,7 @@ struct configEditor
 		std::ifstream fstream(filename);
 		m_fileContent = std::string(
 			(std::istreambuf_iterator<char>(fstream)),
-			std::istreambuf_iterator<char>()
-		);
+			std::istreambuf_iterator<char>());
 		return fstream.good();
 	}
 
@@ -70,7 +68,6 @@ struct configEditor
 	{
 		m_fileContent = std::regex_replace(m_fileContent, std::regex(search), substring);
 	}
-
 };
 
 } // namespace xmrstak

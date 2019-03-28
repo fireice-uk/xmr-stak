@@ -198,7 +198,7 @@ inline void keccakf1600_1(ulong st[25])
 	}
 }
 )==="
-R"===(
+	R"===(
 
 void keccakf1600_2(__local ulong *st)
 {
@@ -372,7 +372,7 @@ inline int4 _mm_alignr_epi8(int4 a, const uint rot)
 #endif
 
 )==="
-R"===(
+	R"===(
 
 void CNKeccak(ulong *output, ulong *input)
 {
@@ -416,7 +416,7 @@ void AESExpandKey256(uint *keybuf)
 }
 
 )==="
-R"===(
+	R"===(
 
 #define mix_and_propagate(xin) (xin)[(get_local_id(1)) % 8][get_local_id(0)] ^ (xin)[(get_local_id(1) + 1) % 8][get_local_id(0)]
 
@@ -577,7 +577,7 @@ __kernel void JOIN(cn0,ALGO)(__global ulong *input, __global uint4 *Scratchpad, 
 }
 
 )==="
-R"===(
+	R"===(
 
 // __NV_CL_C_VERSION checks if NVIDIA opencl is used
 #if((ALGO == cryptonight_monero_v8 || ALGO == cryptonight_v8_reversewaltz) && defined(__NV_CL_C_VERSION))
@@ -867,7 +867,7 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 }
 
 )==="
-R"===(
+	R"===(
 
 __attribute__((reqd_work_group_size(8, 8, 1)))
 __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states,
@@ -1051,7 +1051,7 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 }
 
 )==="
-R"===(
+	R"===(
 
 #define VSWAP8(x)	(((x) >> 56) | (((x) >> 40) & 0x000000000000FF00UL) | (((x) >> 24) & 0x0000000000FF0000UL) \
 		  | (((x) >>  8) & 0x00000000FF000000UL) | (((x) <<  8) & 0x000000FF00000000UL) \

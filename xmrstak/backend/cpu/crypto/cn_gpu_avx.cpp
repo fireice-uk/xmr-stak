@@ -1,12 +1,12 @@
-#include "cn_gpu.hpp"
 #include "../../cryptonight.hpp"
+#include "cn_gpu.hpp"
 
-#pragma GCC target ("avx2")
+#pragma GCC target("avx2")
 #ifndef _mm256_bslli_epi128
-	#define _mm256_bslli_epi128(a, count) _mm256_slli_si256((a), (count))
+#define _mm256_bslli_epi128(a, count) _mm256_slli_si256((a), (count))
 #endif
 #ifndef _mm256_bsrli_epi128
-	#define _mm256_bsrli_epi128(a, count) _mm256_srli_si256((a), (count))
+#define _mm256_bsrli_epi128(a, count) _mm256_srli_si256((a), (count))
 #endif
 
 inline void prep_dv_avx(__m256i* idx, __m256i& v, __m256& n01)
@@ -67,7 +67,7 @@ inline void round_compute(const __m256& n0, const __m256& n1, const __m256& n2, 
 // 112×4 = 448
 template <bool add>
 inline __m256i double_comupte(const __m256& n0, const __m256& n1, const __m256& n2, const __m256& n3,
-							  float lcnt, float hcnt, const __m256& rnd_c, __m256& sum)
+	float lcnt, float hcnt, const __m256& rnd_c, __m256& sum)
 {
 	__m256 c = _mm256_insertf128_ps(_mm256_castps128_ps256(_mm_set1_ps(lcnt)), _mm_set1_ps(hcnt), 1);
 	__m256 r = _mm256_setzero_ps();
@@ -92,7 +92,7 @@ inline __m256i double_comupte(const __m256& n0, const __m256& n1, const __m256& 
 
 template <size_t rot>
 inline void double_comupte_wrap(const __m256& n0, const __m256& n1, const __m256& n2, const __m256& n3,
-								float lcnt, float hcnt, const __m256& rnd_c, __m256& sum, __m256i& out)
+	float lcnt, float hcnt, const __m256& rnd_c, __m256& sum, __m256i& out)
 {
 	__m256i r = double_comupte<rot % 2 != 0>(n0, n1, n2, n3, lcnt, hcnt, rnd_c, sum);
 	if(rot != 0)
@@ -101,9 +101,7 @@ inline void double_comupte_wrap(const __m256& n0, const __m256& n1, const __m256
 	out = _mm256_xor_si256(out, r);
 }
 
-
-inline __m256i* scratchpad_ptr(uint8_t* lpad, uint32_t idx, size_t n, const uint32_t mask) { return reinterpret_cast<__m256i*>(lpad + (idx & mask) + n*16); }
-
+inline __m256i* scratchpad_ptr(uint8_t* lpad, uint32_t idx, size_t n, const uint32_t mask) { return reinterpret_cast<__m256i*>(lpad + (idx & mask) + n * 16); }
 
 void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad, const xmrstak_algo& algo)
 {
@@ -155,7 +153,7 @@ void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad, const xmrstak_algo& al
 		sum1 = _mm256_add_ps(suma, sumb);
 
 		out2 = _mm256_xor_si256(out2, out);
-		out2 = _mm256_xor_si256(_mm256_permute2x128_si256(out2,out2,0x41), out2);
+		out2 = _mm256_xor_si256(_mm256_permute2x128_si256(out2, out2, 0x41), out2);
 		suma = _mm256_permute2f128_ps(sum0, sum1, 0x30);
 		sumb = _mm256_permute2f128_ps(sum0, sum1, 0x21);
 		sum0 = _mm256_add_ps(suma, sumb);

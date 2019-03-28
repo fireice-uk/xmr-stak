@@ -21,17 +21,17 @@
   *
   */
 
-#include <stdarg.h>
-#include <assert.h>
 #include <algorithm>
+#include <assert.h>
 #include <chrono>
+#include <stdarg.h>
 
 #include "jpsock.hpp"
-#include "socks.hpp"
 #include "socket.hpp"
+#include "socks.hpp"
 
-#include "xmrstak/misc/executor.hpp"
 #include "xmrstak/jconf.hpp"
+#include "xmrstak/misc/executor.hpp"
 #include "xmrstak/misc/jext.hpp"
 #include "xmrstak/version.hpp"
 
@@ -45,7 +45,9 @@ struct jpsock::call_rsp
 	std::string sCallErr;
 	uint64_t iMessageId;
 
-	call_rsp(Value* val) : pCallData(val), iMessageId(0)
+	call_rsp(Value* val) :
+		pCallData(val),
+		iMessageId(0)
 	{
 		bHaveResponse = false;
 		iCallId = 0;
@@ -70,7 +72,7 @@ typedef GenericDocument<UTF8<>, MemoryPoolAllocator<>, MemoryPoolAllocator<>> Me
 
 struct jpsock::opaque_private
 {
-	Value  oCallValue;
+	Value oCallValue;
 
 	MemoryPoolAllocator<> callAllocator;
 	MemoryPoolAllocator<> recvAllocator;
@@ -91,12 +93,24 @@ struct jpsock::opaque_private
 struct jpsock::opq_json_val
 {
 	const Value* val;
-	opq_json_val(const Value* val) : val(val) {}
+	opq_json_val(const Value* val) :
+		val(val) {}
 };
 
 jpsock::jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sRigId, const char* sPassword, double pool_weight, bool dev_pool, bool tls, const char* tls_fp, bool nicehash) :
-	net_addr(sAddr), usr_login(sLogin), usr_rigid(sRigId), usr_pass(sPassword), tls_fp(tls_fp), pool_id(id), pool_weight(pool_weight), pool(dev_pool), nicehash(nicehash),
-	connect_time(0), connect_attempts(0), disconnect_time(0), quiet_close(false)
+	net_addr(sAddr),
+	usr_login(sLogin),
+	usr_rigid(sRigId),
+	usr_pass(sPassword),
+	tls_fp(tls_fp),
+	pool_id(id),
+	pool_weight(pool_weight),
+	pool(dev_pool),
+	nicehash(nicehash),
+	connect_time(0),
+	connect_attempts(0),
+	disconnect_time(0),
+	quiet_close(false)
 {
 	sock_init();
 
@@ -245,7 +259,7 @@ bool jpsock::jpsock_thd_main()
 
 	char buf[iSockBufferSize];
 	size_t datalen = 0;
-	while (true)
+	while(true)
 	{
 		int ret = sck->recv(buf + datalen, sizeof(buf) - datalen);
 
@@ -254,7 +268,7 @@ bool jpsock::jpsock_thd_main()
 
 		datalen += ret;
 
-		if (datalen >= sizeof(buf))
+		if(datalen >= sizeof(buf))
 		{
 			sck->close(false);
 			return set_socket_error("RECEIVE error: data overflow");
@@ -262,12 +276,12 @@ bool jpsock::jpsock_thd_main()
 
 		char* lnend;
 		char* lnstart = buf;
-		while ((lnend = (char*)memchr(lnstart, '\n', datalen)) != nullptr)
+		while((lnend = (char*)memchr(lnstart, '\n', datalen)) != nullptr)
 		{
 			lnend++;
 			int lnlen = lnend - lnstart;
 
-			if (!process_line(lnstart, lnlen))
+			if(!process_line(lnstart, lnlen))
 			{
 				sck->close(false);
 				return false;
@@ -278,7 +292,7 @@ bool jpsock::jpsock_thd_main()
 		}
 
 		//Got leftover data? Move it to the front
-		if (datalen > 0 && buf != lnstart)
+		if(datalen > 0 && buf != lnstart)
 			memmove(buf, lnstart, datalen);
 	}
 }
@@ -291,18 +305,18 @@ bool jpsock::process_line(char* line, size_t len)
 	++iMessageCnt;
 
 	/*NULL terminate the line instead of '\n', parsing will add some more NULLs*/
-	line[len-1] = '\0';
+	line[len - 1] = '\0';
 
 	//printf("RECV: %s\n", line);
 
-	if (prv->jsonDoc.ParseInsitu(line).HasParseError())
+	if(prv->jsonDoc.ParseInsitu(line).HasParseError())
 		return set_socket_error("PARSE error: Invalid JSON");
 
-	if (!prv->jsonDoc.IsObject())
+	if(!prv->jsonDoc.IsObject())
 		return set_socket_error("PARSE error: Invalid root");
 
 	const Value* mt;
-	if (prv->jsonDoc.HasMember("method"))
+	if(prv->jsonDoc.HasMember("method"))
 	{
 		mt = GetObjectMember(prv->jsonDoc, "method");
 
@@ -329,7 +343,7 @@ bool jpsock::process_line(char* line, size_t len)
 	{
 		uint64_t iCallId;
 		mt = GetObjectMember(prv->jsonDoc, "id");
-		if (mt == nullptr || !mt->IsUint64())
+		if(mt == nullptr || !mt->IsUint64())
 			return set_socket_error("PARSE error: Protocol error 3");
 
 		iCallId = mt->GetUint64();
@@ -338,10 +352,10 @@ bool jpsock::process_line(char* line, size_t len)
 
 		const char* sError = nullptr;
 		size_t iErrorLen = 0;
-		if (mt == nullptr || mt->IsNull())
+		if(mt == nullptr || mt->IsNull())
 		{
 			/* If there was no error we need a result */
-			if ((mt = GetObjectMember(prv->jsonDoc, "result")) == nullptr)
+			if((mt = GetObjectMember(prv->jsonDoc, "result")) == nullptr)
 				return set_socket_error("PARSE error: Protocol error 7");
 		}
 		else
@@ -359,7 +373,7 @@ bool jpsock::process_line(char* line, size_t len)
 		}
 
 		std::unique_lock<std::mutex> mlock(call_mutex);
-		if (prv->oCallRsp.pCallData == nullptr)
+		if(prv->oCallRsp.pCallData == nullptr)
 		{
 			/*Server sent us a call reply without us making a call*/
 			mlock.unlock();
@@ -400,7 +414,7 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 
 	mlock.unlock();
 
-	if (!params->val->IsObject())
+	if(!params->val->IsObject())
 		return set_socket_error("PARSE error: Job error 1");
 
 	const Value *blob, *jobid, *target, *motd, *blk_height;
@@ -410,7 +424,7 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 	motd = GetObjectMember(*params->val, "motd");
 	blk_height = GetObjectMember(*params->val, "height");
 
-	if (jobid == nullptr || blob == nullptr || target == nullptr ||
+	if(jobid == nullptr || blob == nullptr || target == nullptr ||
 		!jobid->IsString() || !blob->IsString() || !target->IsString())
 	{
 		return set_socket_error("PARSE error: Job error 2");
@@ -421,7 +435,7 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 		std::unique_lock<std::mutex> lck(motd_mutex);
 		if(motd->GetStringLength() > 0)
 		{
-			pool_motd.resize(motd->GetStringLength()/2 + 1);
+			pool_motd.resize(motd->GetStringLength() / 2 + 1);
 			if(!hex2bin(motd->GetString(), motd->GetStringLength(), (unsigned char*)&pool_motd.front()))
 				pool_motd.clear();
 		}
@@ -429,7 +443,7 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 			pool_motd.clear();
 	}
 
-	if (jobid->GetStringLength() >= sizeof(pool_job::sJobID)) // Note >=
+	if(jobid->GetStringLength() >= sizeof(pool_job::sJobID)) // Note >=
 		return set_socket_error("PARSE error: Job error 3");
 
 	pool_job oPoolJob;
@@ -437,10 +451,10 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 	const uint32_t iWorkLen = blob->GetStringLength() / 2;
 	oPoolJob.iWorkLen = iWorkLen;
 
-	if (iWorkLen > sizeof(pool_job::bWorkBlob))
+	if(iWorkLen > sizeof(pool_job::bWorkBlob))
 		return set_socket_error("PARSE error: Invalid job length. Are you sure you are mining the correct coin?");
 
-	if (!hex2bin(blob->GetString(), iWorkLen * 2, oPoolJob.bWorkBlob))
+	if(!hex2bin(blob->GetString(), iWorkLen * 2, oPoolJob.bWorkBlob))
 		return set_socket_error("PARSE error: Job error 4");
 
 	// lock reading of oCurrentJob
@@ -479,7 +493,7 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 		return set_socket_error("PARSE error: Job error 5");
 
 	iJobDiff = t64_to_diff(oPoolJob.iTarget);
-	
+
 	if(blk_height != nullptr && blk_height->IsUint64())
 		oPoolJob.iBlockHeight = bswap_64(blk_height->GetUint64());
 
@@ -589,10 +603,10 @@ bool jpsock::cmd_login()
 	uint64_t messageId = 0;
 
 	/*Normal error conditions (failed login etc..) will end here*/
-	if (!cmd_ret_wait(cmd_buffer, oResult, messageId))
+	if(!cmd_ret_wait(cmd_buffer, oResult, messageId))
 		return false;
 
-	if (!oResult.val->IsObject())
+	if(!oResult.val->IsObject())
 	{
 		set_socket_error("PARSE error: Login protocol error 1");
 		disconnect();
@@ -603,14 +617,14 @@ bool jpsock::cmd_login()
 	const Value* job = GetObjectMember(*oResult.val, "job");
 	const Value* ext = GetObjectMember(*oResult.val, "extensions");
 
-	if (id == nullptr || job == nullptr || !id->IsString())
+	if(id == nullptr || job == nullptr || !id->IsString())
 	{
 		set_socket_error("PARSE error: Login protocol error 2");
 		disconnect();
 		return false;
 	}
 
-	if (id->GetStringLength() >= sizeof(sMinerId))
+	if(id->GetStringLength() >= sizeof(sMinerId))
 	{
 		set_socket_error("PARSE error: Login protocol error 3");
 		disconnect();
@@ -622,7 +636,7 @@ bool jpsock::cmd_login()
 
 	if(ext != nullptr && ext->IsArray())
 	{
-		for(size_t i=0; i < ext->Size(); i++)
+		for(size_t i = 0; i < ext->Size(); i++)
 		{
 			const Value& jextname = ext->GetArray()[i];
 
@@ -693,7 +707,7 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 	sResult[64] = '\0';
 
 	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"submit\",\"params\":{\"id\":\"%s\",\"job_id\":\"%s\",\"nonce\":\"%s\",\"result\":\"%s\"%s%s%s%s%s%s%s},\"id\":1}\n",
-		sMinerId, sJobId, sNonce, sResult, sBackend, sHashcount, sAlgo, sBaseAlgo, sIterations,sMemory, sMemAlignBytes);
+		sMinerId, sJobId, sNonce, sResult, sBackend, sHashcount, sAlgo, sBaseAlgo, sIterations, sMemory, sMemAlignBytes);
 
 	uint64_t messageId = 0;
 	opq_json_val oResult(nullptr);
@@ -732,13 +746,13 @@ bool jpsock::get_pool_motd(std::string& strin)
 	return false;
 }
 
-inline unsigned char hf_hex2bin(char c, bool &err)
+inline unsigned char hf_hex2bin(char c, bool& err)
 {
-	if (c >= '0' && c <= '9')
+	if(c >= '0' && c <= '9')
 		return c - '0';
-	else if (c >= 'a' && c <= 'f')
+	else if(c >= 'a' && c <= 'f')
 		return c - 'a' + 0xA;
-	else if (c >= 'A' && c <= 'F')
+	else if(c >= 'A' && c <= 'F')
 		return c - 'A' + 0xA;
 
 	err = true;
@@ -748,17 +762,18 @@ inline unsigned char hf_hex2bin(char c, bool &err)
 bool jpsock::hex2bin(const char* in, unsigned int len, unsigned char* out)
 {
 	bool error = false;
-	for (unsigned int i = 0; i < len; i += 2)
+	for(unsigned int i = 0; i < len; i += 2)
 	{
 		out[i / 2] = (hf_hex2bin(in[i], error) << 4) | hf_hex2bin(in[i + 1], error);
-		if (error) return false;
+		if(error)
+			return false;
 	}
 	return true;
 }
 
 inline char hf_bin2hex(unsigned char c)
 {
-	if (c <= 0x9)
+	if(c <= 0x9)
 		return '0' + c;
 	else
 		return 'a' - 0xA + c;
@@ -766,7 +781,7 @@ inline char hf_bin2hex(unsigned char c)
 
 void jpsock::bin2hex(const unsigned char* in, unsigned int len, char* out)
 {
-	for (unsigned int i = 0; i < len; i++)
+	for(unsigned int i = 0; i < len; i++)
 	{
 		out[i * 2] = hf_bin2hex((in[i] & 0xF0) >> 4);
 		out[i * 2 + 1] = hf_bin2hex(in[i] & 0x0F);

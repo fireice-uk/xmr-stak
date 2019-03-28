@@ -3,17 +3,16 @@
 
 #include "autoAdjust.hpp"
 
-#include "nvcc_code/cryptonight.hpp"
 #include "jconf.hpp"
-#include "xmrstak/misc/console.hpp"
+#include "nvcc_code/cryptonight.hpp"
 #include "xmrstak/misc/configEditor.hpp"
+#include "xmrstak/misc/console.hpp"
 #include "xmrstak/params.hpp"
 
-#include <vector>
 #include <cstdio>
 #include <sstream>
 #include <string>
-
+#include <vector>
 
 namespace xmrstak
 {
@@ -22,11 +21,9 @@ namespace nvidia
 
 class autoAdjust
 {
-public:
-
+  public:
 	autoAdjust()
 	{
-
 	}
 
 	/** print the adjusted values if needed
@@ -63,25 +60,22 @@ public:
 				nvidCtxVec.push_back(ctx);
 			else
 				printer::inst()->print_msg(L0, "WARNING: NVIDIA setup failed for GPU %d.\n", i);
-
 		}
 
 		generateThreadConfig();
 		return true;
-
 	}
 
-private:
-
+  private:
 	void generateThreadConfig()
 	{
 		// load the template of the backend config into a char variable
-		const char *tpl =
-			#include "./config.tpl"
-		;
+		const char* tpl =
+#include "./config.tpl"
+			;
 
 		configEditor configTpl{};
-		configTpl.set( std::string(tpl) );
+		configTpl.set(std::string(tpl));
 
 		constexpr size_t byte2mib = 1024u * 1024u;
 		std::string conf;
@@ -90,18 +84,18 @@ private:
 			if(ctx.device_threads * ctx.device_blocks > 0)
 			{
 				conf += std::string("  // gpu: ") + ctx.name + " architecture: " + std::to_string(ctx.device_arch[0] * 10 + ctx.device_arch[1]) + "\n";
-				conf += std::string("  //      memory: ") + std::to_string(ctx.free_device_memory / byte2mib) + "/"  + std::to_string(ctx.total_device_memory / byte2mib) + " MiB\n";
+				conf += std::string("  //      memory: ") + std::to_string(ctx.free_device_memory / byte2mib) + "/" + std::to_string(ctx.total_device_memory / byte2mib) + " MiB\n";
 				conf += std::string("  //      smx: ") + std::to_string(ctx.device_mpcount) + "\n";
 				conf += std::string("  { \"index\" : ") + std::to_string(ctx.device_id) + ",\n" +
-					"    \"threads\" : " + std::to_string(ctx.device_threads) + ", \"blocks\" : " + std::to_string(ctx.device_blocks) + ",\n" +
-					"    \"bfactor\" : " + std::to_string(ctx.device_bfactor) + ", \"bsleep\" :  " + std::to_string(ctx.device_bsleep) + ",\n" +
-					"    \"affine_to_cpu\" : false, \"sync_mode\" : 3,\n" +
-					"    \"mem_mode\" : 1,\n" +
-					"  },\n";
+						"    \"threads\" : " + std::to_string(ctx.device_threads) + ", \"blocks\" : " + std::to_string(ctx.device_blocks) + ",\n" +
+						"    \"bfactor\" : " + std::to_string(ctx.device_bfactor) + ", \"bsleep\" :  " + std::to_string(ctx.device_bsleep) + ",\n" +
+						"    \"affine_to_cpu\" : false, \"sync_mode\" : 3,\n" +
+						"    \"mem_mode\" : 1,\n" +
+						"  },\n";
 			}
 		}
 
-		configTpl.replace("GPUCONFIG",conf);
+		configTpl.replace("GPUCONFIG", conf);
 		configTpl.write(params::inst().configFileNVIDIA);
 		printer::inst()->print_msg(L0, "NVIDIA: GPU configuration stored in file '%s'", params::inst().configFileNVIDIA.c_str());
 	}

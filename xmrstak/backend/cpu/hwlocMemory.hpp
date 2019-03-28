@@ -9,4 +9,4 @@
  *
  * @param puId core id
  */
-void bindMemoryToNUMANode( size_t puId );
+void bindMemoryToNUMANode(size_t puId);
