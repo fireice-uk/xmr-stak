@@ -84,10 +84,11 @@ if(CUDA_ENABLE)
             /usr
             /usr/local/cuda
         PATH_SUFFIXES
-            lib64	
+            lib64
             lib/x64
             lib/Win32
-            lib64/stubs)
+            lib64/stubs
+            lib)
 
         #nvrtc
         find_library(CUDA_NVRTC_LIB 
@@ -104,7 +105,8 @@ if(CUDA_ENABLE)
         PATH_SUFFIXES
             lib64
             lib/x64
-            lib/Win32)
+            lib/Win32
+            lib)
 
         list(APPEND BACKEND_TYPES "nvidia")
         option(XMR-STAK_LARGEGRID "Support large CUDA block count > 128" ON)
@@ -322,7 +324,7 @@ endif()
 ################################################################################
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-	set_source_files_properties(xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp PROPERTIES COMPILE_FLAGS "-mavx2")
+    set_source_files_properties(xmrstak/backend/cpu/crypto/cn_gpu_avx.cpp PROPERTIES COMPILE_FLAGS "-mavx2")
 endif()
 
 ################################################################################
