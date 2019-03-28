@@ -3,8 +3,8 @@
 #include "xmrstak/backend/cryptonight.hpp"
 
 #include <stdint.h>
-#include <vector>
 #include <string>
+#include <vector>
 
 #if defined(__APPLE__)
 #include <OpenCL/cl.h>
@@ -20,7 +20,7 @@ namespace amd
 {
 
 cl_program CryptonightR_get_program(GpuContext* ctx, const xmrstak_algo algo,
-	uint64_t height, uint32_t precompile_count, bool background = false);
+	uint64_t height_offset, uint64_t height_chunk_size, uint32_t precompile_count, bool background = false);
 
 } // namespace amd
 } // namespace xmrstak

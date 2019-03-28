@@ -21,10 +21,9 @@
   *
   */
 
-
 #include "jconf.hpp"
-#include "xmrstak/misc/jext.hpp"
 #include "xmrstak/misc/console.hpp"
+#include "xmrstak/misc/jext.hpp"
 
 #ifdef _WIN32
 #define strcasecmp _stricmp
@@ -37,7 +36,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 namespace xmrstak
 {
 namespace amd
@@ -48,9 +46,14 @@ using namespace rapidjson;
 /*
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
-enum configEnum { aGpuThreadsConf, iPlatformIdx };
+enum configEnum
+{
+	aGpuThreadsConf,
+	iPlatformIdx
+};
 
-struct configVal {
+struct configVal
+{
 	configEnum iName;
 	const char* sName;
 	Type iType;
@@ -59,24 +62,25 @@ struct configVal {
 // Same order as in configEnum, as per comment above
 // kNullType means any type
 configVal oConfigValues[] = {
-	{ aGpuThreadsConf, "gpu_threads_conf", kNullType },
-	{ iPlatformIdx, "platform_index", kNumberType }
+	{aGpuThreadsConf, "gpu_threads_conf", kNullType},
+	{iPlatformIdx, "platform_index", kNumberType}};
+
+constexpr size_t iConfigCnt = (sizeof(oConfigValues) / sizeof(oConfigValues[0]));
+
+enum optionalConfigEnum
+{
+	iAutoTune
 };
 
-constexpr size_t iConfigCnt = (sizeof(oConfigValues)/sizeof(oConfigValues[0]));
-
-
-enum optionalConfigEnum { iAutoTune };
-
-struct optionalConfigVal {
+struct optionalConfigVal
+{
 	optionalConfigEnum iName;
 	const char* sName;
 	Type iType;
 };
 
 optionalConfigVal oOptionalConfigValues[] = {
-	{ iAutoTune, "auto_tune", kNumberType }
-};
+	{iAutoTune, "auto_tune", kNumberType}};
 
 inline bool checkType(Type have, Type want)
 {
@@ -109,7 +113,7 @@ jconf::jconf()
 	prv = new opaque_private();
 }
 
-bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
+bool jconf::GetThreadConfig(size_t id, thd_cfg& cfg)
 {
 	if(id >= prv->configValues[aGpuThreadsConf]->Size())
 		return false;
@@ -176,7 +180,7 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg &cfg)
 		return false;
 	}
 
-	if(!memChunk->IsUint64() || (int)memChunk->GetInt64() > 18 )
+	if(!memChunk->IsUint64() || (int)memChunk->GetInt64() > 18)
 	{
 		printer::inst()->print_msg(L0, "ERROR: mem_chunk must be smaller than 18");
 		return false;
@@ -215,7 +219,7 @@ size_t jconf::GetPlatformIdx()
 size_t jconf::GetAutoTune()
 {
 	const Value* value = GetObjectMember(prv->jsonDoc, oOptionalConfigValues[iAutoTune].sName);
-	if( value != nullptr && value->IsUint64())
+	if(value != nullptr && value->IsUint64())
 	{
 		return value->GetUint64();
 	}
@@ -233,22 +237,22 @@ size_t jconf::GetThreadCount()
 
 bool jconf::parse_config(const char* sFilename)
 {
-	FILE * pFile;
-	char * buffer;
+	FILE* pFile;
+	char* buffer;
 	size_t flen;
 
 	pFile = fopen(sFilename, "rb");
-	if (pFile == NULL)
+	if(pFile == NULL)
 	{
 		printer::inst()->print_msg(L0, "Failed to open config file %s.", sFilename);
 		return false;
 	}
 
-	fseek(pFile,0,SEEK_END);
+	fseek(pFile, 0, SEEK_END);
 	flen = ftell(pFile);
 	rewind(pFile);
 
-	if(flen >= 64*1024)
+	if(flen >= 64 * 1024)
 	{
 		fclose(pFile);
 		printer::inst()->print_msg(L0, "Oversized config file - %s.", sFilename);
@@ -262,7 +266,7 @@ bool jconf::parse_config(const char* sFilename)
 	}
 
 	buffer = (char*)malloc(flen + 3);
-	if(fread(buffer+1, flen, 1, pFile) != 1)
+	if(fread(buffer + 1, flen, 1, pFile) != 1)
 	{
 		free(buffer);
 		fclose(pFile);
@@ -284,7 +288,7 @@ bool jconf::parse_config(const char* sFilename)
 	buffer[flen] = '}';
 	buffer[flen + 1] = '\0';
 
-	prv->jsonDoc.Parse<kParseCommentsFlag|kParseTrailingCommasFlag>(buffer, flen+2);
+	prv->jsonDoc.Parse<kParseCommentsFlag | kParseTrailingCommasFlag>(buffer, flen + 2);
 	free(buffer);
 
 	if(prv->jsonDoc.HasParseError())
@@ -293,7 +297,6 @@ bool jconf::parse_config(const char* sFilename)
 			sFilename, int_port(prv->jsonDoc.GetErrorOffset()), GetParseError_En(prv->jsonDoc.GetParseError()));
 		return false;
 	}
-
 
 	if(!prv->jsonDoc.IsObject())
 	{ //This should never happen as we created the root ourselves
@@ -326,7 +329,7 @@ bool jconf::parse_config(const char* sFilename)
 
 	size_t n_thd = prv->configValues[aGpuThreadsConf]->Size();
 	thd_cfg c;
-	for(size_t i=0; i < n_thd; i++)
+	for(size_t i = 0; i < n_thd; i++)
 	{
 		if(!GetThreadConfig(i, c))
 		{

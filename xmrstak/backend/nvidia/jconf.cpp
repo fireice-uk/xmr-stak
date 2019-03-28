@@ -22,8 +22,8 @@
   */
 
 #include "jconf.hpp"
-#include "xmrstak/misc/jext.hpp"
 #include "xmrstak/misc/console.hpp"
+#include "xmrstak/misc/jext.hpp"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +36,6 @@
 #include <cpuid.h>
 #endif
 
-
 namespace xmrstak
 {
 namespace nvidia
@@ -47,9 +46,13 @@ using namespace rapidjson;
 /*
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
-enum configEnum { aGpuThreadsConf };
+enum configEnum
+{
+	aGpuThreadsConf
+};
 
-struct configVal {
+struct configVal
+{
 	configEnum iName;
 	const char* sName;
 	Type iType;
@@ -58,8 +61,7 @@ struct configVal {
 // Same order as in configEnum, as per comment above
 // kNullType means any type
 configVal oConfigValues[] = {
-	{ aGpuThreadsConf, "gpu_threads_conf", kNullType }
-};
+	{aGpuThreadsConf, "gpu_threads_conf", kNullType}};
 
 inline bool checkType(Type have, Type want)
 {
@@ -75,9 +77,7 @@ inline bool checkType(Type have, Type want)
 		return false;
 }
 
-constexpr size_t iConfigCnt = (sizeof(oConfigValues)/sizeof(oConfigValues[0]));
-
-
+constexpr size_t iConfigCnt = (sizeof(oConfigValues) / sizeof(oConfigValues[0]));
 
 struct jconf::opaque_private
 {
@@ -88,7 +88,6 @@ struct jconf::opaque_private
 	{
 	}
 };
-
 
 bool jconf::NeedsAutoconf()
 {
@@ -110,7 +109,7 @@ size_t jconf::GetGPUThreadCount()
 		return 0;
 }
 
-bool jconf::GetGPUThreadConfig(size_t id, thd_cfg &cfg)
+bool jconf::GetGPUThreadConfig(size_t id, thd_cfg& cfg)
 {
 	if(!prv->configValues[aGpuThreadsConf]->IsArray())
 		return false;
@@ -170,7 +169,6 @@ bool jconf::GetGPUThreadConfig(size_t id, thd_cfg &cfg)
 		return false;
 	}
 
-
 	cfg.id = gid->GetInt();
 	cfg.blocks = blocks->GetInt();
 	cfg.threads = threads->GetInt();
@@ -178,7 +176,7 @@ bool jconf::GetGPUThreadConfig(size_t id, thd_cfg &cfg)
 	cfg.bsleep = bsleep->GetInt();
 	cfg.syncMode = syncMode->GetInt();
 	cfg.memMode = memMode->GetInt();
-	
+
 	if(aff->IsNumber())
 		cfg.cpu_aff = aff->GetInt();
 	else
@@ -189,22 +187,22 @@ bool jconf::GetGPUThreadConfig(size_t id, thd_cfg &cfg)
 
 bool jconf::parse_config(const char* sFilename)
 {
-	FILE * pFile;
-	char * buffer;
+	FILE* pFile;
+	char* buffer;
 	size_t flen;
 
 	pFile = fopen(sFilename, "rb");
-	if (pFile == NULL)
+	if(pFile == NULL)
 	{
 		printer::inst()->print_msg(L0, "Failed to open config file %s.", sFilename);
 		return false;
 	}
 
-	fseek(pFile,0,SEEK_END);
+	fseek(pFile, 0, SEEK_END);
 	flen = ftell(pFile);
 	rewind(pFile);
 
-	if(flen >= 64*1024)
+	if(flen >= 64 * 1024)
 	{
 		fclose(pFile);
 		printer::inst()->print_msg(L0, "Oversized config file - %s.", sFilename);
@@ -219,7 +217,7 @@ bool jconf::parse_config(const char* sFilename)
 	}
 
 	buffer = (char*)malloc(flen + 3);
-	if(fread(buffer+1, flen, 1, pFile) != 1)
+	if(fread(buffer + 1, flen, 1, pFile) != 1)
 	{
 		free(buffer);
 		fclose(pFile);
@@ -241,7 +239,7 @@ bool jconf::parse_config(const char* sFilename)
 	buffer[flen] = '}';
 	buffer[flen + 1] = '\0';
 
-	prv->jsonDoc.Parse<kParseCommentsFlag|kParseTrailingCommasFlag>(buffer, flen+2);
+	prv->jsonDoc.Parse<kParseCommentsFlag | kParseTrailingCommasFlag>(buffer, flen + 2);
 	free(buffer);
 
 	if(prv->jsonDoc.HasParseError())
@@ -250,7 +248,6 @@ bool jconf::parse_config(const char* sFilename)
 			sFilename, int_port(prv->jsonDoc.GetErrorOffset()), GetParseError_En(prv->jsonDoc.GetParseError()));
 		return false;
 	}
-
 
 	if(!prv->jsonDoc.IsObject())
 	{ //This should never happen as we created the root ourselves
@@ -262,7 +259,7 @@ bool jconf::parse_config(const char* sFilename)
 	{
 		if(oConfigValues[i].iName != i)
 		{
-			printer::inst()->print_msg(L0, "Code error. oConfigValues are not in order. %s",oConfigValues[i].sName);
+			printer::inst()->print_msg(L0, "Code error. oConfigValues are not in order. %s", oConfigValues[i].sName);
 			return false;
 		}
 

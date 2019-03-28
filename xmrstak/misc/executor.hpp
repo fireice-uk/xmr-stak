@@ -1,18 +1,18 @@
 #pragma once
 
-#include "thdq.hpp"
 #include "telemetry.hpp"
+#include "thdq.hpp"
 #include "xmrstak/backend/iBackend.hpp"
+#include "xmrstak/donate-level.hpp"
 #include "xmrstak/misc/environment.hpp"
 #include "xmrstak/net/msgstruct.hpp"
-#include "xmrstak/donate-level.hpp"
 
-#include <atomic>
 #include <array>
+#include <atomic>
+#include <chrono>
+#include <future>
 #include <list>
 #include <vector>
-#include <future>
-#include <chrono>
 
 class jpsock;
 
@@ -27,7 +27,7 @@ class minethd;
 
 class executor
 {
-public:
+  public:
 	static executor* inst()
 	{
 		auto& env = xmrstak::environment::inst();
@@ -43,13 +43,15 @@ public:
 	inline void push_event(ex_event&& ev) { oEventQ.push(std::move(ev)); }
 	void push_timed_event(ex_event&& ev, size_t sec);
 
-private:
+  private:
 	struct timed_event
 	{
 		ex_event event;
 		size_t ticks_left;
 
-		timed_event(ex_event&& ev, size_t ticks) : event(std::move(ev)), ticks_left(ticks) {}
+		timed_event(ex_event&& ev, size_t ticks) :
+			event(std::move(ev)),
+			ticks_left(ticks) {}
 	};
 
 	inline void set_timestamp() { dev_timestamp = get_timestamp(); };
@@ -119,7 +121,8 @@ private:
 		std::chrono::system_clock::time_point time;
 		std::string msg;
 
-		sck_error_log(std::string&& err) : msg(std::move(err))
+		sck_error_log(std::string&& err) :
+			msg(std::move(err))
 		{
 			time = std::chrono::system_clock::now();
 		}
@@ -134,12 +137,16 @@ private:
 		std::string msg;
 		size_t count;
 
-		result_tally() : msg("[OK]"), count(0)
+		result_tally() :
+			msg("[OK]"),
+			count(0)
 		{
 			time = std::chrono::system_clock::now();
 		}
 
-		result_tally(std::string&& err) : msg(std::move(err)), count(1)
+		result_tally(std::string&& err) :
+			msg(std::move(err)),
+			count(1)
 		{
 			time = std::chrono::system_clock::now();
 		}
@@ -161,7 +168,7 @@ private:
 	std::vector<result_tally> vMineResults;
 
 	//More result statistics
-	std::array<size_t, 10> iTopDiff { { } }; //Initialize to zero
+	std::array<size_t, 10> iTopDiff{{}}; //Initialize to zero
 
 	std::chrono::system_clock::time_point tPoolConnTime;
 	size_t iPoolHashes = 0;
@@ -195,4 +202,3 @@ private:
 
 	inline size_t sec_to_ticks(size_t sec) { return sec * (1000 / iTickTime); }
 };
-

@@ -2,12 +2,12 @@
 
 #include "jconf.hpp"
 
-#include "xmrstak/misc/console.hpp"
+#include "xmrstak/backend/cpu/cpuType.hpp"
+#include "xmrstak/backend/cryptonight.hpp"
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/configEditor.hpp"
+#include "xmrstak/misc/console.hpp"
 #include "xmrstak/params.hpp"
-#include "xmrstak/backend/cryptonight.hpp"
-#include "xmrstak/backend/cpu/cpuType.hpp"
 #include <string>
 
 #ifdef _WIN32
@@ -16,7 +16,6 @@
 #include <unistd.h>
 #endif // _WIN32
 
-
 namespace xmrstak
 {
 namespace cpu
@@ -24,8 +23,7 @@ namespace cpu
 
 class autoAdjust
 {
-public:
-
+  public:
 	bool printConfig()
 	{
 		auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
@@ -42,10 +40,10 @@ public:
 		configEditor configTpl{};
 
 		// load the template of the backend config into a char variable
-		const char *tpl =
-			#include "./config.tpl"
-		;
-		configTpl.set( std::string(tpl) );
+		const char* tpl =
+#include "./config.tpl"
+			;
+		configTpl.set(std::string(tpl));
 
 		std::string conf;
 
@@ -75,14 +73,14 @@ public:
 				linux_layout ? "Linux" : "Windows");
 
 			uint32_t aff_id = 0;
-			for(uint32_t i=0; i < corecnt; i++)
+			for(uint32_t i = 0; i < corecnt; i++)
 			{
 				bool double_mode;
 
 				if(L3KB_size <= 0)
 					break;
 
-				double_mode = L3KB_size / hashMemSizeKB > (int32_t)(corecnt-i);
+				double_mode = L3KB_size / hashMemSizeKB > (int32_t)(corecnt - i);
 
 				conf += std::string("    { \"low_power_mode\" : ");
 				conf += std::string(double_mode ? "true" : "false");
@@ -110,14 +108,14 @@ public:
 		if(useCryptonight_gpu)
 			conf += "*/\n";
 
-		configTpl.replace("CPUCONFIG",conf);
+		configTpl.replace("CPUCONFIG", conf);
 		configTpl.write(params::inst().configFileCPU);
 		printer::inst()->print_msg(L0, "CPU configuration stored in file '%s'", params::inst().configFileCPU.c_str());
 
 		return true;
 	}
 
-private:
+  private:
 	bool detectL3Size()
 	{
 		int32_t cpu_info[4];
@@ -125,8 +123,8 @@ private:
 
 		::jconf::cpuid(0, 0, cpu_info);
 		memcpy(cpustr, &cpu_info[1], 4);
-		memcpy(cpustr+4, &cpu_info[3], 4);
-		memcpy(cpustr+8, &cpu_info[2], 4);
+		memcpy(cpustr + 4, &cpu_info[3], 4);
+		memcpy(cpustr + 8, &cpu_info[2], 4);
 
 		if(strcmp(cpustr, "GenuineIntel") == 0)
 		{
@@ -139,7 +137,8 @@ private:
 			}
 
 			L3KB_size = ((get_masked(cpu_info[1], 31, 22) + 1) * (get_masked(cpu_info[1], 21, 12) + 1) *
-				(get_masked(cpu_info[1], 11, 0) + 1) * (cpu_info[2] + 1)) / 1024;
+							(get_masked(cpu_info[1], 11, 0) + 1) * (cpu_info[2] + 1)) /
+						1024;
 
 			return true;
 		}

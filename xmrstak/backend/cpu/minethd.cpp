@@ -23,33 +23,33 @@
 
 #include "crypto/cryptonight_aesni.h"
 
-#include "xmrstak/misc/console.hpp"
-#include "xmrstak/backend/iBackend.hpp"
-#include "xmrstak/backend/globalStates.hpp"
-#include "xmrstak/misc/configEditor.hpp"
-#include "xmrstak/backend/cpu/cpuType.hpp"
-#include "xmrstak/params.hpp"
 #include "jconf.hpp"
+#include "xmrstak/backend/cpu/cpuType.hpp"
+#include "xmrstak/backend/globalStates.hpp"
+#include "xmrstak/backend/iBackend.hpp"
+#include "xmrstak/misc/configEditor.hpp"
+#include "xmrstak/misc/console.hpp"
+#include "xmrstak/params.hpp"
 
-#include "xmrstak/misc/executor.hpp"
 #include "minethd.hpp"
 #include "xmrstak/jconf.hpp"
+#include "xmrstak/misc/executor.hpp"
 
 #include "hwlocMemory.hpp"
 #include "xmrstak/backend/miner_work.hpp"
 
 #ifndef CONF_NO_HWLOC
-#   include "autoAdjustHwloc.hpp"
+#include "autoAdjustHwloc.hpp"
 #else
-#   include "autoAdjust.hpp"
+#include "autoAdjust.hpp"
 #endif
 
 #include <assert.h>
-#include <cmath>
+#include <bitset>
 #include <chrono>
+#include <cmath>
 #include <cstring>
 #include <thread>
-#include <bitset>
 #include <unordered_map>
 
 #ifdef _WIN32
@@ -58,9 +58,9 @@
 #include <pthread.h>
 
 #if defined(__APPLE__)
-#include <mach/thread_policy.h>
 #include <mach/thread_act.h>
-#define SYSCTL_CORE_COUNT   "machdep.cpu.core_count"
+#include <mach/thread_policy.h>
+#define SYSCTL_CORE_COUNT "machdep.cpu.core_count"
 #elif defined(__FreeBSD__)
 #include <pthread_np.h>
 #endif //__APPLE__
@@ -87,7 +87,7 @@ bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 	}
 #elif defined(__APPLE__)
 	thread_port_t mach_thread;
-	thread_affinity_policy_data_t policy = { static_cast<integer_t>(cpu_id) };
+	thread_affinity_policy_data_t policy = {static_cast<integer_t>(cpu_id)};
 	mach_thread = pthread_mach_thread_np(h);
 	return thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1) == KERN_SUCCESS;
 #elif defined(__FreeBSD__)
@@ -96,8 +96,8 @@ bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 	CPU_SET(cpu_id, &mn);
 	return pthread_setaffinity_np(h, sizeof(cpuset_t), &mn) == 0;
 #elif defined(__OpenBSD__)
-        printer::inst()->print_msg(L0,"WARNING: thread pinning is not supported under OPENBSD.");
-        return true;
+	printer::inst()->print_msg(L0, "WARNING: thread pinning is not supported under OPENBSD.");
+	return true;
 #else
 	cpu_set_t mn;
 	CPU_ZERO(&mn);
@@ -120,7 +120,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch,
 	std::unique_lock<std::mutex> lck(thd_aff_set);
 	std::future<void> order_guard = order_fix.get_future();
 
-	switch (iMultiway)
+	switch(iMultiway)
 	{
 	case 5:
 		oWorkThd = std::thread(&minethd::penta_work_main, this);
@@ -150,13 +150,13 @@ minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch,
 cryptonight_ctx* minethd::minethd_alloc_ctx()
 {
 	cryptonight_ctx* ctx;
-	alloc_msg msg = { 0 };
+	alloc_msg msg = {0};
 
-	switch (::jconf::inst()->GetSlowMemSetting())
+	switch(::jconf::inst()->GetSlowMemSetting())
 	{
 	case ::jconf::never_use:
 		ctx = cryptonight_alloc_ctx(1, 1, &msg);
-		if (ctx == NULL)
+		if(ctx == NULL)
 			printer::inst()->print_msg(L0, "MEMORY ALLOC FAILED: %s", msg.warning);
 		else
 		{
@@ -170,7 +170,7 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 
 	case ::jconf::no_mlck:
 		ctx = cryptonight_alloc_ctx(1, 0, &msg);
-		if (ctx == NULL)
+		if(ctx == NULL)
 			printer::inst()->print_msg(L0, "MEMORY ALLOC FAILED: %s", msg.warning);
 		else
 		{
@@ -184,12 +184,12 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 
 	case ::jconf::print_warning:
 		ctx = cryptonight_alloc_ctx(1, 1, &msg);
-		if (msg.warning != NULL)
+		if(msg.warning != NULL)
 			printer::inst()->print_msg(L0, "MEMORY ALLOC FAILED: %s", msg.warning);
-		if (ctx == NULL)
+		if(ctx == NULL)
 			ctx = cryptonight_alloc_ctx(0, 0, NULL);
 
-		if (ctx != NULL)
+		if(ctx != NULL)
 		{
 			ctx->hash_fn = nullptr;
 			ctx->loop_fn = nullptr;
@@ -220,11 +220,11 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 static constexpr size_t MAX_N = 5;
 bool minethd::self_test()
 {
-	alloc_msg msg = { 0 };
+	alloc_msg msg = {0};
 	size_t res;
 	bool fatal = false;
 
-	switch (::jconf::inst()->GetSlowMemSetting())
+	switch(::jconf::inst()->GetSlowMemSetting())
 	{
 	case ::jconf::never_use:
 		res = cryptonight_init(1, 1, &msg);
@@ -255,13 +255,13 @@ bool minethd::self_test()
 	if(res == 0 && fatal)
 		return false;
 
-	cryptonight_ctx *ctx[MAX_N] = {0};
-	for (int i = 0; i < MAX_N; i++)
+	cryptonight_ctx* ctx[MAX_N] = {0};
+	for(int i = 0; i < MAX_N; i++)
 	{
-		if ((ctx[i] = minethd_alloc_ctx()) == nullptr)
+		if((ctx[i] = minethd_alloc_ctx()) == nullptr)
 		{
 			printer::inst()->print_msg(L0, "ERROR: miner was not able to allocate memory.");
-			for (int j = 0; j < i; j++)
+			for(int j = 0; j < i; j++)
 				cryptonight_free_ctx(ctx[j]);
 			return false;
 		}
@@ -279,63 +279,68 @@ bool minethd::self_test()
 		{
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("This is a test", 14, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
+			bResult = bResult && memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
 			minethd::cn_on_new_job dm;
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
 			ctx[0]->hash_fn("This is a test", 14, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
+			bResult = bResult && memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 32) == 0;
 
 			func_multi_selector<2>(ctx, dm, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
-					"\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
+			bResult = bResult && memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
+											 "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22",
+									 64) == 0;
 
 			func_multi_selector<2>(ctx, dm, ::jconf::inst()->HaveHardwareAes(), true, algo);
 			ctx[0]->hash_fn("The quick brown fox jumps over the lazy dogThe quick brown fox jumps over the lazy log", 43, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
-					"\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22", 64) == 0;
+			bResult = bResult && memcmp(out, "\x3e\xbb\x7f\x9f\x7d\x27\x3d\x7c\x31\x8d\x86\x94\x77\x55\x0c\xc8\x00\xcf\xb1\x1b\x0c\xad\xb7\xff\xbd\xf6\xf8\x9f\x3a\x47\x1c\x59"
+											 "\xb4\x77\xd5\x02\xe4\xd8\x48\x7f\x42\xdf\xe3\x8e\xed\x73\x81\x7a\xda\x91\xb7\xe2\x63\xd2\x91\x71\xb6\x5c\x44\x3a\x01\x2a\x41\x22",
+									 64) == 0;
 
 			func_multi_selector<3>(ctx, dm, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("This is a testThis is a testThis is a test", 14, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
-					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
-					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 96) == 0;
+			bResult = bResult && memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+											 "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+											 "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05",
+									 96) == 0;
 
 			func_multi_selector<4>(ctx, dm, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("This is a testThis is a testThis is a testThis is a test", 14, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
-					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
-					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
-					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 128) == 0;
+			bResult = bResult && memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+											 "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+											 "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+											 "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05",
+									 128) == 0;
 
 			func_multi_selector<5>(ctx, dm, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("This is a testThis is a testThis is a testThis is a testThis is a test", 14, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
-					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
-					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
-					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
-					"\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05", 160) == 0;
+			bResult = bResult && memcmp(out, "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+											 "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+											 "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+											 "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05"
+											 "\xa0\x84\xf0\x1d\x14\x37\xa0\x9c\x69\x85\x40\x1b\x60\xd4\x35\x54\xae\x10\x58\x02\xc5\xf5\xd8\xa9\xb3\x25\x36\x49\xc0\xbe\x66\x05",
+									 160) == 0;
 		}
 		else if(algo == POW(cryptonight_lite))
 		{
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\x5a\x24\xa0\x29\xde\x1c\x39\x3f\x3d\x52\x7a\x2f\x9b\x39\xdc\x3d\xb3\xbc\x87\x11\x8b\x84\x52\x9b\x9f\x0\x88\x49\x25\x4b\x5\xce", 32) == 0;
+			bResult = bResult && memcmp(out, "\x5a\x24\xa0\x29\xde\x1c\x39\x3f\x3d\x52\x7a\x2f\x9b\x39\xdc\x3d\xb3\xbc\x87\x11\x8b\x84\x52\x9b\x9f\x0\x88\x49\x25\x4b\x5\xce", 32) == 0;
 
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\x5a\x24\xa0\x29\xde\x1c\x39\x3f\x3d\x52\x7a\x2f\x9b\x39\xdc\x3d\xb3\xbc\x87\x11\x8b\x84\x52\x9b\x9f\x0\x88\x49\x25\x4b\x5\xce", 32) == 0;
+			bResult = bResult && memcmp(out, "\x5a\x24\xa0\x29\xde\x1c\x39\x3f\x3d\x52\x7a\x2f\x9b\x39\xdc\x3d\xb3\xbc\x87\x11\x8b\x84\x52\x9b\x9f\x0\x88\x49\x25\x4b\x5\xce", 32) == 0;
 		}
 		else if(algo == POW(cryptonight_monero))
 		{
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\x1\x57\xc5\xee\x18\x8b\xbe\xc8\x97\x52\x85\xa3\x6\x4e\xe9\x20\x65\x21\x76\x72\xfd\x69\xa1\xae\xbd\x7\x66\xc7\xb5\x6e\xe0\xbd", 32) == 0;
+			bResult = bResult && memcmp(out, "\x1\x57\xc5\xee\x18\x8b\xbe\xc8\x97\x52\x85\xa3\x6\x4e\xe9\x20\x65\x21\x76\x72\xfd\x69\xa1\xae\xbd\x7\x66\xc7\xb5\x6e\xe0\xbd", 32) == 0;
 
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\x1\x57\xc5\xee\x18\x8b\xbe\xc8\x97\x52\x85\xa3\x6\x4e\xe9\x20\x65\x21\x76\x72\xfd\x69\xa1\xae\xbd\x7\x66\xc7\xb5\x6e\xe0\xbd", 32) == 0;
+			bResult = bResult && memcmp(out, "\x1\x57\xc5\xee\x18\x8b\xbe\xc8\x97\x52\x85\xa3\x6\x4e\xe9\x20\x65\x21\x76\x72\xfd\x69\xa1\xae\xbd\x7\x66\xc7\xb5\x6e\xe0\xbd", 32) == 0;
 		}
 		else if(algo == POW(cryptonight_monero_v8))
 		{
@@ -351,61 +356,61 @@ bool minethd::self_test()
 		{
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xfc\xa1\x7d\x44\x37\x70\x9b\x4a\x3b\xd7\x1e\xf3\xed\x21\xb4\x17\xca\x93\xdc\x86\x79\xce\x81\xdf\xd3\xcb\xdd\xa\x22\xd7\x58\xba", 32) == 0;
+			bResult = bResult && memcmp(out, "\xfc\xa1\x7d\x44\x37\x70\x9b\x4a\x3b\xd7\x1e\xf3\xed\x21\xb4\x17\xca\x93\xdc\x86\x79\xce\x81\xdf\xd3\xcb\xdd\xa\x22\xd7\x58\xba", 32) == 0;
 
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xfc\xa1\x7d\x44\x37\x70\x9b\x4a\x3b\xd7\x1e\xf3\xed\x21\xb4\x17\xca\x93\xdc\x86\x79\xce\x81\xdf\xd3\xcb\xdd\xa\x22\xd7\x58\xba", 32) == 0;
+			bResult = bResult && memcmp(out, "\xfc\xa1\x7d\x44\x37\x70\x9b\x4a\x3b\xd7\x1e\xf3\xed\x21\xb4\x17\xca\x93\xdc\x86\x79\xce\x81\xdf\xd3\xcb\xdd\xa\x22\xd7\x58\xba", 32) == 0;
 		}
 		else if(algo == POW(cryptonight_ipbc))
 		{
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xbc\xe7\x48\xaf\xc5\x31\xff\xc9\x33\x7f\xcf\x51\x1b\xe3\x20\xa3\xaa\x8d\x4\x55\xf9\x14\x2a\x61\xe8\x38\xdf\xdc\x3b\x28\x3e\x0xb0", 32) == 0;
+			bResult = bResult && memcmp(out, "\xbc\xe7\x48\xaf\xc5\x31\xff\xc9\x33\x7f\xcf\x51\x1b\xe3\x20\xa3\xaa\x8d\x4\x55\xf9\x14\x2a\x61\xe8\x38\xdf\xdc\x3b\x28\x3e\x0xb0", 32) == 0;
 
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xbc\xe7\x48\xaf\xc5\x31\xff\xc9\x33\x7f\xcf\x51\x1b\xe3\x20\xa3\xaa\x8d\x4\x55\xf9\x14\x2a\x61\xe8\x38\xdf\xdc\x3b\x28\x3e\x0", 32) == 0;
+			bResult = bResult && memcmp(out, "\xbc\xe7\x48\xaf\xc5\x31\xff\xc9\x33\x7f\xcf\x51\x1b\xe3\x20\xa3\xaa\x8d\x4\x55\xf9\x14\x2a\x61\xe8\x38\xdf\xdc\x3b\x28\x3e\x0", 32) == 0;
 		}
 		else if(algo == POW(cryptonight_stellite))
 		{
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xb9\x9d\x6c\xee\x50\x3c\x6f\xa6\x3f\x30\x69\x24\x4a\x0\x9f\xe4\xd4\x69\x3f\x68\x92\xa4\x5c\xc2\x51\xae\x46\x87\x7c\x6b\x98\xae", 32) == 0;
+			bResult = bResult && memcmp(out, "\xb9\x9d\x6c\xee\x50\x3c\x6f\xa6\x3f\x30\x69\x24\x4a\x0\x9f\xe4\xd4\x69\x3f\x68\x92\xa4\x5c\xc2\x51\xae\x46\x87\x7c\x6b\x98\xae", 32) == 0;
 
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xb9\x9d\x6c\xee\x50\x3c\x6f\xa6\x3f\x30\x69\x24\x4a\x0\x9f\xe4\xd4\x69\x3f\x68\x92\xa4\x5c\xc2\x51\xae\x46\x87\x7c\x6b\x98\xae", 32) == 0;
+			bResult = bResult && memcmp(out, "\xb9\x9d\x6c\xee\x50\x3c\x6f\xa6\x3f\x30\x69\x24\x4a\x0\x9f\xe4\xd4\x69\x3f\x68\x92\xa4\x5c\xc2\x51\xae\x46\x87\x7c\x6b\x98\xae", 32) == 0;
 		}
 		else if(algo == POW(cryptonight_masari))
 		{
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xbf\x5f\xd\xf3\x5a\x65\x7c\x89\xb0\x41\xcf\xf0\xd\x46\x6a\xb6\x30\xf9\x77\x7f\xd9\xc6\x3\xd7\x3b\xd8\xf1\xb5\x4b\x49\xed\x28", 32) == 0;
+			bResult = bResult && memcmp(out, "\xbf\x5f\xd\xf3\x5a\x65\x7c\x89\xb0\x41\xcf\xf0\xd\x46\x6a\xb6\x30\xf9\x77\x7f\xd9\xc6\x3\xd7\x3b\xd8\xf1\xb5\x4b\x49\xed\x28", 32) == 0;
 
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xbf\x5f\xd\xf3\x5a\x65\x7c\x89\xb0\x41\xcf\xf0\xd\x46\x6a\xb6\x30\xf9\x77\x7f\xd9\xc6\x3\xd7\x3b\xd8\xf1\xb5\x4b\x49\xed\x28", 32) == 0;
+			bResult = bResult && memcmp(out, "\xbf\x5f\xd\xf3\x5a\x65\x7c\x89\xb0\x41\xcf\xf0\xd\x46\x6a\xb6\x30\xf9\x77\x7f\xd9\xc6\x3\xd7\x3b\xd8\xf1\xb5\x4b\x49\xed\x28", 32) == 0;
 		}
 		else if(algo == POW(cryptonight_heavy))
 		{
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xf9\x44\x97\xce\xb4\xf0\xd9\x84\xb\x9b\xfc\x45\x94\x74\x55\x25\xcf\x26\x83\x16\x4f\xc\xf8\x2d\xf5\xf\x25\xff\x45\x28\x2e\x85", 32) == 0;
+			bResult = bResult && memcmp(out, "\xf9\x44\x97\xce\xb4\xf0\xd9\x84\xb\x9b\xfc\x45\x94\x74\x55\x25\xcf\x26\x83\x16\x4f\xc\xf8\x2d\xf5\xf\x25\xff\x45\x28\x2e\x85", 32) == 0;
 
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xf9\x44\x97\xce\xb4\xf0\xd9\x84\xb\x9b\xfc\x45\x94\x74\x55\x25\xcf\x26\x83\x16\x4f\xc\xf8\x2d\xf5\xf\x25\xff\x45\x28\x2e\x85", 32) == 0;
+			bResult = bResult && memcmp(out, "\xf9\x44\x97\xce\xb4\xf0\xd9\x84\xb\x9b\xfc\x45\x94\x74\x55\x25\xcf\x26\x83\x16\x4f\xc\xf8\x2d\xf5\xf\x25\xff\x45\x28\x2e\x85", 32) == 0;
 		}
 		else if(algo == POW(cryptonight_haven))
 		{
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xc7\xd4\x52\x9\x2b\x48\xa5\xaf\xae\x11\xaf\x40\x9a\x87\xe5\x88\xf0\x29\x35\xa3\x68\xd\xe3\x6b\xce\x43\xf6\xc8\xdf\xd3\xe3\x9", 32) == 0;
+			bResult = bResult && memcmp(out, "\xc7\xd4\x52\x9\x2b\x48\xa5\xaf\xae\x11\xaf\x40\x9a\x87\xe5\x88\xf0\x29\x35\xa3\x68\xd\xe3\x6b\xce\x43\xf6\xc8\xdf\xd3\xe3\x9", 32) == 0;
 
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xc7\xd4\x52\x9\x2b\x48\xa5\xaf\xae\x11\xaf\x40\x9a\x87\xe5\x88\xf0\x29\x35\xa3\x68\xd\xe3\x6b\xce\x43\xf6\xc8\xdf\xd3\xe3\x9", 32) == 0;
+			bResult = bResult && memcmp(out, "\xc7\xd4\x52\x9\x2b\x48\xa5\xaf\xae\x11\xaf\x40\x9a\x87\xe5\x88\xf0\x29\x35\xa3\x68\xd\xe3\x6b\xce\x43\xf6\xc8\xdf\xd3\xe3\x9", 32) == 0;
 		}
 		else if(algo == POW(cryptonight_bittube2))
 		{
@@ -415,7 +420,7 @@ bool minethd::self_test()
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
 
 			ctx[0]->hash_fn("\x38\x27\x4c\x97\xc4\x5a\x17\x2c\xfc\x97\x67\x98\x70\x42\x2e\x3a\x1a\xb0\x78\x49\x60\xc6\x05\x14\xd8\x16\x27\x14\x15\xc3\x06\xee\x3a\x3e\xd1\xa7\x7e\x31\xf6\xa8\x85\xc3\xcb\xff\x01\x02\x03\x04", 48, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\x18\x2c\x30\x41\x93\x1a\x14\x73\xc6\xbf\x7e\x77\xfe\xb5\x17\x9b\xa8\xbe\xa9\x68\xba\x9e\xe1\xe8\x24\x1a\x12\x7a\xac\x81\xb4\x24", 32) == 0;
+			bResult = bResult && memcmp(out, "\x18\x2c\x30\x41\x93\x1a\x14\x73\xc6\xbf\x7e\x77\xfe\xb5\x17\x9b\xa8\xbe\xa9\x68\xba\x9e\xe1\xe8\x24\x1a\x12\x7a\xac\x81\xb4\x24", 32) == 0;
 
 			ctx[0]->hash_fn("\x04\x04\xb4\x94\xce\xd9\x05\x18\xe7\x25\x5d\x01\x28\x63\xde\x8a\x4d\x27\x72\xb1\xff\x78\x8c\xd0\x56\x20\x38\x98\x3e\xd6\x8c\x94\xea\x00\xfe\x43\x66\x68\x83\x00\x00\x00\x00\x18\x7c\x2e\x0f\x66\xf5\x6b\xb9\xef\x67\xed\x35\x14\x5c\x69\xd4\x69\x0d\x1f\x98\x22\x44\x01\x2b\xea\x69\x6e\xe8\xb3\x3c\x42\x12\x01", 76, out, ctx, algo);
 			bResult = bResult && memcmp(out, "\x7f\xbe\xb9\x92\x76\x87\x5a\x3c\x43\xc2\xbe\x5a\x73\x36\x06\xb5\xdc\x79\xcc\x9c\xf3\x7c\x43\x3e\xb4\x18\x56\x17\xfb\x9b\xc9\x36", 32) == 0;
@@ -427,29 +432,29 @@ bool minethd::self_test()
 		{
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("\x03\x05\xa0\xdb\xd6\xbf\x05\xcf\x16\xe5\x03\xf3\xa6\x6f\x78\x00\x7c\xbf\x34\x14\x43\x32\xec\xbf\xc2\x2e\xd9\x5c\x87\x00\x38\x3b\x30\x9a\xce\x19\x23\xa0\x96\x4b\x00\x00\x00\x08\xba\x93\x9a\x62\x72\x4c\x0d\x75\x81\xfc\xe5\x76\x1e\x9d\x8a\x0e\x6a\x1c\x3f\x92\x4f\xdd\x84\x93\xd1\x11\x56\x49\xc0\x5e\xb6\x01", 76, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\x40\x86\x5a\xa8\x87\x41\xec\x1d\xcc\xbd\x2b\xc6\xff\x36\xb9\x4d\x54\x71\x58\xdb\x94\x69\x8e\x3c\xa0\x3d\xe4\x81\x9a\x65\x9f\xef", 32) == 0;
+			bResult = bResult && memcmp(out, "\x40\x86\x5a\xa8\x87\x41\xec\x1d\xcc\xbd\x2b\xc6\xff\x36\xb9\x4d\x54\x71\x58\xdb\x94\x69\x8e\x3c\xa0\x3d\xe4\x81\x9a\x65\x9f\xef", 32) == 0;
 		}
 		else if(algo == POW(cryptonight_gpu))
 		{
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("", 0, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\x55\x5e\x0a\xee\x78\x79\x31\x6d\x7d\xef\xf7\x72\x97\x3c\xb9\x11\x8e\x38\x95\x70\x9d\xb2\x54\x7a\xc0\x72\xd5\xb9\x13\x10\x01\xd8", 32) == 0;
+			bResult = bResult && memcmp(out, "\x55\x5e\x0a\xee\x78\x79\x31\x6d\x7d\xef\xf7\x72\x97\x3c\xb9\x11\x8e\x38\x95\x70\x9d\xb2\x54\x7a\xc0\x72\xd5\xb9\x13\x10\x01\xd8", 32) == 0;
 
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
 			ctx[0]->hash_fn("", 0, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\x55\x5e\x0a\xee\x78\x79\x31\x6d\x7d\xef\xf7\x72\x97\x3c\xb9\x11\x8e\x38\x95\x70\x9d\xb2\x54\x7a\xc0\x72\xd5\xb9\x13\x10\x01\xd8", 32) == 0;
+			bResult = bResult && memcmp(out, "\x55\x5e\x0a\xee\x78\x79\x31\x6d\x7d\xef\xf7\x72\x97\x3c\xb9\x11\x8e\x38\x95\x70\x9d\xb2\x54\x7a\xc0\x72\xd5\xb9\x13\x10\x01\xd8", 32) == 0;
 		}
 		else if(algo == POW(cryptonight_conceal))
 		{
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("", 0, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xb5\x54\x4b\x58\x16\x70\x26\x47\x63\x47\xe4\x1f\xb6\x5e\x57\xc9\x7c\xa5\x93\xfe\x0e\xb1\x0f\xb9\x2f\xa7\x3e\x5b\xae\xef\x79\x8c", 32) == 0;
+			bResult = bResult && memcmp(out, "\xb5\x54\x4b\x58\x16\x70\x26\x47\x63\x47\xe4\x1f\xb6\x5e\x57\xc9\x7c\xa5\x93\xfe\x0e\xb1\x0f\xb9\x2f\xa7\x3e\x5b\xae\xef\x79\x8c", 32) == 0;
 
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
 			ctx[0]->hash_fn("", 0, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xb5\x54\x4b\x58\x16\x70\x26\x47\x63\x47\xe4\x1f\xb6\x5e\x57\xc9\x7c\xa5\x93\xfe\x0e\xb1\x0f\xb9\x2f\xa7\x3e\x5b\xae\xef\x79\x8c", 32) == 0;
+			bResult = bResult && memcmp(out, "\xb5\x54\x4b\x58\x16\x70\x26\x47\x63\x47\xe4\x1f\xb6\x5e\x57\xc9\x7c\xa5\x93\xfe\x0e\xb1\x0f\xb9\x2f\xa7\x3e\x5b\xae\xef\x79\x8c", 32) == 0;
 		}
-		else if (algo == POW(cryptonight_turtle))
+		else if(algo == POW(cryptonight_turtle))
 		{
 			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
@@ -467,7 +472,7 @@ bool minethd::self_test()
 			work.iBlockHeight = 1806260;
 			set_job(work, ctx);
 			ctx[0]->hash_fn("\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74\x20\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74\x20\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74", 44, out, ctx, algo);
-			bResult = bResult &&  memcmp(out, "\xf7\x59\x58\x8a\xd5\x7e\x75\x84\x67\x29\x54\x43\xa9\xbd\x71\x49\x0a\xbf\xf8\xe9\xda\xd1\xb9\x5b\x6b\xf2\xf5\xd0\xd7\x83\x87\xbc", 32) == 0;
+			bResult = bResult && memcmp(out, "\xf7\x59\x58\x8a\xd5\x7e\x75\x84\x67\x29\x54\x43\xa9\xbd\x71\x49\x0a\xbf\xf8\xe9\xda\xd1\xb9\x5b\x6b\xf2\xf5\xd0\xd7\x83\x87\xbc", 32) == 0;
 		}
 		else if(algo == POW(cryptonight_v8_reversewaltz))
 		{
@@ -498,7 +503,7 @@ bool minethd::self_test()
 				"Cryptonight hash self-test failed. This might be caused by bad compiler optimizations.");
 	}
 
-	for (int i = 0; i < MAX_N; i++)
+	for(int i = 0; i < MAX_N; i++)
 		cryptonight_free_ctx(ctx[i]);
 
 	return bResult;
@@ -520,14 +525,13 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		win_exit();
 	}
 
-
 	//Launch the requested number of single and double threads, to distribute
 	//load evenly we need to alternate single and double threads
 	size_t i, n = jconf::inst()->GetThreadCount();
 	pvThreads.reserve(n);
 
 	jconf::thd_cfg cfg;
-	for (i = 0; i < n; i++)
+	for(i = 0; i < n; i++)
 	{
 		jconf::inst()->GetThreadConfig(i, cfg);
 
@@ -572,11 +576,11 @@ static std::string getAsmName(const uint32_t num_hashes)
 	return asm_type;
 }
 
-template<size_t N>
+template <size_t N>
 void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job& on_new_job,
 	bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo, const std::string& asm_version_str)
 {
-	static_assert(N >= 1, "number of threads must be >= 1" );
+	static_assert(N >= 1, "number of threads must be >= 1");
 
 	// We have two independent flag bits in the functions
 	// therefore we will build a binary digit and select the
@@ -717,21 +721,20 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, false, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, true, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, false, true>,
-		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, true, true>
-	};
+		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, true, true>};
 
 	std::bitset<2> digit;
 	digit.set(0, !bHaveAes);
 	digit.set(1, !bNoPrefetch);
 
-	ctx[0]->hash_fn = func_table[ algv << 2 | digit.to_ulong() ];
+	ctx[0]->hash_fn = func_table[algv << 2 | digit.to_ulong()];
 
 	// check for asm optimized version for cryptonight_v8
 	if(algo == cryptonight_monero_v8)
 	{
 		std::string selected_asm = asm_version_str;
 		if(selected_asm == "auto")
-				selected_asm = cpu::getAsmName(N);
+			selected_asm = cpu::getAsmName(N);
 
 		if(selected_asm != "off")
 		{
@@ -747,7 +750,7 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 	{
 		std::string selected_asm = asm_version_str;
 		if(selected_asm == "auto")
-				selected_asm = cpu::getAsmName(N);
+			selected_asm = cpu::getAsmName(N);
 		if(selected_asm == "off")
 		{
 			for(int h = 0; h < N; ++h)
@@ -769,7 +772,7 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 	};
 
 	auto it = on_new_job_map.find(algo.Id());
-	if (it != on_new_job_map.end())
+	if(it != on_new_job_map.end())
 		on_new_job = it->second;
 	else
 		on_new_job = nullptr;
@@ -806,18 +809,18 @@ void minethd::penta_work_main()
 	multiway_work_main<5u>();
 }
 
-template<size_t N>
-void minethd::prep_multiway_work(uint8_t *bWorkBlob, uint32_t **piNonce)
+template <size_t N>
+void minethd::prep_multiway_work(uint8_t* bWorkBlob, uint32_t** piNonce)
 {
-	for (size_t i = 0; i < N; i++)
+	for(size_t i = 0; i < N; i++)
 	{
 		memcpy(bWorkBlob + oWork.iWorkSize * i, oWork.bWorkBlob, oWork.iWorkSize);
-		if (i > 0)
+		if(i > 0)
 			piNonce[i] = (uint32_t*)(bWorkBlob + oWork.iWorkSize * i + 39);
 	}
 }
 
-template<uint32_t N>
+template <uint32_t N>
 void minethd::multiway_work_main()
 {
 	if(affinity >= 0) //-1 means no affinity
@@ -828,22 +831,22 @@ void minethd::multiway_work_main()
 	lck.release();
 	std::this_thread::yield();
 
-	cryptonight_ctx *ctx[MAX_N];
+	cryptonight_ctx* ctx[MAX_N];
 	uint64_t iCount = 0;
-	uint64_t *piHashVal[MAX_N];
-	uint32_t *piNonce[MAX_N];
+	uint64_t* piHashVal[MAX_N];
+	uint32_t* piNonce[MAX_N];
 	uint8_t bHashOut[MAX_N * 32];
 	uint8_t bWorkBlob[sizeof(miner_work::bWorkBlob) * MAX_N];
 	uint32_t iNonce;
 	job_result res;
 
-	for (size_t i = 0; i < N; i++)
+	for(size_t i = 0; i < N; i++)
 	{
 		ctx[i] = minethd_alloc_ctx();
 		if(ctx[i] == nullptr)
 		{
 			printer::inst()->print_msg(L0, "ERROR: miner was not able to allocate memory.");
-			for (int j = 0; j < i; j++)
+			for(int j = 0; j < i; j++)
 				cryptonight_free_ctx(ctx[j]);
 			win_exit(1);
 		}
@@ -863,15 +866,15 @@ void minethd::multiway_work_main()
 	size_t lastPoolId = 0;
 
 	func_multi_selector<N>(ctx, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
-	while (bQuit == 0)
+	while(bQuit == 0)
 	{
-		if (oWork.bStall)
+		if(oWork.bStall)
 		{
 			/*	We are stalled here because the executor didn't find a job for us yet,
 			either because of network latency, or a socket problem. Since we are
 			raison d'etre of this software it us sensible to just wait until we have something*/
 
-			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			globalStates::inst().consume_work(oWork, iJobNo);
@@ -908,9 +911,9 @@ void minethd::multiway_work_main()
 		if(on_new_job != nullptr)
 			on_new_job(oWork, ctx);
 
-		while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
-			if ((iCount++ & 0x7) == 0)  //Store stats every 8*N hashes
+			if((iCount++ & 0x7) == 0) //Store stats every 8*N hashes
 			{
 				uint64_t iStamp = get_timestamp_ms();
 				iHashCount.store(iCount * N, std::memory_order_relaxed);
@@ -927,19 +930,18 @@ void minethd::multiway_work_main()
 					break;
 			}
 
-			for (size_t i = 0; i < N; i++)
+			for(size_t i = 0; i < N; i++)
 				*piNonce[i] = iNonce++;
 
 			ctx[0]->hash_fn(bWorkBlob, oWork.iWorkSize, bHashOut, ctx, miner_algo);
 
-			for (size_t i = 0; i < N; i++)
+			for(size_t i = 0; i < N; i++)
 			{
-				if (*piHashVal[i] < oWork.iTarget)
+				if(*piHashVal[i] < oWork.iTarget)
 				{
 					executor::inst()->push_event(
 						ex_event(job_result(oWork.sJobID, iNonce - N + i, bHashOut + 32 * i, iThreadNo, miner_algo),
-						oWork.iPoolId)
-					);
+							oWork.iPoolId));
 				}
 			}
 
@@ -950,7 +952,7 @@ void minethd::multiway_work_main()
 		prep_multiway_work<N>(bWorkBlob, piNonce);
 	}
 
-	for (int i = 0; i < N; i++)
+	for(int i = 0; i < N; i++)
 		cryptonight_free_ctx(ctx[i]);
 }
 

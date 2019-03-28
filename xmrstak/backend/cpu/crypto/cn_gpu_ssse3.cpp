@@ -1,7 +1,7 @@
-#include "cn_gpu.hpp"
 #include "../../cryptonight.hpp"
+#include "cn_gpu.hpp"
 
-#pragma GCC target ("sse2")
+#pragma GCC target("sse2")
 
 inline void prep_dv(__m128i* idx, __m128i& v, __m128& n)
 {
@@ -21,13 +21,13 @@ inline void sub_round(__m128 n0, __m128 n1, __m128 n2, __m128 n3, __m128 rnd_c, 
 {
 	n1 = _mm_add_ps(n1, c);
 	__m128 nn = _mm_mul_ps(n0, c);
-	nn = _mm_mul_ps(n1, _mm_mul_ps(nn,nn));
+	nn = _mm_mul_ps(n1, _mm_mul_ps(nn, nn));
 	nn = fma_break(nn);
 	n = _mm_add_ps(n, nn);
 
 	n3 = _mm_sub_ps(n3, c);
 	__m128 dd = _mm_mul_ps(n2, c);
-	dd = _mm_mul_ps(n3, _mm_mul_ps(dd,dd));
+	dd = _mm_mul_ps(n3, _mm_mul_ps(dd, dd));
 	dd = fma_break(dd);
 	d = _mm_add_ps(d, dd);
 
@@ -57,12 +57,12 @@ inline void round_compute(__m128 n0, __m128 n1, __m128 n2, __m128 n3, __m128 rnd
 	// Make sure abs(d) > 2.0 - this prevents division by zero and accidental overflows by division by < 1.0
 	d = _mm_and_ps(_mm_castsi128_ps(_mm_set1_epi32(0xFF7FFFFF)), d);
 	d = _mm_or_ps(_mm_castsi128_ps(_mm_set1_epi32(0x40000000)), d);
-	r =_mm_add_ps(r, _mm_div_ps(n,d));
+	r = _mm_add_ps(r, _mm_div_ps(n, d));
 }
 
 // 112×4 = 448
-template<bool add>
-inline __m128i single_comupte(__m128 n0, __m128 n1,  __m128 n2,  __m128 n3, float cnt, __m128 rnd_c, __m128& sum)
+template <bool add>
+inline __m128i single_comupte(__m128 n0, __m128 n1, __m128 n2, __m128 n3, float cnt, __m128 rnd_c, __m128& sum)
 {
 	__m128 c = _mm_set1_ps(cnt);
 	__m128 r = _mm_setzero_ps();
@@ -85,8 +85,8 @@ inline __m128i single_comupte(__m128 n0, __m128 n1,  __m128 n2,  __m128 n3, floa
 	return _mm_cvttps_epi32(r);
 }
 
-template<size_t rot>
-inline void single_comupte_wrap(__m128 n0, __m128 n1, __m128 n2,  __m128 n3, float cnt, __m128 rnd_c, __m128& sum, __m128i& out)
+template <size_t rot>
+inline void single_comupte_wrap(__m128 n0, __m128 n1, __m128 n2, __m128 n3, float cnt, __m128 rnd_c, __m128& sum, __m128i& out)
 {
 	__m128i r = single_comupte<rot % 2 != 0>(n0, n1, n2, n3, cnt, rnd_c, sum);
 	if(rot != 0)
@@ -94,7 +94,7 @@ inline void single_comupte_wrap(__m128 n0, __m128 n1, __m128 n2,  __m128 n3, flo
 	out = _mm_xor_si128(out, r);
 }
 
-inline __m128i* scratchpad_ptr(uint8_t* lpad, uint32_t idx, size_t n, const uint32_t mask) { return reinterpret_cast<__m128i*>(lpad + (idx & mask) + n*16); }
+inline __m128i* scratchpad_ptr(uint8_t* lpad, uint32_t idx, size_t n, const uint32_t mask) { return reinterpret_cast<__m128i*>(lpad + (idx & mask) + n * 16); }
 
 void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad, const xmrstak_algo& algo)
 {

@@ -9,7 +9,7 @@ using namespace rapidjson;
 inline const Value* GetObjectMember(const Value& obj, const char* key)
 {
 	Value::ConstMemberIterator itr = obj.FindMember(key);
-	if (itr != obj.MemberEnd())
+	if(itr != obj.MemberEnd())
 		return &itr->value;
 	else
 		return nullptr;
@@ -48,8 +48,8 @@ inline const Value* GetObjectMember(const Value& obj, const char* key)
 
 #elif defined(__NetBSD__)
 
-#include <sys/types.h>
 #include <machine/bswap.h>
+#include <sys/types.h>
 #if defined(__BSWAP_RENAME) && !defined(__bswap_32)
 #define bswap_32(x) bswap32(x)
 #define bswap_64(x) bswap64(x)
