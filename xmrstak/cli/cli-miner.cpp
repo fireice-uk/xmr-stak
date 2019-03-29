@@ -195,7 +195,14 @@ inline void prompt_once(bool& prompted)
 	}
 }
 
-void do_guided_pool_config(const bool use_simple_start)
+inline bool use_simple_start()
+{
+	// ask this question only once
+	static bool simple_start = read_yes_no("\nUse simple setup method? (Y/n)", "Y");
+	return simple_start;
+}
+
+void do_guided_pool_config()
 {
 	using namespace xmrstak;
 
@@ -261,19 +268,22 @@ void do_guided_pool_config(const bool use_simple_start)
 	}
 
 	auto& rigid = params::inst().poolRigid;
-	if(!use_simple_start && rigid.empty() && !params::inst().userSetRigid)
+	if(rigid.empty() && !params::inst().userSetRigid)
 	{
-		prompt_once(prompted);
-
-		if(!stdin_flushed)
+		if(!use_simple_start())
 		{
-			// clear everything from stdin to allow an empty rigid
-			std::cin.clear();
-			std::cin.ignore(INT_MAX, '\n');
-		}
+			prompt_once(prompted);
 
-		std::cout << "- Rig identifier for pool-side statistics (needs pool support). Can be empty:" << std::endl;
-		getline(std::cin, rigid);
+			if(!stdin_flushed)
+			{
+				// clear everything from stdin to allow an empty rigid
+				std::cin.clear();
+				std::cin.ignore(INT_MAX, '\n');
+			}
+
+			std::cout << "- Rig identifier for pool-side statistics (needs pool support). Can be empty:" << std::endl;
+			getline(std::cin, rigid);
+		}
 	}
 
 	bool tls = params::inst().poolUseTls;
@@ -289,15 +299,19 @@ void do_guided_pool_config(const bool use_simple_start)
 #endif
 
 	bool nicehash = params::inst().nicehashMode;
-	if(!use_simple_start && !userSetPool)
+	if(!userSetPool)
 	{
-		prompt_once(prompted);
-		nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/N)", "N");
+		if(!use_simple_start())
+		{
+			prompt_once(prompted);
+			nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/N)", "N");
+		}
 	}
 
 	bool multipool = false;
-	if(!use_simple_start && !userSetPool)
-		multipool = read_yes_no("- Do you want to use multiple pools? (y/N)", "N");
+	if(!userSetPool)
+		if(!use_simple_start())
+			multipool = read_yes_no("- Do you want to use multiple pools? (y/N)", "N");
 
 	int64_t pool_weight = 1;
 	if(multipool)
@@ -335,7 +349,7 @@ void do_guided_pool_config(const bool use_simple_start)
 	std::cout << "Pool configuration stored in file '" << params::inst().configFilePools << "'" << std::endl;
 }
 
-void do_guided_config(const bool use_simple_start)
+void do_guided_config()
 {
 	using namespace xmrstak;
 
@@ -353,7 +367,7 @@ void do_guided_config(const bool use_simple_start)
 	{
 		http_port = params::httpd_port_disabled;
 #ifndef CONF_NO_HTTPD
-		if(!use_simple_start)
+		if(!use_simple_start())
 		{
 			prompt_once(prompted);
 
@@ -737,17 +751,13 @@ int main(int argc, char* argv[])
 	bool hasConfigFile = configEditor::file_exist(params::inst().configFile);
 	bool hasPoolConfig = configEditor::file_exist(params::inst().configFilePools);
 
-	if(!hasConfigFile || !hasPoolConfig)
-	{
-		bool use_simple_start = read_yes_no("\nUse simple setup method? (Y/n)", "Y");
+	// check if we need a guided start
+	if(!hasConfigFile)
+		do_guided_config();
 
-		// check if we need a guided start
-		if(!hasConfigFile)
-			do_guided_config(use_simple_start);
+	if(!hasPoolConfig)
+		do_guided_pool_config();
 
-		if(!hasPoolConfig)
-			do_guided_pool_config(use_simple_start);
-	}
 	if(!jconf::inst()->parse_config(params::inst().configFile.c_str(), params::inst().configFilePools.c_str()))
 	{
 		win_exit();
