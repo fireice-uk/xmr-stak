@@ -198,7 +198,6 @@ void minethd::work_main()
 	// wait until all NVIDIA devices are initialized
 	thread_work_guard.wait();
 
-	uint64_t iCount = 0;
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
 
@@ -297,13 +296,8 @@ void minethd::work_main()
 					executor::inst()->push_event(ex_event("NVIDIA Invalid Result", ctx.device_id, oWork.iPoolId));
 			}
 
-			iCount += h_per_round;
 			iNonce += h_per_round;
-
-			using namespace std::chrono;
-			uint64_t iStamp = get_timestamp_ms();
-			iHashCount.store(iCount, std::memory_order_relaxed);
-			iTimestamp.store(iStamp, std::memory_order_relaxed);
+			updateStats(h_per_round, oWork.iPoolId);
 			std::this_thread::yield();
 		}
 
