@@ -23,6 +23,7 @@
 
 #include "telemetry.hpp"
 #include "xmrstak/net/msgstruct.hpp"
+#include "xmrstak/cpputil/read_write_lock.h"
 
 #include <chrono>
 #include <cmath>
@@ -36,7 +37,7 @@ telemetry::telemetry(size_t iThd)
 	ppHashCounts = new uint64_t*[iThd];
 	ppTimestamps = new uint64_t*[iThd];
 	iBucketTop = new uint32_t[iThd];
-	mtx = new std::mutex[iThd];
+	mtx = new ::cpputil::RWLock[iThd];
 
 	for(size_t i = 0; i < iThd; i++)
 	{
@@ -57,7 +58,7 @@ double telemetry::calc_telemetry_data(size_t iLastMillisec, size_t iThread)
 	uint64_t iLatestHashCnt = 0;
 	bool bHaveFullSet = false;
 
-	std::unique_lock<std::mutex> lk(mtx[iThread]);
+	mtx[iThread].ReadLock();
 	uint64_t iTimeNow = get_timestamp_ms();
 
 	//Start at 1, buckettop points to next empty
@@ -83,7 +84,7 @@ double telemetry::calc_telemetry_data(size_t iLastMillisec, size_t iThread)
 		iEarliestStamp = ppTimestamps[iThread][idx];
 		iEarliestHashCnt = ppHashCounts[iThread][idx];
 	}
-	lk.unlock();
+	mtx[iThread].UnLock();
 
 	if(!bHaveFullSet || iEarliestStamp == 0 || iLatestStamp == 0)
 		return nan("");
@@ -102,12 +103,13 @@ double telemetry::calc_telemetry_data(size_t iLastMillisec, size_t iThread)
 
 void telemetry::push_perf_value(size_t iThd, uint64_t iHashCount, uint64_t iTimestamp)
 {
-	std::unique_lock<std::mutex> lk(mtx[iThd]);
+	mtx[iThd].WriteLock();
 	size_t iTop = iBucketTop[iThd];
 	ppHashCounts[iThd][iTop] = iHashCount;
 	ppTimestamps[iThd][iTop] = iTimestamp;
 
 	iBucketTop[iThd] = (iTop + 1) & iBucketMask;
+	mtx[iThd].UnLock();
 }
 
 } // namespace xmrstak
