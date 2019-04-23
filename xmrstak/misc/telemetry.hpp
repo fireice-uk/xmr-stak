@@ -1,5 +1,7 @@
 #pragma once
 
+#include "xmrstak/cpputil/read_write_lock.h"
+
 #include <cstdint>
 #include <cstring>
 #include <mutex>
@@ -15,7 +17,7 @@ class telemetry
 	double calc_telemetry_data(size_t iLastMillisec, size_t iThread);
 
   private:
-	std::mutex* mtx;
+	::cpputil::RWLock* mtx;
 	constexpr static size_t iBucketSize = 2 << 11; //Power of 2 to simplify calculations
 	constexpr static size_t iBucketMask = iBucketSize - 1;
 	uint32_t* iBucketTop;
