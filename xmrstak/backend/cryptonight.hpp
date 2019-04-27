@@ -183,7 +183,7 @@ struct xmrstak_algo
 // default cryptonight
 constexpr size_t CN_MEMORY = 2 * 1024 * 1024;
 constexpr uint32_t CN_ITER = 0x80000;
-CN_MASK = (CN_MEMORY / 16 - 1) * 16;
+constexpr uint32_t CN_MASK = (CN_MEMORY / 16 - 1) * 16;
 
 // crptonight gpu
 constexpr uint32_t CN_GPU_MASK = 0x1FFFC0;
