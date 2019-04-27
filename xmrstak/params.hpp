@@ -50,6 +50,8 @@ struct params
 	std::string configFileNVIDIA;
 	std::string configFileCPU;
 
+	std::string outputFile;
+
 	bool allowUAC = true;
 	std::string minerArg0;
 	std::string minerArgs;

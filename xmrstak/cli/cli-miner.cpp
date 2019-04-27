@@ -90,6 +90,7 @@ void help()
 	cout << "  --noNVIDIA                 disable the NVIDIA miner backend" << endl;
 	cout << "  --nvidia FILE              NVIDIA backend miner config file" << endl;
 #endif
+	cout << "  --log FILE                 miner output file" << endl;
 #ifndef CONF_NO_HTTPD
 	cout << "  -i --httpd HTTP_PORT       HTTP interface port" << endl;
 #endif
@@ -388,6 +389,8 @@ void do_guided_config()
 	}
 
 	configTpl.replace("HTTP_PORT", std::to_string(http_port));
+	
+	configTpl.replace("OUTPUT_FILE", params::inst().outputFile);
 	configTpl.write(params::inst().configFile);
 	std::cout << "Configuration stored in file '" << params::inst().configFile << "'" << std::endl;
 }
@@ -656,6 +659,17 @@ int main(int argc, char* argv[])
 				return 1;
 			}
 			params::inst().configFilePools = argv[i];
+		}
+		else if(opName.compare("--log") == 0)
+		{
+			++i;
+			if(i >= argc)
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--log' given");
+				win_exit();
+				return 1;
+			}
+			params::inst().outputFile = argv[i];
 		}
 		else if(opName.compare("-i") == 0 || opName.compare("--httpd") == 0)
 		{
