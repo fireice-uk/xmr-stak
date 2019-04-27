@@ -168,7 +168,7 @@ struct xmrstak_algo
 	{
 		// default is a 16 byte aligne mask
 		if(mask == 0)
-			return ((mem - 1u) / 16) * 16;
+			return (mem / 16 - 1u) * 16;
 		else
 			return mask;
 	}
@@ -183,7 +183,7 @@ struct xmrstak_algo
 // default cryptonight
 constexpr size_t CN_MEMORY = 2 * 1024 * 1024;
 constexpr uint32_t CN_ITER = 0x80000;
-constexpr uint32_t CN_MASK = ((CN_MEMORY - 1) / 16) * 16;
+CN_MASK = (CN_MEMORY / 16 - 1) * 16;
 
 // crptonight gpu
 constexpr uint32_t CN_GPU_MASK = 0x1FFFC0;
