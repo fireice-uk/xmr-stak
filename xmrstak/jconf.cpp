@@ -283,7 +283,10 @@ bool jconf::DaemonMode()
 
 const char* jconf::GetOutputFile()
 {
-	return prv->configValues[sOutputFile]->GetString();
+	if(xmrstak::params::inst().outputFile.length() > 0)
+		return xmrstak::params::inst().outputFile.c_str();
+	else
+		return prv->configValues[sOutputFile]->GetString();
 }
 
 void jconf::cpuid(uint32_t eax, int32_t ecx, int32_t val[4])
