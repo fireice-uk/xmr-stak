@@ -440,17 +440,35 @@ void executor::on_miner_result(size_t pool_id, job_result& oResult)
 		t_len = 0xFFFF;
 	iPoolCallTimes.push_back((uint16_t)t_len);
 
+	std::string name(backend_name);
+	std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+
 	if(bResult)
 	{
 		uint64_t* targets = (uint64_t*)oResult.bResult;
 		log_result_ok(t64_to_diff(targets[3]));
-		printer::inst()->print_msg(L3, "Result accepted by the pool.");
+
+		if (pvThreads->at(oResult.iThreadId)->backendType == xmrstak::iBackend::BackendType::CPU)
+		{
+			printer::inst()->print_msg(L3, "CPU: Share accepted. Pool: %s", pool->get_pool_addr());
+		}
+		else
+		{
+			printer::inst()->print_msg(L3, "%s GPU %u: Share accepted. Pool: %s", name.c_str(), pvThreads->at(oResult.iThreadId)->iGpuIndex, pool->get_pool_addr());
+		}
 	}
 	else
 	{
 		if(!pool->have_sock_error())
 		{
-			printer::inst()->print_msg(L3, "Result rejected by the pool.");
+			if (pvThreads->at(oResult.iThreadId)->backendType == xmrstak::iBackend::BackendType::CPU)
+			{
+				printer::inst()->print_msg(L3, "CPU: Share rejected. Pool: %s", pool->get_pool_addr());
+			}
+			else
+			{
+				printer::inst()->print_msg(L3, "%s GPU %u: Share rejected. Pool: %s", name.c_str(), pvThreads->at(oResult.iThreadId)->iGpuIndex, pool->get_pool_addr());
+			}
 
 			std::string error = pool->get_call_error();
 
