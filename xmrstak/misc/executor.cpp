@@ -762,10 +762,9 @@ void executor::hashrate_report(std::string& out)
 
 	if(jconf::inst()->PrintMotd())
 	{
-		std::string motd;
 		for(jpsock& pool : pools)
 		{
-			motd.empty();
+			std::string motd;
 			if(pool.get_pool_motd(motd) && motd_filter_console(motd))
 			{
 				out.append("Message from ").append(pool.get_pool_addr()).append(":\n");
@@ -795,16 +794,27 @@ void executor::hashrate_report(std::string& out)
 			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
 
 			out.append("HASHRATE REPORT - ").append(name).append("\n");
-			out.append("| ID |    10s |    60s |    15m |");
-			if(nthd != 1)
-				out.append(" ID |    10s |    60s |    15m |\n");
-			else
-				out.append(1, '\n');
+			out.append("| ID |    10s |    60s |    15m |\n");
 
 			double fTotalCur[3] = {0.0, 0.0, 0.0};
+			uint32_t currGpuIndex = -1;
+			double fTotalCurGpu[3] = { 0.0, 0.0, 0.0 };
 			for(i = 0; i < nthd; i++)
 			{
 				double fHps[3];
+
+				bool isGpuBackend = b != xmrstak::iBackend::BackendType::CPU;
+				uint32_t gpuIndex = isGpuBackend ? backEnds[i]->iGpuIndex : 0;
+
+				if (isGpuBackend && (currGpuIndex != gpuIndex))
+				{
+					out.append("GPU ");
+					snprintf(num, sizeof(num), "%u", (unsigned int)gpuIndex);
+					out.append(num);
+					out.append(":\n");
+
+					currGpuIndex = gpuIndex;
+				}
 
 				uint32_t tid = backEnds[i]->iThreadNo;
 				fHps[0] = telem->calc_telemetry_data(10000, tid);
@@ -825,12 +835,27 @@ void executor::hashrate_report(std::string& out)
 				fTotalCur[1] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
 				fTotalCur[2] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
 
-				if((i & 0x1) == 1) //Odd i's
-					out.append("|\n");
+				fTotalCurGpu[0] += (std::isnormal(fHps[0])) ? fHps[0] : 0.0;
+				fTotalCurGpu[1] += (std::isnormal(fHps[1])) ? fHps[1] : 0.0;
+				fTotalCurGpu[2] += (std::isnormal(fHps[2])) ? fHps[2] : 0.0;
+
+				out.append("|\n");
+
+				if (isGpuBackend && (i == nthd - 1 || backEnds[i + 1]->iGpuIndex != currGpuIndex))
+				{
+					snprintf(num, sizeof(num), "%u", (unsigned int)gpuIndex);
+					out.append("Totals (GPU ").append(num).append("): ");
+					out.append(hps_format(fTotalCurGpu[0], num, sizeof(num)));
+					out.append(hps_format(fTotalCurGpu[1], num, sizeof(num)));
+					out.append(hps_format(fTotalCurGpu[2], num, sizeof(num)));
+					out.append(" H/s\n");
+					fTotalCurGpu[0] = 0.0;
+					fTotalCurGpu[1] = 0.0;
+					fTotalCurGpu[2] = 0.0;
+				}
 			}
 
-			if((i & 0x1) == 1) //We had odd number of threads
-				out.append("|\n");
+			out.append("\n");
 
 			out.append("Totals (").append(name).append("): ");
 			out.append(hps_format(fTotalCur[0], num, sizeof(num)));
