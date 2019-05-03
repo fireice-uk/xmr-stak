@@ -51,6 +51,7 @@ struct params
 	std::string configFileCPU;
 
 	std::string outputFile;
+	int h_print_time = -1;
 
 	bool allowUAC = true;
 	std::string minerArg0;
