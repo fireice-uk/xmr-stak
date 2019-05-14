@@ -72,8 +72,8 @@ struct params
 		rootAMDCacheDir(get_home() + "/.openclcache/"),
 		configFileCPU("cpu.txt"),
 		configFileNVIDIA("nvidia.txt")
-	{}
-
+	{
+	}
 };
 
 } // namespace xmrstak

@@ -84,7 +84,7 @@ inline void single_comupte_wrap(const uint rot, int4 v0, int4 v1, int4 v2, int4 
 }
 
 )==="
-R"===(
+	R"===(
 
 static const __constant uint look[16][4] = {
 	{0, 1, 2, 3},
@@ -220,7 +220,7 @@ __kernel void JOIN(cn1_cn_gpu,ALGO)(__global int *lpad_in, __global int *spad, u
 }
 
 )==="
-R"===(
+	R"===(
 
 static const __constant uint skip[3] = {
 	20,22,22

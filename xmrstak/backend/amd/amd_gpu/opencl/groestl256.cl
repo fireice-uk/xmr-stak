@@ -125,7 +125,7 @@ static const __constant ulong T0_G[] =
 };
 
 )==="
-R"===(
+	R"===(
 
 static const __constant ulong T4_G[] =
 {
@@ -292,4 +292,3 @@ static const __constant ulong T4_G[] =
 		} while (0)
 
 )==="
-

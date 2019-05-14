@@ -4,8 +4,8 @@
 #include <stdint.h>
 
 #if defined(_WIN32) || defined(_WIN64)
-#include <malloc.h>
 #include <intrin.h>
+#include <malloc.h>
 #define HAS_WIN_INTRIN_API
 #endif
 

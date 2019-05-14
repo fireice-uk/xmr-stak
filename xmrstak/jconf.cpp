@@ -26,16 +26,15 @@
 
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/misc/jext.hpp"
-#include "xmrstak/misc/console.hpp"
 #include "xmrstak/misc/utility.hpp"
 
+#include <algorithm>
+#include <math.h>
+#include <numeric>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <vector>
-#include <numeric>
-#include <algorithm>
 
 #ifdef _WIN32
 #define strcasecmp _stricmp
@@ -44,18 +43,34 @@
 #include <cpuid.h>
 #endif
 
-
 using namespace rapidjson;
 
 /*
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
-enum configEnum {
-	aPoolList, sCurrency, bTlsSecureAlgo, iCallTimeout, iNetRetry, iGiveUpLimit, iVerboseLevel, bPrintMotd, iAutohashTime,
-	bDaemonMode, sOutputFile, iHttpdPort, sHttpLogin, sHttpPass, bPreferIpv4, bAesOverride, sUseSlowMem
+enum configEnum
+{
+	aPoolList,
+	sCurrency,
+	bTlsSecureAlgo,
+	iCallTimeout,
+	iNetRetry,
+	iGiveUpLimit,
+	iVerboseLevel,
+	bPrintMotd,
+	iAutohashTime,
+	bDaemonMode,
+	sOutputFile,
+	iHttpdPort,
+	sHttpLogin,
+	sHttpPass,
+	bPreferIpv4,
+	bAesOverride,
+	sUseSlowMem
 };
 
-struct configVal {
+struct configVal
+{
 	configEnum iName;
 	const char* sName;
 	Type iType;
@@ -64,68 +79,66 @@ struct configVal {
 // Same order as in configEnum, as per comment above
 // kNullType means any type
 configVal oConfigValues[] = {
-	{ aPoolList, "pool_list", kArrayType },
-	{ sCurrency, "currency", kStringType },
-	{ bTlsSecureAlgo, "tls_secure_algo", kTrueType },
-	{ iCallTimeout, "call_timeout", kNumberType },
-	{ iNetRetry, "retry_time", kNumberType },
-	{ iGiveUpLimit, "giveup_limit", kNumberType },
-	{ iVerboseLevel, "verbose_level", kNumberType },
-	{ bPrintMotd, "print_motd", kTrueType },
-	{ iAutohashTime, "h_print_time", kNumberType },
-	{ bDaemonMode, "daemon_mode", kTrueType },
-	{ sOutputFile, "output_file", kStringType },
-	{ iHttpdPort, "httpd_port", kNumberType },
-	{ sHttpLogin, "http_login", kStringType },
-	{ sHttpPass, "http_pass", kStringType },
-	{ bPreferIpv4, "prefer_ipv4", kTrueType },
-	{ bAesOverride, "aes_override", kNullType },
-	{ sUseSlowMem, "use_slow_memory", kStringType }
-};
+	{aPoolList, "pool_list", kArrayType},
+	{sCurrency, "currency", kStringType},
+	{bTlsSecureAlgo, "tls_secure_algo", kTrueType},
+	{iCallTimeout, "call_timeout", kNumberType},
+	{iNetRetry, "retry_time", kNumberType},
+	{iGiveUpLimit, "giveup_limit", kNumberType},
+	{iVerboseLevel, "verbose_level", kNumberType},
+	{bPrintMotd, "print_motd", kTrueType},
+	{iAutohashTime, "h_print_time", kNumberType},
+	{bDaemonMode, "daemon_mode", kTrueType},
+	{sOutputFile, "output_file", kStringType},
+	{iHttpdPort, "httpd_port", kNumberType},
+	{sHttpLogin, "http_login", kStringType},
+	{sHttpPass, "http_pass", kStringType},
+	{bPreferIpv4, "prefer_ipv4", kTrueType},
+	{bAesOverride, "aes_override", kNullType},
+	{sUseSlowMem, "use_slow_memory", kStringType}};
 
-constexpr size_t iConfigCnt = (sizeof(oConfigValues)/sizeof(oConfigValues[0]));
+constexpr size_t iConfigCnt = (sizeof(oConfigValues) / sizeof(oConfigValues[0]));
 
 xmrstak::coin_selection coins[] = {
 	// name, userpool, devpool, default_pool_suggestion
-	{ "aeon7",                   {POW(cryptonight_aeon)},      {POW(cryptonight_aeon)}, "mine.aeon-pool.com:5555" },
-	{ "bbscoin",                 {POW(cryptonight_aeon)},      {POW(cryptonight_aeon)}, nullptr },
-	{ "bittube",                 {POW(cryptonight_bittube2)},  {POW(cryptonight_gpu)}, "mining.bit.tube:13333" },
-	{ "cryptonight",             {POW(cryptonight)},           {POW(cryptonight_gpu)}, nullptr },
-	{ "cryptonight_bittube2",    {POW(cryptonight_bittube2)},  {POW(cryptonight_gpu)}, nullptr },
-	{ "cryptonight_masari",      {POW(cryptonight_masari)},    {POW(cryptonight_gpu)}, nullptr },
-	{ "cryptonight_haven",       {POW(cryptonight_haven)},     {POW(cryptonight_gpu)}, nullptr },
-	{ "cryptonight_heavy",       {POW(cryptonight_heavy)},     {POW(cryptonight_gpu)}, nullptr },
-	{ "cryptonight_lite",        {POW(cryptonight_lite)},      {POW(cryptonight_aeon)},      nullptr },
-	{ "cryptonight_lite_v7",     {POW(cryptonight_aeon)},      {POW(cryptonight_aeon)},      nullptr },
-	{ "cryptonight_lite_v7_xor", {POW(cryptonight_ipbc)},      {POW(cryptonight_aeon)},      nullptr },
-	{ "cryptonight_r",           {POW(cryptonight_r)},         {POW(cryptonight_r)}, nullptr },
-	{ "cryptonight_superfast",   {POW(cryptonight_superfast)}, {POW(cryptonight_gpu)}, nullptr },
-	{ "cryptonight_turtle",      {POW(cryptonight_turtle)},    {POW(cryptonight_turtle)},    nullptr },
-	{ "cryptonight_v7",          {POW(cryptonight_monero)},    {POW(cryptonight_gpu)}, nullptr },
-	{ "cryptonight_v8",          {POW(cryptonight_monero_v8)}, {POW(cryptonight_r)}, nullptr },
-	{ "cryptonight_v8_double",   {POW(cryptonight_v8_double)}, {POW(cryptonight_gpu)}, nullptr },
-	{ "cryptonight_v8_half",     {POW(cryptonight_v8_half)},   {POW(cryptonight_gpu)}, nullptr },
-	{ "cryptonight_v8_reversewaltz", {POW(cryptonight_v8_reversewaltz)}, {POW(cryptonight_gpu)}, nullptr },
-	{ "cryptonight_v8_zelerius", {POW(cryptonight_v8_zelerius)},{POW(cryptonight_gpu)}, nullptr },
-	{ "cryptonight_v7_stellite", {POW(cryptonight_stellite)},  {POW(cryptonight_gpu)}, nullptr },
-	{ "cryptonight_gpu",         {POW(cryptonight_gpu)},       {POW(cryptonight_gpu)},       "pool.ryo-currency.com:3333" },
-	{ "cryptonight_conceal",     {POW(cryptonight_conceal)},   {POW(cryptonight_gpu)}, nullptr },
-	{ "freehaven",               {POW(cryptonight_superfast)}, {POW(cryptonight_gpu)}, nullptr },
-	{ "graft",                   {POW(cryptonight_v8_reversewaltz), 12, POW(cryptonight_monero_v8)}, {POW(cryptonight_gpu)}, nullptr },
-	{ "haven",                   {POW(cryptonight_haven)},     {POW(cryptonight_gpu)}, nullptr },
-	{ "lethean",                 {POW(cryptonight_monero)},    {POW(cryptonight_gpu)}, nullptr },
-	{ "masari",                  {POW(cryptonight_v8_half)},   {POW(cryptonight_gpu)}, nullptr },
-	{ "monero",                  {POW(cryptonight_r)},         {POW(cryptonight_r)}, "pool.usxmrpool.com:3333" },
-	{ "qrl",             	     {POW(cryptonight_monero)},    {POW(cryptonight_gpu)}, nullptr },
-	{ "ryo",                     {POW(cryptonight_gpu)},       {POW(cryptonight_gpu)}, "pool.ryo-currency.com:3333" },
-	{ "stellite",                {POW(cryptonight_v8_half)},   {POW(cryptonight_gpu)}, nullptr },
-	{ "turtlecoin",              {POW(cryptonight_turtle), 6u,POW(cryptonight_aeon)}, {POW(cryptonight_aeon)}, nullptr },
-	{ "plenteum",			     {POW(cryptonight_turtle)},    {POW(cryptonight_turtle)},    nullptr },
-	{ "zelerius",                {POW(cryptonight_v8_zelerius), 7, POW(cryptonight_monero_v8)},   {POW(cryptonight_gpu)}, nullptr },
-	{ "xcash",                   {POW(cryptonight_v8_double)}, {POW(cryptonight_gpu)}, nullptr }
-};
+	{"aeon7", {POW(cryptonight_aeon)}, {POW(cryptonight_aeon)}, "mine.aeon-pool.com:5555"},
+	{"bbscoin", {POW(cryptonight_aeon)}, {POW(cryptonight_aeon)}, nullptr},
+	{"bittube", {POW(cryptonight_bittube2)}, {POW(cryptonight_gpu)}, "mining.bit.tube:13333"},
+	{"cryptonight", {POW(cryptonight)}, {POW(cryptonight_gpu)}, nullptr},
+	{"cryptonight_bittube2", {POW(cryptonight_bittube2)}, {POW(cryptonight_gpu)}, nullptr},
+	{"cryptonight_masari", {POW(cryptonight_masari)}, {POW(cryptonight_gpu)}, nullptr},
+	{"cryptonight_haven", {POW(cryptonight_haven)}, {POW(cryptonight_gpu)}, nullptr},
+	{"cryptonight_heavy", {POW(cryptonight_heavy)}, {POW(cryptonight_gpu)}, nullptr},
+	{"cryptonight_lite", {POW(cryptonight_lite)}, {POW(cryptonight_aeon)}, nullptr},
+	{"cryptonight_lite_v7", {POW(cryptonight_aeon)}, {POW(cryptonight_aeon)}, nullptr},
+	{"cryptonight_lite_v7_xor", {POW(cryptonight_ipbc)}, {POW(cryptonight_aeon)}, nullptr},
+	{"cryptonight_r", {POW(cryptonight_r)}, {POW(cryptonight_r)}, nullptr},
+	{"cryptonight_superfast", {POW(cryptonight_superfast)}, {POW(cryptonight_gpu)}, nullptr},
+	{"cryptonight_turtle", {POW(cryptonight_turtle)}, {POW(cryptonight_turtle)}, nullptr},
+	{"cryptonight_v7", {POW(cryptonight_monero)}, {POW(cryptonight_gpu)}, nullptr},
+	{"cryptonight_v8", {POW(cryptonight_monero_v8)}, {POW(cryptonight_r)}, nullptr},
+	{"cryptonight_v8_double", {POW(cryptonight_v8_double)}, {POW(cryptonight_gpu)}, nullptr},
+	{"cryptonight_v8_half", {POW(cryptonight_v8_half)}, {POW(cryptonight_gpu)}, nullptr},
+	{"cryptonight_v8_reversewaltz", {POW(cryptonight_v8_reversewaltz)}, {POW(cryptonight_gpu)}, nullptr},
+	{"cryptonight_v8_zelerius", {POW(cryptonight_v8_zelerius)}, {POW(cryptonight_gpu)}, nullptr},
+	{"cryptonight_v7_stellite", {POW(cryptonight_stellite)}, {POW(cryptonight_gpu)}, nullptr},
+	{"cryptonight_gpu", {POW(cryptonight_gpu)}, {POW(cryptonight_gpu)}, "pool.ryo-currency.com:3333"},
+	{"cryptonight_conceal", {POW(cryptonight_conceal)}, {POW(cryptonight_gpu)}, nullptr},
+	{"freehaven", {POW(cryptonight_superfast)}, {POW(cryptonight_gpu)}, nullptr},
+	{"graft", {POW(cryptonight_v8_reversewaltz), 12, POW(cryptonight_monero_v8)}, {POW(cryptonight_gpu)}, nullptr},
+	{"haven", {POW(cryptonight_haven)}, {POW(cryptonight_gpu)}, nullptr},
+	{"lethean", {POW(cryptonight_monero)}, {POW(cryptonight_gpu)}, nullptr},
+	{"masari", {POW(cryptonight_v8_half)}, {POW(cryptonight_gpu)}, nullptr},
+	{"monero", {POW(cryptonight_r)}, {POW(cryptonight_r)}, "pool.usxmrpool.com:3333"},
+	{"qrl", {POW(cryptonight_monero)}, {POW(cryptonight_gpu)}, nullptr},
+	{"ryo", {POW(cryptonight_gpu)}, {POW(cryptonight_gpu)}, "pool.ryo-currency.com:3333"},
+	{"stellite", {POW(cryptonight_v8_half)}, {POW(cryptonight_gpu)}, nullptr},
+	{"turtlecoin", {POW(cryptonight_turtle), 6u, POW(cryptonight_aeon)}, {POW(cryptonight_aeon)}, nullptr},
+	{"plenteum", {POW(cryptonight_turtle)}, {POW(cryptonight_turtle)}, nullptr},
+	{"zelerius", {POW(cryptonight_v8_zelerius), 7, POW(cryptonight_monero_v8)}, {POW(cryptonight_gpu)}, nullptr},
+	{"xcash", {POW(cryptonight_v8_double)}, {POW(cryptonight_gpu)}, nullptr}};
 
-constexpr size_t coin_algo_size = (sizeof(coins)/sizeof(coins[0]));
+constexpr size_t coin_algo_size = (sizeof(coins) / sizeof(coins[0]));
 
 inline bool checkType(Type have, Type want)
 {
@@ -275,7 +288,7 @@ const char* jconf::GetOutputFile()
 
 void jconf::cpuid(uint32_t eax, int32_t ecx, int32_t val[4])
 {
-	memset(val, 0, sizeof(int32_t)*4);
+	memset(val, 0, sizeof(int32_t) * 4);
 
 #ifdef _WIN32
 	__cpuidex(val, eax, ecx);
@@ -326,7 +339,7 @@ std::string jconf::GetMiningCoin()
 void jconf::GetAlgoList(std::string& list)
 {
 	list.reserve(256);
-	for(size_t i=0; i < coin_algo_size; i++)
+	for(size_t i = 0; i < coin_algo_size; i++)
 	{
 		list += "\t- ";
 		list += coins[i].coin_name;
@@ -338,7 +351,7 @@ bool jconf::IsOnAlgoList(std::string& needle)
 {
 	std::transform(needle.begin(), needle.end(), needle.begin(), ::tolower);
 
-	for(size_t i=0; i < coin_algo_size; i++)
+	for(size_t i = 0; i < coin_algo_size; i++)
 	{
 		if(needle == coins[i].coin_name)
 			return true;
@@ -350,7 +363,7 @@ const char* jconf::GetDefaultPool(const char* needle)
 {
 	const char* default_example = "pool.example.com:3333";
 
-	for(size_t i=0; i < coin_algo_size; i++)
+	for(size_t i = 0; i < coin_algo_size; i++)
 	{
 		if(strcmp(needle, coins[i].coin_name) == 0)
 		{
@@ -366,22 +379,22 @@ const char* jconf::GetDefaultPool(const char* needle)
 
 bool jconf::parse_file(const char* sFilename, bool main_conf)
 {
-	FILE * pFile;
-	char * buffer;
+	FILE* pFile;
+	char* buffer;
 	size_t flen;
 
 	pFile = fopen(sFilename, "rb");
-	if (pFile == NULL)
+	if(pFile == NULL)
 	{
 		printer::inst()->print_msg(L0, "Failed to open config file %s.", sFilename);
 		return false;
 	}
 
-	fseek(pFile,0,SEEK_END);
+	fseek(pFile, 0, SEEK_END);
 	flen = ftell(pFile);
 	rewind(pFile);
 
-	if(flen >= 64*1024)
+	if(flen >= 64 * 1024)
 	{
 		fclose(pFile);
 		printer::inst()->print_msg(L0, "Oversized config file - %s.", sFilename);
@@ -396,7 +409,7 @@ bool jconf::parse_file(const char* sFilename, bool main_conf)
 	}
 
 	buffer = (char*)malloc(flen + 3);
-	if(fread(buffer+1, flen, 1, pFile) != 1)
+	if(fread(buffer + 1, flen, 1, pFile) != 1)
 	{
 		free(buffer);
 		fclose(pFile);
@@ -420,7 +433,7 @@ bool jconf::parse_file(const char* sFilename, bool main_conf)
 
 	Document& root = main_conf ? prv->jsonDoc : prv->jsonDocPools;
 
-	root.Parse<kParseCommentsFlag|kParseTrailingCommasFlag>(buffer, flen+2);
+	root.Parse<kParseCommentsFlag | kParseTrailingCommasFlag>(buffer, flen + 2);
 	free(buffer);
 
 	if(root.HasParseError())
@@ -514,11 +527,11 @@ bool jconf::parse_config(const char* sFilename, const char* sFilenamePools)
 	std::vector<size_t> pool_weights;
 	pool_weights.reserve(pool_cnt);
 
-	const char* aPoolValues[] = { "pool_address", "wallet_address", "rig_id", "pool_password", "use_nicehash", "use_tls", "tls_fingerprint", "pool_weight" };
-	Type poolValTypes[] = { kStringType, kStringType, kStringType, kStringType, kTrueType, kTrueType, kStringType, kNumberType };
+	const char* aPoolValues[] = {"pool_address", "wallet_address", "rig_id", "pool_password", "use_nicehash", "use_tls", "tls_fingerprint", "pool_weight"};
+	Type poolValTypes[] = {kStringType, kStringType, kStringType, kStringType, kTrueType, kTrueType, kStringType, kNumberType};
 
-	constexpr size_t pvcnt = sizeof(aPoolValues)/sizeof(aPoolValues[0]);
-	for(uint32_t i=0; i < pool_cnt; i++)
+	constexpr size_t pvcnt = sizeof(aPoolValues) / sizeof(aPoolValues[0]);
+	for(uint32_t i = 0; i < pool_cnt; i++)
 	{
 		const Value& oThdConf = prv->configValues[aPoolList]->GetArray()[i];
 
@@ -528,7 +541,7 @@ bool jconf::parse_config(const char* sFilename, const char* sFilenamePools)
 			return false;
 		}
 
-		for(uint32_t j=0; j < pvcnt; j++)
+		for(uint32_t j = 0; j < pvcnt; j++)
 		{
 			const Value* v;
 			if((v = GetObjectMember(oThdConf, aPoolValues[j])) == nullptr)
@@ -620,7 +633,7 @@ bool jconf::parse_config(const char* sFilename, const char* sFilenamePools)
 		return false;
 	}
 
-	for(size_t i=0; i < coin_algo_size; i++)
+	for(size_t i = 0; i < coin_algo_size; i++)
 	{
 		if(ctmp == coins[i].coin_name)
 		{

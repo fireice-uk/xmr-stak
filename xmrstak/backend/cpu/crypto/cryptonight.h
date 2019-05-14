@@ -1,6 +1,6 @@
 #pragma once
-#include <stddef.h>
 #include <inttypes.h>
+#include <stddef.h>
 
 #include "variant4_random_math.h"
 
@@ -12,8 +12,8 @@
 
 struct cryptonight_ctx;
 
-typedef void  (*cn_mainloop_fun)(cryptonight_ctx *ctx);
-typedef void  (*cn_double_mainloop_fun)(cryptonight_ctx*, cryptonight_ctx*);
+typedef void (*cn_mainloop_fun)(cryptonight_ctx* ctx);
+typedef void (*cn_double_mainloop_fun)(cryptonight_ctx*, cryptonight_ctx*);
 typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**, const xmrstak_algo&);
 
 void v4_compile_code(size_t N, cryptonight_ctx* ctx, int code_size);
@@ -36,11 +36,9 @@ struct cryptonight_ctx
 	int asm_version = 0;
 	xmrstak_algo last_algo = invalid_algo;
 
-	union
-	{
+	union {
 		extra_ctx_r cn_r_ctx;
 	};
-
 };
 
 struct alloc_msg
@@ -51,5 +49,3 @@ struct alloc_msg
 size_t cryptonight_init(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg);
 cryptonight_ctx* cryptonight_alloc_ctx(size_t use_fast_mem, size_t use_mlock, alloc_msg* msg);
 void cryptonight_free_ctx(cryptonight_ctx* ctx);
-
-
