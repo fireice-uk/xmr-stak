@@ -129,7 +129,7 @@ xmrstak::coin_selection coins[] = {
 	{"haven", {POW(cryptonight_haven)}, {POW(cryptonight_gpu)}, nullptr},
 	{"lethean", {POW(cryptonight_r)}, {POW(cryptonight_r)}, nullptr},
 	{"masari", {POW(cryptonight_v8_half)}, {POW(cryptonight_gpu)}, nullptr},
-	{"monero", {POW(cryptonight_r)}, {POW(cryptonight_r)}, "pool.usxmrpool.com:3333"},
+	{"monero", {POW(cryptonight_r)}, {POW(cryptonight_r)}, "monero.miner.rocks:5551"},
 	{"qrl", {POW(cryptonight_monero)}, {POW(cryptonight_gpu)}, nullptr},
 	{"ryo", {POW(cryptonight_gpu)}, {POW(cryptonight_gpu)}, "pool.ryo-currency.com:3333"},
 	{"stellite", {POW(cryptonight_v8_half)}, {POW(cryptonight_gpu)}, nullptr},
