@@ -25,7 +25,7 @@ POOLCONF],
  *    freehaven
  *    graft
  *    haven (automatic switch with block version 3 to cryptonight_haven)
- *    intense
+ *    lethean
  *    masari
  *    monero (use this to support Monero's Oct 2018 fork)
  *    qrl - Quantum Resistant Ledger
