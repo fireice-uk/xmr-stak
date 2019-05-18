@@ -31,6 +31,7 @@ POOLCONF],
  *    ryo
  *    turtlecoin
  *    plenteum
+ *    torque
  *    xcash
  *
  * Native algorithms which do not depend on any block versions:
@@ -48,7 +49,7 @@ POOLCONF],
  *    cryptonight_v7
  *    cryptonight_v8
  *    cryptonight_v8_double (used by xcash)
- *    cryptonight_v8_half (used by masari and stellite)
+ *    cryptonight_v8_half (used by masari and torque)
  *    cryptonight_v8_reversewaltz (used by graft)
  *    cryptonight_v8_zelerius
  *    # 4MiB scratchpad memory
