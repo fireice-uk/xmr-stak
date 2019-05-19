@@ -91,6 +91,7 @@ void help()
 	cout << "  --nvidia FILE              NVIDIA backend miner config file" << endl;
 #endif
 	cout << "  --log FILE                 miner output file" << endl;
+	cout << "  --h-print-time SEC         interval for printing hashrate, in seconds" << endl;
 #ifndef CONF_NO_HTTPD
 	cout << "  -i --httpd HTTP_PORT       HTTP interface port" << endl;
 #endif
@@ -389,8 +390,8 @@ void do_guided_config()
 	}
 
 	configTpl.replace("HTTP_PORT", std::to_string(http_port));
-	
 	configTpl.replace("OUTPUT_FILE", params::inst().outputFile);
+	configTpl.replace("H_PRINT_TIME", std::to_string(params::inst().h_print_time > 0 ? params::inst().h_print_time : 300));
 	configTpl.write(params::inst().configFile);
 	std::cout << "Configuration stored in file '" << params::inst().configFile << "'" << std::endl;
 }
@@ -670,6 +671,25 @@ int main(int argc, char* argv[])
 				return 1;
 			}
 			params::inst().outputFile = argv[i];
+		}
+		else if (opName.compare("--h-print-time") == 0)
+		{
+			++i;
+			if (i >= argc)
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--h-print-time' given");
+				win_exit();
+				return 1;
+			}
+			char* h_print_time = nullptr;
+			long int time = strtol(argv[i], &h_print_time, 10);
+
+			if (time <= 0)
+			{
+				printer::inst()->print_msg(L0, "Hashrate print time must be > 0");
+				return 1;
+			}
+			params::inst().h_print_time = time;
 		}
 		else if(opName.compare("-i") == 0 || opName.compare("--httpd") == 0)
 		{

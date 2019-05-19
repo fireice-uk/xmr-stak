@@ -254,7 +254,10 @@ bool jconf::PrintMotd()
 
 uint64_t jconf::GetAutohashTime()
 {
-	return prv->configValues[iAutohashTime]->GetUint64();
+	if (xmrstak::params::inst().h_print_time == -1)
+		return prv->configValues[iAutohashTime]->GetUint64();
+	else
+		return uint64_t(xmrstak::params::inst().h_print_time);
 }
 
 uint16_t jconf::GetHttpdPort()
