@@ -46,6 +46,7 @@ struct iBackend
 	std::atomic<uint64_t> iHashCount;
 	std::atomic<uint64_t> iTimestamp;
 	uint32_t iThreadNo;
+	uint32_t iGpuIndex;
 	BackendType backendType = UNKNOWN;
 	uint64_t iLastStamp = get_timestamp_ms();
 	double avgHashPerMsec = 0.0;
