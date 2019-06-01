@@ -2,24 +2,6 @@
 
 #include "xmrstak/backend/cryptonight.hpp"
 
-#ifdef __INTELLISENSE__
-#define __CUDA_ARCH__ 520
-/* avoid red underlining */
-
-struct uint3
-{
-	unsigned int x, y, z;
-};
-
-struct uint3 threadIdx;
-struct uint3 blockIdx;
-struct uint3 blockDim;
-#define __funnelshift_r(a, b, c) 1
-#define __syncthreads()
-#define asm(x)
-#define __shfl(a, b, c) 1
-#endif
-
 #define AES_BLOCK_SIZE 16
 #define AES_KEY_SIZE 32
 #define INIT_SIZE_BLK 8
@@ -52,9 +34,10 @@ __forceinline__ __device__ uint64_t cuda_ROTL64(const uint64_t value, const int 
 	}
 	return __double_as_longlong(__hiloint2double(result.y, result.x));
 }
-#define ROTL64(x, n) (cuda_ROTL64(x, n))
+
+#	define ROTL64(x, n) (cuda_ROTL64(x, n))
 #else
-#define ROTL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
+#	define ROTL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
 #endif
 
 #if __CUDA_ARCH__ < 350
@@ -63,6 +46,26 @@ __forceinline__ __device__ uint64_t cuda_ROTL64(const uint64_t value, const int 
 #else
 #define ROTL32(x, n) __funnelshift_l((x), (x), (n))
 #define ROTR32(x, n) __funnelshift_r((x), (x), (n))
+#endif
+
+#if __CUDA_ARCH__ >= 500
+#	define BYTE_0(x) __byte_perm(x, 0u, 0x4440)
+#	define BYTE_1(x) __byte_perm(x, 0u, 0x4441)
+#	define BYTE_2(x) __byte_perm(x, 0u, 0x4442)
+#	define BYTE_3(x) __byte_perm(x, 0u, 0x4443)
+
+#	define ROTL32_8(x) __byte_perm(x, x, 0x2103)
+#	define ROTL32_16(x) __byte_perm(x, x, 0x1032)
+#	define ROTL32_24(x) __byte_perm(x, x, 0x0321)
+#else
+#	define BYTE_0(x) (((x)      ) & 0xff)
+#	define BYTE_1(x) (((x) >>  8) & 0xff)
+#	define BYTE_2(x) (((x) >> 16) & 0xff)
+#	define BYTE_3(x) (((x) >> 24))
+
+#	define ROTL32_8(x)  ROTL32(x, 8)
+#	define ROTL32_16(x) ROTL32(x, 16)
+#	define ROTL32_24(x) ROTL32(x, 24)
 #endif
 
 #define MEMSET8(dst, what, cnt)                          \
