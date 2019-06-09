@@ -80,6 +80,7 @@ void help()
 #endif
 #ifndef CONF_NO_OPENCL
 	cout << "  --noAMD                    disable the AMD miner backend" << endl;
+	cout << "  --amdGpus GPUS             indices of AMD GPUs to use. Example: 0,2,3" << endl;
 	cout << "  --noAMDCache               disable the AMD(OpenCL) cache for precompiled binaries" << endl;
 	cout << "  --openCLVendor VENDOR      use OpenCL driver of VENDOR and devices [AMD,NVIDIA]" << endl;
 	cout << "                             default: AMD" << endl;
@@ -88,6 +89,7 @@ void help()
 #endif
 #ifndef CONF_NO_CUDA
 	cout << "  --noNVIDIA                 disable the NVIDIA miner backend" << endl;
+	cout << "  --nvidiaGpus GPUS          indices of NVIDIA GPUs to use. Example: 0,2,3" << endl;
 	cout << "  --nvidia FILE              NVIDIA backend miner config file" << endl;
 #endif
 	cout << "  --log FILE                 miner output file" << endl;
@@ -473,6 +475,17 @@ int main(int argc, char* argv[])
 		{
 			params::inst().useAMD = false;
 		}
+		else if (opName.compare("--amdGpus") == 0)
+		{
+			++i;
+			if (i >= argc)
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--amdGpus' given");
+				win_exit();
+				return 1;
+			}
+			params::inst().amdGpus = argv[i];
+		}
 		else if(opName.compare("--openCLVendor") == 0)
 		{
 			++i;
@@ -498,6 +511,17 @@ int main(int argc, char* argv[])
 		else if(opName.compare("--noNVIDIA") == 0)
 		{
 			params::inst().useNVIDIA = false;
+		}
+		else if (opName.compare("--nvidiaGpus") == 0)
+		{
+			++i;
+			if (i >= argc)
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--nvidiaGpus' given");
+				win_exit();
+				return 1;
+			}
+			params::inst().nvidiaGpus = argv[i];
 		}
 		else if(opName.compare("--cpu") == 0)
 		{

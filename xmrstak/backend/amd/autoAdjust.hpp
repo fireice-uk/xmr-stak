@@ -89,6 +89,27 @@ class autoAdjust
 		std::string conf;
 		for(auto& ctx : devVec)
 		{
+			std::string enabledGpus = params::inst().amdGpus;
+			bool enabled = true;
+			if (!enabledGpus.empty())
+			{
+				enabled = false;
+				std::stringstream ss(enabledGpus);
+
+				int i = -1;
+				while (ss >> i)
+				{
+					if (i == ctx.deviceIdx)
+					{
+						enabled = true;
+						break;
+					}
+
+					while (ss.peek() == ',' || ss.peek() == ' ')
+						ss.ignore();
+				}
+			}
+
 			size_t minFreeMem = 128u * byteToMiB;
 			/* 1000 is a magic selected limit, the reason is that more than 2GiB memory
 			 * sowing down the memory performance because of TLB cache misses
@@ -196,6 +217,9 @@ class autoAdjust
 			}
 			if(intensity != 0)
 			{
+				if (!enabled)
+					conf += "/* Disabled\n";
+
 				for(uint32_t thd = 0; thd < numThreads; ++thd)
 				{
 					conf += "  // gpu: " + ctx.name + std::string("  compute units: ") + std::to_string(ctx.computeUnits) + "\n";
@@ -209,6 +233,9 @@ class autoAdjust
 							std::to_string(numUnroll) + ", \"comp_mode\" : true, \"interleave\" : " + std::to_string(ctx.interleave) + "\n" +
 							"  },\n";
 				}
+
+				if (!enabled)
+					conf += "*/\n";
 			}
 			else
 			{
