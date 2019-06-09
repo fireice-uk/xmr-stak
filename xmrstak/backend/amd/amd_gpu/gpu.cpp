@@ -1280,17 +1280,17 @@ size_t XMRRunJob(GpuContext* ctx, cl_uint* HashOutput, const xmrstak_algo& miner
 		}
 	}
 
-	if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, Kernels[2], 2, Nonce, gthreads, lthreads, 0, NULL, NULL)) != CL_SUCCESS)
+	size_t  NonceT[2] = {0, ctx->Nonce}, gthreadsT[2] = {8, g_thd}, lthreadsT[2] = {8 , w_size};
+	if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, Kernels[2], 2, NonceT, gthreadsT, lthreadsT, 0, NULL, NULL)) != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1, "Error %s when calling clEnqueueNDRangeKernel for kernel %d.", err_to_str(ret), 2);
-		return ERR_OCL_API;
+			return ERR_OCL_API;
 	}
 
 	if(miner_algo != cryptonight_gpu)
 	{
 		for(int i = 0; i < 4; ++i)
 		{
-			size_t tmpNonce = ctx->Nonce;
 			if((ret = clEnqueueNDRangeKernel(ctx->CommandQueues, Kernels[i + 3], 1, &tmpNonce, &g_thd, &w_size, 0, NULL, NULL)) != CL_SUCCESS)
 			{
 				printer::inst()->print_msg(L1, "Error %s when calling clEnqueueNDRangeKernel for kernel %d.", err_to_str(ret), i + 3);
