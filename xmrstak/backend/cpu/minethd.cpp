@@ -40,6 +40,7 @@
 
 #ifndef CONF_NO_HWLOC
 #include "autoAdjustHwloc.hpp"
+#include "autoAdjust.hpp"
 #else
 #include "autoAdjust.hpp"
 #endif
@@ -515,9 +516,23 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 
 	if(!configEditor::file_exist(params::inst().configFileCPU))
 	{
+#ifndef CONF_NO_HWLOC
+		autoAdjustHwloc adjustHwloc;
+		if(!adjustHwloc.printConfig())
+		{
+			autoAdjust adjust;
+			if(!adjust.printConfig())
+			{
+				return pvThreads;
+			}
+		}
+#else
 		autoAdjust adjust;
 		if(!adjust.printConfig())
+		{
 			return pvThreads;
+		}
+#endif
 	}
 
 	if(!jconf::inst()->parse_config())

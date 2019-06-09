@@ -49,7 +49,7 @@ Besides [Monero](https://getmonero.org), following coins can be mined using this
 - [Plenteum](https://www.plenteum.com/)
 - [QRL](https://theqrl.org)
 - **[Ryo](https://ryo-currency.com) - Upcoming xmr-stak-gui is sponsored by Ryo**
-- [Stellite](https://stellite.cash/)
+- [Torque](https://torque.cash/)
 - [TurtleCoin](https://turtlecoin.lol)
 - [Zelerius](https://zelerius.org/)
 - [X-CASH](https://x-network.io/)
@@ -72,7 +72,7 @@ If your prefered coin is not listed, you can choose one of the following algorit
     - cryptonight_v7_stellite
     - cryptonight_v8
     - cryptonight_v8_double (used by X-CASH)
-    - cryptonight_v8_half (used by masari and stellite)
+    - cryptonight_v8_half (used by masari and torque)
     - cryptonight_v8_reversewaltz (used by graft)
     - cryptonight_v8_zelerius
 - 4MiB scratchpad memory

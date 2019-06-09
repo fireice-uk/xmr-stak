@@ -80,6 +80,7 @@ void help()
 #endif
 #ifndef CONF_NO_OPENCL
 	cout << "  --noAMD                    disable the AMD miner backend" << endl;
+	cout << "  --amdGpus GPUS             indices of AMD GPUs to use. Example: 0,2,3" << endl;
 	cout << "  --noAMDCache               disable the AMD(OpenCL) cache for precompiled binaries" << endl;
 	cout << "  --openCLVendor VENDOR      use OpenCL driver of VENDOR and devices [AMD,NVIDIA]" << endl;
 	cout << "                             default: AMD" << endl;
@@ -88,8 +89,11 @@ void help()
 #endif
 #ifndef CONF_NO_CUDA
 	cout << "  --noNVIDIA                 disable the NVIDIA miner backend" << endl;
+	cout << "  --nvidiaGpus GPUS          indices of NVIDIA GPUs to use. Example: 0,2,3" << endl;
 	cout << "  --nvidia FILE              NVIDIA backend miner config file" << endl;
 #endif
+	cout << "  --log FILE                 miner output file" << endl;
+	cout << "  --h-print-time SEC         interval for printing hashrate, in seconds" << endl;
 #ifndef CONF_NO_HTTPD
 	cout << "  -i --httpd HTTP_PORT       HTTP interface port" << endl;
 #endif
@@ -388,6 +392,8 @@ void do_guided_config()
 	}
 
 	configTpl.replace("HTTP_PORT", std::to_string(http_port));
+	configTpl.replace("OUTPUT_FILE", params::inst().outputFile);
+	configTpl.replace("H_PRINT_TIME", std::to_string(params::inst().h_print_time > 0 ? params::inst().h_print_time : 300));
 	configTpl.write(params::inst().configFile);
 	std::cout << "Configuration stored in file '" << params::inst().configFile << "'" << std::endl;
 }
@@ -469,6 +475,17 @@ int main(int argc, char* argv[])
 		{
 			params::inst().useAMD = false;
 		}
+		else if (opName.compare("--amdGpus") == 0)
+		{
+			++i;
+			if (i >= argc)
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--amdGpus' given");
+				win_exit();
+				return 1;
+			}
+			params::inst().amdGpus = argv[i];
+		}
 		else if(opName.compare("--openCLVendor") == 0)
 		{
 			++i;
@@ -494,6 +511,17 @@ int main(int argc, char* argv[])
 		else if(opName.compare("--noNVIDIA") == 0)
 		{
 			params::inst().useNVIDIA = false;
+		}
+		else if (opName.compare("--nvidiaGpus") == 0)
+		{
+			++i;
+			if (i >= argc)
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--nvidiaGpus' given");
+				win_exit();
+				return 1;
+			}
+			params::inst().nvidiaGpus = argv[i];
 		}
 		else if(opName.compare("--cpu") == 0)
 		{
@@ -656,6 +684,36 @@ int main(int argc, char* argv[])
 				return 1;
 			}
 			params::inst().configFilePools = argv[i];
+		}
+		else if(opName.compare("--log") == 0)
+		{
+			++i;
+			if(i >= argc)
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--log' given");
+				win_exit();
+				return 1;
+			}
+			params::inst().outputFile = argv[i];
+		}
+		else if (opName.compare("--h-print-time") == 0)
+		{
+			++i;
+			if (i >= argc)
+			{
+				printer::inst()->print_msg(L0, "No argument for parameter '--h-print-time' given");
+				win_exit();
+				return 1;
+			}
+			char* h_print_time = nullptr;
+			long int time = strtol(argv[i], &h_print_time, 10);
+
+			if (time <= 0)
+			{
+				printer::inst()->print_msg(L0, "Hashrate print time must be > 0");
+				return 1;
+			}
+			params::inst().h_print_time = time;
 		}
 		else if(opName.compare("-i") == 0 || opName.compare("--httpd") == 0)
 		{
@@ -894,7 +952,7 @@ int do_benchmark(int block_version, int wait_sec, int work_sec)
 	/* AMD and NVIDIA is currently only supporting work sizes up to 128byte
 	 */
 	printer::inst()->print_msg(L0, "Start a %d second benchmark...", work_sec);
-	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work("", work, 128, 0, false, 0, 0), dat);
+	xmrstak::globalStates::inst().switch_work(xmrstak::miner_work("", work, 128, 0, false, 1, 0), dat);
 	uint64_t iStartStamp = get_timestamp_ms();
 
 	std::this_thread::sleep_for(std::chrono::seconds(work_sec));

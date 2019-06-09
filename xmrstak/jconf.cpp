@@ -124,15 +124,14 @@ xmrstak::coin_selection coins[] = {
 	{"cryptonight_v7_stellite", {POW(cryptonight_stellite)}, {POW(cryptonight_gpu)}, nullptr},
 	{"cryptonight_gpu", {POW(cryptonight_gpu)}, {POW(cryptonight_gpu)}, "pool.ryo-currency.com:3333"},
 	{"cryptonight_conceal", {POW(cryptonight_conceal)}, {POW(cryptonight_gpu)}, nullptr},
-	{"freehaven", {POW(cryptonight_superfast)}, {POW(cryptonight_gpu)}, nullptr},
 	{"graft", {POW(cryptonight_v8_reversewaltz), 12, POW(cryptonight_monero_v8)}, {POW(cryptonight_gpu)}, nullptr},
 	{"haven", {POW(cryptonight_haven)}, {POW(cryptonight_gpu)}, nullptr},
-	{"lethean", {POW(cryptonight_monero)}, {POW(cryptonight_gpu)}, nullptr},
+	{"lethean", {POW(cryptonight_r)}, {POW(cryptonight_r)}, nullptr},
 	{"masari", {POW(cryptonight_v8_half)}, {POW(cryptonight_gpu)}, nullptr},
-	{"monero", {POW(cryptonight_r)}, {POW(cryptonight_r)}, "pool.usxmrpool.com:3333"},
+	{"monero", {POW(cryptonight_r)}, {POW(cryptonight_r)}, "monero.miner.rocks:5551"},
 	{"qrl", {POW(cryptonight_monero)}, {POW(cryptonight_gpu)}, nullptr},
 	{"ryo", {POW(cryptonight_gpu)}, {POW(cryptonight_gpu)}, "pool.ryo-currency.com:3333"},
-	{"stellite", {POW(cryptonight_v8_half)}, {POW(cryptonight_gpu)}, nullptr},
+	{"torque", {POW(cryptonight_v8_half)}, {POW(cryptonight_gpu)}, nullptr},
 	{"turtlecoin", {POW(cryptonight_turtle), 6u, POW(cryptonight_aeon)}, {POW(cryptonight_aeon)}, nullptr},
 	{"plenteum", {POW(cryptonight_turtle)}, {POW(cryptonight_turtle)}, nullptr},
 	{"zelerius", {POW(cryptonight_v8_zelerius), 7, POW(cryptonight_monero_v8)}, {POW(cryptonight_gpu)}, nullptr},
@@ -255,7 +254,10 @@ bool jconf::PrintMotd()
 
 uint64_t jconf::GetAutohashTime()
 {
-	return prv->configValues[iAutohashTime]->GetUint64();
+	if (xmrstak::params::inst().h_print_time == -1)
+		return prv->configValues[iAutohashTime]->GetUint64();
+	else
+		return uint64_t(xmrstak::params::inst().h_print_time);
 }
 
 uint16_t jconf::GetHttpdPort()
@@ -283,7 +285,10 @@ bool jconf::DaemonMode()
 
 const char* jconf::GetOutputFile()
 {
-	return prv->configValues[sOutputFile]->GetString();
+	if(xmrstak::params::inst().outputFile.length() > 0)
+		return xmrstak::params::inst().outputFile.c_str();
+	else
+		return prv->configValues[sOutputFile]->GetString();
 }
 
 void jconf::cpuid(uint32_t eax, int32_t ecx, int32_t val[4])

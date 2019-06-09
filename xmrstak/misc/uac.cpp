@@ -1,6 +1,7 @@
 #ifdef _WIN32
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/params.hpp"
+#include "xmrstak/jconf.hpp"
 
 #include <string>
 #include <windows.h>
@@ -56,6 +57,9 @@ VOID RequestElevation()
 	if(!xmrstak::params::inst().allowUAC)
 	{
 		printer::inst()->print_msg(L0, "The miner needs to run as administrator, but you passed --noUAC option. Please remove it or set use_slow_memory to always.");
+		if (::jconf::inst()->GetSlowMemSetting() == ::jconf::print_warning)
+			return;
+		
 		win_exit();
 		return;
 	}

@@ -21,10 +21,10 @@ namespace xmrstak
 namespace cpu
 {
 
-class autoAdjust
+class autoAdjustHwloc
 {
-  public:
-	autoAdjust()
+public:
+	autoAdjustHwloc()
 	{
 		auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
 
@@ -60,6 +60,7 @@ class autoAdjust
 			conf += "/*\n//CPU config is disabled by default because cryptonight_gpu is not suitable for CPU mining.\n";
 		}
 
+		bool is_successful = true;
 		try
 		{
 			std::vector<hwloc_obj_t> tlcs;
@@ -86,10 +87,8 @@ class autoAdjust
 		}
 		catch(const std::runtime_error& err)
 		{
-			// \todo add fallback to default auto adjust
-			conf += std::string("    { \"low_power_mode\" : false");
-			conf += std::string(", \"no_prefetch\" : true, \"asm\" : \"off\", \"affine_to_cpu\" : false },\n");
-			printer::inst()->print_msg(L0, "Autoconf FAILED: %s. Create config for a single thread.", err.what());
+			is_successful = false;
+			printer::inst()->print_msg(L0, "Autoconf with hwloc FAILED: %s. Trying basic autoconf.", err.what());
 		}
 
 		if(useCryptonight_gpu)
@@ -101,7 +100,7 @@ class autoAdjust
 		/* Destroy topology object. */
 		hwloc_topology_destroy(topology);
 
-		return true;
+		return is_successful;
 	}
 
   private:

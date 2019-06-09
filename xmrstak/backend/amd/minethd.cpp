@@ -53,6 +53,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::th
 	oWork = pWork;
 	bQuit = 0;
 	iThreadNo = (uint8_t)iNo;
+	this->iGpuIndex = cfg.index;
 	iJobNo = 0;
 	iHashCount = 0;
 	iTimestamp = 0;
