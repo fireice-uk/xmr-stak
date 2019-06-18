@@ -70,6 +70,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 	oWork = pWork;
 	bQuit = 0;
 	iThreadNo = (uint8_t)iNo;
+	this->iGpuIndex = cfg.id;
 	iJobNo = 0;
 
 	ctx.device_id = (int)cfg.id;

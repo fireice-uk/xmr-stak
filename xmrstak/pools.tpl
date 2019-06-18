@@ -22,16 +22,16 @@ POOLCONF],
  *    aeon7 (use this for Aeon's new PoW)
  *    bbscoin (automatic switch with block version 3 to cryptonight_v7)
  *    bittube (uses cryptonight_bittube2 algorithm)
- *    freehaven
  *    graft
  *    haven (automatic switch with block version 3 to cryptonight_haven)
- *    intense
+ *    lethean
  *    masari
  *    monero (use this to support Monero's Oct 2018 fork)
  *    qrl - Quantum Resistant Ledger
  *    ryo
  *    turtlecoin
  *    plenteum
+ *    torque
  *    xcash
  *
  * Native algorithms which do not depend on any block versions:
@@ -49,7 +49,7 @@ POOLCONF],
  *    cryptonight_v7
  *    cryptonight_v8
  *    cryptonight_v8_double (used by xcash)
- *    cryptonight_v8_half (used by masari and stellite)
+ *    cryptonight_v8_half (used by masari and torque)
  *    cryptonight_v8_reversewaltz (used by graft)
  *    cryptonight_v8_zelerius
  *    # 4MiB scratchpad memory

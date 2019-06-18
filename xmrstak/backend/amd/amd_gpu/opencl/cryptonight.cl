@@ -867,9 +867,14 @@ __kernel void JOIN(cn1,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 }
 
 )==="
-	R"===(
+R"===(
+#if defined(__clang__)
+#	if __has_builtin(__builtin_amdgcn_ds_bpermute)
+#		define HAS_AMD_BPERMUTE  1
+#	endif
+#endif
 
-__attribute__((reqd_work_group_size(8, 8, 1)))
+__attribute__((reqd_work_group_size(8, WORKSIZE, 1)))
 __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states,
 
 #if (ALGO == cryptonight_gpu)
@@ -878,88 +883,123 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 	__global uint *Branch0, __global uint *Branch1, __global uint *Branch2, __global uint *Branch3, uint Threads)
 #endif
 {
-	__local uint AES0[256], AES1[256], AES2[256], AES3[256];
-	uint ExpandedKey2[40];
-	uint4 text;
+    __local uint AES0[256], AES1[256], AES2[256], AES3[256];
+    uint ExpandedKey2[40];
+    uint4 text;
 
-	const uint gIdx = getIdx();
+    uint gIdx = get_global_id(1) - get_global_offset(1);
+    uint groupIdx = get_local_id(1);
+    uint lIdx = get_local_id(0);
 
-	for (int i = get_local_id(1) * 8 + get_local_id(0); i < 256; i += 8 * 8) {
-		const uint tmp = AES0_C[i];
-		AES0[i] = tmp;
-		AES1[i] = rotate(tmp, 8U);
-		AES2[i] = rotate(tmp, 16U);
-		AES3[i] = rotate(tmp, 24U);
-	}
+    for (int i = groupIdx * 8 + lIdx; i < 256; i += get_local_size(0) * get_local_size(1)) {
+        const uint tmp = AES0_C[i];
+        AES0[i] = tmp;
+        AES1[i] = rotate(tmp, 8U);
+        AES2[i] = rotate(tmp, 16U);
+        AES3[i] = rotate(tmp, 24U);
+    }
 
-	barrier(CLK_LOCAL_MEM_FENCE);
+    barrier(CLK_LOCAL_MEM_FENCE);
 
 #if (ALGO == cryptonight_gpu || ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2  || ALGO == cryptonight_superfast)
-	__local uint4 xin1[8][8];
-	__local uint4 xin2[8][8];
+    __local uint4 xin1[WORKSIZE][8];
+    __local uint4 xin2[WORKSIZE][8];
 #endif
 
 #if(COMP_MODE==1)
-	// do not use early return here
-	if(gIdx < Threads)
+    // do not use early return here
+    if(gIdx < Threads)
 #endif
-	{
-		states += 25 * gIdx;
+    {
+        states += 25 * gIdx;
 #if(STRIDED_INDEX==0)
-		Scratchpad += gIdx * (MEMORY >> 4);
+        Scratchpad += gIdx * (MEMORY >> 4);
 #elif(STRIDED_INDEX==1)
-		Scratchpad += gIdx;
+                Scratchpad += gIdx;
 #elif(STRIDED_INDEX==2)
-		Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + MEM_CHUNK * (gIdx % WORKSIZE);
+        Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + MEM_CHUNK * (gIdx % WORKSIZE);
 #elif(STRIDED_INDEX==3)
-		Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + (gIdx % WORKSIZE);
+                Scratchpad += (gIdx / WORKSIZE) * (MEMORY >> 4) * WORKSIZE + (gIdx % WORKSIZE);
 #endif
 
-		#if defined(__Tahiti__) || defined(__Pitcairn__)
+        #if defined(__Tahiti__) || defined(__Pitcairn__)
 
-		for(int i = 0; i < 4; ++i) ((ulong *)ExpandedKey2)[i] = states[i + 4];
-		text = vload4(get_local_id(1) + 4, (__global uint *)states);
+        for(int i = 0; i < 4; ++i) ((ulong *)ExpandedKey2)[i] = states[i + 4];
+        text = vload4(lIdx + 4, (__global uint *)states);
 
-		#else
+        #else
+        text = vload4(lIdx + 4, (__global uint *)states);
+        ((uint8 *)ExpandedKey2)[0] = vload8(1, (__global uint *)states);
 
-		text = vload4(get_local_id(1) + 4, (__global uint *)states);
-		((uint8 *)ExpandedKey2)[0] = vload8(1, (__global uint *)states);
+        #endif
 
-		#endif
+        AESExpandKey256(ExpandedKey2);
+    }
 
-		AESExpandKey256(ExpandedKey2);
-	}
-
-	barrier(CLK_LOCAL_MEM_FENCE);
+    barrier(CLK_LOCAL_MEM_FENCE);
 
 #if (ALGO == cryptonight_gpu || ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
-	__local uint4* xin1_store = &xin1[get_local_id(1)][get_local_id(0)];
-	__local uint4* xin1_load = &xin1[(get_local_id(1) + 1) % 8][get_local_id(0)];
-	__local uint4* xin2_store = &xin2[get_local_id(1)][get_local_id(0)];
-	__local uint4* xin2_load = &xin2[(get_local_id(1) + 1) % 8][get_local_id(0)];
-	*xin2_store = (uint4)(0, 0, 0, 0);
+#	if (HAS_AMD_BPERMUTE == 1)
+	int lane = (groupIdx * 8 + ((lIdx + 1) % 8)) << 2;
+	uint4 tmp = (uint4)(0, 0, 0, 0);
+#	else
+    __local uint4* xin1_store = &xin1[groupIdx][lIdx];
+    __local uint4* xin1_load = &xin1[groupIdx][(lIdx + 1) % 8];
+    __local uint4* xin2_store = &xin2[groupIdx][lIdx];
+    __local uint4* xin2_load = &xin2[groupIdx][(lIdx + 1) % 8];
+    *xin2_store = (uint4)(0, 0, 0, 0);
+#	endif
 #endif
 
 #if(COMP_MODE == 1)
-	// do not use early return here
-	if (gIdx < Threads)
+    // do not use early return here
+    if (gIdx < Threads)
 #endif
-	{
+    {
 
 #if (ALGO == cryptonight_gpu || ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
+
+#	if	(HAS_AMD_BPERMUTE == 1)
+        #pragma unroll 2
+        for(int i = 0, i1 = lIdx; i < (MEMORY >> 7); ++i, i1 = (i1 + 16) % (MEMORY >> 4))
+        {
+            text ^= Scratchpad[IDX((uint)i1)];
+			text ^= tmp;
+
+            #pragma unroll 10
+            for(int j = 0; j < 10; ++j)
+                text = AES_Round(AES0, AES1, AES2, AES3, text, ((uint4 *)ExpandedKey2)[j]);
+
+            text.s0 ^= __builtin_amdgcn_ds_bpermute(lane, text.s0);
+            text.s1 ^= __builtin_amdgcn_ds_bpermute(lane, text.s1);
+            text.s2 ^= __builtin_amdgcn_ds_bpermute(lane, text.s2);
+            text.s3 ^= __builtin_amdgcn_ds_bpermute(lane, text.s3);
+			//__builtin_amdgcn_s_waitcnt(0);
+            text ^= Scratchpad[IDX((uint)i1 + 8u)];
+
+            #pragma unroll 10
+            for(int j = 0; j < 10; ++j)
+                text = AES_Round(AES0, AES1, AES2, AES3, text, ((uint4 *)ExpandedKey2)[j]);
+            tmp.s0 = __builtin_amdgcn_ds_bpermute(lane, text.s0);
+            tmp.s1 = __builtin_amdgcn_ds_bpermute(lane, text.s1);
+            tmp.s2 = __builtin_amdgcn_ds_bpermute(lane, text.s2);
+            tmp.s3 = __builtin_amdgcn_ds_bpermute(lane, text.s3);
+			//__builtin_amdgcn_s_waitcnt(0);
+        }
+
+        text ^= tmp;
+#	else
+
 		#pragma unroll 2
-		for(int i = 0, i1 = get_local_id(1); i < (MEMORY >> 7); ++i, i1 = (i1 + 16) % (MEMORY >> 4))
+		for(int i = 0, i1 = lIdx; i < (MEMORY >> 7); ++i, i1 = (i1 + 16) % (MEMORY >> 4))
 		{
 			text ^= Scratchpad[IDX((uint)i1)];
 			barrier(CLK_LOCAL_MEM_FENCE);
 			text ^= *xin2_load;
-
 			#pragma unroll 10
 			for(int j = 0; j < 10; ++j)
 			    text = AES_Round(AES0, AES1, AES2, AES3, text, ((uint4 *)ExpandedKey2)[j]);
-
 			*xin1_store = text;
-
 			text ^= Scratchpad[IDX((uint)i1 + 8u)];
 			barrier(CLK_LOCAL_MEM_FENCE);
 			text ^= *xin1_load;
@@ -971,83 +1011,92 @@ __kernel void JOIN(cn2,ALGO) (__global uint4 *Scratchpad, __global ulong *states
 			*xin2_store = text;
 		}
 
-		barrier(CLK_LOCAL_MEM_FENCE);
-		text ^= *xin2_load;
+        barrier(CLK_LOCAL_MEM_FENCE);
+        text ^= *xin2_load;
+#	endif
 
 #else
-		#pragma unroll 2
-		for (int i = 0; i < (MEMORY >> 7); ++i) {
-			text ^= Scratchpad[IDX((uint)((i << 3) + get_local_id(1)))];
+        #pragma unroll 2
+        for (int i = 0; i < (MEMORY >> 7); ++i)
+        {
+            text ^= Scratchpad[IDX((uint)((i << 3) + lIdx))];
 
-			#pragma unroll 10
-			for(int j = 0; j < 10; ++j)
-			    text = AES_Round(AES0, AES1, AES2, AES3, text, ((uint4 *)ExpandedKey2)[j]);
-		}
+            #pragma unroll 10
+            for(int j = 0; j < 10; ++j)
+                text = AES_Round(AES0, AES1, AES2, AES3, text, ((uint4 *)ExpandedKey2)[j]);
+        }
 #endif
-	}
+    }
 
 #if (ALGO == cryptonight_gpu || ALGO == cryptonight_heavy || ALGO == cryptonight_haven || ALGO == cryptonight_bittube2 || ALGO == cryptonight_superfast)
-	/* Also left over threads performe this loop.
-	 * The left over thread results will be ignored
-	 */
-	#pragma unroll 16
-	for(size_t i = 0; i < 16; i++)
-	{
-		#pragma unroll 10
-		for (int j = 0; j < 10; ++j) {
-			text = AES_Round(AES0, AES1, AES2, AES3, text, ((uint4 *)ExpandedKey2)[j]);
-		}
-
-		barrier(CLK_LOCAL_MEM_FENCE);
-		*xin1_store = text;
-		barrier(CLK_LOCAL_MEM_FENCE);
-		text ^= *xin1_load;
-	}
+    /* Also left over threads performe this loop.
+     * The left over thread results will be ignored
+     */
+    #pragma unroll 16
+    for(size_t i = 0; i < 16; i++)
+    {
+        #pragma unroll 10
+        for (int j = 0; j < 10; ++j) {
+            text = AES_Round(AES0, AES1, AES2, AES3, text, ((uint4 *)ExpandedKey2)[j]);
+        }
+#if (HAS_AMD_BPERMUTE == 1)
+	    text.s0 ^= __builtin_amdgcn_ds_bpermute(lane, text.s0);
+        text.s1 ^= __builtin_amdgcn_ds_bpermute(lane, text.s1);
+        text.s2 ^= __builtin_amdgcn_ds_bpermute(lane, text.s2);
+        text.s3 ^= __builtin_amdgcn_ds_bpermute(lane, text.s3);
+		//__builtin_amdgcn_s_waitcnt(0);
+#else
+        barrier(CLK_LOCAL_MEM_FENCE);
+        *xin1_store = text;
+        barrier(CLK_LOCAL_MEM_FENCE);
+        text ^= *xin1_load;
+#endif
+    }
 #endif
 
-	__local ulong State_buf[8 * 25];
+    __local ulong State_buf[8 * 25];
 #if(COMP_MODE==1)
-	// do not use early return here
-	if(gIdx < Threads)
+    // do not use early return here
+    if(gIdx < Threads)
 #endif
-	{
-		vstore2(as_ulong2(text), get_local_id(1) + 4, states);
-	}
+    {
+        vstore2(as_ulong2(text), lIdx + 4, states);
+    }
 
-	barrier(CLK_GLOBAL_MEM_FENCE);
+    barrier(CLK_GLOBAL_MEM_FENCE);
 
 #if(COMP_MODE==1)
-	// do not use early return here
-	if(gIdx < Threads)
+    // do not use early return here
+    if(gIdx < Threads)
 #endif
-	{
-		if(!get_local_id(1))
-		{
-			__local ulong* State = State_buf + get_local_id(0) * 25;
+    {
+        if(!lIdx)
+        {
+            __local ulong* State = State_buf + groupIdx * 25;
 
-			for(int i = 0; i < 25; ++i) State[i] = states[i];
+            for(int i = 0; i < 25; ++i) State[i] = states[i];
 
-			keccakf1600_2(State);
+            keccakf1600_2(State);
 
 #if (ALGO == cryptonight_gpu)
 			if(State[3] <= Target)
 			{
 				ulong outIdx = atomic_inc(output + 0xFF);
 				if(outIdx < 0xFF)
-					output[outIdx] = get_global_id(0);
+					output[outIdx] = get_global_id(1);
 			}
 #else
-			for(int i = 0; i < 25; ++i) states[i] = State[i];
+            for(int i = 0; i < 25; ++i) states[i] = State[i];
 
-			uint StateSwitch = State[0] & 3;
-			__global uint *destinationBranch1 = StateSwitch == 0 ? Branch0 : Branch1;
-			__global uint *destinationBranch2 = StateSwitch == 2 ? Branch2 : Branch3;
-			__global uint *destinationBranch = StateSwitch < 2 ? destinationBranch1 : destinationBranch2;
-			destinationBranch[atomic_inc(destinationBranch + Threads)] = gIdx;
+            uint StateSwitch = State[0] & 3;
+            __global uint *destinationBranch1 = StateSwitch == 0 ? Branch0 : Branch1;
+            __global uint *destinationBranch2 = StateSwitch == 2 ? Branch2 : Branch3;
+            __global uint *destinationBranch = StateSwitch < 2 ? destinationBranch1 : destinationBranch2;
+            destinationBranch[atomic_inc(destinationBranch + Threads)] = gIdx;
 #endif
-		}
-	}
-	mem_fence(CLK_GLOBAL_MEM_FENCE);
+        }
+    }
+    mem_fence(CLK_GLOBAL_MEM_FENCE);
 }
 
 )==="
