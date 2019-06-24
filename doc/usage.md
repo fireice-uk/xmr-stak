@@ -1,7 +1,7 @@
-# HowTo Use xmr-stak
+# HowTo Use Xmr-Stak
 
 ## Content Overview
-* [Configuration](#configuration)
+* [Configurations](#configurations)
 * [Usage on Windows](#usage-on-windows)
 * [Usage on Linux](#usage-on-linux)
 * [Command Line Options](#command-line-options)
@@ -77,6 +77,6 @@ Debug the docker image by getting inside:
 docker run --entrypoint=/bin/bash --rm -it -u $(id -u):$(id -g) --name fireice-uk/xmr-stak -v "$PWD":/mnt xmr-stak
 ```
 
-## HTML and JSON API report configuraton
+## HTML and JSON API report configuration
 
 To configure the reports shown on the [README](../README.md) side you need to edit the httpd_port variable. Then enable wifi on your phone and navigate to [miner ip address]:[httpd_port] in your phone browser. If you want to use the data in scripts, you can get the JSON version of the data at url [miner ip address]:[httpd_port]/api.json
