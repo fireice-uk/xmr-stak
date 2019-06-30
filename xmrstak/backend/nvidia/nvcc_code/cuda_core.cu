@@ -301,8 +301,8 @@ __launch_bounds__(XMR_STAK_THREADS * 2)
 		const u64 cx2 = myChunks[idx1 + ((sub + 1) & 1)];
 
 		u64 cx_aes = ax0 ^ u64(
-			t_fn0(BYTE_0(cx.x)) ^ t_fn1(BYTE_1(cx.y)) ^ ROTL32_16(t_fn0(BYTE_2(cx2.x)) ^ t_fn1(BYTE_3(cx2.y >> 24))),
-			t_fn0(BYTE_0(cx.y)) ^ t_fn1(BYTE_1(cx2.x)) ^ ROTL32_16(t_fn0(BYTE_2(cx2.y)) ^ t_fn1(BYTE_3(cx.x >> 24))));
+			t_fn0(BYTE_0(cx.x)) ^ t_fn1(BYTE_1(cx.y)) ^ ROTL32_16(t_fn0(BYTE_2(cx2.x)) ^ t_fn1(BYTE_3(cx2.y))),
+			t_fn0(BYTE_0(cx.y)) ^ t_fn1(BYTE_1(cx2.x)) ^ ROTL32_16(t_fn0(BYTE_2(cx2.y)) ^ t_fn1(BYTE_3(cx.x))));
 
 		if(ALGO == cryptonight_monero_v8)
 		{
