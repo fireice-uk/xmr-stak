@@ -895,12 +895,19 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo
 		roundsPhase3 *= 2;
 	}
 
+	int blockSizePhase3 = block8.x;
+	int gridSizePhase3 = grid.x;
+	if(blockSizePhase3 * 2 <= ctx->device_maxThreadsPerBlock)
+	{
+		blockSizePhase3 *= 2;
+		gridSizePhase3 = (blockSizePhase3 + 1) / 2;
+	}
 	for(int i = 0; i < roundsPhase3; i++)
 	{
 		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase3<ALGO><<<
-											  (grid.x + 1) / 2,
-											  block8.x * 2,
-											  2  * block8.x * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3)>>>(
+											  gridSizePhase3,
+											  blockSizePhase3,
+											  blockSizePhase3 * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3)>>>(
 											  ITERATIONS,
 											  MEM,
 											  ctx->device_blocks * ctx->device_threads,
@@ -966,12 +973,20 @@ void cryptonight_core_gpu_hash_gpu(nvid_ctx* ctx, uint32_t nonce, const xmrstak_
 		roundsPhase3 *= 2;
 	}
 
+	int blockSizePhase3 = block8.x;
+	int gridSizePhase3 = grid.x;
+	if(blockSizePhase3 * 2 <= ctx->device_maxThreadsPerBlock)
+	{
+		blockSizePhase3 *= 2;
+		gridSizePhase3 = (blockSizePhase3 + 1) / 2;
+	}
+
 	for(int i = 0; i < roundsPhase3; i++)
 	{
 		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase3<ALGO><<<
-											  (grid.x + 1) / 2,
-											  block8.x * 2 ,
-											  2 * block8.x * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3)>>>(
+											  gridSizePhase3,
+											  blockSizePhase3,
+											  blockSizePhase3 * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3)>>>(
 											  ITERATIONS,
 											  MEM / 4,
 											  ctx->device_blocks * ctx->device_threads,
