@@ -560,12 +560,13 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 	ctx->device_mpcount = props.multiProcessorCount;
 	ctx->device_arch[0] = props.major;
 	ctx->device_arch[1] = props.minor;
+	ctx->device_maxThreadsPerBlock = props.maxThreadsPerBlock;
 
 	const int gpuArch = ctx->device_arch[0] * 10 + ctx->device_arch[1];
 
 	ctx->name = std::string(props.name);
 
-	printf("CUDA [%d.%d/%d.%d] GPU#%d, device architecture %d: \"%s\"... ",
+	printf("CUDA [%d.%d/%d.%d] GPU#%d, device architecture %d: \"%s\"...\n",
 		version / 1000, (version % 1000 / 10),
 		CUDART_VERSION / 1000, (CUDART_VERSION % 1000) / 10,
 		ctx->device_id, gpuArch, ctx->device_name);
@@ -802,6 +803,22 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 				ctx->device_blocks = blockOptimal;
 			}
 		}
+	}
+
+	if(useCryptonight_gpu)
+	{
+		// cryptonight_gpu used 16 threads per share
+		if(ctx->device_threads * 16 > ctx->device_maxThreadsPerBlock)
+		{
+			ctx->device_threads = ctx->device_maxThreadsPerBlock / 16;
+			printf("WARNING: 'threads' configuration to large, value adjusted to %i\n", ctx->device_threads);
+		}
+	}
+	else if(ctx->device_threads * 8 > ctx->device_maxThreadsPerBlock)
+	{
+		// by default cryptonight CUDA implementations uses 8 threads per thread for some kernel
+		ctx->device_threads = ctx->device_maxThreadsPerBlock / 8;
+		printf("WARNING: 'threads' configuration to large, value adjusted to %i\n", ctx->device_threads);
 	}
 	printf("device init succeeded\n");
 

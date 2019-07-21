@@ -1356,7 +1356,42 @@ __kernel void Groestl(__global ulong *states, __global uint *BranchBuf, __global
 #endif
 		ulong H[8], M[8];
 
-		for (uint i = 0; i < 3; ++i) {
+		// BUG: AMD driver 19.7.X crashs if this is written as loop
+		// Thx AMD for so bad software
+		uint i = 0;
+		{
+			((ulong8 *)M)[0] = vload8(i, states);
+
+			for (uint x = 0; x < 8; ++x) {
+			    H[x] = M[x] ^ State[x];
+			}
+
+			PERM_SMALL_P(H);
+			PERM_SMALL_Q(M);
+
+			for (uint x = 0; x < 8; ++x)
+			{
+			    State[x] ^= H[x] ^ M[x];
+			}
+		}
+		i = 1;
+		{
+			((ulong8 *)M)[0] = vload8(i, states);
+
+			for (uint x = 0; x < 8; ++x) {
+			    H[x] = M[x] ^ State[x];
+			}
+
+			PERM_SMALL_P(H);
+			PERM_SMALL_Q(M);
+
+			for (uint x = 0; x < 8; ++x)
+			{
+			    State[x] ^= H[x] ^ M[x];
+			}
+		}
+		i = 2;
+		{
 			((ulong8 *)M)[0] = vload8(i, states);
 
 			for (uint x = 0; x < 8; ++x) {
