@@ -90,8 +90,85 @@ ulong8 SkeinOddRound(ulong8 p, const ulong8 h, const ulong *t, const uint s, con
 
 ulong8 Skein512Block(ulong8 p, ulong8 h, ulong h8, const ulong *t)
 {
-	#pragma unroll
-	for(int i = 0; i < 18; ++i)
+	// BUG: AMD driver 19.7.X crashs if this is written as loop
+	// Thx AMD for so bad software
+	int i = 0;
+	{
+		p = SkeinEvenRound(p, h, t, 0U, i);
+		++i;
+		ulong tmp = h.s0;
+		h = shuffle(h, (ulong8)(1, 2, 3, 4, 5, 6, 7, 0));
+		h.s7 = h8;
+		h8 = tmp;
+		p = SkeinOddRound(p, h, t, 1U, i);
+		++i;
+		tmp = h.s0;
+		h = shuffle(h, (ulong8)(1, 2, 3, 4, 5, 6, 7, 0));
+		h.s7 = h8;
+		h8 = tmp;
+		p = SkeinEvenRound(p, h, t, 2U, i);
+		++i;
+		tmp = h.s0;
+		h = shuffle(h, (ulong8)(1, 2, 3, 4, 5, 6, 7, 0));
+		h.s7 = h8;
+		h8 = tmp;
+		p = SkeinOddRound(p, h, t, 0U, i);
+		++i;
+		tmp = h.s0;
+		h = shuffle(h, (ulong8)(1, 2, 3, 4, 5, 6, 7, 0));
+		h.s7 = h8;
+		h8 = tmp;
+		p = SkeinEvenRound(p, h, t, 1U, i);
+		++i;
+		tmp = h.s0;
+		h = shuffle(h, (ulong8)(1, 2, 3, 4, 5, 6, 7, 0));
+		h.s7 = h8;
+		h8 = tmp;
+		p = SkeinOddRound(p, h, t, 2U, i);
+		tmp = h.s0;
+		h = shuffle(h, (ulong8)(1, 2, 3, 4, 5, 6, 7, 0));
+		h.s7 = h8;
+		h8 = tmp;
+		++i;
+	}
+	{
+		p = SkeinEvenRound(p, h, t, 0U, i);
+		++i;
+		ulong tmp = h.s0;
+		h = shuffle(h, (ulong8)(1, 2, 3, 4, 5, 6, 7, 0));
+		h.s7 = h8;
+		h8 = tmp;
+		p = SkeinOddRound(p, h, t, 1U, i);
+		++i;
+		tmp = h.s0;
+		h = shuffle(h, (ulong8)(1, 2, 3, 4, 5, 6, 7, 0));
+		h.s7 = h8;
+		h8 = tmp;
+		p = SkeinEvenRound(p, h, t, 2U, i);
+		++i;
+		tmp = h.s0;
+		h = shuffle(h, (ulong8)(1, 2, 3, 4, 5, 6, 7, 0));
+		h.s7 = h8;
+		h8 = tmp;
+		p = SkeinOddRound(p, h, t, 0U, i);
+		++i;
+		tmp = h.s0;
+		h = shuffle(h, (ulong8)(1, 2, 3, 4, 5, 6, 7, 0));
+		h.s7 = h8;
+		h8 = tmp;
+		p = SkeinEvenRound(p, h, t, 1U, i);
+		++i;
+		tmp = h.s0;
+		h = shuffle(h, (ulong8)(1, 2, 3, 4, 5, 6, 7, 0));
+		h.s7 = h8;
+		h8 = tmp;
+		p = SkeinOddRound(p, h, t, 2U, i);
+		tmp = h.s0;
+		h = shuffle(h, (ulong8)(1, 2, 3, 4, 5, 6, 7, 0));
+		h.s7 = h8;
+		h8 = tmp;
+		++i;
+	}
 	{
 		p = SkeinEvenRound(p, h, t, 0U, i);
 		++i;
@@ -129,7 +206,6 @@ ulong8 Skein512Block(ulong8 p, ulong8 h, ulong h8, const ulong *t)
 		h.s7 = h8;
 		h8 = tmp;
 	}
-
 	p += h;
 	p.s5 += t[0];
 	p.s6 += t[1];
