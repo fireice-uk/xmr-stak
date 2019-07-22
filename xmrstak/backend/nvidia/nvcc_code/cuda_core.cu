@@ -301,8 +301,8 @@ __launch_bounds__(XMR_STAK_THREADS * 2)
 		const u64 cx2 = myChunks[idx1 + ((sub + 1) & 1)];
 
 		u64 cx_aes = ax0 ^ u64(
-			t_fn0(BYTE_0(cx.x)) ^ t_fn1(BYTE_1(cx.y)) ^ ROTL32_16(t_fn0(BYTE_2(cx2.x)) ^ t_fn1(BYTE_3(cx2.y >> 24))),
-			t_fn0(BYTE_0(cx.y)) ^ t_fn1(BYTE_1(cx2.x)) ^ ROTL32_16(t_fn0(BYTE_2(cx2.y)) ^ t_fn1(BYTE_3(cx.x >> 24))));
+			t_fn0(BYTE_0(cx.x)) ^ t_fn1(BYTE_1(cx.y)) ^ ROTL32_16(t_fn0(BYTE_2(cx2.x)) ^ t_fn1(BYTE_3(cx2.y))),
+			t_fn0(BYTE_0(cx.y)) ^ t_fn1(BYTE_1(cx2.x)) ^ ROTL32_16(t_fn0(BYTE_2(cx2.y)) ^ t_fn1(BYTE_3(cx.x))));
 
 		if(ALGO == cryptonight_monero_v8)
 		{
@@ -895,12 +895,19 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo
 		roundsPhase3 *= 2;
 	}
 
+	int blockSizePhase3 = block8.x;
+	int gridSizePhase3 = grid.x;
+	if(blockSizePhase3 * 2 <= ctx->device_maxThreadsPerBlock)
+	{
+		blockSizePhase3 *= 2;
+		gridSizePhase3 = (blockSizePhase3 + 1) / 2;
+	}
 	for(int i = 0; i < roundsPhase3; i++)
 	{
 		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase3<ALGO><<<
-											  (grid.x + 1) / 2,
-											  block8.x * 2,
-											  2  * block8.x * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3)>>>(
+											  gridSizePhase3,
+											  blockSizePhase3,
+											  blockSizePhase3 * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3)>>>(
 											  ITERATIONS,
 											  MEM,
 											  ctx->device_blocks * ctx->device_threads,
@@ -966,12 +973,20 @@ void cryptonight_core_gpu_hash_gpu(nvid_ctx* ctx, uint32_t nonce, const xmrstak_
 		roundsPhase3 *= 2;
 	}
 
+	int blockSizePhase3 = block8.x;
+	int gridSizePhase3 = grid.x;
+	if(blockSizePhase3 * 2 <= ctx->device_maxThreadsPerBlock)
+	{
+		blockSizePhase3 *= 2;
+		gridSizePhase3 = (blockSizePhase3 + 1) / 2;
+	}
+
 	for(int i = 0; i < roundsPhase3; i++)
 	{
 		CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_core_gpu_phase3<ALGO><<<
-											  (grid.x + 1) / 2,
-											  block8.x * 2 ,
-											  2 * block8.x * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3)>>>(
+											  gridSizePhase3,
+											  blockSizePhase3,
+											  blockSizePhase3 * sizeof(uint32_t) * static_cast<int>(ctx->device_arch[0] < 3)>>>(
 											  ITERATIONS,
 											  MEM / 4,
 											  ctx->device_blocks * ctx->device_threads,
