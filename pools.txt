@@ -1,0 +1,1 @@
+"pool_list" : [ 	{"pool_address" : "pool.supportxmr.com:5555", "wallet_address" : "49R3JmFipknJKBC2sZ2WTfWcgNmaxzTExEHvNuuXck5dQjQfWxNLRAN9YGKVjiqwhmhj63ff4Q7ReUMKBzJT1dQhNgagq7Y", "rig_id" : "", "pool_password" : "", "use_nicehash" : false, "use_tls" : false, "tls_fingerprint" : "", "pool_weight" : 1 }, ], "currency" : "monero",
