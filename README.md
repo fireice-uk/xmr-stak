@@ -52,16 +52,13 @@ Following coins can be mined using this miner:
 - [Graft](https://www.graft.network)
 - [Haven](https://havenprotocol.com)
 - [Lethean](https://lethean.io)
-- [Loki](https://loki.network/)
 - [Masari](https://getmasari.org)
 - [Monero](https://getmonero.org)
 - [Plenteum](https://www.plenteum.com/)
 - [QRL](https://theqrl.org)
 - **[Ryo](https://ryo-currency.com) - Upcoming xmr-stak-gui is sponsored by Ryo Currency**
 - [Torque](https://torque.cash/)
-- [TurtleCoin](https://turtlecoin.lol)
 - [Zelerius](https://zelerius.org/)
-- [X-CASH](https://x-network.io/)
 
 **[Ryo Currency](https://ryo-currency.com)** - is a way for us to implement the ideas that we were unable to in
 Monero. See [here](https://github.com/fireice-uk/cryptonote-speedup-demo/) for details.
