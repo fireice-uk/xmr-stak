@@ -900,7 +900,7 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, const xmrstak_algo
 	if(blockSizePhase3 * 2 <= ctx->device_maxThreadsPerBlock)
 	{
 		blockSizePhase3 *= 2;
-		gridSizePhase3 = (blockSizePhase3 + 1) / 2;
+		gridSizePhase3 = (gridSizePhase3 + 1) / 2;
 	}
 	for(int i = 0; i < roundsPhase3; i++)
 	{
@@ -978,7 +978,7 @@ void cryptonight_core_gpu_hash_gpu(nvid_ctx* ctx, uint32_t nonce, const xmrstak_
 	if(blockSizePhase3 * 2 <= ctx->device_maxThreadsPerBlock)
 	{
 		blockSizePhase3 *= 2;
-		gridSizePhase3 = (blockSizePhase3 + 1) / 2;
+		gridSizePhase3 = (gridSizePhase3 + 1) / 2;
 	}
 
 	for(int i = 0; i < roundsPhase3; i++)

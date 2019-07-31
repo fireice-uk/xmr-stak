@@ -1,7 +1,7 @@
 ###### fireice-uk's and psychocrypt's
 # XMR-Stak: Cryptonight All-in-One Mining Software
 
-XMR-Stak is a universal open source stratum pool miner. This miner supports CPUs, AMD and NVIDIA GPUs and can be used various crypto currencies: Ryo, Monero, Turtlecoin, Graft, Bittube, Loki, Aeon and many more Cryptonight coins.
+XMR-Stak is a universal open source stratum pool miner. This miner supports x86-64 CPUs, AMD and NVIDIA GPUs and can be used various crypto currencies: Ryo, Monero, Turtlecoin, Graft, Bittube, Loki, Aeon and many more Cryptonight coins.
 
 
 
@@ -52,16 +52,13 @@ Following coins can be mined using this miner:
 - [Graft](https://www.graft.network)
 - [Haven](https://havenprotocol.com)
 - [Lethean](https://lethean.io)
-- [Loki](https://loki.network/)
 - [Masari](https://getmasari.org)
 - [Monero](https://getmonero.org)
 - [Plenteum](https://www.plenteum.com/)
 - [QRL](https://theqrl.org)
 - **[Ryo](https://ryo-currency.com) - Upcoming xmr-stak-gui is sponsored by Ryo Currency**
 - [Torque](https://torque.cash/)
-- [TurtleCoin](https://turtlecoin.lol)
 - [Zelerius](https://zelerius.org/)
-- [X-CASH](https://x-network.io/)
 
 **[Ryo Currency](https://ryo-currency.com)** - is a way for us to implement the ideas that we were unable to in
 Monero. See [here](https://github.com/fireice-uk/cryptonote-speedup-demo/) for details.
