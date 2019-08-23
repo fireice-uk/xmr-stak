@@ -3,7 +3,7 @@
 ## Content Overview
 * [Configurations](#configurations)
 * [Usage on Windows](#usage-on-windows)
-* [Usage on Linux](#usage-on-linux)
+* [Usage on Linux & macOS](#usage-on-linux--macos)
 * [Command Line Options](#command-line-options)
 * [Use different backends](#use-different-backends)
 * [HTML and JSON API report configuraton](#html-and-json-api-report-configuraton)
