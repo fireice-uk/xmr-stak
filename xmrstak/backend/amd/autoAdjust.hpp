@@ -181,6 +181,7 @@ class autoAdjust
 			}
 
 			uint32_t numUnroll = 8;
+			uint32_t numThreads = 1u;
 
 			if(useCryptonight_gpu)
 			{
@@ -188,7 +189,11 @@ class autoAdjust
 				// @todo check again after all optimizations
 				maxThreads = ctx.computeUnits * 6 * 8;
 				ctx.stridedIndex = 0;
-				numUnroll = 1;
+				// do not change unroll for AMD RX5700 but set 2 threads per gpu
+				if(ctx.name.compare("gfx1010") == 0)
+					numThreads = 2;
+				else
+					numUnroll = 1;
 			}
 
 			// keep 128MiB memory free (value is randomly chosen) from the max available memory
@@ -196,7 +201,6 @@ class autoAdjust
 
 			size_t memPerThread = std::min(ctx.maxMemPerAlloc, maxAvailableFreeMem);
 
-			uint32_t numThreads = 1u;
 			if(ctx.isAMD && !useCryptonight_gpu)
 			{
 				numThreads = 2;
