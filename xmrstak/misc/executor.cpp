@@ -783,7 +783,7 @@ void executor::hashrate_report(std::string& out)
 		std::string motd;
 		for(jpsock& pool : pools)
 		{
-			motd.empty();
+			motd.clear();
 			if(pool.get_pool_motd(motd) && motd_filter_console(motd))
 			{
 				out.append("Message from ").append(pool.get_pool_addr()).append(":\n");
@@ -1040,7 +1040,7 @@ void executor::http_hashrate_report(std::string& out)
 		std::string motd;
 		for(jpsock& pool : pools)
 		{
-			motd.empty();
+			motd.clear();
 			if(pool.get_pool_motd(motd) && motd_filter_web(motd))
 			{
 				if(!have_motd)
