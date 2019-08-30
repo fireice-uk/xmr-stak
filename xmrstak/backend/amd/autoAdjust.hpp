@@ -213,8 +213,11 @@ class autoAdjust
 			size_t possibleIntensity = std::min(maxThreads, maxIntensity);
 			// map intensity to a multiple of the compute unit count, default_workSize is the number of threads per work group
 			size_t intensity = (possibleIntensity / (default_workSize * ctx.computeUnits)) * ctx.computeUnits * default_workSize;
-			// in the case we use two threads per gpu we can be relax and need no multiple of the number of compute units
-			if(numThreads == 2)
+
+			size_t computeUnitUtilization = ((possibleIntensity * 100)  / (default_workSize * ctx.computeUnits)) % 100;
+			// in the case we use two threads per gpu or if we can utilize over 75% of the compute units
+			// we can be relax and need no multiple of the number of compute units
+			if(numThreads == 2 || computeUnitUtilization >= 75)
 				intensity = (possibleIntensity / default_workSize) * default_workSize;
 
 			//If the intensity is 0, then it's because the multiple of the unit count is greater than intensity
