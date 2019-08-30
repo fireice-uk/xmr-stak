@@ -138,7 +138,10 @@ class autoAdjust
 				// UNKNOWN
 				ctx.name.compare("gfx900") == 0 ||
 				ctx.name.compare("gfx903") == 0 ||
-				ctx.name.compare("gfx905") == 0)
+				ctx.name.compare("gfx905") == 0 ||
+				// Radeon VII
+				ctx.name.compare("gfx906") == 0 ||
+				ctx.name.compare("Fiji") == 0)
 			{
 				/* Increase the number of threads for AMD VEGA gpus.
 				 * Limit the number of threads based on the issue: https://github.com/fireice-uk/xmr-stak/issues/5#issuecomment-339425089
