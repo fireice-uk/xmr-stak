@@ -19,10 +19,13 @@
 #include "cn_gpu.hpp"
 #include "cryptonight.h"
 #include "xmrstak/backend/cryptonight.hpp"
+#include "xmrstak/backend/cpu/jconf.hpp"
+#include "xmrstak/backend/cpu/cpuType.hpp"
 #include <cfenv>
 #include <memory.h>
 #include <stdio.h>
 #include <utility>
+#include "xmrstak/backend/cpu/crypto/randomx/randomx.h"
 
 #ifdef _WIN64
 #include <winsock2.h>
@@ -960,6 +963,17 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 template <size_t N>
 struct Cryptonight_hash;
 
+template <size_t N>
+struct RandomX_hash
+{
+	template <xmrstak_algo_id ALGO, bool SOFT_AES, bool PREFETCH>
+	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
+	{
+		for(size_t i = 0u; i < N; ++i)
+			randomx_calculate_hash(ctx[i]->m_rx_vm, input, len, (char*)output + 32 * i);
+	}
+};
+
 template <>
 struct Cryptonight_hash<1>
 {
@@ -1368,5 +1382,60 @@ struct Cryptonight_R_generator
 			ctx[i]->loop_fn = ctx[0]->loop_fn;
 			ctx[i]->hash_fn = ctx[0]->hash_fn;
 		}
+	}
+};
+
+template <size_t N>
+struct RandomX_generator
+{
+	template <xmrstak_algo_id ALGO>
+	static void cn_on_new_job(const xmrstak::miner_work& work, cryptonight_ctx** ctx)
+	{
+
+		bool algorithm_switched = ctx[0]->last_algo != POW(ALGO);
+
+		if(ctx[0]->m_rx_vm == nullptr)
+		{
+			int flags = RANDOMX_FLAG_LARGE_PAGES | RANDOMX_FLAG_FULL_MEM | RANDOMX_FLAG_JIT;
+			auto cpu_model = xmrstak::cpu::getModel();
+
+			if(cpu_model.aes)
+				flags |= RANDOMX_FLAG_HARD_AES;
+
+			for(size_t i = 0; i < N; i++)
+			{
+				printer::inst()->print_msg(LDEBUG,"%s create vm", POW(ALGO).Name().c_str());
+				ctx[i]->m_rx_vm = randomx_create_vm(static_cast<randomx_flags>(flags), nullptr, randomX_global_ctx::inst().getDataset(), ctx[i]->long_state);
+				if (!ctx[i]->m_rx_vm)
+					ctx[i]->m_rx_vm = randomx_create_vm(static_cast<randomx_flags>(flags - RANDOMX_FLAG_LARGE_PAGES), nullptr, randomX_global_ctx::inst().getDataset(), ctx[i]->long_state);
+			}
+		}
+		else if(algorithm_switched)
+		{
+			// remove old vm and re-initialize the full randomx context
+			for(size_t i = 0; i < N; i++)
+			{
+				randomx_destroy_vm(ctx[i]->m_rx_vm);
+				ctx[i]->m_rx_vm = nullptr;
+			}
+			cn_on_new_job<ALGO>(work, ctx);
+			return;
+		}
+
+		if(algorithm_switched)
+		{
+			if(ALGO == randomX)
+				randomx_apply_config(RandomX_MoneroConfig);
+			else if(ALGO == randomX_loki)
+				randomx_apply_config(RandomX_LokiConfig);
+			else if(ALGO == randomX_wow)
+				randomx_apply_config(RandomX_WowneroConfig);
+		}
+
+		for(size_t i = 0; i < N; i++)
+			ctx[i]->last_algo = POW(ALGO);
+
+		printer::inst()->print_msg(LDEBUG,"%s update dataset with %u threads", POW(ALGO).Name().c_str(), (uint32_t)xmrstak::cpu::jconf::inst()->GetThreadCount());
+		randomX_global_ctx::inst().updateDataset(work.seed_hash, xmrstak::cpu::jconf::inst()->GetThreadCount());
 	}
 };

@@ -417,12 +417,13 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 	if(!params->val->IsObject())
 		return set_socket_error("PARSE error: Job error 1");
 
-	const Value *blob, *jobid, *target, *motd, *blk_height;
+	const Value *blob, *jobid, *target, *motd, *blk_height, *seed_hash;
 	jobid = GetObjectMember(*params->val, "job_id");
 	blob = GetObjectMember(*params->val, "blob");
 	target = GetObjectMember(*params->val, "target");
 	motd = GetObjectMember(*params->val, "motd");
 	blk_height = GetObjectMember(*params->val, "height");
+	seed_hash = GetObjectMember(*params->val, "seed_hash");
 
 	if(jobid == nullptr || blob == nullptr || target == nullptr ||
 		!jobid->IsString() || !blob->IsString() || !target->IsString())
@@ -485,7 +486,7 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 	{
 		oPoolJob.iTarget = 0;
 		char sTempStr[] = "0000000000000000";
-		memcpy(sTempStr, target->GetString(), target_slen);
+		memcpy(sTempStr, seed_hash, target_slen);
 		if(!hex2bin(sTempStr, 16, (unsigned char*)&oPoolJob.iTarget) || oPoolJob.iTarget == 0)
 			return set_socket_error("PARSE error: Invalid target");
 	}
@@ -497,6 +498,16 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 	if(blk_height != nullptr && blk_height->IsUint64())
 		oPoolJob.iBlockHeight = bswap_64(blk_height->GetUint64());
 
+	if(seed_hash != nullptr && seed_hash->IsString() && seed_hash->GetStringLength() == 64u)
+	{
+		printer::inst()->print_msg(LDEBUG,"randomX job seed %s", seed_hash->GetString());
+		hex2bin(seed_hash->GetString(), seed_hash->GetStringLength(), oPoolJob.seed_hash.data());
+		for(int i = 0; i < 32; i++)
+		{
+			printf("%u",oPoolJob.seed_hash[i]);
+		}
+		printf("\n");
+	}
 	std::unique_lock<std::mutex> lck(job_mutex);
 	oCurrentJob = oPoolJob;
 	lck.unlock();

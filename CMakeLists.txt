@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 11)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}" CACHE PATH "install prefix" FORCE)
 endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -425,6 +427,8 @@ else()
     add_definitions("-DCONF_NO_HWLOC")
 endif()
 
+include(cmake/randomx.cmake)
+
 ################################################################################
 # Windows Sockets
 ################################################################################
@@ -563,7 +567,7 @@ add_library(xmr-stak-backend
     STATIC
     ${BACKEND_CPP}
 )
-target_link_libraries(xmr-stak-backend xmr-stak-c ${CMAKE_DL_LIBS} xmr-stak-asm)
+target_link_libraries(xmr-stak-backend xmr-stak-c xmr-stak-randomx ${CMAKE_DL_LIBS} xmr-stak-asm ${RANDOMX_LIBRARIES})
 
 # compile CUDA backend
 if(CUDA_FOUND)

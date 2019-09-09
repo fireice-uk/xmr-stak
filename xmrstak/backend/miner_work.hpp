@@ -9,6 +9,7 @@
 #include <iostream>
 #include <mutex>
 #include <thread>
+#include <array>
 
 namespace xmrstak
 {
@@ -23,6 +24,7 @@ struct miner_work
 	size_t iPoolId;
 	uint64_t iBlockHeight;
 	uint8_t* ref_ptr;
+	std::array<uint8_t, 32> seed_hash = {{0}};
 
 	miner_work() :
 		iWorkSize(0),
@@ -32,14 +34,15 @@ struct miner_work
 		ref_ptr((uint8_t*)&iBlockHeight) {}
 
 	miner_work(const char* sJobID, const uint8_t* bWork, uint32_t iWorkSize,
-		uint64_t iTarget, bool bNiceHash, size_t iPoolId, uint64_t iBlockHeiht) :
+		uint64_t iTarget, bool bNiceHash, size_t iPoolId, uint64_t iBlockHeiht, const std::array<uint8_t, 32>& seed) :
 		iWorkSize(iWorkSize),
 		iTarget(iTarget),
 		bNiceHash(bNiceHash),
 		bStall(false),
 		iPoolId(iPoolId),
 		iBlockHeight(iBlockHeiht),
-		ref_ptr((uint8_t*)&iBlockHeight)
+		ref_ptr((uint8_t*)&iBlockHeight),
+		seed_hash(seed)
 	{
 		assert(iWorkSize <= sizeof(bWorkBlob));
 		memcpy(this->bWorkBlob, bWork, iWorkSize);
@@ -52,7 +55,8 @@ struct miner_work
 		bStall(from.bStall),
 		iPoolId(from.iPoolId),
 		iBlockHeight(from.iBlockHeight),
-		ref_ptr((uint8_t*)&iBlockHeight)
+		ref_ptr((uint8_t*)&iBlockHeight),
+		seed_hash(from.seed_hash)
 	{
 		assert(iWorkSize <= sizeof(bWorkBlob));
 		memcpy(bWorkBlob, from.bWorkBlob, iWorkSize);
@@ -71,6 +75,7 @@ struct miner_work
 		iWorkSize = from.iWorkSize;
 		bNiceHash = from.bNiceHash;
 		iTarget = from.iTarget;
+		seed_hash = from.seed_hash;
 
 		assert(iWorkSize <= sizeof(bWorkBlob));
 		memcpy(sJobID, from.sJobID, sizeof(sJobID));
@@ -89,6 +94,7 @@ struct miner_work
 		iWorkSize = from.iWorkSize;
 		bNiceHash = from.bNiceHash;
 		iTarget = from.iTarget;
+		seed_hash = from.seed_hash;
 
 		if(!ref_ptr)
 			return *this;

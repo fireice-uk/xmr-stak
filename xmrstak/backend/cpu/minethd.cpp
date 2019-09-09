@@ -166,6 +166,7 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 			ctx->fun_data = nullptr;
 			ctx->asm_version = 0;
 			ctx->last_algo = invalid_algo;
+			ctx->m_rx_vm = nullptr;
 		}
 		return ctx;
 
@@ -180,6 +181,7 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 			ctx->fun_data = nullptr;
 			ctx->asm_version = 0;
 			ctx->last_algo = invalid_algo;
+			ctx->m_rx_vm = nullptr;
 		}
 		return ctx;
 
@@ -197,6 +199,7 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 			ctx->fun_data = nullptr;
 			ctx->asm_version = 0;
 			ctx->last_algo = invalid_algo;
+			ctx->m_rx_vm = nullptr;
 		}
 		return ctx;
 
@@ -208,6 +211,7 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 		ctx->fun_data = nullptr;
 		ctx->asm_version = 0;
 		ctx->last_algo = invalid_algo;
+		ctx->m_rx_vm = nullptr;
 
 		return ctx;
 
@@ -652,6 +656,9 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 	case cryptonight_v8_reversewaltz:
 		algv = 15;
 		break;
+	case randomX:
+		algv = 16;
+		break;
 	default:
 		algv = 2;
 		break;
@@ -736,7 +743,13 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, false, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, true, false>,
 		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, false, true>,
-		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, true, true>};
+		Cryptonight_hash<N>::template hash<cryptonight_v8_reversewaltz, true, true>,
+
+		RandomX_hash<N>::template hash<randomX, false, false>,
+		RandomX_hash<N>::template hash<randomX, true, false>,
+		RandomX_hash<N>::template hash<randomX, false, true>,
+		RandomX_hash<N>::template hash<randomX, true, true>
+	};
 
 	std::bitset<2> digit;
 	digit.set(0, !bHaveAes);
@@ -784,13 +797,23 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 
 	static const std::unordered_map<uint32_t, minethd::cn_on_new_job> on_new_job_map = {
 		{cryptonight_r, Cryptonight_R_generator<N>::template cn_on_new_job<cryptonight_r>},
+		{randomX, RandomX_generator<N>::template cn_on_new_job<randomX>},
+		{randomX_loki, RandomX_generator<N>::template cn_on_new_job<randomX_loki>},
+		{randomX_wow, RandomX_generator<N>::template cn_on_new_job<randomX_wow>}
 	};
 
-	auto it = on_new_job_map.find(algo.Id());
-	if(it != on_new_job_map.end())
-		on_new_job = it->second;
+	auto it_algo = on_new_job_map.find(algo.Algo_Id());
+	if(it_algo != on_new_job_map.end())
+		on_new_job = it_algo->second;
 	else
-		on_new_job = nullptr;
+	{
+		// fallback to base algorithm
+		auto it_base = on_new_job_map.find(algo.Id());
+		if(it_base != on_new_job_map.end())
+			on_new_job = it_base->second;
+		else
+			on_new_job = nullptr;
+	}
 }
 
 void minethd::func_selector(cryptonight_ctx** ctx, bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo)
