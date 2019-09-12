@@ -47,13 +47,13 @@ struct plugin
 		fileExtension = ".dylib";
 #endif
 		// search library in working directory
-		libBackend = dlopen(("./lib" + libName + fileExtension).c_str(), RTLD_LAZY);
+		libBackend = dlopen(("./lib" + libName + fileExtension).c_str(), RTLD_NOW | RTLD_LAZY | RTLD_GLOBAL);
 		// fallback to binary directory
 		if(!libBackend)
-			libBackend = dlopen((params::inst().executablePrefix + "lib" + libName + fileExtension).c_str(), RTLD_LAZY);
+			libBackend = dlopen((params::inst().executablePrefix + "lib" + libName + fileExtension).c_str(), RTLD_NOW | RTLD_LAZY | RTLD_GLOBAL);
 		// try use LD_LIBRARY_PATH
 		if(!libBackend)
-			libBackend = dlopen(("lib" + libName + fileExtension).c_str(), RTLD_LAZY);
+			libBackend = dlopen(("lib" + libName + fileExtension).c_str(), RTLD_NOW | RTLD_LAZY | RTLD_GLOBAL);
 		if(!libBackend)
 		{
 			std::cerr << "WARNING: " << m_backendName << " cannot load backend library: " << dlerror() << std::endl;
