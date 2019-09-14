@@ -28,17 +28,10 @@ typedef struct
 	uint32_t* d_result_nonce;
 	uint32_t* d_long_state;
 	uint32_t* d_ctx_state;
-	uint32_t* d_ctx_state2;
 
 	std::string name;
 	size_t free_device_memory;
 	size_t total_device_memory;
-
-	CUcontext cuContext;
-	CUmodule module = nullptr;
-	CUfunction kernel = nullptr;
-	uint64_t kernel_height = 0;
-	xmrstak_algo cached_algo = {xmrstak_algo_id::invalid_algo};
 
 	//randomx stuff
 	uint8_t rx_dataset_seedhash[32] = {0};

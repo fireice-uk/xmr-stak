@@ -23,10 +23,10 @@
 
 extern "C"
 {
-#include "c_blake256.h"
-#include "c_groestl.h"
-#include "c_jh.h"
-#include "c_skein.h"
+//#include "c_blake256.h"
+//#include "c_groestl.h"
+//#include "c_jh.h"
+//#include "c_skein.h"
 }
 #include "cryptonight.h"
 #include "cryptonight_aesni.h"
@@ -56,28 +56,6 @@ extern "C"
 #include <string.h>
 #include <sys/mman.h>
 #endif // _WIN32
-
-void do_blake_hash(const void* input, uint32_t len, char* output)
-{
-	blake256_hash((uint8_t*)output, (const uint8_t*)input, len);
-}
-
-void do_groestl_hash(const void* input, uint32_t len, char* output)
-{
-	groestl((const uint8_t*)input, len * 8, (uint8_t*)output);
-}
-
-void do_jh_hash(const void* input, uint32_t len, char* output)
-{
-	jh_hash(32 * 8, (const uint8_t*)input, 8 * len, (uint8_t*)output);
-}
-
-void do_skein_hash(const void* input, uint32_t len, char* output)
-{
-	skein_hash(8 * 32, (const uint8_t*)input, 8 * len, (uint8_t*)output);
-}
-
-void (*const extra_hashes[4])(const void*, uint32_t, char*) = {do_blake_hash, do_groestl_hash, do_jh_hash, do_skein_hash};
 
 #ifdef _WIN32
 #include "xmrstak/misc/uac.hpp"

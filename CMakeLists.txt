@@ -493,18 +493,6 @@ if(CMAKE_LINK_STATIC)
     endif()
 endif()
 
-# compile C files
-file(GLOB SRCFILES_C "xmrstak/backend/cpu/crypto/*.c")
-
-add_library(xmr-stak-c
-    STATIC
-    ${SRCFILES_C}
-)
-set_property(TARGET xmr-stak-c PROPERTY C_STANDARD 99)
-if(MICROHTTPD_ENABLE)
-    target_link_libraries(xmr-stak-c ${MHTD})
-endif()
-target_link_libraries(xmr-stak-c ${LIBS})
 
 # compile generic backend files
 file(GLOB BACKEND_CPP
@@ -520,7 +508,7 @@ add_library(xmr-stak-backend
     STATIC
     ${BACKEND_CPP}
 )
-target_link_libraries(xmr-stak-backend xmr-stak-c xmr-stak-randomx ${CMAKE_DL_LIBS} ${RANDOMX_LIBRARIES})
+target_link_libraries(xmr-stak-backend xmr-stak-randomx ${CMAKE_DL_LIBS} ${RANDOMX_LIBRARIES} ${MHTD} ${LIBS})
 
 # compile CUDA backend
 if(CUDA_FOUND)
@@ -580,7 +568,7 @@ endif()
 set(EXECUTABLE_OUTPUT_PATH "bin" CACHE STRING "Path to place executables relative to ${CMAKE_INSTALL_PREFIX}")
 set(LIBRARY_OUTPUT_PATH "bin" CACHE STRING "Path to place libraries relative to ${CMAKE_INSTALL_PREFIX}")
 
-target_link_libraries(xmr-stak ${LIBS} xmr-stak-c xmr-stak-backend)
+target_link_libraries(xmr-stak ${MHTD} ${LIBS} xmr-stak-backend)
 
 ################################################################################
 # Install

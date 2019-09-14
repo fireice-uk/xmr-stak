@@ -16,7 +16,6 @@
 #pragma once
 
 #include "../../miner_work.hpp"
-#include "cn_gpu.hpp"
 #include "cryptonight.h"
 #include "xmrstak/backend/cryptonight.hpp"
 #include "xmrstak/backend/cpu/jconf.hpp"
@@ -38,25 +37,6 @@
 #else
 #include <sys/mman.h>
 #endif
-
-#ifdef __GNUC__
-#include <x86intrin.h>
-static inline uint64_t _umul128(uint64_t a, uint64_t b, uint64_t* hi)
-{
-	unsigned __int128 r = (unsigned __int128)a * (unsigned __int128)b;
-	*hi = r >> 64;
-	return (uint64_t)r;
-}
-
-#else
-#include <intrin.h>
-#endif // __GNUC__
-
-#if !defined(_LP64) && !defined(_WIN64)
-#error You are trying to do a 32-bit build. This will all end in tears. I know it.
-#endif
-
-#include "soft_aes.hpp"
 
 template <size_t N>
 struct Cryptonight_hash;
