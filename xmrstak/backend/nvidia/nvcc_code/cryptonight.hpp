@@ -29,11 +29,7 @@ typedef struct
 	uint32_t* d_long_state;
 	uint32_t* d_ctx_state;
 	uint32_t* d_ctx_state2;
-	uint32_t* d_ctx_a;
-	uint32_t* d_ctx_b;
-	uint32_t* d_ctx_key1;
-	uint32_t* d_ctx_key2;
-	uint32_t* d_ctx_text;
+
 	std::string name;
 	size_t free_device_memory;
 	size_t total_device_memory;
@@ -67,8 +63,7 @@ extern "C"
 	int cuda_get_deviceinfo(nvid_ctx* ctx);
 	int cryptonight_extra_cpu_init(nvid_ctx* ctx);
 	void cryptonight_extra_cpu_set_data(nvid_ctx* ctx, const void* data, uint32_t len);
-	void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, const xmrstak_algo& miner_algo);
-	void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t* resnonce, const xmrstak_algo& miner_algo);
+
 }
 
 void randomx_prepare(nvid_ctx *ctx, const uint8_t* seed_hash, const xmrstak_algo& miner_algo, uint32_t batch_size);
@@ -77,5 +72,3 @@ namespace RandomX_Monero  { void hash(nvid_ctx *ctx, uint32_t nonce, uint64_t ta
 namespace RandomX_Wownero { void hash(nvid_ctx *ctx, uint32_t nonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, uint32_t batch_size); }
 namespace RandomX_Loki    { void hash(nvid_ctx *ctx, uint32_t nonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, uint32_t batch_size); }
 
-
-void cryptonight_core_cpu_hash(nvid_ctx* ctx, const xmrstak_algo& miner_algo, uint32_t startNonce, uint64_t chain_height);

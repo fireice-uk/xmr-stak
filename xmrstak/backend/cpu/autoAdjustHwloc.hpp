@@ -51,15 +51,6 @@ public:
 			;
 		configTpl.set(std::string(tpl));
 
-		// if cryptonight_gpu is used we will disable cpu mining but provide a inactive config
-		bool useCryptonight_gpu = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgo() == cryptonight_gpu;
-
-		if(useCryptonight_gpu)
-		{
-			printer::inst()->print_msg(L0, "WARNING: CPU mining will be disabled because cryptonight_gpu is not suitable for CPU mining. You can uncomment the auto generated config in %s to enable CPU mining.", params::inst().configFileCPU.c_str());
-			conf += "/*\n//CPU config is disabled by default because cryptonight_gpu is not suitable for CPU mining.\n";
-		}
-
 		bool is_successful = true;
 		try
 		{
@@ -90,9 +81,6 @@ public:
 			is_successful = false;
 			printer::inst()->print_msg(L0, "Autoconf with hwloc FAILED: %s. Trying basic autoconf.", err.what());
 		}
-
-		if(useCryptonight_gpu)
-			conf += "*/\n";
 
 		configTpl.replace("CPUCONFIG", conf);
 		configTpl.write(params::inst().configFileCPU);

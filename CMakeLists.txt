@@ -92,24 +92,6 @@ if(CUDA_ENABLE)
             lib64/stubs
             lib)
 
-        #nvrtc
-        find_library(CUDA_NVRTC_LIB 
-        NAMES
-            libnvrtc 
-            nvrtc 
-            nvrtc.lib
-        HINTS 
-            ${CUDA_TOOLKIT_ROOT_DIR} 
-            ${LIBNVRTC_LIBRARY_DIR}
-            ${CUDA_TOOLKIT_ROOT_DIR}
-            /usr 
-            /usr/local/cuda
-        PATH_SUFFIXES
-            lib64
-            lib/x64
-            lib/Win32
-            lib)
-
         list(APPEND BACKEND_TYPES "nvidia")
         option(XMR-STAK_LARGEGRID "Support large CUDA block count > 128" ON)
         if(XMR-STAK_LARGEGRID)
@@ -198,9 +180,6 @@ if(CUDA_ENABLE)
             if(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11")
             endif()
-
-            # required for cryptonight_gpu (fast floating point operations are not allowed)
-            set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --fmad=false --prec-div=true --ftz=false")
 
             # avoid that nvcc in CUDA 8 complains about sm_20 pending removal
             if(CUDA_VERSION VERSION_EQUAL 8.0)
@@ -514,32 +493,6 @@ if(CMAKE_LINK_STATIC)
     endif()
 endif()
 
-if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
-    # asm optimized monero v8 code
-    enable_language(ASM_MASM)
-    set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.asm" PROPERTY ASM_MASM)
-    set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.asm" PROPERTY ASM_MASM)
-    add_library(xmr-stak-asm
-        STATIC
-        "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.asm"
-        "xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.asm"
-    )
-else()
-    # asm optimized monero v8 code
-    enable_language(ASM)
-    set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S" PROPERTY CPP)
-    set_property(SOURCE "xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.S" PROPERTY CPP)
-    set_source_files_properties("xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S" PROPERTIES COMPILE_FLAGS "-x assembler-with-cpp")
-    set_source_files_properties("xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.S" PROPERTIES COMPILE_FLAGS "-x assembler-with-cpp")
-    add_library(xmr-stak-asm
-        STATIC
-        "xmrstak/backend/cpu/crypto/asm/cryptonight_v8_main_loop.S"
-        "xmrstak/backend/cpu/crypto/asm/cnR/CryptonightR_template.S"
-    )
-endif()
-
-set_property(TARGET xmr-stak-asm PROPERTY LINKER_LANGUAGE C)
-
 # compile C files
 file(GLOB SRCFILES_C "xmrstak/backend/cpu/crypto/*.c")
 
@@ -551,7 +504,7 @@ set_property(TARGET xmr-stak-c PROPERTY C_STANDARD 99)
 if(MICROHTTPD_ENABLE)
     target_link_libraries(xmr-stak-c ${MHTD})
 endif()
-target_link_libraries(xmr-stak-c ${LIBS} xmr-stak-asm)
+target_link_libraries(xmr-stak-c ${LIBS})
 
 # compile generic backend files
 file(GLOB BACKEND_CPP
@@ -567,7 +520,7 @@ add_library(xmr-stak-backend
     STATIC
     ${BACKEND_CPP}
 )
-target_link_libraries(xmr-stak-backend xmr-stak-c xmr-stak-randomx ${CMAKE_DL_LIBS} xmr-stak-asm ${RANDOMX_LIBRARIES})
+target_link_libraries(xmr-stak-backend xmr-stak-c xmr-stak-randomx ${CMAKE_DL_LIBS} ${RANDOMX_LIBRARIES})
 
 # compile CUDA backend
 if(CUDA_FOUND)
@@ -596,17 +549,9 @@ if(CUDA_FOUND)
     endif()
 
     set(CUDA_LIBRARIES ${CUDA_LIB} ${CUDA_LIBRARIES})
-    if(XMR-STAK_COMPILE STREQUAL "dev_release")
-        # do not link nvrtc for linux binaries, cn-r will be disabled
-        if(WIN32)
-            set(CUDA_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_NVRTC_LIB})
-        endif()
-    else()
-        set(CUDA_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_NVRTC_LIB})
-    endif()
     
     target_link_libraries(xmrstak_cuda_backend ${CUDA_LIBRARIES})
-    target_link_libraries(xmrstak_cuda_backend xmr-stak-backend xmr-stak-asm)
+    target_link_libraries(xmrstak_cuda_backend xmr-stak-backend)
 endif()
 
 # compile AMD backend
@@ -619,7 +564,7 @@ if(OpenCL_FOUND)
         ${OPENCLSRCFILES}
     )
     target_link_libraries(xmrstak_opencl_backend ${OpenCL_LIBRARY} )
-    target_link_libraries(xmrstak_opencl_backend xmr-stak-backend xmr-stak-asm)
+    target_link_libraries(xmrstak_opencl_backend xmr-stak-backend)
 endif()
 
 # compile final binary
@@ -635,7 +580,7 @@ endif()
 set(EXECUTABLE_OUTPUT_PATH "bin" CACHE STRING "Path to place executables relative to ${CMAKE_INSTALL_PREFIX}")
 set(LIBRARY_OUTPUT_PATH "bin" CACHE STRING "Path to place libraries relative to ${CMAKE_INSTALL_PREFIX}")
 
-target_link_libraries(xmr-stak ${LIBS} xmr-stak-c xmr-stak-backend xmr-stak-asm)
+target_link_libraries(xmr-stak ${LIBS} xmr-stak-c xmr-stak-backend)
 
 ################################################################################
 # Install

@@ -19,43 +19,17 @@ POOLCONF],
 /*
  * Currency to mine. Supported values:
  *
- *    aeon7 (use this for Aeon's new PoW)
- *    bbscoin (automatic switch with block version 3 to cryptonight_v7)
- *    bittube (uses cryptonight_bittube2 algorithm)
- *    graft
- *    haven (automatic switch with block version 3 to cryptonight_haven)
- *    lethean
- *    masari
- *    monero (use this to support Monero's Oct 2018 fork)
- *    qrl - Quantum Resistant Ledger
- *    ryo
- *    turtlecoin
- *    plenteum
- *    torque
- *    xcash
+ *    loki
+ *    monero
+ *    wow
  *
  * Native algorithms which do not depend on any block versions:
  *
- *    # 256KiB scratchpad memory
- *    cryptonight_turtle
  *    # 1MiB scratchpad memory
- *    cryptonight_lite
- *    cryptonight_lite_v7
- *    cryptonight_lite_v7_xor (algorithm used by ipbc)
+ *    randomx_wow
  *    # 2MiB scratchpad memory
- *    cryptonight
- *    cryptonight_gpu (for Ryo's 14th of Feb fork)
- *    cryptonight_superfast
- *    cryptonight_v7
- *    cryptonight_v8
- *    cryptonight_v8_double (used by xcash)
- *    cryptonight_v8_half (used by masari and torque)
- *    cryptonight_v8_reversewaltz (used by graft)
- *    cryptonight_v8_zelerius
- *    # 4MiB scratchpad memory
- *    cryptonight_bittube2
- *    cryptonight_haven
- *    cryptonight_heavy
+ *    randomx
+ *    randomx_loki
  */
 
 "currency" : "CURRENCY",

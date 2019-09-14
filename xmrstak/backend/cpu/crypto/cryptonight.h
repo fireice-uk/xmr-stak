@@ -3,8 +3,9 @@
 #include <stddef.h>
 
 #include "xmrstak/misc/environment.hpp"
-#include "variant4_random_math.h"
+#include "xmrstak/backend/cryptonight.hpp"
 #include "xmrstak/backend/cpu/crypto/randomx/randomx.h"
+#include "xmrstak/misc/console.hpp"
 #include <mutex>
 #include <array>
 #include <atomic>
@@ -24,13 +25,6 @@ typedef void (*cn_hash_fun)(const void*, size_t, void*, cryptonight_ctx**, const
 
 void v4_compile_code(size_t N, cryptonight_ctx* ctx, int code_size);
 
-struct extra_ctx_r
-{
-	uint64_t height = 0;
-	// the buffer must be able to hold NUM_INSTRUCTIONS_MAX and a termination instruction
-	V4_Instruction code[NUM_INSTRUCTIONS_MAX + 1];
-};
-
 struct cryptonight_ctx
 {
 	uint8_t hash_state[224]; // Need only 200, explicit align
@@ -41,11 +35,6 @@ struct cryptonight_ctx
 	uint8_t* fun_data = nullptr;
 	int asm_version = 0;
 	xmrstak_algo last_algo = invalid_algo;
-
-	union {
-		extra_ctx_r cn_r_ctx;
-
-	};
 
 	randomx_vm* m_rx_vm = nullptr;
 };

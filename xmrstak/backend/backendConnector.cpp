@@ -86,18 +86,6 @@ std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 		plugin nvidiaplugin;
 #ifdef XMRSTAK_DEV_RELEASE
 		std::vector<std::string> libNames = {"xmrstak_cuda_backend_cuda10_0", "xmrstak_cuda_backend"};
-#	ifndef _WIN32
-		auto neededAlgorithms = ::jconf::inst()->GetCurrentCoinSelection().GetAllAlgorithms();
-		bool cn_r_derivate =
-			std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_r) != neededAlgorithms.end() ||
-			std::find(neededAlgorithms.begin(), neededAlgorithms.end(), cryptonight_r_wow) != neededAlgorithms.end();
-
-		if(cn_r_derivate)
-		{
-			disableNvidia = true;
-			printer::inst()->print_msg(L0, "WARNING: The linux release binaries not support cryptonight_r derived coins for NVIDIA.");		
-		}
-#	endif
 #else
 		std::vector<std::string> libNames = {"xmrstak_cuda_backend"};
 #endif

@@ -246,13 +246,8 @@ void minethd::work_main()
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		uint64_t target = oWork.iTarget;
 
-		if(miner_algo == randomX || miner_algo == randomX_loki || miner_algo == randomX_wow)
-		{
-			RXSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, oWork.seed_hash.data(), miner_algo);
-		}
-		else
-			XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo, cpu_ctx->cn_r_ctx.height);
-		//printer::inst()->print_msg(L1,"setup finished");
+		RXSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, oWork.seed_hash.data(), miner_algo);
+
 		if(oWork.bNiceHash)
 			pGpuCtx->Nonce = *(uint32_t*)(oWork.bWorkBlob + 39);
 
@@ -274,12 +269,7 @@ void minethd::work_main()
 			cl_uint results[0x100];
 			memset(results, 0, sizeof(cl_uint) * (0x100));
 
-			if(miner_algo == randomX || miner_algo == randomX_loki || miner_algo == randomX_wow)
-			{
-				RXRunJob(pGpuCtx, results, miner_algo);
-			}
-			else
-				XMRRunJob(pGpuCtx, results, miner_algo);
+			RXRunJob(pGpuCtx, results, miner_algo);
 
 			for(size_t i = 0; i < results[0xFF]; i++)
 			{
@@ -338,7 +328,7 @@ void minethd::work_main()
 							bestIntensity);
 					}
 					// update gpu with new intensity
-					XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo, cpu_ctx->cn_r_ctx.height);
+					RXSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, oWork.seed_hash.data(), miner_algo);
 				}
 				// use 3 rounds to warm up with the new intensity
 				else if(cntTestRounds == autoTune + 3)
