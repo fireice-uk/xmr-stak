@@ -2,6 +2,7 @@
 #include <inttypes.h>
 #include <stddef.h>
 
+#include "xmrstak/misc/environment.hpp"
 #include "variant4_random_math.h"
 #include "xmrstak/backend/cpu/crypto/randomx/randomx.h"
 #include <mutex>
@@ -54,8 +55,10 @@ struct randomX_global_ctx
 {
 	static randomX_global_ctx & inst()
 	{
-		static randomX_global_ctx instance;
-		return instance;
+		auto& env = xmrstak::environment::inst();
+		if(env.pGlobalCtx == nullptr)
+			env.pGlobalCtx = new randomX_global_ctx;
+		return *env.pGlobalCtx;
 	}
 
 	randomx_dataset* getDataset()

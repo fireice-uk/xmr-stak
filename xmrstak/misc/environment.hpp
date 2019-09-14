@@ -3,6 +3,7 @@
 class printer;
 class jconf;
 class executor;
+struct randomX_global_ctx;
 
 namespace xmrstak
 {
@@ -36,6 +37,7 @@ struct environment
 	jconf* pJconfConfig = nullptr;
 	executor* pExecutor = nullptr;
 	params* pParams = nullptr;
+	randomX_global_ctx* pGlobalCtx = nullptr;
 };
 
 } // namespace xmrstak

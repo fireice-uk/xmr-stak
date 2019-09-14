@@ -231,7 +231,7 @@ inline xmrstak_algo POW(xmrstak_algo_id algo_id)
 		{cryptonight_v8_reversewaltz, cryptonight_v8_reversewaltz, CN_WALTZ_ITER, CN_MEMORY},
 		{randomX, randomX, CN_ITER, CN_MEMORY},
 		{randomX_loki, randomX_loki, CN_ITER, CN_MEMORY},
-		{randomX_wow, randomX_wow, CN_ITER, CN_MEMORY}
+		{randomX_wow, randomX_wow, CN_ITER, CN_MEMORY/2}
 	}};
 
 	static std::array<xmrstak_algo, 4> derived_pow =

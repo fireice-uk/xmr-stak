@@ -246,8 +246,13 @@ void minethd::work_main()
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		uint64_t target = oWork.iTarget;
 
-		XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo, cpu_ctx->cn_r_ctx.height);
-
+		if(miner_algo == randomX || miner_algo == randomX_loki || miner_algo == randomX_wow)
+		{
+			RXSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, oWork.seed_hash.data(), miner_algo);
+		}
+		else
+			XMRSetJob(pGpuCtx, oWork.bWorkBlob, oWork.iWorkSize, target, miner_algo, cpu_ctx->cn_r_ctx.height);
+		//printer::inst()->print_msg(L1,"setup finished");
 		if(oWork.bNiceHash)
 			pGpuCtx->Nonce = *(uint32_t*)(oWork.bWorkBlob + 39);
 
@@ -269,7 +274,12 @@ void minethd::work_main()
 			cl_uint results[0x100];
 			memset(results, 0, sizeof(cl_uint) * (0x100));
 
-			XMRRunJob(pGpuCtx, results, miner_algo);
+			if(miner_algo == randomX || miner_algo == randomX_loki || miner_algo == randomX_wow)
+			{
+				RXRunJob(pGpuCtx, results, miner_algo);
+			}
+			else
+				XMRRunJob(pGpuCtx, results, miner_algo);
 
 			for(size_t i = 0; i < results[0xFF]; i++)
 			{
