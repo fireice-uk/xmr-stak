@@ -43,6 +43,16 @@ typedef struct
 	CUfunction kernel = nullptr;
 	uint64_t kernel_height = 0;
 	xmrstak_algo cached_algo = {xmrstak_algo_id::invalid_algo};
+
+	//randomx stuff
+	uint8_t rx_dataset_seedhash[32] = {0};
+	uint32_t *d_rx_dataset = nullptr;
+	uint32_t *d_rx_hashes = nullptr;
+	uint32_t *d_rx_entropy = nullptr;
+	uint32_t *d_rx_vm_states = nullptr;
+	uint32_t *d_rx_rounding = nullptr;
+	size_t d_scratchpads_size = 0u;
+
 } nvid_ctx;
 
 extern "C"
@@ -60,5 +70,12 @@ extern "C"
 	void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, const xmrstak_algo& miner_algo);
 	void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t* resnonce, const xmrstak_algo& miner_algo);
 }
+
+void randomx_prepare(nvid_ctx *ctx, const uint8_t* seed_hash, const xmrstak_algo& miner_algo, uint32_t batch_size);
+
+namespace RandomX_Monero  { void hash(nvid_ctx *ctx, uint32_t nonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, uint32_t batch_size); }
+namespace RandomX_Wownero { void hash(nvid_ctx *ctx, uint32_t nonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, uint32_t batch_size); }
+namespace RandomX_Loki    { void hash(nvid_ctx *ctx, uint32_t nonce, uint64_t target, uint32_t *rescount, uint32_t *resnonce, uint32_t batch_size); }
+
 
 void cryptonight_core_cpu_hash(nvid_ctx* ctx, const xmrstak_algo& miner_algo, uint32_t startNonce, uint64_t chain_height);

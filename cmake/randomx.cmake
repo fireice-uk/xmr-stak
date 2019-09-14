@@ -51,3 +51,4 @@ add_library(xmr-stak-randomx
     STATIC
     ${SOURCES_RANDOMX}
 )
+set_property(TARGET xmr-stak-randomx PROPERTY POSITION_INDEPENDENT_CODE ON)

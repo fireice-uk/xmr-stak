@@ -336,19 +336,41 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	else
 		ctx->d_ctx_state2 = ctx->d_ctx_state;
 
-	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key1, 40 * sizeof(uint32_t) * wsize));
-	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key2, 40 * sizeof(uint32_t) * wsize));
-	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_text, 32 * sizeof(uint32_t) * wsize));
-	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_a, 4 * sizeof(uint32_t) * wsize));
-	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_b, ctx_b_size));
+
+	memset(ctx->rx_dataset_seedhash, 0, sizeof(ctx->rx_dataset_seedhash));
+	ctx->d_rx_dataset = nullptr;
+	ctx->d_rx_hashes = nullptr;
+	ctx->d_rx_entropy = nullptr;
+	ctx->d_rx_vm_states = nullptr;
+	ctx->d_rx_rounding = nullptr;
+	ctx->d_scratchpads_size = 0u;
+	ctx->d_long_state = nullptr;
+
+
+	if(
+		std::find(neededAlgorithms.begin(), neededAlgorithms.end(), randomX) == neededAlgorithms.end() &&
+		std::find(neededAlgorithms.begin(), neededAlgorithms.end(), randomX_wow) == neededAlgorithms.end() &&
+		std::find(neededAlgorithms.begin(), neededAlgorithms.end(), randomX_loki) == neededAlgorithms.end())
+	{
+		CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key1, 40 * sizeof(uint32_t) * wsize));
+		CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_key2, 40 * sizeof(uint32_t) * wsize));
+		CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_text, 32 * sizeof(uint32_t) * wsize));
+		CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_a, 4 * sizeof(uint32_t) * wsize));
+		CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_b, ctx_b_size));
+
+		ctx->d_scratchpads_size = hashMemSize * wsize;
+
+		CUDA_CHECK_MSG(
+			ctx->device_id,
+			"\n**suggestion: Try to reduce the value of the attribute 'threads' in the NVIDIA config file.**",
+			cudaMalloc(&ctx->d_long_state, hashMemSize * wsize));
+	}
+
 	// POW block format http://monero.wikia.com/wiki/PoW_Block_Header_Format
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_input, 32 * sizeof(uint32_t)));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_count, sizeof(uint32_t)));
 	CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_nonce, 10 * sizeof(uint32_t)));
-	CUDA_CHECK_MSG(
-		ctx->device_id,
-		"\n**suggestion: Try to reduce the value of the attribute 'threads' in the NVIDIA config file.**",
-		cudaMalloc(&ctx->d_long_state, hashMemSize * wsize));
+
 	return 1;
 }
 

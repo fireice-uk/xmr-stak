@@ -38,7 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define RANDOMX_CACHE_MAX_SIZE  268435456
 
 // Increase it if some configs use larger dataset
-#define RANDOMX_DATASET_MAX_SIZE  2181038080
+#define RANDOMX_DATASET_MAX_SIZE  size_t(2181038080)
 
 // Increase it if some configs use larger programs
 #define RANDOMX_PROGRAM_MAX_SIZE       512

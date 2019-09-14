@@ -273,11 +273,40 @@ void minethd::work_main()
 			uint32_t foundNonce[10];
 			uint32_t foundCount;
 
-			cryptonight_extra_cpu_prepare(&ctx, iNonce, miner_algo);
+			if(miner_algo == randomX|| miner_algo == randomX_loki || miner_algo == randomX_wow)
+			{
+				if(ctx.d_scratchpads_size)
+				{
+					const uint32_t num_scratchpads = ctx.d_scratchpads_size / miner_algo.Mem();
+					if (h_per_round > num_scratchpads)
+					{
+						h_per_round = num_scratchpads;
+					}
+				}
+				h_per_round -= h_per_round % 32;
 
-			cryptonight_core_cpu_hash(&ctx, miner_algo, iNonce, cpu_ctx->cn_r_ctx.height);
+				randomx_prepare(&ctx, oWork.seed_hash.data(), miner_algo, h_per_round);
 
-			cryptonight_extra_cpu_final(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, miner_algo);
+				if(miner_algo == randomX)
+				{
+					RandomX_Monero::hash(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, h_per_round);
+				}
+				else if(miner_algo == randomX_wow)
+				{
+					RandomX_Wownero::hash(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, h_per_round);
+				}
+				else if(miner_algo == randomX_loki)
+				{
+					RandomX_Loki::hash(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, h_per_round);
+				}
+			}
+			else
+			{
+				cryptonight_extra_cpu_prepare(&ctx, iNonce, miner_algo);
+				cryptonight_core_cpu_hash(&ctx, miner_algo, iNonce, cpu_ctx->cn_r_ctx.height);
+				cryptonight_extra_cpu_final(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, miner_algo);
+			}
+
 
 			for(size_t i = 0; i < foundCount; i++)
 			{

@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <utility>
 #include "xmrstak/backend/cpu/crypto/randomx/randomx.h"
+#include "xmrstak/backend/globalStates.hpp"
 
 #ifdef _WIN64
 #include <winsock2.h>
@@ -1435,7 +1436,7 @@ struct RandomX_generator
 		for(size_t i = 0; i < N; i++)
 			ctx[i]->last_algo = POW(ALGO);
 
-		printer::inst()->print_msg(LDEBUG,"%s update dataset with %u threads", POW(ALGO).Name().c_str(), (uint32_t)xmrstak::cpu::jconf::inst()->GetThreadCount());
-		randomX_global_ctx::inst().updateDataset(work.seed_hash, xmrstak::cpu::jconf::inst()->GetThreadCount());
+		printer::inst()->print_msg(LDEBUG,"%s update dataset with %u threads", POW(ALGO).Name().c_str(), xmrstak::globalStates::inst().iThreadCount);
+		randomX_global_ctx::inst().updateDataset(work.seed_hash, xmrstak::globalStates::inst().iThreadCount);
 	}
 };

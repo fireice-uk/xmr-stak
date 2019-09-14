@@ -573,6 +573,7 @@ target_link_libraries(xmr-stak-backend xmr-stak-c xmr-stak-randomx ${CMAKE_DL_LI
 if(CUDA_FOUND)
     file(GLOB CUDASRCFILES
         "xmrstak/backend/nvidia/nvcc_code/*.cu"
+        "xmrstak/backend/nvidia/RandomX*/*.cu"
         "xmrstak/backend/nvidia/*.cpp")
 
     if(CUDA_COMPILER STREQUAL "clang")
