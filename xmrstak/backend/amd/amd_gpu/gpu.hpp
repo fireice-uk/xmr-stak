@@ -40,12 +40,8 @@ struct GpuContext
 	size_t maxRawIntensity;
 	size_t workSize;
 	size_t bfactor = 6;
-	int stridedIndex;
-	int memChunk;
-	int unroll = 0;
 	bool isNVIDIA = false;
 	bool isAMD = false;
-	int compMode;
 
 	uint32_t gcn_version;
 
@@ -72,7 +68,7 @@ struct GpuContext
 	uint32_t Nonce;
 
 	//randomx attributes
-	int gcnAsm = 1;
+	bool gcnAsm = true;
     int datasetHost = 0;
     cl_program AsmProgram = nullptr;
 

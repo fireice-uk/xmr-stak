@@ -99,10 +99,8 @@ bool minethd::init_gpus()
 		vGpuData[i].deviceIdx = cfg.index;
 		vGpuData[i].rawIntensity = cfg.intensity;
 		vGpuData[i].workSize = cfg.w_size;
-		vGpuData[i].stridedIndex = cfg.stridedIndex;
-		vGpuData[i].memChunk = cfg.memChunk;
-		vGpuData[i].compMode = cfg.compMode;
-		vGpuData[i].unroll = cfg.unroll;
+		vGpuData[i].gcnAsm = cfg.gcnAsm;
+		vGpuData[i].bfactor = cfg.bfactor;
 		vGpuData[i].interleave = cfg.interleave;
 	}
 

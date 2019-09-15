@@ -123,19 +123,17 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg& cfg)
 	if(!oThdConf.IsObject())
 		return false;
 
-	const Value *idx, *intensity, *w_size, *aff, *stridedIndex, *memChunk, *unroll, *compMode, *interleave;
+	const Value *idx, *intensity, *w_size, *aff, *gcnAsm, *interleave, *bfactor;
 	idx = GetObjectMember(oThdConf, "index");
 	intensity = GetObjectMember(oThdConf, "intensity");
 	w_size = GetObjectMember(oThdConf, "worksize");
 	aff = GetObjectMember(oThdConf, "affine_to_cpu");
-	stridedIndex = GetObjectMember(oThdConf, "strided_index");
-	memChunk = GetObjectMember(oThdConf, "mem_chunk");
-	unroll = GetObjectMember(oThdConf, "unroll");
-	compMode = GetObjectMember(oThdConf, "comp_mode");
+	gcnAsm = GetObjectMember(oThdConf, "asm");
+	bfactor = GetObjectMember(oThdConf, "bfactor");
 	interleave = GetObjectMember(oThdConf, "interleave");
 
-	if(idx == nullptr || intensity == nullptr || w_size == nullptr || aff == nullptr || memChunk == nullptr ||
-		stridedIndex == nullptr || unroll == nullptr || compMode == nullptr)
+	if(idx == nullptr || intensity == nullptr || w_size == nullptr || aff == nullptr ||
+		gcnAsm == nullptr || bfactor == nullptr)
 		return false;
 
 	// interleave is optional
@@ -157,51 +155,23 @@ bool jconf::GetThreadConfig(size_t id, thd_cfg& cfg)
 		}
 	}
 
-	if(!idx->IsUint64() || !intensity->IsUint64() || !w_size->IsUint64())
+	if(!idx->IsUint64() || !intensity->IsUint64() || !w_size->IsUint64() || !bfactor->IsUint64())
 		return false;
 
 	if(!aff->IsUint64() && !aff->IsBool())
 		return false;
 
-	if(!stridedIndex->IsBool() && !stridedIndex->IsNumber())
+	if(!gcnAsm->IsBool())
 	{
-		printer::inst()->print_msg(L0, "ERROR: strided_index must be a bool or a number");
+		printer::inst()->print_msg(L0, "ERROR: gcnAsm must be a bool");
 		return false;
 	}
 
-	if(stridedIndex->IsBool())
-		cfg.stridedIndex = stridedIndex->GetBool() ? 1 : 0;
-	else
-		cfg.stridedIndex = (int)stridedIndex->GetInt64();
-
-	if(cfg.stridedIndex > 3)
-	{
-		printer::inst()->print_msg(L0, "ERROR: strided_index must be smaller than 3");
-		return false;
-	}
-
-	if(!memChunk->IsUint64() || (int)memChunk->GetInt64() > 18)
-	{
-		printer::inst()->print_msg(L0, "ERROR: mem_chunk must be smaller than 18");
-		return false;
-	}
-
-	cfg.memChunk = (int)memChunk->GetInt64();
-
-	if(!unroll->IsUint64() || (int)unroll->GetInt64() >= 128 || (int)unroll->GetInt64() == 0)
-	{
-		printer::inst()->print_msg(L0, "ERROR: unroll must be smaller than 128 and not zero");
-		return false;
-	}
-	cfg.unroll = (int)unroll->GetInt64();
-
-	if(!compMode->IsBool())
-		return false;
-
+	cfg.gcnAsm = gcnAsm->GetBool();
 	cfg.index = idx->GetUint64();
 	cfg.w_size = w_size->GetUint64();
 	cfg.intensity = intensity->GetUint64();
-	cfg.compMode = compMode->GetBool();
+	cfg.bfactor = bfactor->GetUint64();
 
 	if(aff->IsNumber())
 		cfg.cpu_aff = aff->GetInt64();

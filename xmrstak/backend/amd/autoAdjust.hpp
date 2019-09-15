@@ -6,6 +6,7 @@
 #include "jconf.hpp"
 
 #include "xmrstak/backend/cryptonight.hpp"
+#include "xmrstak/backend/cpu/crypto/cryptonight_1.h"
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/configEditor.hpp"
 #include "xmrstak/misc/console.hpp"
@@ -111,7 +112,7 @@ class autoAdjust
 			}
 
 			// 8 threads per block (this is a good value for the most gpus)
-			uint32_t default_workSize = 8;
+			uint32_t default_workSize = 16;
 			size_t minFreeMem = 128u * byteToMiB;
 			/* 1000 is a magic selected limit, the reason is that more than 2GiB memory
 			 * sowing down the memory performance because of TLB cache misses
@@ -125,6 +126,7 @@ class autoAdjust
 				// UNKNOWN
 				ctx.name.compare("gfx900") == 0 ||
 				ctx.name.compare("gfx903") == 0 ||
+				ctx.name.compare("gfx1010") == 0 ||
 				ctx.name.compare("gfx905") == 0)
 			{
 				/* Increase the number of threads for AMD VEGA gpus.
@@ -142,15 +144,14 @@ class autoAdjust
 			{
 				// do not limit the number of threads
 				maxThreads = 40000u;
-				minFreeMem = 512u * byteToMiB;
 			}
 
 			// set strided index to default
-			ctx.stridedIndex = 1;
+			ctx.gcnAsm = true;
 
 			// nvidia performance is very bad if the scratchpad is not contiguous
 			if(ctx.isNVIDIA)
-				ctx.stridedIndex = 0;
+				ctx.gcnAsm = 0;
 
 
 			if(hashMemSize < CN_MEMORY)
@@ -160,10 +161,15 @@ class autoAdjust
 				maxThreads *= factor;
 			}
 
-			uint32_t numUnroll = 8;
-
 			// keep 128MiB memory free (value is randomly chosen) from the max available memory
-			const size_t maxAvailableFreeMem = ctx.freeMem - minFreeMem;
+			size_t maxAvailableFreeMem = ctx.freeMem - minFreeMem;
+
+			const size_t dataset_size = getRandomXDatasetSize();
+			if(maxAvailableFreeMem <= dataset_size)
+				maxAvailableFreeMem = 0;
+			else
+				maxAvailableFreeMem -= dataset_size;
+
 
 			size_t memPerThread = std::min(ctx.maxMemPerAlloc, maxAvailableFreeMem);
 
@@ -198,9 +204,8 @@ class autoAdjust
 							std::to_string(ctx.maxMemPerAlloc / byteToMiB) + "|" + std::to_string(maxAvailableFreeMem / byteToMiB) + " MiB (used per thread|max per alloc|total free)\n";
 					conf += std::string("  { \"index\" : ") + std::to_string(ctx.deviceIdx) + ",\n" +
 							"    \"intensity\" : " + std::to_string(intensity) + ", \"worksize\" : " + std::to_string(default_workSize) + ",\n" +
-							"    \"affine_to_cpu\" : false, \"strided_index\" : " + std::to_string(ctx.stridedIndex) + ", \"mem_chunk\" : 2,\n"
-																													   "    \"unroll\" : " +
-							std::to_string(numUnroll) + ", \"comp_mode\" : true, \"interleave\" : " + std::to_string(ctx.interleave) + "\n" +
+							"    \"affine_to_cpu\" : false, \"asm\" : " + (ctx.gcnAsm  ? "true" : "false") + ",\n" +
+							"    \"bfactor\" : " + std::to_string(ctx.bfactor) + ", \"interleave\" : " + std::to_string(ctx.interleave) + "\n" +
 							"  },\n";
 				}
 

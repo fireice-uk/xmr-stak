@@ -136,12 +136,6 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	}
 
 	const std::string backendName = xmrstak::params::inst().openCLVendor;
-	if((ctx->stridedIndex == 2 || ctx->stridedIndex == 3) && (ctx->rawIntensity % ctx->workSize) != 0)
-	{
-		size_t reduced_intensity = (ctx->rawIntensity / ctx->workSize) * ctx->workSize;
-		ctx->rawIntensity = reduced_intensity;
-		printer::inst()->print_msg(L0, "WARNING %s: gpu %d intensity is not a multiple of 'worksize', auto reduce intensity to %d", backendName.c_str(), ctx->deviceIdx, int(reduced_intensity));
-	}
 
 #if defined(CL_VERSION_2_0) && !defined(CONF_ENFORCE_OpenCL_1_2)
 	const cl_queue_properties CommandQueueProperties[] = {0, 0, 0};
@@ -290,13 +284,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		size_t hashMemSize = miner_algo.Mem();
 		int threadMemMask = miner_algo.Mask();
 		int hashIterations = miner_algo.Iter();
-
-		size_t mem_chunk_exp = 1u << ctx->memChunk;
-		size_t strided_index = ctx->stridedIndex;
-
-		// ifintensity is a multiple of worksize than comp mode is not needed
-		int needCompMode = ctx->compMode && ctx->rawIntensity % ctx->workSize != 0 ? 1 : 0;
-
+		
 		std::string options;
 		options += " -DALGO=" + std::to_string(miner_algo.Id());
 		/* AMD driver output is something like: `1445.5 (VM)`

@@ -28,11 +28,9 @@ class jconf
 		size_t intensity;
 		size_t w_size;
 		long long cpu_aff;
-		int stridedIndex;
+		size_t bfactor = 6;
+		bool gcnAsm;
 		int interleave = 40;
-		int memChunk;
-		int unroll;
-		bool compMode;
 	};
 
 	size_t GetThreadCount();
