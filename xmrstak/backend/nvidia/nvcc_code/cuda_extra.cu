@@ -1,4 +1,5 @@
 #include "xmrstak/jconf.hpp"
+#include "xmrstak/backend/cpu/crypto/cryptonight_1.h"
 #include <algorithm>
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -344,6 +345,13 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		// 200byte are meta data memory (result nonce, ...)
 		size_t availableMem = freeMemory - (128u * byteToMiB) - 200u;
 		size_t limitedMemory = std::min(availableMem, maxMemUsage);
+
+		const size_t dataset_size = getRandomXDatasetSize();
+		if(limitedMemory <= dataset_size)
+			limitedMemory = 0;
+		else
+			limitedMemory -= dataset_size;
+
 		// up to 16kibyte extra memory is used per thread for some kernel (lmem/local memory)
 		// 680bytes are extra meta data memory per hash
 		size_t perThread = hashMemSize + 16192u + 680u;

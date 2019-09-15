@@ -79,7 +79,6 @@ minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 	ctx.device_bfactor = (int)cfg.bfactor;
 	ctx.device_bsleep = (int)cfg.bsleep;
 	ctx.syncMode = cfg.syncMode;
-	ctx.memMode = cfg.memMode;
 	this->affinity = cfg.cpu_aff;
 
 	std::future<void> numa_guard = numa_promise.get_future();

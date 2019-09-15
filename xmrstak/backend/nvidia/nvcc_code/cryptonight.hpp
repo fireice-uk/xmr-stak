@@ -20,7 +20,6 @@ typedef struct
 	int device_bsleep;
 	int device_maxThreadsPerBlock;
 	int syncMode;
-	bool memMode;
 
 	uint32_t* d_input;
 	uint32_t inputlen;

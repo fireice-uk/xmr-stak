@@ -41,6 +41,8 @@ void hash(nvid_ctx *ctx, uint32_t nonce, uint64_t target, uint32_t *rescount, ui
     CUDA_CHECK(ctx->device_id, cudaDeviceSynchronize());
     CUDA_CHECK(ctx->device_id, cudaMemset(ctx->d_rx_rounding, 0, batch_size * sizeof(uint32_t)));
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(ctx->device_bsleep));
+
     for (size_t i = 0; i < RANDOMX_PROGRAM_COUNT; ++i) {
         CUDA_CHECK_KERNEL(ctx->device_id, fillAes4Rx4<ENTROPY_SIZE, false><<<batch_size / 32, 32 * 4>>>(ctx->d_rx_hashes, ctx->d_rx_entropy, batch_size));
 
@@ -55,6 +57,7 @@ void hash(nvid_ctx *ctx, uint32_t nonce, uint64_t target, uint32_t *rescount, ui
         } else {
             CUDA_CHECK_KERNEL(ctx->device_id, blake2b_hash_registers<REGISTERS_SIZE, VM_STATE_SIZE, 64><<<batch_size / 32, 32>>>(ctx->d_rx_hashes, ctx->d_rx_vm_states));
         }
+		std::this_thread::sleep_for(std::chrono::milliseconds(ctx->device_bsleep));
     }
 
     CUDA_CHECK(ctx->device_id, cudaMemset(ctx->d_result_nonce, 0, 10 * sizeof(uint32_t)));

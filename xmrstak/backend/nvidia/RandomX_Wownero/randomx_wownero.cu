@@ -20,6 +20,8 @@ along with RandomX CUDA.  If not, see<http://www.gnu.org/licenses/>.
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cstdint>
+#include <chrono>
+#include <thread>
 //#include "xmrstak/backend/cpu/crypto/randomx/randomx.h"
 #include "xmrstak/backend/nvidia/nvcc_code/cryptonight.hpp"
 #include "../nvcc_code/cuda_device.hpp"
