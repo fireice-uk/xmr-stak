@@ -44,7 +44,7 @@ struct Cryptonight_hash;
 template <size_t N>
 struct RandomX_hash
 {
-	template <xmrstak_algo_id ALGO, bool SOFT_AES, bool PREFETCH>
+	template <xmrstak_algo_id ALGO, bool SOFT_AES>
 	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
 	{
 		for(size_t i = 0u; i < N; ++i)

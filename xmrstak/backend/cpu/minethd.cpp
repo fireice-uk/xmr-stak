@@ -107,16 +107,13 @@ bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 #endif
 }
 
-minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, bool no_prefetch, int64_t affinity, const std::string& asm_version)
+minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, int64_t affinity)
 {
 	this->backendType = iBackend::CPU;
 	oWork = pWork;
 	bQuit = 0;
 	iThreadNo = (uint8_t)iNo;
 	iJobNo = 0;
-	bNoPrefetch = no_prefetch;
-	this->affinity = affinity;
-	asm_version_str = asm_version;
 
 	std::unique_lock<std::mutex> lck(thd_aff_set);
 	std::future<void> order_guard = order_fix.get_future();
@@ -164,7 +161,6 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 			ctx->hash_fn = nullptr;
 			ctx->loop_fn = nullptr;
 			ctx->fun_data = nullptr;
-			ctx->asm_version = 0;
 			ctx->last_algo = invalid_algo;
 			ctx->m_rx_vm = nullptr;
 		}
@@ -179,7 +175,6 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 			ctx->hash_fn = nullptr;
 			ctx->loop_fn = nullptr;
 			ctx->fun_data = nullptr;
-			ctx->asm_version = 0;
 			ctx->last_algo = invalid_algo;
 			ctx->m_rx_vm = nullptr;
 		}
@@ -197,7 +192,6 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 			ctx->hash_fn = nullptr;
 			ctx->loop_fn = nullptr;
 			ctx->fun_data = nullptr;
-			ctx->asm_version = 0;
 			ctx->last_algo = invalid_algo;
 			ctx->m_rx_vm = nullptr;
 		}
@@ -209,7 +203,6 @@ cryptonight_ctx* minethd::minethd_alloc_ctx()
 		ctx->hash_fn = nullptr;
 		ctx->loop_fn = nullptr;
 		ctx->fun_data = nullptr;
-		ctx->asm_version = 0;
 		ctx->last_algo = invalid_algo;
 		ctx->m_rx_vm = nullptr;
 
@@ -346,7 +339,7 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		else
 			printer::inst()->print_msg(L1, "Starting %dx thread, no affinity.", cfg.iMultiway);
 
-		minethd* thd = new minethd(pWork, i + threadOffset, cfg.iMultiway, cfg.bNoPrefetch, cfg.iCpuAff, cfg.asm_version_str);
+		minethd* thd = new minethd(pWork, i + threadOffset, cfg.iMultiway, cfg.iCpuAff);
 		pvThreads.push_back(thd);
 	}
 
@@ -378,7 +371,7 @@ static std::string getAsmName(const uint32_t num_hashes)
 
 template <size_t N>
 void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job& on_new_job,
-	bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo, const std::string& asm_version_str)
+	bool bHaveAes, const xmrstak_algo& algo)
 {
 	static_assert(N >= 1, "number of threads must be >= 1");
 
@@ -405,29 +398,22 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 
 	static const cn_hash_fun func_table[] = {
 		//randomx
-		RandomX_hash<N>::template hash<randomX, false, false>,
-		RandomX_hash<N>::template hash<randomX, true, false>,
-		RandomX_hash<N>::template hash<randomX, false, true>,
-		RandomX_hash<N>::template hash<randomX, true, true>,
+		RandomX_hash<N>::template hash<randomX, false>,
+		RandomX_hash<N>::template hash<randomX, true>,
 
 		// loki
-		RandomX_hash<N>::template hash<randomX_loki, false, false>,
-		RandomX_hash<N>::template hash<randomX_loki, true, false>,
-		RandomX_hash<N>::template hash<randomX_loki, false, true>,
-		RandomX_hash<N>::template hash<randomX_loki, true, true>,
+		RandomX_hash<N>::template hash<randomX_loki, false>,
+		RandomX_hash<N>::template hash<randomX_loki, true>,
 
 		//wow
-		RandomX_hash<N>::template hash<randomX_wow, false, false>,
-		RandomX_hash<N>::template hash<randomX_wow, true, false>,
-		RandomX_hash<N>::template hash<randomX_wow, false, true>,
-		RandomX_hash<N>::template hash<randomX_wow, true, true>
+		RandomX_hash<N>::template hash<randomX_wow, false>,
+		RandomX_hash<N>::template hash<randomX_wow, true>
 	};
 
-	std::bitset<2> digit;
+	std::bitset<1> digit;
 	digit.set(0, !bHaveAes);
-	digit.set(1, !bNoPrefetch);
 
-	ctx[0]->hash_fn = func_table[algv << 2 | digit.to_ulong()];
+	ctx[0]->hash_fn = func_table[algv << 1 | digit.to_ulong()];
 
 	for(int h = 1; h < N; ++h)
 		ctx[h]->hash_fn = ctx[0]->hash_fn;
@@ -452,10 +438,10 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 	}
 }
 
-void minethd::func_selector(cryptonight_ctx** ctx, bool bHaveAes, bool bNoPrefetch, const xmrstak_algo& algo)
+void minethd::func_selector(cryptonight_ctx** ctx, bool bHaveAes, const xmrstak_algo& algo)
 {
 	minethd::cn_on_new_job dm;
-	func_multi_selector<1>(ctx, dm, bHaveAes, bNoPrefetch, algo); // for testing us eauto, must be removed before the release
+	func_multi_selector<1>(ctx, dm, bHaveAes, algo); // for testing us eauto, must be removed before the release
 }
 
 void minethd::work_main()
@@ -540,7 +526,7 @@ void minethd::multiway_work_main()
 	uint8_t version = 0;
 	size_t lastPoolId = 0;
 
-	func_multi_selector<N>(ctx, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
+	func_multi_selector<N>(ctx, on_new_job, ::jconf::inst()->HaveHardwareAes(), miner_algo);
 	while(bQuit == 0)
 	{
 		if(oWork.bStall)
@@ -572,12 +558,12 @@ void minethd::multiway_work_main()
 			if(new_version >= coinDesc.GetMiningForkVersion())
 			{
 				miner_algo = coinDesc.GetMiningAlgo();
-				func_multi_selector<N>(ctx, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
+				func_multi_selector<N>(ctx, on_new_job, ::jconf::inst()->HaveHardwareAes(), miner_algo);
 			}
 			else
 			{
 				miner_algo = coinDesc.GetMiningAlgoRoot();
-				func_multi_selector<N>(ctx, on_new_job, ::jconf::inst()->HaveHardwareAes(), bNoPrefetch, miner_algo, asm_version_str);
+				func_multi_selector<N>(ctx, on_new_job, ::jconf::inst()->HaveHardwareAes(), miner_algo);
 			}
 			lastPoolId = oWork.iPoolId;
 			version = new_version;

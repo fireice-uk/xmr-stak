@@ -41,7 +41,6 @@ class minethd : public iBackend
 	uint32_t autoTune;
 
 	bool bQuit;
-	bool bNoPrefetch;
 
 	//Mutable ptr to vector below, different for each thread
 	GpuContext* pGpuCtx;
