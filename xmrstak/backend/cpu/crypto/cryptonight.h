@@ -62,7 +62,7 @@ struct randomX_global_ctx
 		    return;
 
 		const uint32_t thread_id = m_rx_dataset_init_thread_counter++;
-		printer::inst()->print_msg(LDEBUG,"Thread %u started updating RandomX dataset", thread_id);
+		printer::inst()->print_msg(LDEBUG,"Thread %u started updating RandomX dataset %x", thread_id,&m_rx_dataset_init_thread_counter);
 
 		// Wait for all threads to get here
 		do
@@ -81,8 +81,8 @@ struct randomX_global_ctx
 		}
 
 		// All threads update dataset
-		const uint32_t a = (randomx_dataset_item_count() * thread_id) / num_threads;
-		const uint32_t b = (randomx_dataset_item_count() * (thread_id + 1)) / num_threads;
+		const uint32_t a = (randomx_dataset_item_count() * static_cast<uint64_t>(thread_id)) / num_threads;
+		const uint32_t b = (randomx_dataset_item_count() * (static_cast<uint64_t>(thread_id) + 1u)) / num_threads;
 		printer::inst()->print_msg(LDEBUG,"Thread %u start updating RandomX dataset %u %u", thread_id, a, b);
 		randomx_init_dataset(m_rx_dataset, m_rx_cache, a, b - a);
 
