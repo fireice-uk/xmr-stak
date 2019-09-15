@@ -61,7 +61,7 @@ struct coin_selection
 		 */
 	inline coinDescription GetDescription(size_t poolId) const
 	{
-		coinDescription tmp = (poolId == 0 ? pool_coin[1] : pool_coin[0]);
+		coinDescription tmp = pool_coin[0];
 		return tmp;
 	}
 

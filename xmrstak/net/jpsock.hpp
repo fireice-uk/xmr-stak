@@ -27,7 +27,7 @@ class base_socket;
 class jpsock
 {
   public:
-	jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sRigId, const char* sPassword, double pool_weight, bool dev_pool, bool tls, const char* tls_fp, bool nicehash);
+	jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sRigId, const char* sPassword, double pool_weight, bool tls, const char* tls_fp, bool nicehash);
 	~jpsock();
 
 	bool connect(std::string& sConnectError);
@@ -52,13 +52,11 @@ class jpsock
 	inline size_t can_connect() { return get_timestamp() != connect_time; }
 	inline bool is_running() { return bRunning; }
 	inline bool is_logged_in() { return bLoggedIn; }
-	inline bool is_dev_pool() { return pool; }
 	inline size_t get_pool_id() { return pool_id; }
-	inline bool get_disconnects(size_t& att, size_t& time)
+	inline void update_disconnects(size_t& att, size_t& time)
 	{
 		att = connect_attempts;
 		time = disconnect_time != 0 ? get_timestamp() - disconnect_time + 1 : 0;
-		return pool && usr_login[0];
 	}
 	inline const char* get_pool_addr() { return net_addr.c_str(); }
 	inline const char* get_tls_fp() { return tls_fp.c_str(); }
@@ -90,7 +88,6 @@ class jpsock
 
 	size_t pool_id;
 	double pool_weight;
-	bool pool;
 	bool nicehash;
 
 	bool ext_algo = false;

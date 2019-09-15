@@ -868,7 +868,7 @@ int main(int argc, char* argv[])
 	printer::inst()->print_str("Based on OpenCL mining code by wolf9466.\n");
 #endif
 	char buffer[64];
-	snprintf(buffer, sizeof(buffer), "\nConfigurable dev donation level is set to %.1f%%\n\n", fDevDonationLevel * 100.0);
+	snprintf(buffer, sizeof(buffer), "\nConfigurable dev donation level is set to %.1f%%\n\n", 2.0f);
 	printer::inst()->print_str(buffer);
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_str("You can use following keys to display reports:\n");

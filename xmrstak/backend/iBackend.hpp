@@ -57,17 +57,10 @@ struct iBackend
 		double timeDiff = static_cast<double>(iStamp - iLastStamp);
 		iLastStamp = iStamp;
 
-		if(poolId == 0)
-		{
-			// if dev pool is active interpolate the number of shares (avoid hash rate drops)
-			numNewHashes = static_cast<uint64_t>(avgHashPerMsec * timeDiff);
-		}
-		else
-		{
-			const double hashRatePerMs = static_cast<double>(numNewHashes) / timeDiff;
-			constexpr double averagingBias = 0.1;
-			avgHashPerMsec = avgHashPerMsec * (1.0 - averagingBias) + hashRatePerMs * averagingBias;
-		}
+		const double hashRatePerMs = static_cast<double>(numNewHashes) / timeDiff;
+		constexpr double averagingBias = 0.1;
+		avgHashPerMsec = avgHashPerMsec * (1.0 - averagingBias) + hashRatePerMs * averagingBias;
+
 		iHashCount.fetch_add(numNewHashes, std::memory_order_relaxed);
 		iTimestamp.store(iStamp, std::memory_order_relaxed);
 	}
