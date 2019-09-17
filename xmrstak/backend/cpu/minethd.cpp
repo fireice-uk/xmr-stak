@@ -424,18 +424,11 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 		{randomX_wow, RandomX_generator<N>::template cn_on_new_job<randomX_wow>}
 	};
 
-	auto it_algo = on_new_job_map.find(algo.Algo_Id());
-	if(it_algo != on_new_job_map.end())
-		on_new_job = it_algo->second;
+	auto it = on_new_job_map.find(algo.Id());
+	if(it != on_new_job_map.end())
+		on_new_job = it->second;
 	else
-	{
-		// fallback to base algorithm
-		auto it_base = on_new_job_map.find(algo.Id());
-		if(it_base != on_new_job_map.end())
-			on_new_job = it_base->second;
-		else
-			on_new_job = nullptr;
-	}
+		on_new_job = nullptr;
 }
 
 void minethd::func_selector(cryptonight_ctx** ctx, bool bHaveAes, const xmrstak_algo& algo)
