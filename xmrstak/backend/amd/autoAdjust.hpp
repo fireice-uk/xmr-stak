@@ -114,44 +114,58 @@ class autoAdjust
 			// 8 threads per block (this is a good value for the most gpus)
 			uint32_t default_workSize = 16;
 			size_t minFreeMem = 128u * byteToMiB;
+
+			// disable asm code by default and activate only for RX4XX, RX5XX, Vega, Fiji and VII
+			ctx.gcnAsm = false;
+
+			std::string device_name = ctx.name;
+			std::transform(ctx.name.begin(), ctx.name.end(), device_name.begin(), ::toupper);
+
 			/* 1000 is a magic selected limit, the reason is that more than 2GiB memory
 			 * sowing down the memory performance because of TLB cache misses
 			 */
 			size_t maxThreads = 1000u;
 			if(
-				ctx.name.compare("gfx901") == 0 ||
-				ctx.name.compare("gfx904") == 0 ||
+				device_name.compare("GFX901") == 0 ||
+				device_name.compare("GFX904") == 0 ||
+				// vii
+				device_name.compare("GFX906") == 0 ||
 				// APU
-				ctx.name.compare("gfx902") == 0 ||
+				device_name.compare("GFX902") == 0 ||
 				// UNKNOWN
-				ctx.name.compare("gfx900") == 0 ||
-				ctx.name.compare("gfx903") == 0 ||
-				ctx.name.compare("gfx1010") == 0 ||
-				ctx.name.compare("gfx905") == 0)
+				device_name.compare("GFX900") == 0 ||
+				device_name.compare("GFX903") == 0 ||
+				device_name.compare("GFX905") == 0)
 			{
 				/* Increase the number of threads for AMD VEGA gpus.
 				 * Limit the number of threads based on the issue: https://github.com/fireice-uk/xmr-stak/issues/5#issuecomment-339425089
 				 * to avoid out of memory errors
 				 */
 				maxThreads = 2024u;
+				ctx.gcnAsm = true;
+			}
 
+			if(
+				// RX4XX, RX5XX
+				device_name.compare("ELLESMERE") == 0 ||
+				device_name.compare("FIJI") == 0
+			)
+			{
+				ctx.gcnAsm = true;
 			}
 
 			// NVIDIA optimizations
 			if(
-				ctx.isNVIDIA && (ctx.name.find("P100") != std::string::npos ||
-									ctx.name.find("V100") != std::string::npos))
+				ctx.isNVIDIA && (device_name.find("P100") != std::string::npos ||
+									device_name.find("V100") != std::string::npos))
 			{
 				// do not limit the number of threads
 				maxThreads = 40000u;
 			}
 
-			// set strided index to default
-			ctx.gcnAsm = true;
-
 			// nvidia performance is very bad if the scratchpad is not contiguous
 			if(ctx.isNVIDIA)
-				ctx.gcnAsm = 0;
+				ctx.gcnAsm = false;
 
 
 			if(hashMemSize < CN_MEMORY)
