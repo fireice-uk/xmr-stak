@@ -21,14 +21,14 @@ struct environment
 
 		if(env == nullptr)
 		{
-				if(init == nullptr)
-				{
-					env = new environment;
-					env->init_singeltons();
-				}
-				else
-					env = init;
+			if(init == nullptr)
+			{
+				env = new environment;
+				env->init_singeltons();
 			}
+			else
+				env = init;
+		}
 
 		return *env;
 	}
@@ -43,6 +43,8 @@ struct environment
 	executor* pExecutor = nullptr;
 	params* pParams = nullptr;
 	randomX_global_ctx* pGlobalCtx = nullptr;
+
+	std::mutex update;
 
 private:
 	void init_singeltons();

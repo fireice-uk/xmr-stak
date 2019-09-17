@@ -14,7 +14,11 @@ class jconf
 	{
 		auto& env = xmrstak::environment::inst();
 		if(env.pJconfConfig == nullptr)
-			env.pJconfConfig = new jconf;
+		{
+			std::unique_lock<std::mutex> lck(env.update);
+			if(env.pJconfConfig == nullptr)
+				env.pJconfConfig = new jconf;
+		}
 		return env.pJconfConfig;
 	};
 

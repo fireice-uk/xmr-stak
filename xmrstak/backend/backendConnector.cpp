@@ -57,6 +57,9 @@ bool BackendConnector::self_test()
 std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 {
 
+	//randomX_global_ctx::inst();
+//randomX_global_ctx::inst();
+
 	std::vector<iBackend*>* pvThreads = new std::vector<iBackend*>;
 
 #ifndef CONF_NO_OPENCL

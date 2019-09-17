@@ -45,7 +45,11 @@ struct randomX_global_ctx
 	{
 		auto& env = xmrstak::environment::inst();
 		if(env.pGlobalCtx == nullptr)
-			env.pGlobalCtx = new randomX_global_ctx;
+		{
+			std::unique_lock<std::mutex> lck(env.update);
+			if(env.pGlobalCtx == nullptr)
+				env.pGlobalCtx = new randomX_global_ctx;
+		}
 		return *env.pGlobalCtx;
 	}
 
@@ -58,7 +62,7 @@ struct randomX_global_ctx
 	{
 		// Check if we need to update cache and dataset
 		if(m_rx_seed_hash == seed_hash)
-		    return;
+			return;
 
 		const uint32_t thread_id = m_rx_dataset_init_thread_counter++;
 		printer::inst()->print_msg(LDEBUG,"Thread %u started updating RandomX dataset %x", thread_id,&m_rx_dataset_init_thread_counter);

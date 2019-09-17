@@ -48,7 +48,11 @@ class printer
 	{
 		auto& env = xmrstak::environment::inst();
 		if(env.pPrinter == nullptr)
-			env.pPrinter = new printer;
+		{
+			std::unique_lock<std::mutex> lck(env.update);
+			if(env.pPrinter == nullptr)
+				env.pPrinter = new printer;
+		}
 		return env.pPrinter;
 	};
 
