@@ -39,6 +39,7 @@ struct cryptonight_ctx
 	union {
 		extra_ctx_r cn_r_ctx;
 	};
+
 };
 
 struct alloc_msg

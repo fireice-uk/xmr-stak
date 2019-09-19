@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mutex>
+
 class printer;
 class jconf;
 class executor;
@@ -19,7 +21,10 @@ struct environment
 		if(env == nullptr)
 		{
 			if(init == nullptr)
+			{
 				env = new environment;
+				env->init_singeltons();
+			}
 			else
 				env = init;
 		}
@@ -36,6 +41,11 @@ struct environment
 	jconf* pJconfConfig = nullptr;
 	executor* pExecutor = nullptr;
 	params* pParams = nullptr;
+
+	std::mutex update;
+
+private:
+	void init_singeltons();
 };
 
 } // namespace xmrstak
