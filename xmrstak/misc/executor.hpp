@@ -32,7 +32,11 @@ class executor
 	{
 		auto& env = xmrstak::environment::inst();
 		if(env.pExecutor == nullptr)
-			env.pExecutor = new executor;
+		{
+			std::unique_lock<std::mutex> lck(env.update);
+			if(env.pExecutor == nullptr)
+				env.pExecutor = new executor;
+		}
 		return env.pExecutor;
 	};
 
