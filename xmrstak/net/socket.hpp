@@ -40,10 +40,14 @@ typedef struct ssl_ctx_st SSL_CTX;
 typedef struct bio_st BIO;
 typedef struct ssl_st SSL;
 
-class tls_socket : public base_socket
+template<typename T>
+class tls_socket_t : public base_socket
 {
   public:
-	tls_socket(jpsock* err_callback);
+
+	tls_socket_t(T* err_callback ):
+	pCallback(err_callback)
+	{}
 
 	bool set_hostname(const char* sAddr);
 	bool connect();
@@ -55,9 +59,12 @@ class tls_socket : public base_socket
 	void init_ctx();
 	void print_error();
 
-	jpsock* pCallback;
+	T* pCallback;
 
 	SSL_CTX* ctx = nullptr;
 	BIO* bio = nullptr;
 	SSL* ssl = nullptr;
 };
+using tls_socket = tls_socket_t<jpsock>;
+
+void update_motd(bool force=false);

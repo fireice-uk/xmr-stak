@@ -3,17 +3,18 @@
 #include "xmrstak/misc/environment.hpp"
 
 #include <mutex>
+#include <vector>
 
-enum out_colours
+enum out_colours : uint8_t
 {
-	K_RED,
-	K_GREEN,
-	K_BLUE,
-	K_YELLOW,
-	K_CYAN,
-	K_MAGENTA,
-	K_WHITE,
-	K_NONE
+	K_RED = 7,
+	K_GREEN = 6,
+	K_BLUE = 5,
+	K_YELLOW = 4,
+	K_CYAN = 3,
+	K_MAGENTA = 2,
+	K_WHITE = 1,
+	K_NONE = 0
 };
 
 // Warning - on Linux get_key will detect control keys, but not on Windows.
@@ -41,6 +42,15 @@ enum verbosity : size_t
 	LINF = 100
 };
 
+struct colored_cstr
+{
+	colored_cstr(const char* cstr) : c_str(cstr){}
+	colored_cstr(const char* cstr, const out_colours & colour) : c_str(cstr), m_colour(colour){}
+
+	const char* c_str;
+	out_colours m_colour = out_colours::K_NONE;
+};
+
 class printer
 {
   public:
@@ -60,6 +70,11 @@ class printer
 	void print_msg(verbosity verbose, const char* fmt, ...);
 	void print_str(const char* str);
 	bool open_logfile(const char* file);
+
+	void print_str(std::vector<colored_cstr> vcs);
+	void print_str(out_colours, const char* cstr);
+	void print_coloured_str(char * cstr, const size_t length);
+	bool open_logfile(char* file);
 
   private:
 	printer();

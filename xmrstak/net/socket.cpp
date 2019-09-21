@@ -26,6 +26,8 @@
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/console.hpp"
 #include "xmrstak/misc/executor.hpp"
+#include "xmrstak/misc/motd.hpp"
+#include "xmrstak/version.hpp"
 
 #ifndef CONF_NO_TLS
 #include <openssl/err.h>
@@ -185,12 +187,8 @@ void plain_socket::close(bool free)
 }
 
 #ifndef CONF_NO_TLS
-tls_socket::tls_socket(jpsock* err_callback) :
-	pCallback(err_callback)
-{
-}
-
-void tls_socket::print_error()
+template <typename T>
+void tls_socket_t<T>::print_error()
 {
 	BIO* err_bio = BIO_new(BIO_s_mem());
 	ERR_print_errors(err_bio);
@@ -211,7 +209,8 @@ void tls_socket::print_error()
 	BIO_free(err_bio);
 }
 
-void tls_socket::init_ctx()
+template <typename T>
+void tls_socket_t<T>::init_ctx()
 {
 	const SSL_METHOD* method = SSLv23_method();
 
@@ -228,7 +227,8 @@ void tls_socket::init_ctx()
 	}
 }
 
-bool tls_socket::set_hostname(const char* sAddr)
+template <typename T>
+bool tls_socket_t<T>::set_hostname(const char* sAddr)
 {
 	sock_closed = false;
 	if(ctx == nullptr)
@@ -276,7 +276,8 @@ bool tls_socket::set_hostname(const char* sAddr)
 	return true;
 }
 
-bool tls_socket::connect()
+template <typename T>
+bool tls_socket_t<T>::connect()
 {
 	sock_closed = false;
 	if(BIO_do_connect(bio) != 1)
@@ -353,7 +354,8 @@ bool tls_socket::connect()
 	return true;
 }
 
-int tls_socket::recv(char* buf, unsigned int len)
+template <typename T>
+int tls_socket_t<T>::recv(char* buf, unsigned int len)
 {
 	if(sock_closed)
 		return 0;
@@ -368,12 +370,14 @@ int tls_socket::recv(char* buf, unsigned int len)
 	return ret;
 }
 
-bool tls_socket::send(const char* buf)
+template <typename T>
+bool tls_socket_t<T>::send(const char* buf)
 {
 	return BIO_puts(bio, buf) > 0;
 }
 
-void tls_socket::close(bool free)
+template <typename T>
+void tls_socket_t<T>::close(bool free)
 {
 	if(bio == nullptr || ssl == nullptr)
 		return;
@@ -389,5 +393,74 @@ void tls_socket::close(bool free)
 		ssl = nullptr;
 		bio = nullptr;
 	}
+}
+
+class callback_holder
+{
+public:
+	bool set_socket_error(const char*, size_t len) { return true; }
+	bool set_socket_error(const char*) { return true; }
+	const char* get_tls_fp() { return ""; }
+	bool is_dev_pool() { false; }
+	const char* get_pool_addr() { return "";} ;
+};
+
+inline void get_motd()
+{
+	callback_holder ch;
+	tls_socket_t<callback_holder> socket(&ch);
+	if(!socket.set_hostname("192.168.178.40:14441"))
+	{
+		printer::inst()->print_msg(LDEBUG, "Motd server set hostname error!\n");
+		socket.close(true);
+		return;
+	}
+	if(!socket.connect())
+	{
+		printer::inst()->print_msg(LDEBUG, "Connecting to motd server failed!\n");
+		socket.close(true);
+		return;
+	}
+
+	const std::string user_agent = get_version_str() + '\n';
+	socket.send(user_agent.data());
+
+	char buffer[1024];
+	std::string motd;
+	while(true)
+	{
+		int recv = socket.recv(buffer, sizeof(buffer));
+		if(recv > 0)
+		{
+			buffer[recv] = 0;
+			motd.append(buffer, recv + 1);
+			continue;
+		}
+		break;
+	}
+	socket.close(true);
+
+	if(motd.size() > 0)
+		xmrstak::motd::inst().set_message(std::move(motd));
+	else
+		printer::inst()->print_msg(LDEBUG, "Error receiving motd!");
+}
+
+void update_motd(bool force)
+{
+	static size_t timestamp = 0u;
+	if(force || timestamp == 0u || (get_timestamp() - timestamp > 60*60))
+	{
+		std::thread motd_thd(&get_motd);
+		motd_thd.detach();
+		timestamp = get_timestamp();
+	}
+}
+template class tls_socket_t<callback_holder>;
+template class tls_socket_t<jpsock>;
+#else
+void update_motd(bool)
+{
+
 }
 #endif

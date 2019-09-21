@@ -24,6 +24,7 @@
 #include "executor.hpp"
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/net/jpsock.hpp"
+#include "xmrstak/net/socket.hpp"
 
 #include "telemetry.hpp"
 #include "xmrstak/backend/backendConnector.hpp"
@@ -35,6 +36,7 @@
 #include "xmrstak/http/webdesign.hpp"
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/console.hpp"
+#include "xmrstak/misc/motd.hpp"
 #include "xmrstak/version.hpp"
 
 #include <algorithm>
@@ -535,6 +537,8 @@ void executor::ex_main()
 	if(jconf::inst()->GetVerboseLevel() >= 4)
 		push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 
+	push_timed_event(ex_event(EV_SOCK_UPDATE_MOTD), 1);
+
 	size_t cnt = 0;
 	while(true)
 	{
@@ -615,6 +619,10 @@ void executor::ex_main()
 		case EV_HASHRATE_LOOP:
 			print_report(EV_USR_HASHRATE);
 			push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
+			break;
+		case EV_SOCK_UPDATE_MOTD:
+			update_motd(true);
+			push_timed_event(ex_event(EV_SOCK_UPDATE_MOTD), 60*60);
 			break;
 
 		case EV_INVALID_VAL:
@@ -704,6 +712,10 @@ void executor::hashrate_report(std::string& out)
 			}
 		}
 	}
+
+	std::string motd_server_str = xmrstak::motd::inst().get_message();
+	if(!motd_server_str.empty())
+		printer::inst()->print_coloured_str((char*)motd_server_str.c_str(), motd_server_str.size());
 
 	char num[32];
 	double fTotal[3] = {0.0, 0.0, 0.0};
