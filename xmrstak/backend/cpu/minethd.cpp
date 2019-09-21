@@ -514,7 +514,7 @@ void minethd::multiway_work_main()
 	globalStates::inst().iConsumeCnt++;
 
 	// start with root algorithm and switch later if fork version is reached
-	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
+	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription().GetMiningAlgoRoot();
 	cn_on_new_job on_new_job;
 	uint8_t version = 0;
 	size_t lastPoolId = 0;
@@ -547,7 +547,7 @@ void minethd::multiway_work_main()
 		uint8_t new_version = oWork.getVersion();
 		if(new_version != version || oWork.iPoolId != lastPoolId)
 		{
-			coinDescription coinDesc = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(oWork.iPoolId);
+			coinDescription coinDesc = ::jconf::inst()->GetCurrentCoinSelection().GetDescription();
 			if(new_version >= coinDesc.GetMiningForkVersion())
 			{
 				miner_algo = coinDesc.GetMiningAlgo();

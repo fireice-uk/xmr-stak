@@ -38,7 +38,7 @@ struct coin_selection
 	/* [0] -> user pool
 		 * [1] -> dev pool
 		 */
-	coinDescription pool_coin[2];
+	coinDescription pool_coin;
 	const char* default_pool = nullptr;
 
 	coin_selection() = default;
@@ -51,17 +51,16 @@ struct coin_selection
 		coin_name(in_coin_name),
 		default_pool(in_default_pool)
 	{
-		pool_coin[0] = user_coinDescription;
-		pool_coin[1] = dev_coinDescription;
+		pool_coin = user_coinDescription;
 	}
 
 	/** get coin description for the pool
 		 *
 		 * @param poolId 0 select dev pool, else the user pool is selected
 		 */
-	inline coinDescription GetDescription(size_t poolId) const
+	inline coinDescription GetDescription() const
 	{
-		coinDescription tmp = pool_coin[0];
+		coinDescription tmp = pool_coin;
 		return tmp;
 	}
 
@@ -72,10 +71,9 @@ struct coin_selection
 	inline std::vector<xmrstak_algo> GetAllAlgorithms()
 	{
 		std::vector<xmrstak_algo> allAlgos = {
-			GetDescription(0).GetMiningAlgo(),
-			GetDescription(0).GetMiningAlgoRoot(),
-			GetDescription(1).GetMiningAlgo(),
-			GetDescription(1).GetMiningAlgoRoot()};
+			GetDescription().GetMiningAlgo(),
+			GetDescription().GetMiningAlgoRoot()
+		};
 
 		std::sort(allAlgos.begin(), allAlgos.end());
 		std::remove(allAlgos.begin(), allAlgos.end(), invalid_algo);

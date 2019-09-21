@@ -192,12 +192,12 @@ void printer::print_msg(verbosity verbose, const char* fmt, ...)
 		return;
 
 	buf[bpos] = '\n';
-	//buf[bpos + 1] = '\0';
-	buf[bpos + 1] = K_GREEN;
-	buf[bpos + 2] = '\0';
+	buf[bpos + 1] = '\0';
+	//buf[bpos + 1] = K_GREEN;
+	//buf[bpos + 2] = '\0';
 
-	print_coloured_str(buf,bpos+2);
-	//print_str(buf);
+	//print_coloured_str(buf,bpos+2);
+	print_str(buf);
 }
 
 void printer::print_str(const char* str)

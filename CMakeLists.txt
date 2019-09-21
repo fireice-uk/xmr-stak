@@ -1,6 +1,10 @@
 project(xmr-stak)
 
 cmake_minimum_required(VERSION 3.4.0)
+#   https://cmake.org/cmake/help/v3.12/policy/CMP0074.html
+if(POLICY CMP0074)
+    cmake_policy(SET CMP0074 NEW)
+endif()
 
 # enforce C++11
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -72,31 +76,8 @@ if(CUDA_ENABLE)
     find_package(CUDA 7.5)
 
     if(CUDA_FOUND)
-        # required for monero's cryptonight_r
-        # libcuda
-        find_library(CUDA_LIB 
-        NAMES
-            libcuda 
-            cuda 
-            cuda.lib
-        HINTS
-            ${CUDA_TOOLKIT_ROOT_DIR}
-            ${LIBCUDA_LIBRARY_DIR}
-            ${CUDA_TOOLKIT_ROOT_DIR}
-            /usr
-            /usr/local/cuda
-        PATH_SUFFIXES
-            lib64
-            lib/x64
-            lib/Win32
-            lib64/stubs
-            lib)
 
         list(APPEND BACKEND_TYPES "nvidia")
-        option(XMR-STAK_LARGEGRID "Support large CUDA block count > 128" ON)
-        if(XMR-STAK_LARGEGRID)
-            add_definitions("-DXMR_STAK_LARGEGRID=${XMR-STAK_LARGEGRID}")
-        endif()
 
         set(DEVICE_COMPILER "nvcc")
         set(CUDA_COMPILER "${DEVICE_COMPILER}" CACHE STRING "Select the device compiler")
@@ -536,7 +517,7 @@ if(CUDA_FOUND)
         )
     endif()
 
-    set(CUDA_LIBRARIES ${CUDA_LIB} ${CUDA_LIBRARIES})
+    set(CUDA_LIBRARIES ${CUDA_LIBRARIES})
     
     target_link_libraries(xmrstak_cuda_backend ${CUDA_LIBRARIES})
     target_link_libraries(xmrstak_cuda_backend xmr-stak-backend)

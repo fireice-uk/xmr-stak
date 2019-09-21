@@ -122,7 +122,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 {
 	std::vector<iBackend*>* pvThreads = new std::vector<iBackend*>();
 
-	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
+	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription().GetMiningAlgoRoot();
 
 	if(!configEditor::file_exist(params::inst().configFileNVIDIA))
 	{
@@ -149,8 +149,6 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 
 	size_t i, n = jconf::inst()->GetGPUThreadCount();
 	pvThreads->reserve(n);
-
-	cuInit(0);
 
 	jconf::thd_cfg cfg;
 	for(i = 0; i < n; i++)
@@ -202,7 +200,7 @@ void minethd::work_main()
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
 
 	// start with root algorithm and switch later if fork version is reached
-	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(1).GetMiningAlgoRoot();
+	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription().GetMiningAlgoRoot();
 
 	cpu::minethd::cn_on_new_job set_job;
 	cpu::minethd::func_multi_selector<1>(&cpu_ctx, set_job, ::jconf::inst()->HaveHardwareAes(), miner_algo);
@@ -230,7 +228,7 @@ void minethd::work_main()
 		uint8_t new_version = oWork.getVersion();
 		if(new_version != version || oWork.iPoolId != lastPoolId)
 		{
-			coinDescription coinDesc = ::jconf::inst()->GetCurrentCoinSelection().GetDescription(oWork.iPoolId);
+			coinDescription coinDesc = ::jconf::inst()->GetCurrentCoinSelection().GetDescription();
 			if(new_version >= coinDesc.GetMiningForkVersion())
 			{
 				miner_algo = coinDesc.GetMiningAlgo();

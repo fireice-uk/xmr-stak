@@ -616,7 +616,7 @@ bool jconf::parse_config(const char* sFilename, const char* sFilenamePools)
 		}
 	}
 
-	if(currentCoin.GetDescription(1).GetMiningAlgo() == invalid_algo)
+	if(currentCoin.GetDescription().GetMiningAlgo() == invalid_algo)
 	{
 		std::string cl;
 		GetAlgoList(cl);

@@ -316,7 +316,7 @@ __device__ void print_inst(uint2 inst)
 		}
 		opcode -= RANDOMX_FREQ_IROR_R;
 
-		if (opcode < RANDOMX_FREQ_IROL_R)
+		if (opcode + 1 <= RANDOMX_FREQ_IROL_R)
 		{
 			printf("%s%sIROL_R   r%u, r%u    ", branch_target, fp_inst, dst, src);
 			break;
