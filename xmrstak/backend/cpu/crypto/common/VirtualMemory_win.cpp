@@ -30,8 +30,7 @@
 #include <ntsecapi.h>
 #include <tchar.h>
 
-
-#include "base/io/log/Log.h"
+#include "xmrstak/misc/console.hpp"
 #include "xmrstak/backend/cpu/crypto/common/portable/mm_malloc.h"
 #include "xmrstak/backend/cpu/crypto/common/VirtualMemory.h"
 
@@ -83,7 +82,7 @@ static BOOL SetLockPagesPrivilege() {
 static LSA_UNICODE_STRING StringToLsaUnicodeString(LPCTSTR string) {
     LSA_UNICODE_STRING lsaString;
 
-    DWORD dwLen = (DWORD) wcslen(string);
+    DWORD dwLen = static_cast<DWORD>(lstrlen(string));
     lsaString.Buffer = (LPWSTR) string;
     lsaString.Length = (USHORT)((dwLen) * sizeof(WCHAR));
     lsaString.MaximumLength = (USHORT)((dwLen + 1) * sizeof(WCHAR));
@@ -120,7 +119,7 @@ static BOOL ObtainLockPagesPrivilege() {
         LSA_UNICODE_STRING str = StringToLsaUnicodeString(_T(SE_LOCK_MEMORY_NAME));
 
         if (LsaAddAccountRights(handle, user->User.Sid, &str, 1) == 0) {
-            LOG_NOTICE("Huge pages support was successfully enabled, but reboot required to use it");
+            printer::inst()->print_msg(L0,"Huge pages support was successfully enabled, but reboot required to use it");
             result = TRUE;
         }
 

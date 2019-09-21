@@ -501,11 +501,6 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 	{
 		printer::inst()->print_msg(LDEBUG,"randomX job seed %s", seed_hash->GetString());
 		hex2bin(seed_hash->GetString(), seed_hash->GetStringLength(), oPoolJob.seed_hash.data());
-		for(int i = 0; i < 32; i++)
-		{
-			printf("%u",oPoolJob.seed_hash[i]);
-		}
-		printf("\n");
 	}
 	std::unique_lock<std::mutex> lck(job_mutex);
 	oCurrentJob = oPoolJob;

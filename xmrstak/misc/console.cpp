@@ -226,6 +226,9 @@ void printer::print_str(std::vector<colored_cstr> vcs)
 	{
 		set_colour(cs.m_colour);
 		fputs(cs.c_str, stdout);
+#ifdef _WIN32
+		fflush(stdout);
+#endif
 		reset_colour();
 	}
 	fflush(stdout);

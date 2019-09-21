@@ -15,6 +15,7 @@ void environment::init_singeltons()
 	jconf::inst();
 	executor::inst();
 	params::inst();
-	randomX_global_ctx::inst();
+	// do not init randomx here else you can get rejected results
+	//randomX_global_ctx::inst();
 }
 }

@@ -177,13 +177,5 @@ inline xmrstak_algo POW(xmrstak_algo_id algo_id)
 		{randomX_wow, randomX_wow, CN_ITER, CN_MEMORY/2}
 	}};
 
-	static std::array<xmrstak_algo, 0 > derived_pow =
-		{{
-			// {cryptonight_derived}
-		}};
-
-	if(algo_id < start_derived_algo_id)
-		return pow[algo_id];
-	else
-		return derived_pow[algo_id - start_derived_algo_id];
+	return pow[algo_id];
 }

@@ -33,11 +33,22 @@
 #include <openssl/err.h>
 #include <openssl/opensslconf.h>
 #include <openssl/ssl.h>
+#include <type_traits>
 
 #ifndef OPENSSL_THREADS
 #error OpenSSL was compiled without thread support
 #endif
 #endif
+
+class callback_holder
+{
+public:
+	bool set_socket_error(const char*, size_t len) { return true; }
+	bool set_socket_error(const char*) { return true; }
+	const char* get_tls_fp() { return ""; }
+	bool is_dev_pool() { false; }
+	const char* get_pool_addr() { return "";} ;
+};
 
 plain_socket::plain_socket(jpsock* err_callback) :
 	pCallback(err_callback)
@@ -333,19 +344,23 @@ bool tls_socket_t<T>::connect()
 	char* b64_md = nullptr;
 	size_t b64_len = BIO_get_mem_data(bmem, &b64_md);
 
-	if(strlen(conf_md) == 0)
+	// disable fingerprint check for motd server
+	if(!std::is_same<T, callback_holder>::value)
 	{
-		printer::inst()->print_msg(L1, "TLS fingerprint [%s] %.*s", pCallback->get_pool_addr(), (int)b64_len, b64_md);
-	}
-	else if(strncmp(b64_md, conf_md, b64_len) != 0)
-	{
-		printer::inst()->print_msg(L0, "FINGERPRINT FAILED CHECK [%s] %.*s was given, %s was configured",
-			pCallback->get_pool_addr(), (int)b64_len, b64_md, conf_md);
+		if(strlen(conf_md) == 0)
+		{
+			printer::inst()->print_msg(L1, "TLS fingerprint [%s] %.*s", pCallback->get_pool_addr(), (int)b64_len, b64_md);
+		}
+		else if(strncmp(b64_md, conf_md, b64_len) != 0)
+		{
+			printer::inst()->print_msg(L0, "FINGERPRINT FAILED CHECK [%s] %.*s was given, %s was configured",
+				pCallback->get_pool_addr(), (int)b64_len, b64_md, conf_md);
 
-		pCallback->set_socket_error("FINGERPRINT FAILED CHECK");
-		BIO_free_all(b64);
-		X509_free(cert);
-		return false;
+			pCallback->set_socket_error("FINGERPRINT FAILED CHECK");
+			BIO_free_all(b64);
+			X509_free(cert);
+			return false;
+		}
 	}
 
 	BIO_free_all(b64);
@@ -394,16 +409,6 @@ void tls_socket_t<T>::close(bool free)
 		bio = nullptr;
 	}
 }
-
-class callback_holder
-{
-public:
-	bool set_socket_error(const char*, size_t len) { return true; }
-	bool set_socket_error(const char*) { return true; }
-	const char* get_tls_fp() { return ""; }
-	bool is_dev_pool() { false; }
-	const char* get_pool_addr() { return "";} ;
-};
 
 inline void get_motd()
 {
