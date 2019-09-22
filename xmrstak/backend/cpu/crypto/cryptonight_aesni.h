@@ -190,7 +190,7 @@ struct RandomX_generator
 		for(size_t i = 0; i < N; i++)
 			ctx[i]->last_algo = POW(ALGO);
 
-		printer::inst()->print_msg(LDEBUG,"%s update dataset with %u threads", POW(ALGO).Name().c_str(), xmrstak::globalStates::inst().iThreadCount);
+		printer::inst()->print_msg(LDEBUG,"%s check for update dataset with %u threads", POW(ALGO).Name().c_str(), xmrstak::globalStates::inst().iThreadCount);
 		randomX_global_ctx::inst().updateDataset(work.seed_hash, xmrstak::globalStates::inst().iThreadCount);
 	}
 };
