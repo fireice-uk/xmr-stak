@@ -107,11 +107,6 @@ char* LoadTextFile(const char* filename)
 
 size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_code)
 {
-	std::string device_name = ctx->name;
-	std::transform(ctx->name.begin(), ctx->name.end(), device_name.begin(), ::toupper);
-	ctx->gcn_version = ((device_name == "GFX900") || (device_name == "GFX906")) ? 14 : 12;
-	printer::inst()->print_msg(LDEBUG, "AMD: select gcn version %u", ctx->gcn_version);
-
 	size_t MaximumWorkSize;
 	cl_int ret;
 
@@ -271,6 +266,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		printer::inst()->print_msg(L1, "WARNING: %s when calling clGetDeviceInfo to get CL_DEVICE_NAME for device %u.", err_to_str(ret), ctx->deviceIdx);
 		return ERR_OCL_API;
 	}
+	ctx->name = std::string(devNameVec.data());
 
 	std::vector<char> openCLDriverVer(1024);
 	if((ret = clGetDeviceInfo(ctx->DeviceID, CL_DRIVER_VERSION, openCLDriverVer.size(), openCLDriverVer.data(), NULL)) != CL_SUCCESS)
@@ -278,6 +274,11 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		printer::inst()->print_msg(L1, "WARNING: %s when calling clGetDeviceInfo to get CL_DRIVER_VERSION for device %u.", err_to_str(ret), ctx->deviceIdx);
 		return ERR_OCL_API;
 	}
+
+	std::string device_name = ctx->name;
+	std::transform(ctx->name.begin(), ctx->name.end(), device_name.begin(), ::toupper);
+	ctx->gcn_version = ((device_name == "GFX900") || (device_name == "GFX906")) ? 14 : 12;
+	printer::inst()->print_msg(LDEBUG, "AMD: select gcn version %u for '%s'", ctx->gcn_version, device_name.c_str());
 
 	for(const auto miner_algo : neededAlgorithms)
 	{
