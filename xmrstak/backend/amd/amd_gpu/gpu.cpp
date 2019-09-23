@@ -110,6 +110,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	std::string device_name = ctx->name;
 	std::transform(ctx->name.begin(), ctx->name.end(), device_name.begin(), ::toupper);
 	ctx->gcn_version = ((device_name == "GFX900") || (device_name == "GFX906")) ? 14 : 12;
+	printer::inst()->print_msg(LDEBUG, "AMD: select gcn version %u", ctx->gcn_version);
 
 	size_t MaximumWorkSize;
 	cl_int ret;
@@ -284,7 +285,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		size_t hashMemSize = miner_algo.Mem();
 		int threadMemMask = miner_algo.Mask();
 		int hashIterations = miner_algo.Iter();
-		
+
 		std::string options;
 		options += " -DALGO=" + std::to_string(miner_algo.Id());
 		/* AMD driver output is something like: `1445.5 (VM)`
@@ -469,11 +470,14 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		{
 			if(!KernelNames[i][0])
 			{
+				printer::inst()->print_msg(LDEBUG, "AMD: skip kernel %i (no name)", i);
 				continue;
 			}
+			printer::inst()->print_msg(LDEBUG, "AMD: prepare kernel %s", KernelNames[i].c_str());
 			ctx->rx_kernels[i] = clCreateKernel(ctx->Program[miner_algo], KernelNames[i].c_str(), &ret);
 			if(ret != CL_SUCCESS)
 			{
+				printer::inst()->print_msg(L1, "ERROR AMD: clCreateKernel %s", KernelNames[i].c_str());
 				return ERR_OCL_API;
 			}
 		}
@@ -487,6 +491,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 			size_t bin_size;
 			if(clGetProgramInfo(ctx->Program[miner_algo], CL_PROGRAM_BINARY_SIZES, sizeof(bin_size), &bin_size, NULL) != CL_SUCCESS)
 			{
+				printer::inst()->print_msg(L1, "ERROR AMD: gcnAsm clGetProgramInfo(CL_PROGRAM_BINARY_SIZES)");
 				return ERR_OCL_API;
 			}
 
@@ -494,6 +499,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 			char* tmp[1] = { binary_data.data() };
 			if(clGetProgramInfo(ctx->Program[miner_algo], CL_PROGRAM_BINARIES, sizeof(char*), tmp, NULL) != CL_SUCCESS)
 			{
+				printer::inst()->print_msg(L1, "ERROR AMD: gcnAsm clGetProgramInfo(CL_PROGRAM_BINARIES) bin_size = %u", (uint32_t)bin_size);
 				return false;
 			}
 
@@ -515,18 +521,21 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 			ctx->AsmProgram = clCreateProgramWithBinary(ctx->opencl_ctx, 1, &ctx->DeviceID, &len, (const unsigned char**) &binary, &status, &ret);
 			if(ret != CL_SUCCESS)
 			{
+				printer::inst()->print_msg(L1, "ERROR AMD: gcnAsm clCreateProgramWithBinary");
 				return ERR_OCL_API;
 			}
 
 			ret = clBuildProgram(ctx->AsmProgram, 1, &ctx->DeviceID, options.c_str(), NULL, NULL);
 			if(ret != CL_SUCCESS)
 			{
+				printer::inst()->print_msg(L1, "ERROR AMD: gcnAsm clBuildProgram AsmProgram");
 				return ERR_OCL_API;
 			}
 
 			ctx->rx_kernels[10] = clCreateKernel(ctx->AsmProgram, "randomx_run", &ret);
 			if(ret != CL_SUCCESS)
 			{
+				printer::inst()->print_msg(L1, "ERROR AMD: gcnAsm clBuildProgram randomx_run");
 				return ERR_OCL_API;
 			}
 		}
@@ -861,7 +870,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	}
 
 	ctx->Nonce = 0;
-	return 0;
+	return CL_SUCCESS;
 }
 
 const cl_platform_info attributeTypes[5] = {
