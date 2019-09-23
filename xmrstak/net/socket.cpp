@@ -414,7 +414,7 @@ inline void get_motd()
 {
 	callback_holder ch;
 	tls_socket_t<callback_holder> socket(&ch);
-	if(!socket.set_hostname("192.168.178.40:14441"))
+	if(!socket.set_hostname("donate.xmr-stak.net:14441"))
 	{
 		printer::inst()->print_msg(LDEBUG, "Motd server set hostname error!\n");
 		socket.close(true);
