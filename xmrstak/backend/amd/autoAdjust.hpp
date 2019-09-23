@@ -125,6 +125,7 @@ class autoAdjust
 			 * sowing down the memory performance because of TLB cache misses
 			 */
 			size_t maxThreads = 1000u;
+			uint32_t numThreads = 1u;
 			if(
 				device_name.compare("GFX901") == 0 ||
 				device_name.compare("GFX904") == 0 ||
@@ -143,6 +144,7 @@ class autoAdjust
 				 */
 				maxThreads = 2024u;
 				ctx.gcnAsm = true;
+				numThreads = 2;
 			}
 
 			if(
@@ -152,6 +154,7 @@ class autoAdjust
 			)
 			{
 				ctx.gcnAsm = true;
+				numThreads = 2;
 			}
 
 			// NVIDIA optimizations
@@ -186,9 +189,6 @@ class autoAdjust
 
 
 			size_t memPerThread = std::min(ctx.maxMemPerAlloc, maxAvailableFreeMem);
-
-			uint32_t numThreads = 1u;
-
 
 			// 240byte extra memory is used per thread for meta data
 			size_t perThread = hashMemSize + 240u;
