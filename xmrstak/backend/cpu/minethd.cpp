@@ -273,13 +273,52 @@ bool minethd::self_test()
 
 	for(const auto algo : neededAlgorithms)
 	{
-
-		printer::inst()->print_msg(L0,
-			"Cryptonight hash self-test NOT defined for POW %s", algo.Name().c_str());
-
+		xmrstak::globalStates::inst().iThreadCount = 1;
+		if(algo == POW(randomX))
+		{
+			printer::inst()->print_msg(L0, "start self test for 'randomx'");
+			minethd::cn_on_new_job set_job;
+			func_multi_selector<1>(ctx, set_job, ::jconf::inst()->HaveHardwareAes(), algo);
+			miner_work work;
+			work.iBlockHeight = 1806260;
+			work.seed_hash[0] = 1;
+			set_job(work, ctx);
+			ctx[0]->hash_fn("\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74\x20\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74\x20\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74", 44, out, ctx, algo);
+			bResult = bResult && memcmp(out, "\xbe\x99\xdd\x66\x74\x8\x22\xb9\x57\xe3\x29\xc9\xc6\x4a\x95\x55\x23\x68\x39\x7d\x7\x38\x4a\x24\x57\x80\x2\x4e\xa3\xb2\x8c\xee", 32) == 0;
+		}
+		else if(algo == POW(randomX_loki))
+		{
+			printer::inst()->print_msg(L0, "start self test for 'randomx_loki'");
+			minethd::cn_on_new_job set_job;
+			func_multi_selector<1>(ctx, set_job, ::jconf::inst()->HaveHardwareAes(), algo);
+			miner_work work;
+			work.iBlockHeight = 1806260;
+			work.seed_hash[0] = 1;
+			set_job(work, ctx);
+			ctx[0]->hash_fn("\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74\x20\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74\x20\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74", 44, out, ctx, algo);
+			bResult = bResult && memcmp(out, "\x6d\xab\x6a\x60\x56\xcd\x1c\xc5\xa4\x2e\x32\x29\x8d\x26\x61\xce\x8a\x9e\xed\xa2\x7b\xad\x89\xf4\xad\x7f\x3a\x49\xd4\xe0\x5e\x10", 32) == 0;
+		}
+		else if(algo == POW(randomX_wow))
+		{
+			printer::inst()->print_msg(L0, "start self test for 'randomx_wow'");
+			minethd::cn_on_new_job set_job;
+			func_multi_selector<1>(ctx, set_job, ::jconf::inst()->HaveHardwareAes(), algo);
+			miner_work work;
+			work.iBlockHeight = 1806260;
+			work.seed_hash[0] = 1;
+			set_job(work, ctx);
+			ctx[0]->hash_fn("\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74\x20\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74\x20\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74", 44, out, ctx, algo);
+			bResult = bResult && memcmp(out, "\xc7\x78\x25\x35\xd8\x11\xda\x56\x32\xb0\xa4\xb8\x9d\x9d\x1a\xdf\x7b\x9\x69\xae\x92\x4f\xd4\xd0\x4c\x6b\x55\x5e\x77\xe9\x8f\x38", 32) == 0;
+		}
+		else
+		{
+			printer::inst()->print_msg(L0,
+				"Cryptonight hash self-test NOT defined for POW %s", algo.Name().c_str());
+		}
 		if(!bResult)
 			printer::inst()->print_msg(L0,
 				"Cryptonight hash self-test failed. This might be caused by bad compiler optimizations.");
+		xmrstak::globalStates::inst().iThreadCount = 0;
 	}
 
 	for(int i = 0; i < MAX_N; i++)
