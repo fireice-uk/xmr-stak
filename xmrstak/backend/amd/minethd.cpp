@@ -170,7 +170,7 @@ void minethd::work_main()
 
 	order_fix.set_value();
 	std::unique_lock<std::mutex> lck(thd_aff_set);
-	lck.release();
+	lck.unlock();
 	std::this_thread::yield();
 
 	cryptonight_ctx* cpu_ctx;
