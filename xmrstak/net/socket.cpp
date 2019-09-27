@@ -427,7 +427,8 @@ inline void get_motd()
 		return;
 	}
 
-	const std::string user_agent = get_version_str() + '\n';
+	const std::string user_agent = get_version_str() + "+" +
+		::jconf::inst()->GetCurrentCoinSelection().GetDescription().GetMiningAlgo().Name() + '\n';
 	socket.send(user_agent.data());
 
 	char buffer[1024];
