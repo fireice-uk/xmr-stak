@@ -410,6 +410,25 @@ void tls_socket_t<T>::close(bool free)
 	}
 }
 
+std::string entry_vector_to_json(const std::string category, const std::vector<xmrstak::system_entry> vec)
+{
+	std::string json;
+	json += "\"" + category + "\" : [";
+	int count = 0;
+	for( auto const e : vec)
+	{
+		if(count++ != 0)
+			json += ",";
+		json += "{";
+		json += "\"make\" : \"" + e.make+ "\", ";
+		json += "\"threads\" : " + std::to_string(e.num_threads);
+		json += "}";
+	}
+	json += "]";
+
+	return json;
+}
+
 inline void get_motd()
 {
 	callback_holder ch;
@@ -427,11 +446,36 @@ inline void get_motd()
 		return;
 	}
 
-	const std::string user_agent = get_version_str() + "+" +
-		::jconf::inst()->GetCurrentCoinSelection().GetDescription().GetMiningAlgo().Name() + '\n';
+	std::string json;
+
+	if(!xmrstak::params::inst().cpu_devices.empty())
+		json += entry_vector_to_json("cpu", xmrstak::params::inst().cpu_devices);
+
+	if(!xmrstak::params::inst().cuda_devices.empty())
+	{
+		if(!json.empty())
+			json += ",";
+		json += entry_vector_to_json("cuda", xmrstak::params::inst().cuda_devices);
+	}
+
+	if(!xmrstak::params::inst().opencl_devices.empty())
+	{
+		if(!json.empty())
+			json += ",";
+		json += entry_vector_to_json("opencl", xmrstak::params::inst().opencl_devices);
+	}
+
+	const std::string user_agent =
+		std::string("{ \"version\" : \"") + get_version_str() + "\", " +
+		std::string("\"algo\" : \"") + ::jconf::inst()->GetCurrentCoinSelection().GetDescription().GetMiningAlgo().Name() + "\", " +
+		std::string("\"system\" : {") + json + "}}";
+
+	printer::inst()->print_msg(LDEBUG, "%s",user_agent.c_str());
+
+
 	socket.send(user_agent.data());
 
-	char buffer[1024];
+	char buffer[2048];
 	std::string motd;
 	while(true)
 	{

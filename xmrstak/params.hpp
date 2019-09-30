@@ -3,10 +3,21 @@
 #include "xmrstak/misc/environment.hpp"
 #include "xmrstak/misc/home_dir.hpp"
 
-#include <string>
+#include <vector>
+#include <cstdint>
 
 namespace xmrstak
 {
+
+struct system_entry
+{
+	system_entry( const std::string make_value, const size_t threads) :
+		make(make_value), num_threads(threads)
+	{}
+
+	std::string make;
+	size_t num_threads;
+};
 
 struct params
 {
@@ -67,6 +78,10 @@ struct params
 	int benchmark_block_version = -1;
 	int benchmark_wait_sec = 30;
 	int benchmark_work_sec = 60;
+
+	std::vector<system_entry> cpu_devices;
+	std::vector<system_entry> cuda_devices;
+	std::vector<system_entry> opencl_devices;
 
 	params() :
 		binaryName("xmr-stak"),

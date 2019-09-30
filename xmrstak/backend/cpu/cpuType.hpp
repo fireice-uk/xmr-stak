@@ -15,6 +15,7 @@ struct Model
 	bool sse2 = false;
 	bool avx = false;
 	std::string type_name = "unknown";
+	std::string name;
 };
 
 Model getModel();

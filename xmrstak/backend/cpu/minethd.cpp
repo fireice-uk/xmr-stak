@@ -68,6 +68,13 @@
 
 #endif //_WIN32
 
+#ifdef _WIN32
+#define strcasecmp _stricmp
+#include <intrin.h>
+#else
+#include <cpuid.h>
+#endif
+
 namespace xmrstak
 {
 namespace cpu
@@ -381,6 +388,9 @@ std::vector<iBackend*> minethd::thread_starter(uint32_t threadOffset, miner_work
 		minethd* thd = new minethd(pWork, i + threadOffset, cfg.iMultiway, cfg.iCpuAff);
 		pvThreads.push_back(thd);
 	}
+
+	auto model = getModel();
+	xmrstak::params::inst().cpu_devices.emplace_back(xmrstak::system_entry{model.name, pvThreads.size()});
 
 	return pvThreads;
 }

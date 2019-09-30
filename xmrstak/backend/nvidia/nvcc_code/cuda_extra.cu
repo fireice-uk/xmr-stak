@@ -376,5 +376,8 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 	}
 	printf("device init succeeded\n");
 
+	xmrstak::params::inst().cuda_devices.emplace_back(
+		xmrstak::system_entry{std::string(ctx->device_name), static_cast<size_t>(ctx->device_threads * ctx->device_blocks)});
+
 	return 0;
 }

@@ -39,6 +39,37 @@ bool has_feature(int32_t val, int32_t bit)
 	return (val & mask) != 0u;
 }
 
+std::string get_cpu_string()
+{
+	char cpu_str[48] = {'\0'};
+	int32_t val[4] = {0};
+	int32_t* cpu_out = reinterpret_cast<int32_t*>(cpu_str);
+
+	cpuid(0x80000000, 0, val);
+	if(val[0] >= 0x80000004)
+	{
+		cpuid(0x80000002, 0, cpu_out);
+		cpuid(0x80000003, 0, cpu_out+4);
+		cpuid(0x80000004, 0, cpu_out+8);
+	}
+	else
+	{
+		for(size_t i=0; i < 12; i++)
+			cpu_out[i] = 0;
+	}
+
+	//Remove any trailing spaces
+	for(size_t i=48; i--;)
+	{
+		if(cpu_str[i] == ' ')
+			cpu_str[i] = '\0';
+		if(cpu_str[i] != '\0')
+			break;
+	}
+
+	return cpu_str;
+}
+
 Model getModel()
 {
 	int32_t cpu_info[4];
@@ -70,6 +101,8 @@ Model getModel()
 		if(result.family == 0xF)
 			result.family += get_masked(cpu_info[0], 28, 20);
 	}
+
+	result.name = get_cpu_string();
 
 	return result;
 }

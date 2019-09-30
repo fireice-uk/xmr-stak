@@ -23,6 +23,7 @@
 #include "xmrstak/backend/amd/amd_gpu/opencl/RandomX/randomx_run_gfx803.h"
 #include "xmrstak/backend/amd/amd_gpu/opencl/RandomX/randomx_run_gfx900.h"
 #include "xmrstak/backend/cpu/crypto/randomx/randomx.h"
+#include "xmrstak/params.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -259,6 +260,16 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		printer::inst()->print_msg(L1, "Error %s when calling clCreateBuffer to create output buffer.", err_to_str(ret));
 		return ERR_OCL_API;
 	}
+
+	std::vector<char> devVendorVec(1024);
+	if((ret = clGetDeviceInfo(ctx->DeviceID, CL_DEVICE_VENDOR, devVendorVec.size(), devVendorVec.data(), NULL)) != CL_SUCCESS)
+	{
+		printer::inst()->print_msg(L1, "WARNING: %s when calling clGetDeviceInfo to get the device vendor name for device %u.", err_to_str(ret), ctx->deviceIdx);
+		return ERR_OCL_API;
+	}
+
+	std::string devVendor(devVendorVec.data());
+	ctx->vendor = devVendor;
 
 	std::vector<char> devNameVec(1024);
 	if((ret = clGetDeviceInfo(ctx->DeviceID, CL_DEVICE_NAME, devNameVec.size(), devNameVec.data(), NULL)) != CL_SUCCESS)
@@ -1215,6 +1226,8 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 
 	std::vector<std::shared_ptr<InterleaveData>> interleaveData(num_gpus, nullptr);
 
+	std::map<size_t, bool> overview;
+
 	for(int i = 0; i < num_gpus; ++i)
 	{
 		printer::inst()->print_msg(LDEBUG, "OpenCL Init device %d", ctx[i].deviceIdx);
@@ -1239,6 +1252,12 @@ size_t InitOpenCL(GpuContext* ctx, size_t num_gpus, size_t platform_idx)
 		{
 			return ret;
 		}
+
+		bool known_index = overview.find(devIdx) != overview.end();
+		overview[devIdx] = true;
+		if(!known_index)
+			xmrstak::params::inst().opencl_devices.emplace_back(
+				xmrstak::system_entry{ctx[i].vendor + " " + ctx[i].name, ctx[i].rawIntensity});
 	}
 
 	return ERR_SUCCESS;

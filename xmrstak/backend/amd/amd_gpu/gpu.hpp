@@ -60,6 +60,7 @@ struct GpuContext
 	size_t maxMemPerAlloc;
 	int computeUnits;
 	std::string name;
+	std::string vendor;
 	std::shared_ptr<InterleaveData> interleaveData;
 	uint32_t idWorkerOnDevice = 0u;
 	int interleave = 40;
