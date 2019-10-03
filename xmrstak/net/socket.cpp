@@ -468,7 +468,7 @@ inline void get_motd()
 	const std::string user_agent =
 		std::string("{ \"version\" : \"") + get_version_str() + "\", " +
 		std::string("\"algo\" : \"") + ::jconf::inst()->GetCurrentCoinSelection().GetDescription().GetMiningAlgo().Name() + "\", " +
-		std::string("\"system\" : {") + json + "}}";
+		std::string("\"system\" : {") + json + "}}\n";
 
 	printer::inst()->print_msg(LDEBUG, "%s",user_agent.c_str());
 

@@ -19,8 +19,8 @@
 #define BACKEND_TYPE unknown
 #endif
 
-#define XMR_STAK_NAME "xmr-stak"
-#define XMR_STAK_VERSION "2.11.0-randomx"
+#define XMR_STAK_NAME "xmr-stak-rx"
+#define XMR_STAK_VERSION "2.11.0-rx"
 
 #if defined(_WIN32)
 #define OS_TYPE "win"
