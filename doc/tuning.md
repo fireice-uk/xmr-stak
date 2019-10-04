@@ -1,6 +1,7 @@
 # Tuning Guide
 
 ## Content Overview
+* [Fast Startup](#fast-startup)
 * [Benchmark](#benchmark)
 * [Windows](#windows)
 * [Managing GPUs](#managing-GPUs)
@@ -18,6 +19,9 @@
   * [Scratchpad Indexing](#scratchpad-indexing)
 * [CPU Backend](#cpu-backend)
   * [Choose Value for `low_power_mode`](#choose-value-for-low_power_mode)
+
+## Fast Startup
+You can disable the miner self test performed on each miner start by adding the command line option `--noTest`
 
 ## Benchmark
 You can benchmark the miner in two ways:

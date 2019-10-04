@@ -1,7 +1,7 @@
 ###### fireice-uk's and psychocrypt's
-# XMR-Stak: Cryptonight All-in-One Mining Software
+# XMR-Stak-Rx: Cryptonight All-in-One Mining Software
 
-XMR-Stak is a universal open source stratum pool miner. This miner supports x86-64 CPUs, AMD and NVIDIA GPUs and can be used various crypto currencies: Ryo, Monero, Turtlecoin, Graft, Bittube, Loki, Aeon and many more Cryptonight coins.
+XMR-Stak-Rx is a universal open source stratum pool miner. This miner supports x86-64 CPUs, AMD and NVIDIA GPUs and can be used various crypto currencies: Ryo, Monero, Turtlecoin, Graft, Bittube, Loki, Aeon and many more Cryptonight coins.
 
 
 
@@ -29,7 +29,7 @@ To improve our support we created [Xmr-Stak forum](https://www.reddit.com/r/XmrS
 
 - Supports all common backends (CPU/x86, AMD/NVIDIA GPU).
 - Supports all common OS (Linux, Windows and macOS).
-- Supports 15 cryptonight-variant mining algorithms + Cryptonight-GPU.
+- Supports `randomx`, `randomx_loki` and `randomx_wow`
 - Easy to use and flexible in setup:
   - guided start with easy/advanced setup option (no need to edit a config file for the first start)
   - auto-configuration and config file creation for each backend.

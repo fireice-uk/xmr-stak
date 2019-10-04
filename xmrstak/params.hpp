@@ -53,6 +53,7 @@ struct params
 	std::string poolRigid;
 	std::string poolUsername;
 	bool nicehashMode = false;
+	bool selfTest = true;
 
 	static constexpr int32_t httpd_port_unset = -1;
 	static constexpr int32_t httpd_port_disabled = 0;
