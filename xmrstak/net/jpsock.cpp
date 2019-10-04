@@ -485,7 +485,7 @@ bool jpsock::process_pool_job(const opq_json_val* params, const uint64_t message
 	{
 		oPoolJob.iTarget = 0;
 		char sTempStr[] = "0000000000000000";
-		memcpy(sTempStr, seed_hash, target_slen);
+		memcpy(sTempStr, target->GetString(), target_slen);
 		if(!hex2bin(sTempStr, 16, (unsigned char*)&oPoolJob.iTarget) || oPoolJob.iTarget == 0)
 			return set_socket_error("PARSE error: Invalid target");
 	}
