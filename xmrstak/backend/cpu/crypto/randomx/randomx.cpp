@@ -44,12 +44,14 @@ RandomX_ConfigurationWownero::RandomX_ConfigurationWownero()
 	ScratchpadL2_Size = 131072;
 	ScratchpadL3_Size = 1048576;
 
+	RANDOMX_FREQ_IADD_RS = 25;
 	RANDOMX_FREQ_IROR_R = 10;
 	RANDOMX_FREQ_IROL_R = 0;
 	RANDOMX_FREQ_FSWAP_R = 8;
 	RANDOMX_FREQ_FADD_R = 20;
 	RANDOMX_FREQ_FSUB_R = 20;
 	RANDOMX_FREQ_FMUL_R = 20;
+	RANDOMX_FREQ_CBRANCH = 16;
 
 	fillAes4Rx4_Key[0] = rx_set_int_vec_i128(0xcf359e95, 0x141f82b7, 0x7ffbe4a6, 0xf890465d);
 	fillAes4Rx4_Key[1] = rx_set_int_vec_i128(0x6741ffdc, 0xbd5c5ac3, 0xfee8278a, 0x6a55c450);
@@ -68,6 +70,9 @@ RandomX_ConfigurationLoki::RandomX_ConfigurationLoki()
 	ArgonSalt = "RandomXL\x12";
 	ProgramSize = 320;
 	ProgramCount = 7;
+
+	RANDOMX_FREQ_IADD_RS = 25;
+	RANDOMX_FREQ_CBRANCH = 16;
 }
 
 RandomX_ConfigurationBase::RandomX_ConfigurationBase()
@@ -144,26 +149,17 @@ RandomX_ConfigurationBase::RandomX_ConfigurationBase()
 		memcpy(codeReadDatasetLightSshInitTweaked, a, b - a);
 	}
 	{
-		const uint8_t* a = (const uint8_t*)&randomx_program_loop_load;
-		const uint8_t* b = (const uint8_t*)&randomx_program_start;
-		memcpy(codeLoopLoadTweaked, a, b - a);
+		const uint8_t* a = (const uint8_t*)&randomx_prefetch_scratchpad;
+		const uint8_t* b = (const uint8_t*)&randomx_prefetch_scratchpad_end;
+		memcpy(codePrefetchScratchpadTweaked, a, b - a);
 	}
 #endif
 }
 
+static uint32_t Log2(size_t value) { return (value > 1) ? (Log2(value / 2) + 1) : 0; }
+
 void RandomX_ConfigurationBase::Apply()
 {
-#if defined(_M_X64) || defined(__x86_64__)
-	*(uint32_t*)(codeShhPrefetchTweaked + 3) = ArgonMemory * 16 - 1;
-	const uint32_t DatasetBaseMask = DatasetBaseSize - RANDOMX_DATASET_ITEM_SIZE;
-	*(uint32_t*)(codeReadDatasetTweaked + 7) = DatasetBaseMask;
-	*(uint32_t*)(codeReadDatasetTweaked + 23) = DatasetBaseMask;
-	*(uint32_t*)(codeReadDatasetLightSshInitTweaked + 59) = DatasetBaseMask;
-#endif
-
-	CacheLineAlignMask_Calculated = (DatasetBaseSize - 1) & ~(RANDOMX_DATASET_ITEM_SIZE - 1);
-	DatasetExtraItems_Calculated = DatasetExtraSize / RANDOMX_DATASET_ITEM_SIZE;
-
 	ScratchpadL1Mask_Calculated = (ScratchpadL1_Size / sizeof(uint64_t) - 1) * 8;
 	ScratchpadL1Mask16_Calculated = (ScratchpadL1_Size / sizeof(uint64_t) / 2 - 1) * 16;
 	ScratchpadL2Mask_Calculated = (ScratchpadL2_Size / sizeof(uint64_t) - 1) * 8;
@@ -171,21 +167,28 @@ void RandomX_ConfigurationBase::Apply()
 	ScratchpadL3Mask_Calculated = (((ScratchpadL3_Size / sizeof(uint64_t)) - 1) * 8);
 	ScratchpadL3Mask64_Calculated = ((ScratchpadL3_Size / sizeof(uint64_t)) / 8 - 1) * 64;
 
-#if defined(_M_X64) || defined(__x86_64__)
-	*(uint32_t*)(codeLoopLoadTweaked + 4) = ScratchpadL3Mask64_Calculated;
-	*(uint32_t*)(codeLoopLoadTweaked + 50) = ScratchpadL3Mask64_Calculated;
-#endif
+	CacheLineAlignMask_Calculated = (DatasetBaseSize - 1) & ~(RANDOMX_DATASET_ITEM_SIZE - 1);
+	DatasetExtraItems_Calculated = DatasetExtraSize / RANDOMX_DATASET_ITEM_SIZE;
 
 	ConditionMask_Calculated = (1 << JumpBits) - 1;
 
-	constexpr int CEIL_NULL = 0;
-	int k = 0;
-
 #if defined(_M_X64) || defined(__x86_64__)
+	*(uint32_t*)(codeShhPrefetchTweaked + 3) = ArgonMemory * 16 - 1;
+	const uint32_t DatasetBaseMask = DatasetBaseSize - RANDOMX_DATASET_ITEM_SIZE;
+	*(uint32_t*)(codeReadDatasetTweaked + 7) = DatasetBaseMask;
+	*(uint32_t*)(codeReadDatasetTweaked + 23) = DatasetBaseMask;
+	*(uint32_t*)(codeReadDatasetLightSshInitTweaked + 59) = DatasetBaseMask;
+
+	*(uint32_t*)(codePrefetchScratchpadTweaked + 4) = ScratchpadL3Mask64_Calculated;
+	*(uint32_t*)(codePrefetchScratchpadTweaked + 18) = ScratchpadL3Mask64_Calculated;
+
 #define JIT_HANDLE(x, prev) randomx::JitCompilerX86::engine[k] = &randomx::JitCompilerX86::h_##x
 #else
 #define JIT_HANDLE(x, prev)
 #endif
+
+	constexpr int CEIL_NULL = 0;
+	int k = 0;
 
 #define INST_HANDLE(x, prev) \
 	CEIL_##x = CEIL_##prev + RANDOMX_FREQ_##x; \
@@ -430,12 +433,12 @@ extern "C" {
 		assert(inputSize == 0 || input != nullptr);
 		assert(output != nullptr);
 		alignas(16) uint64_t tempHash[8];
-        rx_blake2b(tempHash, sizeof(tempHash), input, inputSize, nullptr, 0);
+		rx_blake2b(tempHash, sizeof(tempHash), input, inputSize, nullptr, 0);
 		machine->initScratchpad(&tempHash);
 		machine->resetRoundingMode();
 		for (uint32_t chain = 0; chain < RandomX_CurrentConfig.ProgramCount - 1; ++chain) {
 			machine->run(&tempHash);
-            rx_blake2b(tempHash, sizeof(tempHash), machine->getRegisterFile(), sizeof(randomx::RegisterFile), nullptr, 0);
+			rx_blake2b(tempHash, sizeof(tempHash), machine->getRegisterFile(), sizeof(randomx::RegisterFile), nullptr, 0);
 		}
 		machine->run(&tempHash);
 		machine->getFinalResult(output, RANDOMX_HASH_SIZE);

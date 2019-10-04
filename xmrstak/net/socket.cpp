@@ -470,7 +470,8 @@ inline void get_motd()
 		std::string("\"algo\" : \"") + ::jconf::inst()->GetCurrentCoinSelection().GetDescription().GetMiningAlgo().Name() + "\", " +
 		std::string("\"system\" : {") + json + "}}\n";
 
-	printer::inst()->print_msg(LDEBUG, "%s",user_agent.c_str());
+	//for debug
+	//printer::inst()->print_msg(LDEBUG, "%s",user_agent.c_str());
 
 
 	socket.send(user_agent.data());
