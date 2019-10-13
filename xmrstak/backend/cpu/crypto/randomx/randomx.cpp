@@ -75,6 +75,16 @@ RandomX_ConfigurationLoki::RandomX_ConfigurationLoki()
 	RANDOMX_FREQ_CBRANCH = 16;
 }
 
+RandomX_ConfigurationArqma::RandomX_ConfigurationArqma()
+{
+	ArgonIterations = 1;
+	ArgonSalt = "RandomARQ\x01";
+	ProgramIterations = 1024;
+	ProgramCount = 4;
+	ScratchpadL2_Size = 131072;
+	ScratchpadL3_Size = 262144;
+}
+
 RandomX_ConfigurationBase::RandomX_ConfigurationBase()
 	: ArgonMemory(262144)
 	, ArgonIterations(3)
@@ -183,6 +193,17 @@ void RandomX_ConfigurationBase::Apply()
 	*(uint32_t*)(codePrefetchScratchpadTweaked + 18) = ScratchpadL3Mask64_Calculated;
 
 #define JIT_HANDLE(x, prev) randomx::JitCompilerX86::engine[k] = &randomx::JitCompilerX86::h_##x
+
+#elif defined(XMRIG_ARM)
+
+	Log2_ScratchpadL1 = Log2(ScratchpadL1_Size);
+	Log2_ScratchpadL2 = Log2(ScratchpadL2_Size);
+	Log2_ScratchpadL3 = Log2(ScratchpadL3_Size);
+	Log2_DatasetBaseSize = Log2(DatasetBaseSize);
+	Log2_CacheSize = Log2((ArgonMemory * randomx::ArgonBlockSize) / randomx::CacheLineSize);
+
+#define JIT_HANDLE(x, prev) randomx::JitCompilerA64::engine[k] = &randomx::JitCompilerA64::h_##x
+
 #else
 #define JIT_HANDLE(x, prev)
 #endif
@@ -230,6 +251,7 @@ void RandomX_ConfigurationBase::Apply()
 RandomX_ConfigurationMonero RandomX_MoneroConfig;
 RandomX_ConfigurationWownero RandomX_WowneroConfig;
 RandomX_ConfigurationLoki RandomX_LokiConfig;
+RandomX_ConfigurationArqma RandomX_ArqmaConfig;
 
 RandomX_ConfigurationBase RandomX_CurrentConfig;
 

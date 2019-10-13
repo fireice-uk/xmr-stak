@@ -36,7 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace randomx {
 
 	class Program;
-	struct ProgramConfiguration;
+	class ProgramConfiguration;
 	class SuperscalarProgram;
 
 	class JitCompilerFallback {
