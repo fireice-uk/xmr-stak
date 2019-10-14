@@ -49,6 +49,7 @@
 
 #ifdef _WIN32
 #define strncasecmp _strnicmp
+#include <windows.h>
 #endif // _WIN32
 
 executor::executor()
@@ -461,6 +462,27 @@ inline void disable_sigpipe()
 }
 #endif
 
+
+void open_motd_link()
+{
+	std::string motd_url = xmrstak::motd::inst().get_url();
+	if(!motd_url.empty())
+	{
+#ifndef _WIN32
+		if(std::system("which xdg-open > /dev/null 2>&1") == 0)
+		{
+			auto ret = std::system((std::string("xdg-open  ") + motd_url + " > /dev/null 2>&1").c_str() );
+			if(ret == 0)
+				printer::inst()->print_msg(L1, (std::string("opening url '") + motd_url + "' with the default browser").c_str());
+			else
+				printer::inst()->print_msg(L1, (std::string("Failed to open url '") + motd_url + "'").c_str());
+		}
+#else
+		HINSTANCE r = ShellExecute(NULL, "open", motd_url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+#endif
+	}
+}
+
 void executor::ex_main()
 {
 	disable_sigpipe();
@@ -623,6 +645,9 @@ void executor::ex_main()
 		case EV_SOCK_UPDATE_MOTD:
 			update_motd(true);
 			push_timed_event(ex_event(EV_SOCK_UPDATE_MOTD), 60*60);
+			break;
+		case EV_MOTD_LINK:
+			open_motd_link();
 			break;
 
 		case EV_INVALID_VAL:

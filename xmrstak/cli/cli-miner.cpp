@@ -923,6 +923,9 @@ int main(int argc, char* argv[])
 		case 'c':
 			executor::inst()->push_event(ex_event(EV_USR_CONNSTAT));
 			break;
+		case 'v':
+			executor::inst()->push_event(ex_event(EV_MOTD_LINK));
+			break;
 		default:
 			break;
 		}
