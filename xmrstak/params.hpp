@@ -4,9 +4,22 @@
 #include "xmrstak/misc/home_dir.hpp"
 
 #include <string>
+#include <vector>
 
 namespace xmrstak
 {
+
+struct pool
+{
+	bool poolUseTls = false;
+	std::string poolURL;
+	bool userSetPwd = false;
+	std::string poolPasswd;
+	bool userSetRigid = false;
+	std::string poolRigid;
+	std::string poolUsername;
+	bool nicehashMode = false;
+};
 
 struct params
 {
@@ -34,14 +47,7 @@ struct params
 	// user selected OpenCL vendor
 	std::string openCLVendor;
 
-	bool poolUseTls = false;
-	std::string poolURL;
-	bool userSetPwd = false;
-	std::string poolPasswd;
-	bool userSetRigid = false;
-	std::string poolRigid;
-	std::string poolUsername;
-	bool nicehashMode = false;
+	std::vector<pool> pools;
 
 	static constexpr int32_t httpd_port_unset = -1;
 	static constexpr int32_t httpd_port_disabled = 0;

@@ -524,14 +524,21 @@ void executor::ex_main()
 	telem = new xmrstak::telemetry(pvThreads->size());
 
 	set_timestamp();
-	size_t pc = jconf::inst()->GetPoolCount();
 	bool dev_tls = true;
-	bool already_have_cli_pool = false;
-	size_t i = 0;
-	for(; i < pc; i++)
-	{
+	
+	size_t pc = jconf::inst()->GetPoolCount();
+	std::vector<jconf::pool_cfg> pool_cfgs;
+	for (size_t i = 0; i < pc; i++) {
 		jconf::pool_cfg cfg;
 		jconf::inst()->GetPoolConfig(i, cfg);
+		pool_cfgs.push_back(cfg);
+	}
+
+	// Add all pools from the config file.
+	// If a pool is also specified in CLI params, CLI values override config values.
+	for(size_t i = 0; i < pc; i++)
+	{
+		jconf::pool_cfg cfg = pool_cfgs[i];
 #ifdef CONF_NO_TLS
 		if(cfg.tls)
 		{
@@ -542,32 +549,38 @@ void executor::ex_main()
 		if(!cfg.tls)
 			dev_tls = false;
 
-		if(!xmrstak::params::inst().poolURL.empty() && xmrstak::params::inst().poolURL == cfg.sPoolAddr)
+		auto& pool_from_params = find_if(xmrstak::params::inst().pools.begin(), xmrstak::params::inst().pools.end(), [&cfg](const xmrstak::pool &pool_from_params) { return pool_from_params.poolURL == cfg.sPoolAddr; });
+		if(pool_from_params != xmrstak::params::inst().pools.end())
 		{
-			auto& params = xmrstak::params::inst();
-			already_have_cli_pool = true;
+			const char* wallet = pool_from_params->poolUsername.empty() ? cfg.sWalletAddr : pool_from_params->poolUsername.c_str();
+			const char* rigid = pool_from_params->userSetRigid ? pool_from_params->poolRigid.c_str() : cfg.sRigId;
+			const char* pwd = pool_from_params->userSetPwd ? pool_from_params->poolPasswd.c_str() : cfg.sPasswd;
+			bool nicehash = cfg.nicehash || pool_from_params->nicehashMode;
 
-			const char* wallet = params.poolUsername.empty() ? cfg.sWalletAddr : params.poolUsername.c_str();
-			const char* rigid = params.userSetRigid ? params.poolRigid.c_str() : cfg.sRigId;
-			const char* pwd = params.userSetPwd ? params.poolPasswd.c_str() : cfg.sPasswd;
-			bool nicehash = cfg.nicehash || params.nicehashMode;
-
-			pools.emplace_back(i + 1, cfg.sPoolAddr, wallet, rigid, pwd, 9.9, false, params.poolUseTls, cfg.tls_fingerprint, nicehash);
+			pools.emplace_back(i + 1, cfg.sPoolAddr, wallet, rigid, pwd, 9.9, false, pool_from_params->poolUseTls, cfg.tls_fingerprint, nicehash);
 		}
 		else
+		{
 			pools.emplace_back(i + 1, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sRigId, cfg.sPasswd, cfg.weight, false, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
+		}
 	}
 
-	if(!xmrstak::params::inst().poolURL.empty() && !already_have_cli_pool)
+	// Add pools exclusively specified as CLI params
+  for (size_t i = 0; i < xmrstak::params::inst().pools.size(); i++)
 	{
-		auto& params = xmrstak::params::inst();
-		if(params.poolUsername.empty())
+		auto& pool_from_params = xmrstak::params::inst().pools[i];
+		auto& already_added_pool = find_if(pool_cfgs.begin(), pool_cfgs.end(), [&pool_from_params](const jconf::pool_cfg &already_added_pool) { return already_added_pool.sPoolAddr == pool_from_params.poolURL; });
+
+		if (pool_from_params.poolURL.empty() || (already_added_pool != pool_cfgs.end()))
+			continue;
+
+		if(pool_from_params.poolUsername.empty())
 		{
-			printer::inst()->print_msg(L1, "ERROR: You didn't specify the username / wallet address for %s", xmrstak::params::inst().poolURL.c_str());
+			printer::inst()->print_msg(L1, "ERROR: You didn't specify the username / wallet address for %s", pool_from_params.poolURL.c_str());
 			win_exit();
 		}
-
-		pools.emplace_back(i + 1, params.poolURL.c_str(), params.poolUsername.c_str(), params.poolRigid.c_str(), params.poolPasswd.c_str(), 9.9, false, params.poolUseTls, "", params.nicehashMode);
+		
+		pools.emplace_back(i + 1, pool_from_params.poolURL.c_str(), pool_from_params.poolUsername.c_str(), pool_from_params.poolRigid.c_str(), pool_from_params.poolPasswd.c_str(), 9.9, false, pool_from_params.poolUseTls, "", pool_from_params.nicehashMode);
 	}
 
 	switch(jconf::inst()->GetCurrentCoinSelection().GetDescription(0).GetMiningAlgo())
@@ -658,7 +671,7 @@ void executor::ex_main()
 		}
 
 		case EV_PERF_TICK:
-			for(i = 0; i < pvThreads->size(); i++)
+			for(size_t i = 0; i < pvThreads->size(); i++)
 				telem->push_perf_value(i, pvThreads->at(i)->iHashCount.load(std::memory_order_relaxed),
 					pvThreads->at(i)->iTimestamp.load(std::memory_order_relaxed));
 
@@ -668,7 +681,7 @@ void executor::ex_main()
 				double fTelem;
 				bool normal = true;
 
-				for(i = 0; i < pvThreads->size(); i++)
+				for(size_t i = 0; i < pvThreads->size(); i++)
 				{
 					fTelem = telem->calc_telemetry_data(10000, i);
 					if(std::isnormal(fTelem))

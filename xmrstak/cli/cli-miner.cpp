@@ -106,6 +106,7 @@ void help()
 	cout << "  -r, --rigid RIGID          rig identifier for pool-side statistics (needs pool support)" << endl;
 	cout << "  -p, --pass PASSWD          pool password, in the most cases x or empty \"\"" << endl;
 	cout << "  --use-nicehash             the pool should run in nicehash mode" << endl;
+	cout << "You can supply multiple pools, too: repeat these options, starting from pool url." << endl;
 	cout << "  --currency NAME            currency to mine" << endl;
 	cout << endl;
 #ifdef _WIN32
@@ -143,67 +144,133 @@ inline const char* bool_to_str(bool v)
 	return v ? "true" : "false";
 }
 
-std::string get_multipool_entry(bool& final)
-{
-	std::cout << std::endl
-			  << "- Next Pool:" << std::endl
-			  << std::endl;
-
-	std::string pool;
-	std::cout << "- Pool address: e.g. " << jconf::GetDefaultPool(xmrstak::params::inst().currency.c_str()) << std::endl;
-	std::cin >> pool;
-
-	std::string userName;
-	std::cout << "- Username (wallet address or pool login):" << std::endl;
-	std::cin >> userName;
-
-	std::string passwd;
-	std::cin.clear();
-	std::cin.ignore(INT_MAX, '\n');
-	std::cout << "- Password (mostly empty or x):" << std::endl;
-	getline(std::cin, passwd);
-
-	std::string rigid;
-	std::cout << "- Rig identifier for pool-side statistics (needs pool support). Can be empty:" << std::endl;
-	getline(std::cin, rigid);
-
-#ifdef CONF_NO_TLS
-	bool tls = false;
-#else
-	bool tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)", "N");
-#endif
-	bool nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/N)", "N");
-
-	int64_t pool_weight;
-	std::cout << "- Please enter a weight for this pool: " << std::endl;
-	while(!(std::cin >> pool_weight) || pool_weight <= 0)
-	{
-		std::cin.clear();
-		std::cin.ignore(INT_MAX, '\n');
-		std::cout << "Invalid weight.  Try 1, 10, 100, etc:" << std::endl;
-	}
-
-	final = !read_yes_no("- Do you want to add another pool? (y/N)", "N");
-
-	return "\t{\"pool_address\" : \"" + pool + "\", \"wallet_address\" : \"" + userName + "\", \"rig_id\" : \"" + rigid +
-		   "\", \"pool_password\" : \"" + passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " +
-		   bool_to_str(tls) + ", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
-}
-
-inline void prompt_once(bool& prompted)
-{
-	if(!prompted)
-	{
-		std::cout << "Please enter:" << std::endl;
-		prompted = true;
-	}
-}
-
 inline bool use_simple_start()
 {
 	// ask this question only once
 	static bool simple_start = read_yes_no("\nUse simple setup method? (Y/n)", "Y");
 	return simple_start;
+}
+
+std::string get_multipool_entry(int i, bool& final)
+{
+	using namespace xmrstak;
+
+	bool pool_supplied_in_params = i < params::inst().pools.size();
+	bool fully_supplied = pool_supplied_in_params
+		&& !params::inst().pools[i].poolURL.empty()
+		&& !params::inst().pools[i].poolUsername.empty()
+		&& params::inst().pools[i].userSetPwd
+		&& (params::inst().pools[i].userSetRigid || use_simple_start());
+
+	auto& pool = pool_supplied_in_params ? params::inst().pools[i].poolURL : std::string("");
+
+	if (!fully_supplied) {
+		std::cout << std::endl;
+		if (!pool_supplied_in_params || pool.empty())
+		{
+			std::cout	<< "- Pool:";
+		}
+		else
+		{
+			std::cout	<< "- Pool " << pool << ":";
+		}
+		std::cout << std::endl;
+		std::cout << std::endl;
+	}
+
+	bool userSetPool = true;
+	if(pool.empty())
+	{
+		userSetPool = false;
+		std::cout << "- Pool address: e.g. " << jconf::GetDefaultPool(xmrstak::params::inst().currency.c_str()) << std::endl;
+		std::cin >> pool;
+		std::cin.clear();
+		std::cin.ignore(INT_MAX, '\n');
+	}
+
+	std::string userName = pool_supplied_in_params ? params::inst().pools[i].poolUsername : std::string("");
+	if(userName.empty())
+	{
+		std::cout << "- Username (wallet address or pool login):" << std::endl;
+		std::cin >> userName;
+		std::cin.clear();
+		std::cin.ignore(INT_MAX, '\n');
+	}
+
+	std::string passwd = pool_supplied_in_params ? params::inst().pools[i].poolPasswd : std::string("");
+	if(passwd.empty() && !(pool_supplied_in_params && params::inst().pools[i].userSetPwd))
+	{
+		std::cout << "- Password (mostly empty or x):" << std::endl;
+		getline(std::cin, passwd);
+	}
+
+	std::string rigid = pool_supplied_in_params ? params::inst().pools[i].poolRigid : std::string("");
+	if(rigid.empty() && !(pool_supplied_in_params && params::inst().pools[i].userSetRigid))
+	{
+		if(!use_simple_start())
+		{
+			std::cout << "- Rig identifier for pool-side statistics (needs pool support). Can be empty:" << std::endl;
+			getline(std::cin, rigid);
+		}
+	}
+
+	bool tls = pool_supplied_in_params ? params::inst().pools[i].poolUseTls : false;
+#ifdef CONF_NO_TLS
+	tls = false;
+#else
+	if(!userSetPool)
+	{
+		tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)", "N");
+	}
+
+#endif
+
+	bool nicehash = pool_supplied_in_params ? params::inst().pools[i].nicehashMode : false;
+	if(!userSetPool)
+	{
+		if(!use_simple_start())
+		{
+			nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/N)", "N");
+		}
+	}
+
+
+	bool multipool = false;
+
+	if (i == 0) {
+		if(!userSetPool && !use_simple_start())
+			multipool = read_yes_no("- Do you want to use multiple pools? (y/N)", "N");
+	} else {
+		multipool = true;
+	}
+
+	int64_t pool_weight = 1;
+	if (!userSetPool)
+	{
+		std::cout << "Pool weight is a number telling the miner how important the pool is." << std::endl;
+		std::cout << "Miner will mine mostly at the pool with the highest weight, unless the pool fails." << std::endl;
+		std::cout << "Weight must be an integer larger than 0." << std::endl;
+		std::cout << "- Please enter a weight for this pool: " << std::endl;
+
+		while(!(std::cin >> pool_weight) || pool_weight <= 0)
+		{
+			std::cin.clear();
+			std::cin.ignore(INT_MAX, '\n');
+			std::cout << "Invalid weight.  Try 1, 10, 100, etc:" << std::endl;
+		}
+		std::cin.clear();
+		std::cin.ignore(INT_MAX, '\n');
+	}
+	else
+	{
+		pool_weight = 100 - i;
+	}
+
+	final = !((i+1 < params::inst().pools.size()) || (!userSetPool && read_yes_no("- Do you want to add another pool? (y/N)", "N")));
+
+	return "\t{\"pool_address\" : \"" + pool + "\", \"wallet_address\" : \"" + userName + "\", \"rig_id\" : \"" + rigid +
+		   "\", \"pool_password\" : \"" + passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " +
+		   bool_to_str(tls) + ", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
 }
 
 void do_guided_pool_config()
@@ -217,13 +284,10 @@ void do_guided_pool_config()
 
 	configEditor configTpl{};
 	configTpl.set(std::string(tpl));
-	bool prompted = false;
 
 	auto& currency = params::inst().currency;
 	if(currency.empty() || !jconf::IsOnAlgoList(currency))
 	{
-		prompt_once(prompted);
-
 		std::string tmp;
 		while(tmp.empty() || !jconf::IsOnAlgoList(tmp))
 		{
@@ -236,116 +300,15 @@ void do_guided_pool_config()
 		currency = tmp;
 	}
 
-	auto& pool = params::inst().poolURL;
-	bool userSetPool = true;
-	if(pool.empty())
-	{
-		prompt_once(prompted);
-
-		userSetPool = false;
-		std::cout << "- Pool address: e.g. " << jconf::GetDefaultPool(xmrstak::params::inst().currency.c_str()) << std::endl;
-		std::cin >> pool;
-	}
-
-	auto& userName = params::inst().poolUsername;
-	if(userName.empty())
-	{
-		prompt_once(prompted);
-
-		std::cout << "- Username (wallet address or pool login):" << std::endl;
-		std::cin >> userName;
-	}
-
-	bool stdin_flushed = false;
-	auto& passwd = params::inst().poolPasswd;
-	if(passwd.empty() && !params::inst().userSetPwd)
-	{
-		prompt_once(prompted);
-
-		// clear everything from stdin to allow an empty password
-		std::cin.clear();
-		std::cin.ignore(INT_MAX, '\n');
-		stdin_flushed = true;
-
-		std::cout << "- Password (mostly empty or x):" << std::endl;
-		getline(std::cin, passwd);
-	}
-
-	auto& rigid = params::inst().poolRigid;
-	if(rigid.empty() && !params::inst().userSetRigid)
-	{
-		if(!use_simple_start())
-		{
-			prompt_once(prompted);
-
-			if(!stdin_flushed)
-			{
-				// clear everything from stdin to allow an empty rigid
-				std::cin.clear();
-				std::cin.ignore(INT_MAX, '\n');
-			}
-
-			std::cout << "- Rig identifier for pool-side statistics (needs pool support). Can be empty:" << std::endl;
-			getline(std::cin, rigid);
-		}
-	}
-
-	bool tls = params::inst().poolUseTls;
-#ifdef CONF_NO_TLS
-	tls = false;
-#else
-	if(!userSetPool)
-	{
-		prompt_once(prompted);
-		tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)", "N");
-	}
-
-#endif
-
-	bool nicehash = params::inst().nicehashMode;
-	if(!userSetPool)
-	{
-		if(!use_simple_start())
-		{
-			prompt_once(prompted);
-			nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/N)", "N");
-		}
-	}
-
-	bool multipool = false;
-	if(!userSetPool)
-		if(!use_simple_start())
-			multipool = read_yes_no("- Do you want to use multiple pools? (y/N)", "N");
-
-	int64_t pool_weight = 1;
-	if(multipool)
-	{
-		std::cout << "Pool weight is a number telling the miner how important the pool is." << std::endl;
-		std::cout << "Miner will mine mostly at the pool with the highest weight, unless the pool fails." << std::endl;
-		std::cout << "Weight must be an integer larger than 0." << std::endl;
-		std::cout << "- Please enter a weight for this pool: " << std::endl;
-
-		while(!(std::cin >> pool_weight) || pool_weight <= 0)
-		{
-			std::cin.clear();
-			std::cin.ignore(INT_MAX, '\n');
-			std::cout << "Invalid weight.  Try 1, 10, 100, etc:" << std::endl;
-		}
-	}
-
 	std::string pool_table;
-	pool_table += "\t{\"pool_address\" : \"" + pool + "\", \"wallet_address\" : \"" + userName + "\", \"rig_id\" : \"" + rigid +
-				  "\", \"pool_password\" : \"" + passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " +
-				  bool_to_str(tls) + ", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
 
-	if(multipool)
+    int i = 0;
+	bool final = false;
+	do
 	{
-		bool final;
-		do
-		{
-			pool_table += get_multipool_entry(final);
-		} while(!final);
-	}
+		pool_table += get_multipool_entry(i, final);
+		i++;
+	} while(!final);
 
 	configTpl.replace("CURRENCY", currency);
 	configTpl.replace("POOLCONF", pool_table);
@@ -364,7 +327,6 @@ void do_guided_config()
 
 	configEditor configTpl{};
 	configTpl.set(std::string(tpl));
-	bool prompted = false;
 
 	auto& http_port = params::inst().httpd_port;
 	if(http_port == params::httpd_port_unset)
@@ -373,8 +335,6 @@ void do_guided_config()
 #ifndef CONF_NO_HTTPD
 		if(!use_simple_start())
 		{
-			prompt_once(prompted);
-
 			std::cout << "- Do you want to use the HTTP interface?" << std::endl;
 			std::cout << "Unlike the screen display, browser interface is not affected by the GPU lag." << std::endl;
 			std::cout << "If you don't want to use it, please enter 0, otherwise enter port number that the miner should listen on" << std::endl;
@@ -436,14 +396,6 @@ int main(int argc, char* argv[])
 	{
 		params::inst().minerArgs += " ";
 		params::inst().minerArgs += argv[i];
-	}
-
-	bool pool_url_set = false;
-	for(size_t i = 1; i < argc - 1; i++)
-	{
-		std::string opName(argv[i]);
-		if(opName == "-o" || opName == "-O" || opName == "--url" || opName == "--tls-url")
-			pool_url_set = true;
 	}
 
 	for(size_t i = 1; i < argc; ++i)
@@ -587,8 +539,9 @@ int main(int argc, char* argv[])
 				win_exit();
 				return 1;
 			}
-			params::inst().poolURL = argv[i];
-			params::inst().poolUseTls = false;
+			params::inst().pools.push_back(xmrstak::pool());
+			params::inst().pools.back().poolURL = argv[i];
+			params::inst().pools.back().poolUseTls = false;
 		}
 		else if(opName.compare("-O") == 0 || opName.compare("--tls-url") == 0)
 		{
@@ -599,12 +552,13 @@ int main(int argc, char* argv[])
 				win_exit();
 				return 1;
 			}
-			params::inst().poolURL = argv[i];
-			params::inst().poolUseTls = true;
+			params::inst().pools.push_back(xmrstak::pool());
+			params::inst().pools.back().poolURL = argv[i];
+			params::inst().pools.back().poolUseTls = true;
 		}
 		else if(opName.compare("-u") == 0 || opName.compare("--user") == 0)
 		{
-			if(!pool_url_set)
+			if(params::inst().pools.back().poolURL.empty())
 			{
 				printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify username and password.");
 				win_exit();
@@ -618,11 +572,11 @@ int main(int argc, char* argv[])
 				win_exit();
 				return 1;
 			}
-			params::inst().poolUsername = argv[i];
+			params::inst().pools.back().poolUsername = argv[i];
 		}
 		else if(opName.compare("-p") == 0 || opName.compare("--pass") == 0)
 		{
-			if(!pool_url_set)
+			if(params::inst().pools.back().poolURL.empty())
 			{
 				printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify username and password.");
 				win_exit();
@@ -636,12 +590,12 @@ int main(int argc, char* argv[])
 				win_exit();
 				return 1;
 			}
-			params::inst().userSetPwd = true;
-			params::inst().poolPasswd = argv[i];
+			params::inst().pools.back().userSetPwd = true;
+			params::inst().pools.back().poolPasswd = argv[i];
 		}
 		else if(opName.compare("-r") == 0 || opName.compare("--rigid") == 0)
 		{
-			if(!pool_url_set)
+			if(params::inst().pools.back().poolURL.empty())
 			{
 				printer::inst()->print_msg(L0, "Pool address has to be set if you want to specify rigid.");
 				win_exit();
@@ -656,12 +610,12 @@ int main(int argc, char* argv[])
 				return 1;
 			}
 
-			params::inst().userSetRigid = true;
-			params::inst().poolRigid = argv[i];
+			params::inst().pools.back().userSetRigid = true;
+			params::inst().pools.back().poolRigid = argv[i];
 		}
 		else if(opName.compare("--use-nicehash") == 0)
 		{
-			params::inst().nicehashMode = true;
+			params::inst().pools.back().nicehashMode = true;
 		}
 		else if(opName.compare("-c") == 0 || opName.compare("--config") == 0)
 		{
