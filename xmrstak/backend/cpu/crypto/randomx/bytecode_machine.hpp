@@ -28,10 +28,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include "xmrstak/backend/cpu/crypto/randomx/common.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/intrin_portable.h"
-#include "xmrstak/backend/cpu/crypto/randomx/instruction.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/program.hpp"
+#include "crypto/randomx/common.hpp"
+#include "crypto/randomx/intrin_portable.h"
+#include "crypto/randomx/instruction.hpp"
+#include "crypto/randomx/program.hpp"
 
 namespace randomx {
 

@@ -31,9 +31,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <iostream>
 #include <climits>
-#include "xmrstak/backend/cpu/crypto/randomx/blake2/endian.h"
-#include "xmrstak/backend/cpu/crypto/randomx/configuration.h"
-#include "xmrstak/backend/cpu/crypto/randomx/randomx.h"
+#include "crypto/randomx/blake2/endian.h"
+#include "crypto/randomx/configuration.h"
+#include "crypto/randomx/randomx.h"
 
 namespace randomx {
 

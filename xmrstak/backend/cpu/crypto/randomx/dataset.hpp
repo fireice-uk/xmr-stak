@@ -31,9 +31,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <vector>
 #include <type_traits>
-#include "xmrstak/backend/cpu/crypto/randomx/common.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/superscalar_program.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/allocator.hpp"
+#include "crypto/randomx/common.hpp"
+#include "crypto/randomx/superscalar_program.hpp"
+#include "crypto/randomx/allocator.hpp"
 
 /* Global scope for C binding */
 struct randomx_dataset {

@@ -30,10 +30,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <new>
 #include <cstdint>
-#include "xmrstak/backend/cpu/crypto/randomx/virtual_machine.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/jit_compiler.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/allocator.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/dataset.hpp"
+#include "crypto/randomx/virtual_machine.hpp"
+#include "crypto/randomx/jit_compiler.hpp"
+#include "crypto/randomx/allocator.hpp"
+#include "crypto/randomx/dataset.hpp"
 
 namespace randomx {
 

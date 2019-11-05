@@ -27,9 +27,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <stddef.h>
-#include "xmrstak/backend/cpu/crypto/randomx/blake2/blake2.h"
-#include "xmrstak/backend/cpu/crypto/randomx/blake2/endian.h"
-#include "xmrstak/backend/cpu/crypto/randomx/blake2_generator.hpp"
+#include "crypto/randomx/blake2/blake2.h"
+#include "crypto/randomx/blake2/endian.h"
+#include "crypto/randomx/blake2_generator.hpp"
 
 namespace randomx {
 

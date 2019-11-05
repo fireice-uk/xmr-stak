@@ -29,8 +29,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdexcept>
 
 
-#include "xmrstak/backend/cpu/crypto/common/VirtualMemory.h"
-#include "xmrstak/backend/cpu/crypto/randomx/virtual_memory.hpp"
+#include "crypto/common/VirtualMemory.h"
+#include "crypto/randomx/virtual_memory.hpp"
 
 
 void* allocExecutableMemory(std::size_t bytes) {

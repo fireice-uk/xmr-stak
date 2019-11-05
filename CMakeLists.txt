@@ -388,6 +388,7 @@ else()
 endif()
 
 include(cmake/randomx.cmake)
+include_directories(AFTER xmrstak/backend/cpu)
 
 ################################################################################
 # Windows Sockets

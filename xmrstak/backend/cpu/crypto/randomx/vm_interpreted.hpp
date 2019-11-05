@@ -31,10 +31,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <new>
 #include <vector>
 #include "common.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/virtual_machine.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/bytecode_machine.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/intrin_portable.h"
-#include "xmrstak/backend/cpu/crypto/randomx/allocator.hpp"
+#include "crypto/randomx/virtual_machine.hpp"
+#include "crypto/randomx/bytecode_machine.hpp"
+#include "crypto/randomx/intrin_portable.h"
+#include "crypto/randomx/allocator.hpp"
 
 namespace randomx {
 

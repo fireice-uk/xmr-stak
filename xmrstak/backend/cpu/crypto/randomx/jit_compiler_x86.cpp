@@ -29,12 +29,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdexcept>
 #include <cstring>
 #include <climits>
-#include "xmrstak/backend/cpu/crypto/randomx/jit_compiler_x86.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/jit_compiler_x86_static.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/superscalar.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/program.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/reciprocal.h"
-#include "xmrstak/backend/cpu/crypto/randomx/virtual_memory.hpp"
+#include "crypto/randomx/jit_compiler_x86.hpp"
+#include "crypto/randomx/jit_compiler_x86_static.hpp"
+#include "crypto/randomx/superscalar.hpp"
+#include "crypto/randomx/program.hpp"
+#include "crypto/randomx/reciprocal.h"
+#include "crypto/randomx/virtual_memory.hpp"
 
 namespace randomx {
 	/*
@@ -481,7 +481,7 @@ namespace randomx {
 	void JitCompilerX86::h_IADD_M(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		if (instr.src != instr.dst) {
 			genAddressReg(instr, p, pos);
 			emit32(template_IADD_M[instr.dst], p, pos);
@@ -503,7 +503,7 @@ namespace randomx {
 	void JitCompilerX86::h_ISUB_R(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		if (instr.src != instr.dst) {
 			emit(REX_SUB_RR, p, pos);
 			emitByte(0xc0 + 8 * instr.dst + instr.src, p, pos);
@@ -521,7 +521,7 @@ namespace randomx {
 	void JitCompilerX86::h_ISUB_M(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		if (instr.src != instr.dst) {
 			genAddressReg(instr, p, pos);
 			emit(REX_SUB_RM, p, pos);
@@ -541,7 +541,7 @@ namespace randomx {
 	void JitCompilerX86::h_IMUL_R(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		if (instr.src != instr.dst) {
 			emit(REX_IMUL_RR, p, pos);
 			emitByte(0xc0 + 8 * instr.dst + instr.src, p, pos);
@@ -559,7 +559,7 @@ namespace randomx {
 	void JitCompilerX86::h_IMUL_M(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		if (instr.src != instr.dst) {
 			genAddressReg(instr, p, pos);
 			emit(REX_IMUL_RM, p, pos);
@@ -594,7 +594,7 @@ namespace randomx {
 	void JitCompilerX86::h_IMULH_M(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		if (instr.src != instr.dst) {
 			genAddressReg(instr, p, pos, false);
 			emit(REX_MOV_RR64, p, pos);
@@ -618,7 +618,7 @@ namespace randomx {
 	void JitCompilerX86::h_ISMULH_R(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		emit(REX_MOV_RR64, p, pos);
 		emitByte(0xc0 + instr.dst, p, pos);
 		emit(REX_MUL_R, p, pos);
@@ -633,7 +633,7 @@ namespace randomx {
 	void JitCompilerX86::h_ISMULH_M(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		if (instr.src != instr.dst) {
 			genAddressReg(instr, p, pos, false);
 			emit(REX_MOV_RR64, p, pos);
@@ -657,7 +657,7 @@ namespace randomx {
 	void JitCompilerX86::h_IMUL_RCP(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		uint64_t divisor = instr.getImm32();
 		if (!isZeroOrPowerOf2(divisor)) {
 			emit(MOV_RAX_I, p, pos);
@@ -673,7 +673,7 @@ namespace randomx {
 	void JitCompilerX86::h_INEG_R(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		emit(REX_NEG, p, pos);
 		emitByte(0xd8 + instr.dst, p, pos);
 
@@ -684,7 +684,7 @@ namespace randomx {
 	void JitCompilerX86::h_IXOR_R(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		if (instr.src != instr.dst) {
 			emit(REX_XOR_RR, p, pos);
 			emitByte(0xc0 + 8 * instr.dst + instr.src, p, pos);
@@ -702,7 +702,7 @@ namespace randomx {
 	void JitCompilerX86::h_IXOR_M(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		if (instr.src != instr.dst) {
 			genAddressReg(instr, p, pos);
 			emit(REX_XOR_RM, p, pos);
@@ -722,7 +722,7 @@ namespace randomx {
 	void JitCompilerX86::h_IROR_R(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		if (instr.src != instr.dst) {
 			emit(REX_MOV_RR, p, pos);
 			emitByte(0xc8 + instr.src, p, pos);
@@ -762,7 +762,7 @@ namespace randomx {
 	void JitCompilerX86::h_ISWAP_R(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		if (instr.src != instr.dst) {
 			emit(REX_XCHG, p, pos);
 			emitByte(0xc0 + instr.src + 8 * instr.dst, p, pos);
@@ -776,7 +776,7 @@ namespace randomx {
 	void JitCompilerX86::h_FSWAP_R(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		emit(SHUFPD, p, pos);
 		emitByte(0xc0 + 9 * instr.dst, p, pos);
 		emitByte(1, p, pos);
@@ -799,7 +799,7 @@ namespace randomx {
 	void JitCompilerX86::h_FADD_M(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		const uint32_t dst = instr.dst % RegisterCountFlt;
 		genAddressReg(instr, p, pos);
 		emit(REX_CVTDQ2PD_XMM12, p, pos);
@@ -812,7 +812,7 @@ namespace randomx {
 	void JitCompilerX86::h_FSUB_R(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		const uint32_t dst = instr.dst % RegisterCountFlt;
 		const uint32_t src = instr.src % RegisterCountFlt;
 		emit(REX_SUBPD, p, pos);
@@ -824,7 +824,7 @@ namespace randomx {
 	void JitCompilerX86::h_FSUB_M(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		const uint32_t dst = instr.dst % RegisterCountFlt;
 		genAddressReg(instr, p, pos);
 		emit(REX_CVTDQ2PD_XMM12, p, pos);
@@ -837,7 +837,7 @@ namespace randomx {
 	void JitCompilerX86::h_FSCAL_R(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		const uint32_t dst = instr.dst % RegisterCountFlt;
 		emit(REX_XORPS, p, pos);
 		emitByte(0xc7 + 8 * dst, p, pos);
@@ -848,7 +848,7 @@ namespace randomx {
 	void JitCompilerX86::h_FMUL_R(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		const uint32_t dst = instr.dst % RegisterCountFlt;
 		const uint32_t src = instr.src % RegisterCountFlt;
 		emit(REX_MULPD, p, pos);
@@ -860,7 +860,7 @@ namespace randomx {
 	void JitCompilerX86::h_FDIV_M(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		const uint32_t dst = instr.dst % RegisterCountFlt;
 		genAddressReg(instr, p, pos);
 		emit(REX_CVTDQ2PD_XMM12, p, pos);
@@ -874,7 +874,7 @@ namespace randomx {
 	void JitCompilerX86::h_FSQRT_R(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		const uint32_t dst = instr.dst % RegisterCountFlt;
 		emit(SQRTPD, p, pos);
 		emitByte(0xe4 + 9 * dst, p, pos);
@@ -901,7 +901,7 @@ namespace randomx {
 	void JitCompilerX86::h_CBRANCH(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
-
+		
 		int reg = instr.dst;
 		emit(REX_ADD_I, p, pos);
 		emitByte(0xc0 + reg, p, pos);

@@ -26,8 +26,8 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "xmrstak/backend/cpu/crypto/randomx/vm_compiled.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/common.hpp"
+#include "crypto/randomx/vm_compiled.hpp"
+#include "crypto/randomx/common.hpp"
 
 namespace randomx {
 
@@ -50,9 +50,7 @@ namespace randomx {
 
 	template<bool softAes>
 	void CompiledVm<softAes>::execute() {
-#ifdef XMRIG_ARM
-		memcpy(reg.f, config.eMask, sizeof(config.eMask));
-#endif
+
 		compiler.getProgramFunc()(reg, mem, scratchpad, RandomX_CurrentConfig.ProgramIterations);
 	}
 

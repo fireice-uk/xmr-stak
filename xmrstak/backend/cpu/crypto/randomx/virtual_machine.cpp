@@ -29,12 +29,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstring>
 #include <iomanip>
 #include <stdexcept>
-#include "xmrstak/backend/cpu/crypto/randomx/virtual_machine.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/common.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/aes_hash.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/blake2/blake2.h"
-#include "xmrstak/backend/cpu/crypto/randomx/intrin_portable.h"
-#include "xmrstak/backend/cpu/crypto/randomx/allocator.hpp"
+#include "crypto/randomx/virtual_machine.hpp"
+#include "crypto/randomx/common.hpp"
+#include "crypto/randomx/aes_hash.hpp"
+#include "crypto/randomx/blake2/blake2.h"
+#include "crypto/randomx/intrin_portable.h"
+#include "crypto/randomx/allocator.hpp"
 
 randomx_vm::~randomx_vm() {
 

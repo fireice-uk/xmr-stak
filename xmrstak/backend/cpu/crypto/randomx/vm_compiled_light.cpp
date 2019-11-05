@@ -26,8 +26,8 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "xmrstak/backend/cpu/crypto/randomx/vm_compiled_light.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/common.hpp"
+#include "crypto/randomx/vm_compiled_light.hpp"
+#include "crypto/randomx/common.hpp"
 #include <stdexcept>
 
 namespace randomx {

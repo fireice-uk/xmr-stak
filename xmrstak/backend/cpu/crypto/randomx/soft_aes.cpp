@@ -27,7 +27,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "xmrstak/backend/cpu/crypto/randomx/soft_aes.h"
+#include "crypto/randomx/soft_aes.h"
 
 alignas(64) uint32_t lutEnc0[256];
 alignas(64) uint32_t lutEnc1[256];

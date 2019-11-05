@@ -31,7 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <vector>
 #include <stdexcept>
-#include "xmrstak/backend/cpu/crypto/randomx/common.hpp"
+#include "crypto/randomx/common.hpp"
 
 namespace randomx {
 

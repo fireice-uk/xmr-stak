@@ -26,8 +26,8 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "xmrstak/backend/cpu/crypto/randomx/vm_interpreted_light.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/dataset.hpp"
+#include "crypto/randomx/vm_interpreted_light.hpp"
+#include "crypto/randomx/dataset.hpp"
 
 namespace randomx {
 
@@ -41,7 +41,7 @@ namespace randomx {
 	void InterpretedLightVm<softAes>::datasetRead(uint64_t address, int_reg_t(&r)[8]) {
 		uint32_t itemNumber = address / CacheLineSize;
 		int_reg_t rl[8];
-
+		
 		initDatasetItem(cachePtr, (uint8_t*)rl, itemNumber);
 
 		for (unsigned q = 0; q < 8; ++q)

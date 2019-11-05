@@ -30,7 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 #include <stdint.h>
-#include "xmrstak/backend/cpu/crypto/randomx/intrin_portable.h"
+#include "crypto/randomx/intrin_portable.h"
 
 extern uint32_t lutEnc0[256];
 extern uint32_t lutEnc1[256];

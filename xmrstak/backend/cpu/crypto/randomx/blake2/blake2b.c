@@ -36,8 +36,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <stdio.h>
 
-#include "xmrstak/backend/cpu/crypto/randomx/blake2/blake2.h"
-#include "xmrstak/backend/cpu/crypto/randomx/blake2/blake2-impl.h"
+#include "crypto/randomx/blake2/blake2.h"
+#include "crypto/randomx/blake2/blake2-impl.h"
 
 static const uint64_t blake2b_IV[8] = {
 	UINT64_C(0x6a09e667f3bcc908), UINT64_C(0xbb67ae8584caa73b),

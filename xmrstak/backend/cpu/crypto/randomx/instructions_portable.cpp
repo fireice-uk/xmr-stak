@@ -28,9 +28,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <cfenv>
 #include <cmath>
-#include "xmrstak/backend/cpu/crypto/randomx/common.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/intrin_portable.h"
-#include "xmrstak/backend/cpu/crypto/randomx/blake2/endian.h"
+#include "crypto/randomx/common.hpp"
+#include "crypto/randomx/intrin_portable.h"
+#include "crypto/randomx/blake2/endian.h"
 
 #if defined(__SIZEOF_INT128__)
 	typedef unsigned __int128 uint128_t;

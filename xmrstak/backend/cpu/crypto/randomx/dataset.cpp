@@ -39,17 +39,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <limits>
 #include <cstring>
 
-#include "xmrstak/backend/cpu/crypto/randomx/common.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/dataset.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/virtual_memory.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/superscalar.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/blake2_generator.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/reciprocal.h"
-#include "xmrstak/backend/cpu/crypto/randomx/blake2/endian.h"
-#include "xmrstak/backend/cpu/crypto/randomx/argon2.h"
-#include "xmrstak/backend/cpu/crypto/randomx/argon2_core.h"
-#include "xmrstak/backend/cpu/crypto/randomx/jit_compiler.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/intrin_portable.h"
+#include "crypto/randomx/common.hpp"
+#include "crypto/randomx/dataset.hpp"
+#include "crypto/randomx/virtual_memory.hpp"
+#include "crypto/randomx/superscalar.hpp"
+#include "crypto/randomx/blake2_generator.hpp"
+#include "crypto/randomx/reciprocal.h"
+#include "crypto/randomx/blake2/endian.h"
+#include "crypto/randomx/argon2.h"
+#include "crypto/randomx/argon2_core.h"
+#include "crypto/randomx/jit_compiler.hpp"
+#include "crypto/randomx/intrin_portable.h"
 
 //static_assert(RANDOMX_ARGON_MEMORY % (RANDOMX_ARGON_LANES * ARGON2_SYNC_POINTS) == 0, "RANDOMX_ARGON_MEMORY - invalid value");
 static_assert(ARGON2_BLOCK_SIZE == randomx::ArgonBlockSize, "Unpexpected value of ARGON2_BLOCK_SIZE");

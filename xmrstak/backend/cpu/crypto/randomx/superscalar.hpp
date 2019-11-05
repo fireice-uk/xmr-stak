@@ -30,8 +30,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <cstdint>
 #include <vector>
-#include "xmrstak/backend/cpu/crypto/randomx/superscalar_program.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/blake2_generator.hpp"
+#include "crypto/randomx/superscalar_program.hpp"
+#include "crypto/randomx/blake2_generator.hpp"
 
 namespace randomx {
 	                                              //                  Intel Ivy Bridge reference

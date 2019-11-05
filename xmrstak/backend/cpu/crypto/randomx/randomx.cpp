@@ -26,14 +26,16 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "xmrstak/backend/cpu/crypto/randomx/randomx.h"
-#include "xmrstak/backend/cpu/crypto/randomx/dataset.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/vm_interpreted.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/vm_interpreted_light.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/vm_compiled.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/vm_compiled_light.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/blake2/blake2.h"
-#include "xmrstak/backend/cpu/crypto/randomx/jit_compiler_x86_static.hpp"
+#include "crypto/randomx/common.hpp"
+#include "crypto/randomx/randomx.h"
+#include "crypto/randomx/dataset.hpp"
+#include "crypto/randomx/vm_interpreted.hpp"
+#include "crypto/randomx/vm_interpreted_light.hpp"
+#include "crypto/randomx/vm_compiled.hpp"
+#include "crypto/randomx/vm_compiled_light.hpp"
+#include "crypto/randomx/blake2/blake2.h"
+#include "crypto/randomx/jit_compiler_x86_static.hpp"
+
 #include <cassert>
 
 RandomX_ConfigurationWownero::RandomX_ConfigurationWownero()
@@ -193,16 +195,6 @@ void RandomX_ConfigurationBase::Apply()
 	*(uint32_t*)(codePrefetchScratchpadTweaked + 18) = ScratchpadL3Mask64_Calculated;
 
 #define JIT_HANDLE(x, prev) randomx::JitCompilerX86::engine[k] = &randomx::JitCompilerX86::h_##x
-
-#elif defined(XMRIG_ARM)
-
-	Log2_ScratchpadL1 = Log2(ScratchpadL1_Size);
-	Log2_ScratchpadL2 = Log2(ScratchpadL2_Size);
-	Log2_ScratchpadL3 = Log2(ScratchpadL3_Size);
-	Log2_DatasetBaseSize = Log2(DatasetBaseSize);
-	Log2_CacheSize = Log2((ArgonMemory * randomx::ArgonBlockSize) / randomx::CacheLineSize);
-
-#define JIT_HANDLE(x, prev) randomx::JitCompilerA64::engine[k] = &randomx::JitCompilerA64::h_##x
 
 #else
 #define JIT_HANDLE(x, prev)

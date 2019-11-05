@@ -32,7 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
-#include "xmrstak/backend/cpu/crypto/randomx/intrin_portable.h"
+#include "crypto/randomx/intrin_portable.h"
 
 #define RANDOMX_HASH_SIZE 32
 #define RANDOMX_DATASET_ITEM_SIZE 64
@@ -132,14 +132,6 @@ struct RandomX_ConfigurationBase
 	uint32_t ScratchpadL3Mask64_Calculated;
 
 	uint32_t ConditionMask_Calculated;
-
-#ifdef XMRIG_ARM
-	uint32_t Log2_ScratchpadL1;
-	uint32_t Log2_ScratchpadL2;
-	uint32_t Log2_ScratchpadL3;
-	uint32_t Log2_DatasetBaseSize;
-	uint32_t Log2_CacheSize;
-#endif
 
 	int CEIL_IADD_RS;
 	int CEIL_IADD_M;

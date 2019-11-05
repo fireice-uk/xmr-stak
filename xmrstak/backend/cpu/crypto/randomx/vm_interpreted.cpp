@@ -26,10 +26,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "xmrstak/backend/cpu/crypto/randomx/vm_interpreted.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/dataset.hpp"
-#include "xmrstak/backend/cpu/crypto/randomx/intrin_portable.h"
-#include "xmrstak/backend/cpu/crypto/randomx/reciprocal.h"
+#include "crypto/randomx/vm_interpreted.hpp"
+#include "crypto/randomx/dataset.hpp"
+#include "crypto/randomx/intrin_portable.h"
+#include "crypto/randomx/reciprocal.h"
 
 namespace randomx {
 
@@ -65,7 +65,7 @@ namespace randomx {
 			spAddr0 &= ScratchpadL3Mask64;
 			spAddr1 ^= spMix >> 32;
 			spAddr1 &= ScratchpadL3Mask64;
-
+			
 			for (unsigned i = 0; i < RegistersCount; ++i)
 				nreg.r[i] ^= load64(scratchpad + spAddr0 + 8 * i);
 
