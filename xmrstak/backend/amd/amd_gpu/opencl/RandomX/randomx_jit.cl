@@ -912,7 +912,7 @@ __global uint* generate_jit_code(__global uint2* e, __global uint2* p0, __global
 {
 	int prefetch_data_count;
 
-	#pragma unroll(1)
+	#pragma unroll 1
 	for (int pass = 0; pass < 2; ++pass)
 	{
 #if RANDOMX_PROGRAM_SIZE > 256
@@ -939,7 +939,7 @@ __global uint* generate_jit_code(__global uint2* e, __global uint2* p0, __global
 
 		prefetch_data_count = 0;
 
-		#pragma unroll(1)
+		#pragma unroll 1
 		for (uint i = 0; i < RANDOMX_PROGRAM_SIZE; ++i)
 		{
 			// Clean flags
@@ -1324,7 +1324,7 @@ __global uint* generate_jit_code(__global uint2* e, __global uint2* p0, __global
 
 	// Sort p0
 	uint prev = p0[0].x;
-	#pragma unroll(1)
+	#pragma unroll 1
 	for (int j = 1; j < prefetch_data_count; ++j)
 	{
 		uint2 cur = p0[j];
@@ -1354,7 +1354,7 @@ __global uint* generate_jit_code(__global uint2* e, __global uint2* p0, __global
 
 	__global int* prefetched_vgprs = prefecth_vgprs_stack + num_prefetch_vgprs;
 
-	#pragma unroll(8)
+	#pragma unroll 8
 	for (int i = 0; i < RANDOMX_PROGRAM_SIZE; ++i)
 		prefetched_vgprs[i] = 0;
 
@@ -1369,7 +1369,7 @@ __global uint* generate_jit_code(__global uint2* e, __global uint2* p0, __global
 	const uint size_limit = (COMPILED_PROGRAM_SIZE - 200) / sizeof(uint);
 	__global uint* start_p = p;
 
-	#pragma unroll(1)
+	#pragma unroll 1
 	for (int i = 0; i < RANDOMX_PROGRAM_SIZE; ++i)
 	{
 		const uint2 inst = e[i];
