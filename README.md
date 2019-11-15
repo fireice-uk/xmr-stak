@@ -1,9 +1,7 @@
 ###### fireice-uk's and psychocrypt's
-# XMR-Stak-Rx: Cryptonight All-in-One Mining Software
+# XMR-Stak-RX: Free RandomX Mining Software
 
-XMR-Stak-Rx is a universal open source stratum pool miner. This miner supports x86-64 CPUs, AMD and NVIDIA GPUs and can be used various crypto currencies: Ryo, Monero, Turtlecoin, Graft, Bittube, Loki, Aeon and many more Cryptonight coins.
-
-
+XMR-Stak-RX is a universal free and open source stratum pool miner. This miner supports x86-64 CPUs, AMD and NVIDIA GPUs and can be used for various randomX variants.
 
 ## Video guides
 [<img src="doc/_img/stak-yt-cover.jpg">](https://www.youtube.com/playlist?list=PLAhUkom29iGMFoN8pk91JA-oqvxlmJ5H8)
@@ -70,8 +68,6 @@ Please note, this list is not complete and is not an endorsement.
 You can find the latest releases and precompiled binaries on GitHub under [Releases](https://github.com/fireice-uk/xmr-stak/releases).
 
 ## Default Developer Donation
-
-By default, the miner will donate 2% of the hashpower (2 minutes in 100 minutes) to my pool. If you want to change that, edit [donate-level.hpp](xmrstak/donate-level.hpp) before you build the binaries.
 
 If you want to donate directly to support further development, here is my wallet
 

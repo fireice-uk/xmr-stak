@@ -875,16 +875,12 @@ int main(int argc, char* argv[])
 #ifndef CONF_NO_OPENCL
 	printer::inst()->print_str("Based on OpenCL mining code by wolf9466.\n");
 #endif
-	char buffer[64];
-	snprintf(buffer, sizeof(buffer), "\nConfigurable dev donation level is set to %.1f%%\n\n", 2.0f);
-	printer::inst()->print_str(buffer);
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_str("You can use following keys to display reports:\n");
 	printer::inst()->print_str("'h' - hashrate\n");
 	printer::inst()->print_str("'r' - results\n");
 	printer::inst()->print_str("'c' - connection\n");
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
-	printer::inst()->print_str("Upcoming xmr-stak-gui is sponsored by:\n");
 	printer::inst()->print_str("   #####   ______               ____\n");
 	printer::inst()->print_str(" ##     ## | ___ \\             /  _ \\\n");
 	printer::inst()->print_str("#    _    #| |_/ /_   _   ___  | / \\/ _   _  _ _  _ _  ___  _ __    ___  _   _\n");
