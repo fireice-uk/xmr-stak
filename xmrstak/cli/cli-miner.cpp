@@ -24,7 +24,6 @@
 #include "xmrstak/backend/backendConnector.hpp"
 #include "xmrstak/backend/globalStates.hpp"
 #include "xmrstak/backend/miner_work.hpp"
-#include "xmrstak/donate-level.hpp"
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/configEditor.hpp"
 #include "xmrstak/misc/console.hpp"

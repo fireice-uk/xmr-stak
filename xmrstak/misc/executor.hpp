@@ -3,7 +3,6 @@
 #include "telemetry.hpp"
 #include "thdq.hpp"
 #include "xmrstak/backend/iBackend.hpp"
-#include "xmrstak/donate-level.hpp"
 #include "xmrstak/misc/environment.hpp"
 #include "xmrstak/net/msgstruct.hpp"
 

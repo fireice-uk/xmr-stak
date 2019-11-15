@@ -32,7 +32,6 @@
 #include "xmrstak/backend/iBackend.hpp"
 #include "xmrstak/backend/miner_work.hpp"
 
-#include "xmrstak/donate-level.hpp"
 #include "xmrstak/http/webdesign.hpp"
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/console.hpp"

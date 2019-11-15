@@ -12,7 +12,7 @@ XMR-Stak-RX is a universal free and open source stratum pool miner. This miner s
 * [Supported coins and algorithms](#supported-coins-and-algorithms)
 * [Download](#download)
 * [FAQ](doc/FAQ.md)
-* [Developer Donation](#default-developer-donation)
+* [Developer Donation](#developer-donation)
 * [Developer PGP Key's](doc/pgp_keys.md)
 
 ## Guides and FAQ
@@ -67,9 +67,9 @@ Please note, this list is not complete and is not an endorsement.
 
 You can find the latest releases and precompiled binaries on GitHub under [Releases](https://github.com/fireice-uk/xmr-stak/releases).
 
-## Default Developer Donation
+## Developer Donation
 
-If you want to donate directly to support further development, here is my wallet
+If you want to donate directly to support further development, here are our wallets
 
 fireice-uk:
 ```
