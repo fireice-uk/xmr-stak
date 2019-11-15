@@ -73,7 +73,7 @@ option(CMAKE_LINK_STATIC "link as much as possible libraries static" OFF)
 
 option(CUDA_ENABLE "Enable or disable CUDA support (NVIDIA backend)" ON)
 if(CUDA_ENABLE)
-    find_package(CUDA 7.5)
+    find_package(CUDA 9.0)
 
     if(CUDA_FOUND)
 
@@ -94,28 +94,23 @@ if(CUDA_ENABLE)
             add_definitions("-DXMR_STAK_THREADS=${XMR-STAK_THREADS}")
         endif()
         set(DEFAULT_CUDA_ARCH "30;35;37;50;52")
-        # Fermi GPUs are only supported with CUDA < 9.0
-        if(CUDA_VERSION VERSION_LESS 9.0)
-            list(APPEND DEFAULT_CUDA_ARCH "20")
-        endif()
+
         # add Pascal support for CUDA >= 8.0
-        if(NOT CUDA_VERSION VERSION_LESS 8.0)
-            list(APPEND DEFAULT_CUDA_ARCH "60" "61" "62")
-        endif()
+        list(APPEND DEFAULT_CUDA_ARCH "60" "61" "62")
+
         # add Volta support for CUDA >= 9.0
-        if(NOT CUDA_VERSION VERSION_LESS 9.0)
-            # Volta GPUs are currently not supported on MACOSX
-            # https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#cuda-general-known-issues
-            if(NOT APPLE)
-                list(APPEND DEFAULT_CUDA_ARCH "70")
-            endif()
+        # Volta GPUs are currently not supported on MACOSX
+        # https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#cuda-general-known-issues
+        if(NOT APPLE)
+            list(APPEND DEFAULT_CUDA_ARCH "70")
         endif()
+
         # add Turing support for CUDA >= 10.0
         if(NOT CUDA_VERSION VERSION_LESS 10.0)
             list(APPEND DEFAULT_CUDA_ARCH "75")
         endif()
 
-        set(CUDA_ARCH "${DEFAULT_CUDA_ARCH}" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=20;35;60')")
+        set(CUDA_ARCH "${DEFAULT_CUDA_ARCH}" CACHE STRING "Set GPU architecture (semicolon separated list, e.g. '-DCUDA_ARCH=35;60')")
 
         # generate comma separated list with architectures
         string(REPLACE ";" "+" STR_CUDA_ARCH "${CUDA_ARCH}")
@@ -162,15 +157,6 @@ if(CUDA_ENABLE)
                 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11")
             endif()
 
-            # avoid that nvcc in CUDA 8 complains about sm_20 pending removal
-            if(CUDA_VERSION VERSION_EQUAL 8.0)
-                set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wno-deprecated-gpu-targets")
-            endif()
-
-            # avoid that nvcc in CUDA < 8 tries to use libc `memcpy` within the kernel
-            if(CUDA_VERSION VERSION_LESS 8.0)
-                add_definitions(-D_FORCE_INLINES)
-            endif()
             foreach(CUDA_ARCH_ELEM ${CUDA_ARCH})
                 # set flags to create device code for the given architecture
                 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
