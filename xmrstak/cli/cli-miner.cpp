@@ -867,12 +867,12 @@ int main(int argc, char* argv[])
 	printer::inst()->print_str(get_version_str_short().c_str());
 	printer::inst()->print_str("\n\n");
 	printer::inst()->print_str("Brought to you by fireice_uk and psychocrypt under GPLv3.\n");
-	printer::inst()->print_str("Based on CPU mining code by wolf9466 (heavily optimized by fireice_uk).\n");
+	printer::inst()->print_str("Based on CPU mining code by tevador and SChernykh.\n");
 #ifndef CONF_NO_CUDA
-	printer::inst()->print_str("Based on NVIDIA mining code by KlausT and psychocrypt.\n");
+	printer::inst()->print_str("Based on NVIDIA mining code by SChernykh.\n");
 #endif
 #ifndef CONF_NO_OPENCL
-	printer::inst()->print_str("Based on OpenCL mining code by wolf9466.\n");
+	printer::inst()->print_str("Based on OpenCL mining code by SChernykh.\n");
 #endif
 	printer::inst()->print_str("-------------------------------------------------------------------\n");
 	printer::inst()->print_str("You can use following keys to display reports:\n");
