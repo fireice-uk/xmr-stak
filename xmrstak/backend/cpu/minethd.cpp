@@ -283,7 +283,7 @@ bool minethd::self_test()
 		xmrstak::globalStates::inst().iThreadCount = 1;
 		if(algo == POW(randomX))
 		{
-			printer::inst()->print_msg(L0, "start self test for 'randomx'");
+			printer::inst()->print_msg(L0, "start self test for 'randomx' (can be disabled with the command line option '--noTest')");
 			minethd::cn_on_new_job set_job;
 			func_multi_selector<1>(ctx, set_job, ::jconf::inst()->HaveHardwareAes(), algo);
 			miner_work work;
@@ -295,7 +295,7 @@ bool minethd::self_test()
 		}
 		else if(algo == POW(randomX_loki))
 		{
-			printer::inst()->print_msg(L0, "start self test for 'randomx_loki'");
+			printer::inst()->print_msg(L0, "start self test for 'randomx_loki' (can be disabled with the command line option '--noTest')");
 			minethd::cn_on_new_job set_job;
 			func_multi_selector<1>(ctx, set_job, ::jconf::inst()->HaveHardwareAes(), algo);
 			miner_work work;
@@ -307,7 +307,7 @@ bool minethd::self_test()
 		}
 		else if(algo == POW(randomX_wow))
 		{
-			printer::inst()->print_msg(L0, "start self test for 'randomx_wow'");
+			printer::inst()->print_msg(L0, "start self test for 'randomx_wow' (can be disabled with the command line option '--noTest')");
 			minethd::cn_on_new_job set_job;
 			func_multi_selector<1>(ctx, set_job, ::jconf::inst()->HaveHardwareAes(), algo);
 			miner_work work;
