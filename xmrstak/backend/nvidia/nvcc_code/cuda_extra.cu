@@ -322,6 +322,12 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			hashMemSize = std::max(hashMemSize, algo.Mem());
 		}
 
+		const size_t dataset_size = getRandomXDatasetSize();
+		/* increase maxMemUsage by the dataset because the upper limits are
+		 * only for the scratchpad and does not take the randomX dataset into account.
+		 */
+		maxMemUsage += dataset_size;
+
 #ifdef WIN32
 		/* We use in windows bfactor (split slow kernel into smaller parts) to avoid
 		 * that windows is killing long running kernel.
@@ -346,7 +352,6 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		size_t availableMem = freeMemory - (128u * byteToMiB) - 200u;
 		size_t limitedMemory = std::min(availableMem, maxMemUsage);
 
-		const size_t dataset_size = getRandomXDatasetSize();
 		if(limitedMemory <= dataset_size)
 			limitedMemory = 0;
 		else
