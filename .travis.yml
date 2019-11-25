@@ -25,21 +25,21 @@ env:
 
 matrix:
   include:
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - *default_packages
-            - gcc-5
-            - g++-5
-      env:
-        - CMAKE_CXX_COMPILER=g++-5
-        - CMAKE_C_COMPILER=gcc-5
-        - XMRSTAK_CMAKE_FLAGS="-DCUDA_ARCH=30 -DOpenCL_ENABLE=OFF"
-
+#    - os: linux
+#      compiler: gcc
+#      addons:
+#        apt:
+#          sources:
+#            - ubuntu-toolchain-r-test
+#          packages:
+#            - *default_packages
+#            - gcc-5
+#            - g++-5
+#      env:
+#        - CMAKE_CXX_COMPILER=g++-5
+#        - CMAKE_C_COMPILER=gcc-5
+#        - XMRSTAK_CMAKE_FLAGS="-DCUDA_ARCH=30 -DOpenCL_ENABLE=OFF"
+#
     - os: linux
       compiler: gcc
       addons:
@@ -123,4 +123,4 @@ script:
       cmake -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} ${XMRSTAK_CMAKE_FLAGS} .;
     fi;
   - make VERBOSE=1 install
-  - ./bin/xmr-stak --help
+  - ./bin/xmr-stak-rx --help
