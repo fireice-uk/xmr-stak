@@ -101,7 +101,6 @@ constexpr size_t iConfigCnt = (sizeof(oConfigValues) / sizeof(oConfigValues[0]))
 
 xmrstak::coin_selection coins[] = {
 	// name, userpool, devpool, default_pool_suggestion
-	{"aeon7", {POW(cryptonight_aeon)}, {POW(cryptonight_aeon)}, "mine.aeon-pool.com:5555"},
 	{"bbscoin", {POW(cryptonight_aeon)}, {POW(cryptonight_aeon)}, nullptr},
 	{"bittube", {POW(cryptonight_bittube2)}, {POW(cryptonight_gpu)}, "mining.bit.tube:13333"},
 	{"cryptonight", {POW(cryptonight)}, {POW(cryptonight_gpu)}, nullptr},
