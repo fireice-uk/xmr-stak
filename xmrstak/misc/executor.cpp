@@ -525,8 +525,9 @@ void executor::ex_main()
 			const char* rigid = params.userSetRigid ? params.poolRigid.c_str() : cfg.sRigId;
 			const char* pwd = params.userSetPwd ? params.poolPasswd.c_str() : cfg.sPasswd;
 			bool nicehash = cfg.nicehash || params.nicehashMode;
+			bool tls = params.poolUseTls;
 
-			pools.emplace_back(i, cfg.sPoolAddr, wallet, rigid, pwd, 9.9, params.poolUseTls, cfg.tls_fingerprint, nicehash);
+			pools.emplace_back(i, cfg.sPoolAddr, wallet, rigid, pwd, 9.9, tls, cfg.tls_fingerprint, nicehash);
 		}
 		else
 			pools.emplace_back(i, cfg.sPoolAddr, cfg.sWalletAddr, cfg.sRigId, cfg.sPasswd, cfg.weight, cfg.tls, cfg.tls_fingerprint, cfg.nicehash);
