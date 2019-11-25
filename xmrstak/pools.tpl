@@ -21,7 +21,7 @@ POOLCONF],
  *
  *    loki
  *    monero
- *    wow
+ *    wownero
  *
  * Native algorithms which do not depend on any block versions:
  *
