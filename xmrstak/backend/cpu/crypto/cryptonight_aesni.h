@@ -167,6 +167,7 @@ struct RandomX_generator
 		}
 		else if(algorithm_switched)
 		{
+			printer::inst()->print_msg(LDEBUG,"%s switched to %s",ctx[0]->last_algo.Name().c_str(), POW(ALGO).Name().c_str());
 			// remove old vm and re-initialize the full randomx context
 			for(size_t i = 0; i < N; i++)
 			{

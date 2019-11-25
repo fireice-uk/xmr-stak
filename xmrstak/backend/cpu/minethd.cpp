@@ -480,12 +480,6 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 		on_new_job = nullptr;
 }
 
-void minethd::func_selector(cryptonight_ctx** ctx, bool bHaveAes, const xmrstak_algo& algo)
-{
-	minethd::cn_on_new_job dm;
-	func_multi_selector<1>(ctx, dm, bHaveAes, algo); // for testing us eauto, must be removed before the release
-}
-
 void minethd::work_main()
 {
 	multiway_work_main<1u>();
