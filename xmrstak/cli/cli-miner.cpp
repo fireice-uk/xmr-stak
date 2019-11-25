@@ -937,6 +937,12 @@ int do_benchmark(int block_version, int wait_sec, int work_sec)
 
 	printer::inst()->print_msg(L0, "Prepare benchmark for block version %d", block_version);
 
+	if(block_version <= 0)
+	{
+		printer::inst()->print_msg(L0, "Block version must be >0, current value is %u.", block_version);
+		return 1;
+	}
+
 	uint8_t work[128];
 	memset(work, 0, 128);
 	work[0] = static_cast<uint8_t>(block_version);
