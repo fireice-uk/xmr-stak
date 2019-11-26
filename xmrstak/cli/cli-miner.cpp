@@ -219,7 +219,7 @@ void do_guided_pool_config()
 	configTpl.set(std::string(tpl));
 	bool prompted = false;
 
-	auto& currency = params::inst().currency;
+	auto currency = params::inst().currency;
 	if(currency.empty() || !jconf::IsOnAlgoList(currency))
 	{
 		prompt_once(prompted);
@@ -236,7 +236,7 @@ void do_guided_pool_config()
 		currency = tmp;
 	}
 
-	auto& pool = params::inst().poolURL;
+	auto pool = params::inst().poolURL;
 	bool userSetPool = true;
 	if(pool.empty())
 	{
@@ -247,7 +247,7 @@ void do_guided_pool_config()
 		std::cin >> pool;
 	}
 
-	auto& userName = params::inst().poolUsername;
+	auto userName = params::inst().poolUsername;
 	if(userName.empty())
 	{
 		prompt_once(prompted);
@@ -257,7 +257,7 @@ void do_guided_pool_config()
 	}
 
 	bool stdin_flushed = false;
-	auto& passwd = params::inst().poolPasswd;
+	auto passwd = params::inst().poolPasswd;
 	if(passwd.empty() && !params::inst().userSetPwd)
 	{
 		prompt_once(prompted);
@@ -271,7 +271,7 @@ void do_guided_pool_config()
 		getline(std::cin, passwd);
 	}
 
-	auto& rigid = params::inst().poolRigid;
+	auto rigid = params::inst().poolRigid;
 	if(rigid.empty() && !params::inst().userSetRigid)
 	{
 		if(!use_simple_start())
@@ -366,7 +366,7 @@ void do_guided_config()
 	configTpl.set(std::string(tpl));
 	bool prompted = false;
 
-	auto& http_port = params::inst().httpd_port;
+	auto http_port = params::inst().httpd_port;
 	if(http_port == params::httpd_port_unset)
 	{
 		http_port = params::httpd_port_disabled;
@@ -942,6 +942,12 @@ int do_benchmark(int block_version, int wait_sec, int work_sec)
 	std::vector<xmrstak::iBackend*>* pvThreads;
 
 	printer::inst()->print_msg(L0, "Prepare benchmark for block version %d", block_version);
+
+	if(block_version <= 0)
+	{
+		printer::inst()->print_msg(L0, "Block version must be >0, current value is %u.", block_version);
+		return 1;
+	}
 
 	uint8_t work[128];
 	memset(work, 0, 128);

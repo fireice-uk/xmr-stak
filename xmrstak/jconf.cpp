@@ -100,10 +100,13 @@ configVal oConfigValues[] = {
 constexpr size_t iConfigCnt = (sizeof(oConfigValues) / sizeof(oConfigValues[0]));
 
 xmrstak::coin_selection coins[] = {
-	// name, userpool, devpool, default_pool_suggestion
+	// name, userpool, default_pool_suggestion
+	{"loki", {POW(randomX_loki)}, {POW(randomX_loki)}, nullptr},
+	{"monero", {POW(randomX)}, {POW(randomX)}, nullptr},
 	{"randomx", {POW(randomX)}, {POW(randomX)}, nullptr},
 	{"randomx_loki", {POW(randomX_loki)}, {POW(randomX_loki)}, nullptr},
-	{"randomx_wow", {POW(randomX_wow)}, {POW(randomX_wow)}, nullptr}
+	{"randomx_wow", {POW(randomX_wow)}, {POW(randomX_wow)}, nullptr},
+	{"wownero", {POW(randomX_wow)}, {POW(randomX_wow)}, nullptr}
 };
 
 constexpr size_t coin_algo_size = (sizeof(coins) / sizeof(coins[0]));

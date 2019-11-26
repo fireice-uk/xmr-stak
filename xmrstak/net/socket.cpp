@@ -46,7 +46,6 @@ public:
 	bool set_socket_error(const char*, size_t len) { return true; }
 	bool set_socket_error(const char*) { return true; }
 	const char* get_tls_fp() { return ""; }
-	bool is_dev_pool() { false; }
 	const char* get_pool_addr() { return "";} ;
 };
 

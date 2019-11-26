@@ -1,5 +1,5 @@
 # image
-image: Visual Studio 2015
+image: Visual Studio 2017
 
 # build platform
 platform: x64
@@ -9,20 +9,21 @@ clone_folder: c:\xmr-stak
 
 install:
   - mkdir c:\xmr-stak-dep
-  - curl -sL https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip -o xmr-stak-dep.zip
-  - 7z x xmr-stak-dep.zip -o"c:\xmr-stak-dep" -y > nul
-  - appveyor DownloadFile  https://developer.nvidia.com/compute/cuda/8.0/prod/local_installers/cuda_8.0.44_windows-exe -FileName cuda_8.0.44_windows.exe
-  - cuda_8.0.44_windows.exe -s compiler_8.0 cudart_8.0 nvrtc_8.0 nvrtc_dev_8.0
-  - set PATH=%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v8.0\bin;%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v8.0\libnvvp;%PATH%
+  - curl -sL https://github.com/fireice-uk/xmr-stak-dep/releases/download/v2/xmr-stak-dep.zip -o xmr-stak-dep.zip
+  - 7z x xmr-stak-dep.zip -o"c:\" -y > nul
+  - dir c:\xmr-stak-dep
+  - appveyor DownloadFile "https://developer.nvidia.com/compute/cuda/10.1/Prod/network_installers/cuda_10.1.105_win10_network.exe" -FileName install_cuda.exe
+  - install_cuda.exe -s nvcc_10.1 cudart_10.1
+  - set PATH=%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v10.1\bin;%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v10.1\libnvvp;%PATH%
   - nvcc -V
 
 build_script:
-  - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsMSBuildCmd.bat"
+  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 -vcvars_ver=14.11
   - cd c:\xmr-stak
   - mkdir build
   - cd build
   - set CMAKE_PREFIX_PATH=C:\xmr-stak-dep\hwloc;C:\xmr-stak-dep\libmicrohttpd;C:\xmr-stak-dep\openssl;
-  - cmake -G "Visual Studio 14 2015 Win64" -T v140,host=x64 .. -DCUDA_ARCH=30
+  - cmake -G "Visual Studio 15 2017 Win64" -T v141,host=x64 .. -DCUDA_ARCH=35
   - cmake --build . --config Release --target install
 
 test_script:
@@ -30,4 +31,4 @@ test_script:
   - dir
   - copy C:\xmr-stak-dep\openssl\bin\* .
   - set XMRSTAK_NOWAIT=1
-  - xmr-stak.exe --help --noUAC
+  - xmr-stak-rx.exe --help --noUAC

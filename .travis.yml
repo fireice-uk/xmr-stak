@@ -9,7 +9,7 @@ language: cpp
 cache:
   apt: true
   directories:
-    - $HOME/.cache/cuda
+    - $HOME/.cache/cuda9
 
 addons:
   apt:
@@ -21,25 +21,25 @@ addons:
 
 env:
   global:
-    - CUDA_ROOT: $HOME/.cache/cuda
+    - CUDA_ROOT: $HOME/.cache/cuda9
 
 matrix:
   include:
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - *default_packages
-            - gcc-5
-            - g++-5
-      env:
-        - CMAKE_CXX_COMPILER=g++-5
-        - CMAKE_C_COMPILER=gcc-5
-        - XMRSTAK_CMAKE_FLAGS="-DCUDA_ARCH=30 -DOpenCL_ENABLE=OFF"
-
+#    - os: linux
+#      compiler: gcc
+#      addons:
+#        apt:
+#          sources:
+#            - ubuntu-toolchain-r-test
+#          packages:
+#            - *default_packages
+#            - gcc-5
+#            - g++-5
+#      env:
+#        - CMAKE_CXX_COMPILER=g++-5
+#        - CMAKE_C_COMPILER=gcc-5
+#        - XMRSTAK_CMAKE_FLAGS="-DCUDA_ARCH=30 -DOpenCL_ENABLE=OFF"
+#
     - os: linux
       compiler: gcc
       addons:
@@ -106,11 +106,11 @@ install:
       if [ $NVCC_FOUND -ne 0 ]; then
         mkdir -p $CUDA_ROOT &&
         cd $CUDA_ROOT &&
-        travis_retry wget https://developer.nvidia.com/compute/cuda/8.0/prod/local_installers/cuda_8.0.44_linux-run &&
+        travis_retry wget https://developer.nvidia.com/compute/cuda/9.0/Prod/local_installers/cuda_9.0.176_384.81_linux-run &&
         ls -la &&
         chmod u+x *-run &&
-        ./cuda_8.0.44_linux-run --silent --toolkit --toolkitpath=$CUDA_ROOT &&
-        rm -rf ./cuda_8.0.44_linux-run $CUDA_ROOT/{samples,jre,doc,share} &&
+        ./cuda_9.0.176_384.81_linux-run --silent --toolkit --toolkitpath=$CUDA_ROOT &&
+        rm -rf ./cuda_9.0.176_384.81_linux-run $CUDA_ROOT/{samples,jre,doc,share} &&
         cd -;
       fi
     fi;
@@ -123,4 +123,4 @@ script:
       cmake -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} ${XMRSTAK_CMAKE_FLAGS} .;
     fi;
   - make VERBOSE=1 install
-  - ./bin/xmr-stak --help
+  - ./bin/xmr-stak-rx --help
