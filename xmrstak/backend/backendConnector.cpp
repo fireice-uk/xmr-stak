@@ -56,10 +56,6 @@ bool BackendConnector::self_test()
 
 std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 {
-
-	//randomX_global_ctx::inst();
-//randomX_global_ctx::inst();
-
 	std::vector<iBackend*>* pvThreads = new std::vector<iBackend*>;
 
 #ifndef CONF_NO_OPENCL
@@ -67,7 +63,7 @@ std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 	{
 		const std::string backendName = xmrstak::params::inst().openCLVendor;
 		plugin amdplugin;
-		amdplugin.load(backendName, "xmrstak_opencl_backend");
+		amdplugin.load(backendName, "xmrstakrx_opencl_backend");
 		std::vector<iBackend*>* amdThreads = amdplugin.startBackend(static_cast<uint32_t>(pvThreads->size()), pWork, environment::inst());
 		size_t numWorkers = 0u;
 		if(amdThreads != nullptr)
@@ -88,9 +84,9 @@ std::vector<iBackend*>* BackendConnector::thread_starter(miner_work& pWork)
 
 		plugin nvidiaplugin;
 #ifdef XMRSTAK_DEV_RELEASE
-		std::vector<std::string> libNames = {"xmrstak_cuda_backend_cuda10_0", "xmrstak_cuda_backend"};
+		std::vector<std::string> libNames = {"xmrstakrx_cuda_backend_cuda10_0", "xmrstakrx_cuda_backend"};
 #else
-		std::vector<std::string> libNames = {"xmrstak_cuda_backend"};
+		std::vector<std::string> libNames = {"xmrstakrx_cuda_backend"};
 #endif
 		size_t numWorkers = 0u;
 
