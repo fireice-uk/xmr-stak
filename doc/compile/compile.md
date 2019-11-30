@@ -1,4 +1,4 @@
-# Compile xmr-stak
+# Compile Xmr-Stak-RX
 
 ## Content Overview
 * [Build System](#build-system)
@@ -17,7 +17,7 @@ The build system is CMake, if you are not familiar with CMake you can learn more
 
 By default the miner will be build with all dependencies. Each optional dependency can be disabled (this will reduce the miner features).
 
-There are two easy ways to set variables for `cmake` to configure *xmr-stak*
+There are two easy ways to set variables for `cmake` to configure *xmr-stak-rx*
 - use the ncurses GUI
   - `ccmake ..`
   - edit your options
@@ -35,8 +35,8 @@ After the configuration you need to compile the miner, follow the guide for your
 
 ## Generic Build Options
 - `CMAKE_INSTALL_PREFIX` install miner to the home folder
-  - `cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/xmr-stak`
-  - you can find the binary and the `config.txt` file after `make install` in `$HOME/xmr-stak/bin`
+  - `cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/xmr-stak-rx`
+  - you can find the binary and the `config.txt` file after `make install` in `$HOME/xmr-stak-rx/bin`
 - `CMAKE_LINK_STATIC` link libgcc and libstdc++ libraries static (default OFF)
   - disable with `cmake .. -DCMAKE_LINK_STATIC=ON`
   - if you use static compile to run the miner on another system set `-DXMR-STAK_COMPILE=generic`
@@ -124,5 +124,5 @@ on Windows Driver Release Notes
 nVidia always puts the runtime-included CUDA version in the release notes PDF for whatever driver, doesn't hurt to
 double check your specific one.
 
-For better navigation of CUDA version matching, xmr-stak will display both version numbers during CUDA detection phases
+For better navigation of CUDA version matching, xmr-stak-rx will display both version numbers during CUDA detection phases
 such as `[9.2/10.0]` which is the compiled (SDK) version and the current (driver) runtime version.
