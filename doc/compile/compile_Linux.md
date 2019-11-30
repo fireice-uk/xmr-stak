@@ -24,7 +24,7 @@ ROCm is not supporting old GPUs please check if your GPU is supported https://ro
 ```
     # Ubuntu / Debian
     sudo apt install libmicrohttpd-dev libssl-dev cmake build-essential libhwloc-dev
-    git clone https://github.com/fireice-uk/xmr-stak.git
+    git clone https://github.com/fireice-uk/xmr-stak.git -b xmr-stak-rx
     mkdir xmr-stak/build
     cd xmr-stak/build
     cmake ..
@@ -32,7 +32,7 @@ ROCm is not supporting old GPUs please check if your GPU is supported https://ro
 
     # Arch
     sudo pacman -S --needed base-devel hwloc openssl cmake libmicrohttpd
-    git clone https://github.com/fireice-uk/xmr-stak.git
+    git clone https://github.com/fireice-uk/xmr-stak.git -b xmr-stak-rx
     mkdir xmr-stak/build
     cd xmr-stak/build
     cmake ..
@@ -40,7 +40,7 @@ ROCm is not supporting old GPUs please check if your GPU is supported https://ro
 
     # Fedora
     sudo dnf install gcc gcc-c++ hwloc-devel libmicrohttpd-devel libstdc++-static make openssl-devel cmake
-    git clone https://github.com/fireice-uk/xmr-stak.git
+    git clone https://github.com/fireice-uk/xmr-stak.git -b xmr-stak-rx
     mkdir xmr-stak/build
     cd xmr-stak/build
     cmake ..
@@ -50,7 +50,7 @@ ROCm is not supporting old GPUs please check if your GPU is supported https://ro
     sudo yum install centos-release-scl epel-release
     sudo yum install cmake3 devtoolset-4-gcc* hwloc-devel libmicrohttpd-devel openssl-devel make
     scl enable devtoolset-4 bash
-    git clone https://github.com/fireice-uk/xmr-stak.git
+    git clone https://github.com/fireice-uk/xmr-stak.git -b xmr-stak-rx
     mkdir xmr-stak/build
     cd xmr-stak/build
     cmake3 ..
@@ -65,7 +65,7 @@ ROCm is not supporting old GPUs please check if your GPU is supported https://ro
     cd /tmp/cmake-3.4.1/ && ./configure && make && sudo make install && cd -
     sudo update-alternatives --install /usr/bin/cmake cmake /usr/local/bin/cmake 1 --force
     sudo apt install libmicrohttpd-dev libssl-dev libhwloc-dev
-    git clone https://github.com/fireice-uk/xmr-stak.git
+    git clone https://github.com/fireice-uk/xmr-stak.git -b xmr-stak-rx
     mkdir xmr-stak/build
     cd xmr-stak/build
     cmake ..
@@ -90,7 +90,7 @@ ROCm is not supporting old GPUs please check if your GPU is supported https://ro
     make
     sudo make install
     cd ..
-    git clone http://github.com/fireice-uk/xmr-stak
+    git clone http://github.com/fireice-uk/xmr-stak -b xmr-stak-rx
     cd xmr-stak
     mkdir build
     cd build
@@ -116,7 +116,5 @@ cmake -DCUDA_HOST_COMPILER=/usr/bin/gcc-5 ..
 ```
     cmake -DCMAKE_LINK_STATIC=ON -DXMR-STAK_COMPILE=generic .
     make install
-    cd bin\Release
-    copy C:\xmr-stak-dep\openssl\bin\* .
 ```
 Note - cmake caches variables, so if you want to do a dynamic build later you need to specify '-DCMAKE_LINK_STATIC=OFF'
