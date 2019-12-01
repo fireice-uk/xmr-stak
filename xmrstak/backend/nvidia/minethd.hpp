@@ -42,6 +42,7 @@ class minethd : public iBackend
 
 	std::promise<void> numa_promise;
 	std::promise<void> thread_work_promise;
+	std::mutex thd_aff_set;
 
 	// block thread until all NVIDIA GPUs are initialized
 	std::future<void> thread_work_guard;

@@ -19,14 +19,12 @@ POOLCONF],
 /*
  * Currency to mine. Supported values:
  *
- *    aeon7 (use this for Aeon's new PoW)
  *    bbscoin (automatic switch with block version 3 to cryptonight_v7)
  *    bittube (uses cryptonight_bittube2 algorithm)
  *    graft
  *    haven (automatic switch with block version 3 to cryptonight_haven)
  *    lethean
  *    masari
- *    monero (use this to support Monero's Oct 2018 fork)
  *    qrl - Quantum Resistant Ledger
  *    ryo
  *    turtlecoin

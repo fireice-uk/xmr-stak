@@ -82,6 +82,7 @@ minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 	ctx.memMode = cfg.memMode;
 	this->affinity = cfg.cpu_aff;
 
+	std::unique_lock<std::mutex> lck(thd_aff_set);
 	std::future<void> numa_guard = numa_promise.get_future();
 	thread_work_guard = thread_work_promise.get_future();
 
@@ -92,14 +93,15 @@ minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 	 * without concurrent threads (CUDA driver is less occupied).
 	 */
 	numa_guard.wait();
+
+	if(this->affinity >= 0) //-1 means no affinity
+		if(!cpu::minethd::thd_setaffinity(oWorkThd.native_handle(), affinity))
+			printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
 }
 
 void minethd::start_mining()
 {
 	thread_work_promise.set_value();
-	if(this->affinity >= 0) //-1 means no affinity
-		if(!cpu::minethd::thd_setaffinity(oWorkThd.native_handle(), affinity))
-			printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
 }
 
 bool minethd::self_test()
@@ -194,7 +196,8 @@ void minethd::work_main()
 
 	// numa memory bind and gpu memory is initialized
 	numa_promise.set_value();
-
+	std::unique_lock<std::mutex> lck(thd_aff_set);
+	lck.unlock();
 	std::this_thread::yield();
 	// wait until all NVIDIA devices are initialized
 	thread_work_guard.wait();

@@ -634,6 +634,10 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		if(props.multiProcessorCount <= 6)
 			ctx->device_bfactor += 2;
 	}
+
+	// for the most algorithms we are using 8 threads per hash
+	uint32_t threadsPerHash = 8;
+
 	if(ctx->device_threads == -1)
 	{
 		/* sm_20 devices can only run 512 threads per cuda block
@@ -641,9 +645,6 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		 * `8 * ctx->device_threads` threads per block
 		 */
 		const uint32_t maxThreadsPerBlock = props.major < 3 ? 512 : 1024;
-
-		// for the most algorithms we are using 8 threads per hash
-		uint32_t threadsPerHash = 8;
 
 		// phase2_gpu uses 16 threads per hash
 		if(useCryptonight_gpu)
@@ -789,6 +790,8 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 			// 8 is chosen by checking the occupancy calculator
 			size_t blockOptimal = 8 * ctx->device_mpcount;
 
+			if(gpuArch == 30)
+				blockOptimal = 8 * ctx->device_mpcount;
 			// the following values are calculated with CUDA10 and the occupancy calculator
 			if(gpuArch == 35 || gpuArch / 10 == 5 || gpuArch / 10 == 6)
 				blockOptimal = 7 * ctx->device_mpcount;
@@ -798,26 +801,17 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 				blockOptimal = 6 * ctx->device_mpcount;
 
 			if(blockOptimal * threads * hashMemSize < limitedMemory)
-			{
-				ctx->device_threads = threads;
 				ctx->device_blocks = blockOptimal;
-			}
+			else
+				ctx->device_blocks = limitedMemory / hashMemSize / threads; // round to a memory fitting value
+			ctx->device_threads = threads;
 		}
 	}
 
-	if(useCryptonight_gpu)
-	{
-		// cryptonight_gpu used 16 threads per share
-		if(ctx->device_threads * 16 > ctx->device_maxThreadsPerBlock)
-		{
-			ctx->device_threads = ctx->device_maxThreadsPerBlock / 16;
-			printf("WARNING: 'threads' configuration to large, value adjusted to %i\n", ctx->device_threads);
-		}
-	}
-	else if(ctx->device_threads * 8 > ctx->device_maxThreadsPerBlock)
+	if(ctx->device_threads * threadsPerHash > ctx->device_maxThreadsPerBlock)
 	{
 		// by default cryptonight CUDA implementations uses 8 threads per thread for some kernel
-		ctx->device_threads = ctx->device_maxThreadsPerBlock / 8;
+		ctx->device_threads = ctx->device_maxThreadsPerBlock / threadsPerHash;
 		printf("WARNING: 'threads' configuration to large, value adjusted to %i\n", ctx->device_threads);
 	}
 	printf("device init succeeded\n");

@@ -17,7 +17,11 @@ struct globalStates
 	{
 		auto& env = environment::inst();
 		if(env.pglobalStates == nullptr)
-			env.pglobalStates = new globalStates;
+		{
+			std::unique_lock<std::mutex> lck(env.update);
+			if(env.pglobalStates == nullptr)
+				env.pglobalStates = new globalStates;
+		}
 		return *env.pglobalStates;
 	}
 

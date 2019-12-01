@@ -15,7 +15,11 @@ struct params
 	{
 		auto& env = environment::inst();
 		if(env.pParams == nullptr)
-			env.pParams = new params;
+		{
+			std::unique_lock<std::mutex> lck(env.update);
+			if(env.pParams == nullptr)
+				env.pParams = new params;
+		}
 		return *env.pParams;
 	}
 
