@@ -114,7 +114,7 @@ bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 #endif
 }
 
-minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, int64_t affinity)
+minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, int64_t affinity) : affinity(affinity)
 {
 	this->backendType = iBackend::CPU;
 	oWork = pWork;
