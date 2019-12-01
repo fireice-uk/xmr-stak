@@ -1,7 +1,7 @@
 
 <table>
     <tr>
-        <td align="center"><a href=https://github.com/fireice-uk/xmr-stak/tree/tree/xmr-stak-rx/doc/README.md><img src="_img/xmr-stak-rx-btn-inactive.png"></a></td>
+        <td align="center"><a href=https://github.com/fireice-uk/xmr-stak/tree/xmr-stak-rx/doc/README.md><img src="_img/xmr-stak-rx-btn-inactive.png"></a></td>
         <td align="center"><a href=#><img src="_img/xmr-stak-btn-active.png"></a></td>
         <td align="center"><a href=https://ragerx.lol><img src="_img/ragerx-btn.png"></a></td>
     </tr>
