@@ -610,7 +610,8 @@ void minethd::multiway_work_main()
 
 		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
-			if((iCount++ & 0x7) == 0) //Store stats every 8*N hashes
+			constexpr uint64_t update_stat_each = 128;
+			if((iCount++ % update_stat_each) == 0) //Store stats every 8*N hashes
 			{
 				updateStats((iCount - iLastCount) * N, oWork.iPoolId);
 				iLastCount = iCount;
