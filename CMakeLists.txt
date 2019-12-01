@@ -488,17 +488,17 @@ if(CUDA_FOUND)
     if(CUDA_COMPILER STREQUAL "clang")
         # build device code with clang
         add_library(
-            xmrstak_cuda_backend
+            xmrstakrx_cuda_backend
             SHARED
             ${CUDASRCFILES}
         )
-        set_target_properties(xmrstak_cuda_backend PROPERTIES COMPILE_FLAGS ${CLANG_BUILD_FLAGS})
-        set_target_properties(xmrstak_cuda_backend PROPERTIES LINKER_LANGUAGE CXX)
+        set_target_properties(xmrstakrx_cuda_backend PROPERTIES COMPILE_FLAGS ${CLANG_BUILD_FLAGS})
+        set_target_properties(xmrstakrx_cuda_backend PROPERTIES LINKER_LANGUAGE CXX)
         set_source_files_properties(${CUDASRCFILES} PROPERTIES LANGUAGE CXX)
     else()
         #  build device code with nvcc
         cuda_add_library(
-            xmrstak_cuda_backend
+            xmrstakrx_cuda_backend
             SHARED
             ${CUDASRCFILES}
         )
@@ -506,8 +506,8 @@ if(CUDA_FOUND)
 
     set(CUDA_LIBRARIES ${CUDA_LIBRARIES})
     
-    target_link_libraries(xmrstak_cuda_backend ${CUDA_LIBRARIES})
-    target_link_libraries(xmrstak_cuda_backend xmr-stak-backend)
+    target_link_libraries(xmrstakrx_cuda_backend ${CUDA_LIBRARIES})
+    target_link_libraries(xmrstakrx_cuda_backend xmr-stak-backend)
 endif()
 
 # compile AMD backend
@@ -515,12 +515,12 @@ if(OpenCL_FOUND)
     file(GLOB OPENCLSRCFILES
         "xmrstak/backend/amd/amd_gpu/*.cpp"
         "xmrstak/backend/amd/*.cpp")
-    add_library(xmrstak_opencl_backend
+    add_library(xmrstakrx_opencl_backend
         SHARED
         ${OPENCLSRCFILES}
     )
-    target_link_libraries(xmrstak_opencl_backend ${OpenCL_LIBRARY} )
-    target_link_libraries(xmrstak_opencl_backend xmr-stak-backend)
+    target_link_libraries(xmrstakrx_opencl_backend ${OpenCL_LIBRARY} )
+    target_link_libraries(xmrstakrx_opencl_backend xmr-stak-backend)
 endif()
 
 # compile final binary
@@ -548,19 +548,19 @@ if( NOT CMAKE_INSTALL_PREFIX STREQUAL PROJECT_BINARY_DIR )
             RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/${EXECUTABLE_OUTPUT_PATH}")
     if(CUDA_FOUND)
         if(WIN32)
-            install(TARGETS xmrstak_cuda_backend
+            install(TARGETS xmrstakrx_cuda_backend
                 RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/${LIBRARY_OUTPUT_PATH}")
         else()
-            install(TARGETS xmrstak_cuda_backend
+            install(TARGETS xmrstakrx_cuda_backend
                 LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/${LIBRARY_OUTPUT_PATH}")
         endif()
     endif()
     if(OpenCL_FOUND)
         if(WIN32)
-            install(TARGETS xmrstak_opencl_backend
+            install(TARGETS xmrstakrx_opencl_backend
                 RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/${LIBRARY_OUTPUT_PATH}")
         else()
-            install(TARGETS xmrstak_opencl_backend
+            install(TARGETS xmrstakrx_opencl_backend
                 LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/${LIBRARY_OUTPUT_PATH}")
         endif()
     endif()

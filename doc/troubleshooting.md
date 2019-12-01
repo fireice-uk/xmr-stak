@@ -1,5 +1,5 @@
 # Troubleshooting
-To improve our support we created [Xmr-Stak forum](https://www.reddit.com/r/XmrStak). Check it out if you have a problem, or you are looking for most up to date config for your card and [guides](https://www.reddit.com/r/XmrStak/wiki/index).
+To improve our support we created [Xmr-Stak-RX forum](https://www.reddit.com/r/XmrStak). Check it out if you have a problem, or you are looking for most up to date config for your card and [guides](https://www.reddit.com/r/XmrStak/wiki/index).
 
 
 ### 1. CL_MEM_OBJECT_ALLOCATION_FAILURE when calling clEnqueue
@@ -102,7 +102,7 @@ If that happens, disable all auto-starting applications and run the miner after 
 
  
 ### 12. (Ubuntu compiling) - Nvidia insufficient driver
-If you have this error after compiling xmr-stak in Ubuntu - make sure you have the latest drivers and not X.org.X Nouveau or v390. Install them manually or with [cuda package](https://www.reddit.com/r/XmrStak/wiki/guides/startup#wiki_2._ubuntu_18.10_setup_.2B_nvidia_.28compiling_from_source.29)
+If you have this error after compiling xmr-stak-rx in Ubuntu - make sure you have the latest drivers and not X.org.X Nouveau or v390. Install them manually or with [cuda package](https://www.reddit.com/r/XmrStak/wiki/guides/startup#wiki_2._ubuntu_18.10_setup_.2B_nvidia_.28compiling_from_source.29)
 
  
 

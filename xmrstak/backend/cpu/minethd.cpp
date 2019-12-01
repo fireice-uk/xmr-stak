@@ -114,7 +114,7 @@ bool minethd::thd_setaffinity(std::thread::native_handle_type h, uint64_t cpu_id
 #endif
 }
 
-minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, int64_t affinity)
+minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, int64_t affinity) : affinity(affinity)
 {
 	this->backendType = iBackend::CPU;
 	oWork = pWork;
@@ -608,14 +608,10 @@ void minethd::multiway_work_main()
 		if(on_new_job != nullptr)
 			on_new_job(oWork, ctx);
 
-		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		constexpr uint64_t update_stat_each = 128;
+		// only check each 128 hash if the job has changed
+		while((iCount % update_stat_each) != 0 || globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
-			if((iCount++ & 0x7) == 0) //Store stats every 8*N hashes
-			{
-				updateStats((iCount - iLastCount) * N, oWork.iPoolId);
-				iLastCount = iCount;
-			}
-
 			nonce_ctr -= N;
 			if(nonce_ctr <= 0)
 			{
@@ -640,9 +636,13 @@ void minethd::multiway_work_main()
 							oWork.iPoolId));
 				}
 			}
-
-			std::this_thread::yield();
+			if((iCount++ % update_stat_each) == 0) //Store stats every 8*N hashes
+			{
+				updateStats((iCount - iLastCount) * N, oWork.iPoolId);
+				iLastCount = iCount;
+			}
 		}
+		std::this_thread::yield();
 
 		globalStates::inst().consume_work(oWork, iJobNo);
 		prep_multiway_work<N>(bWorkBlob, piNonce);
