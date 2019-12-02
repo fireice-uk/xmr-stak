@@ -76,7 +76,7 @@ Miner has 2 ways of initial configuring: simple and advanced. The simple method 
 
 
 ## Support additional guides and feedback
-[<img src="/doc/_img/YT.png">](#)
+[<img src="/doc/_img/YT.png">](https://www.youtube.com/c/xmrstak)
 To improve our support we created [Xmr-Stak forum](https://www.reddit.com/r/XmrStak) which is also applicable to Xmr-Stak-RX. Check it out if you have a problem, or you are looking for most up to date config for your card and [guides](https://www.reddit.com/r/XmrStak/wiki/index).
 
 <table>
