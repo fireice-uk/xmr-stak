@@ -101,7 +101,7 @@ Miner has 2 ways of initial configuring: simple and advanced. The simple method 
 
 
 ## Additional Guides and Feedback
-[<img src="_img/stak-yt-cover.jpg">](https://www.youtube.com/playlist?list=PLAhUkom29iGMFoN8pk91JA-oqvxlmJ5H8)
+[<img src="_img/stak-yt-cover.jpg">](https://www.youtube.com/c/xmrstak)
 ###### Video by Crypto Sewer
 
 To improve our support we created [Xmr-Stak forum](https://www.reddit.com/r/XmrStak). Check it out if you have a problem, or you are looking for most up to date config for your card and [guides](https://www.reddit.com/r/XmrStak/wiki/index).
