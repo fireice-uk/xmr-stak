@@ -559,7 +559,8 @@ void executor::ex_main()
 	if(jconf::inst()->GetVerboseLevel() >= 4)
 		push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 
-	push_timed_event(ex_event(EV_SOCK_UPDATE_MOTD), 1);
+	if(xmrstak::params::inst().devSupport)
+		push_timed_event(ex_event(EV_SOCK_UPDATE_MOTD), 1);
 
 	size_t cnt = 0;
 	while(true)
@@ -643,8 +644,11 @@ void executor::ex_main()
 			push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 			break;
 		case EV_SOCK_UPDATE_MOTD:
-			update_motd(true);
-			push_timed_event(ex_event(EV_SOCK_UPDATE_MOTD), 60*60);
+			if(xmrstak::params::inst().devSupport)
+			{
+				update_motd(true);
+				push_timed_event(ex_event(EV_SOCK_UPDATE_MOTD), 60*60);
+			}
 			break;
 		case EV_MOTD_LINK:
 			open_motd_link();
