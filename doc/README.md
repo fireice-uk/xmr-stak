@@ -44,7 +44,7 @@ Xmr-Stak-RX supports various variants of RandomX algorithm. Use one of the follo
 [<img src="/doc/_img/fee.png">](#)
 
 ## Get Miner
-Please note that code is developed on the [dev branch](#), if you want to check out the latest updates, before they are merged on [main branch](#), please refer there. Master branch will always point to a version that we consider stable, so you can download the code by simply typing `git clone https://github.com/fireice-uk/xmr-stak-rx.git`  
+Please note that code is developed on the [dev branch](#), if you want to check out the latest updates, before they are merged on [main branch](#), please refer there. Master branch will always point to a version that we consider stable, so you can download the code by simply typing `git clone https://github.com/fireice-uk/xmr-stak.git`  
 
 Also you can find the latest releases, changelog and precompiled binaries on GitHub under [releases](#) section.
 
