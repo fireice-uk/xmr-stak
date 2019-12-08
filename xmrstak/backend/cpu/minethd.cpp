@@ -579,9 +579,6 @@ void minethd::multiway_work_main()
 			continue;
 		}
 
-		constexpr uint32_t nonce_chunk = 4096;
-		int64_t nonce_ctr = 0;
-
 		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
 		if(oWork.bNiceHash)
@@ -608,6 +605,13 @@ void minethd::multiway_work_main()
 		if(on_new_job != nullptr)
 			on_new_job(oWork, ctx);
 
+		uint64_t tempHash[N][8];
+		uint32_t current_nonces[N];
+		// always use a multiple of N
+		constexpr uint32_t nonce_chunk = 4096 * N;
+		int64_t nonce_ctr = 0;
+		bool first = true;
+
 		constexpr uint64_t update_stat_each = 128;
 		// only check each 128 hash if the job has changed
 		while((iCount % update_stat_each) != 0 || globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
@@ -622,20 +626,41 @@ void minethd::multiway_work_main()
 					break;
 			}
 
-			for(size_t i = 0; i < N; i++)
-				*piNonce[i] = iNonce++;
+			if(first)
+			{
+				first = false;
+				for(size_t i = 0u; i < N; ++i)
+				{
+					*piNonce[i] = iNonce;
+					current_nonces[i] = iNonce;
+					++iNonce;
+					randomx_calculate_hash_first(ctx[i]->m_rx_vm, tempHash[i], bWorkBlob + oWork.iWorkSize * i, oWork.iWorkSize);
+				}
+			};
 
-			ctx[0]->hash_fn(bWorkBlob, oWork.iWorkSize, bHashOut, ctx, miner_algo);
-
+			// prepare nonce for next round
 			for(size_t i = 0; i < N; i++)
+			{
+				*piNonce[i] = iNonce;
+				++iNonce;
+			}
+
+			for(size_t i = 0u; i < N; ++i)
+				randomx_calculate_hash_next(ctx[i]->m_rx_vm, tempHash[i], bWorkBlob + oWork.iWorkSize * i, oWork.iWorkSize, (char*)bHashOut + 32 * i);
+
+			for(size_t i = 0u; i < N; i++)
 			{
 				if(*piHashVal[i] < oWork.iTarget)
 				{
 					executor::inst()->push_event(
-						ex_event(job_result(oWork.sJobID, iNonce - N + i, bHashOut + 32 * i, iThreadNo, miner_algo),
+						ex_event(job_result(oWork.sJobID, current_nonces[i], bHashOut + 32 * i, iThreadNo, miner_algo),
 							oWork.iPoolId));
 				}
 			}
+
+			for(size_t i = 0; i < N; i++)
+				current_nonces[i] = iNonce - N + i;
+			
 			if((iCount++ % update_stat_each) == 0) //Store stats every 8*N hashes
 			{
 				updateStats((iCount - iLastCount) * N, oWork.iPoolId);
