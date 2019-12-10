@@ -1,7 +1,3 @@
-dist: trusty
-
-osx_image: xcode8.3
-
 sudo: false
 
 language: cpp
@@ -9,7 +5,8 @@ language: cpp
 cache:
   apt: true
   directories:
-    - $HOME/.cache/cuda
+    - $HOME/.cache/cuda102
+    - $HOME/.cache/cuda9
 
 addons:
   apt:
@@ -19,13 +16,29 @@ addons:
       - libssl-dev
       - libhwloc-dev
 
-env:
-  global:
-    - CUDA_ROOT: $HOME/.cache/cuda
-
 matrix:
   include:
     - os: linux
+      dist: bionic
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - *default_packages
+            - gcc-5
+            - g++-5
+            - ocl-icd-opencl-dev
+      env:
+        - CUDA=102
+        - CUDA_ROOT=$HOME/.cache/cuda102
+        - CMAKE_CXX_COMPILER=g++-5
+        - CMAKE_C_COMPILER=gcc-5
+        - XMRSTAK_CMAKE_FLAGS="-DCUDA_ARCH=30 -DOpenCL_ENABLE=ON"
+
+    - os: linux
+      dist: bionic
       compiler: gcc
       addons:
         apt:
@@ -36,11 +49,14 @@ matrix:
             - gcc-5
             - g++-5
       env:
+        - CUDA=9
+        - CUDA_ROOT=$HOME/.cache/cuda9
         - CMAKE_CXX_COMPILER=g++-5
         - CMAKE_C_COMPILER=gcc-5
         - XMRSTAK_CMAKE_FLAGS="-DCUDA_ARCH=30 -DOpenCL_ENABLE=OFF"
-
+        
     - os: linux
+      dist: bionic
       compiler: gcc
       addons:
         apt:
@@ -57,6 +73,7 @@ matrix:
 
     # test with disabled HWLOC, MICROHTTPD, OpenSSL and no accelerators
     - os: linux
+      dist: bionic
       compiler: gcc
       addons:
         apt:
@@ -72,6 +89,7 @@ matrix:
         - XMRSTAK_CMAKE_FLAGS="-DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF -DHWLOC_ENABLE=OFF -DOpenSSL_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF"
 
     - os: linux
+      dist: bionic
       compiler: gcc
       addons:
         apt:
@@ -85,13 +103,31 @@ matrix:
         - CMAKE_CXX_COMPILER=g++-7
         - CMAKE_C_COMPILER=gcc-7
         - XMRSTAK_CMAKE_FLAGS="-DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF"
+        
+    - os: linux
+      dist: bionic
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - *default_packages
+            - gcc-8
+            - g++-8
+      env:
+        - CMAKE_CXX_COMPILER=g++-8
+        - CMAKE_C_COMPILER=gcc-8
+        - XMRSTAK_CMAKE_FLAGS="-DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF"
 
     - os: osx
+      osx_image: xcode8.3
       compiler: gcc
       env:
         - XMRSTAK_CMAKE_FLAGS="-DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF"
 
 before_install:
+  - echo $CUDA_ROOT
   - . CI/checkPRBranch
   - if [ $TRAVIS_OS_NAME = osx ] ; then
       brew update;
@@ -99,27 +135,44 @@ before_install:
   - export PATH=$CUDA_ROOT/bin:$PATH
 
 install:
-
+  - echo $CUDA_ROOT
   # CUDA
   - if [ $TRAVIS_OS_NAME != osx ]; then
       NVCC_FOUND=$(which nvcc >/dev/null && { echo 0; } || { echo 1; });
-      if [ $NVCC_FOUND -ne 0 ]; then
-        mkdir -p $CUDA_ROOT &&
-        cd $CUDA_ROOT &&
-        travis_retry wget https://developer.nvidia.com/compute/cuda/8.0/prod/local_installers/cuda_8.0.44_linux-run &&
-        ls -la &&
-        chmod u+x *-run &&
-        ./cuda_8.0.44_linux-run --silent --toolkit --toolkitpath=$CUDA_ROOT &&
-        rm -rf ./cuda_8.0.44_linux-run $CUDA_ROOT/{samples,jre,doc,share} &&
-        cd -;
+      if [ -n $CUDA ] ; then
+        if [ $CUDA -eq 102 ] ; then
+          if [ $NVCC_FOUND -ne 0 ]; then
+            mkdir -p $CUDA_ROOT &&
+            cd $CUDA_ROOT &&
+            travis_retry wget http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda_10.2.89_440.33.01_linux.run &&
+            ls -la &&
+            chmod u+x *.run &&
+            ./cuda_10.2.89_440.33.01_linux.run --silent --toolkit --override --toolkitpath=$CUDA_ROOT --no-opengl-libs --no-drm --no-man-page --installpath=$CUDA_ROOT --librarypath=$CUDA_ROOT &&
+            rm -rf ./cuda_10.2.89_440.33.01_linux.run $CUDA_ROOT/{samples,jre,doc,share} &&
+            cd -;
+          fi
+        elif [ $CUDA -eq 9 ] ; then
+          if [ $NVCC_FOUND -ne 0 ]; then
+            mkdir -p $CUDA_ROOT &&
+            cd $CUDA_ROOT &&
+            travis_retry wget https://developer.nvidia.com/compute/cuda/9.0/Prod/local_installers/cuda_9.0.176_384.81_linux-run &&
+            ls -la &&
+            chmod u+x *-run &&
+            ./cuda_9.0.176_384.81_linux-run --silent --toolkit --override --toolkitpath=$CUDA_ROOT &&
+            rm -rf ./cuda_9.0.176_384.81_linux-run $CUDA_ROOT/{samples,jre,doc,share} &&
+            cd -;
+          fi
+        fi
       fi
     fi;
 
 script:
+  - echo $CUDA_ROOT
   - if [ $TRAVIS_OS_NAME = osx ]; then
       brew install hwloc;
       cmake -DMICROHTTPD_ENABLE=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl ${XMRSTAK_CMAKE_FLAGS} .;
     else
+      export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:$CUDA_ROOT;
       cmake -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} ${XMRSTAK_CMAKE_FLAGS} .;
     fi;
   - make VERBOSE=1 install
