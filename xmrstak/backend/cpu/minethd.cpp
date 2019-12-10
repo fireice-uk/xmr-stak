@@ -260,6 +260,12 @@ bool minethd::self_test()
 	if(res == 0 && fatal)
 		return false;
 
+	if(!params::inst().selfTest)
+	{
+		printer::inst()->print_msg(L0, "skip self test: disabled by the command line option '--noTest')");
+		return true;
+	}
+
 	cryptonight_ctx* ctx[MAX_N] = {0};
 	for(int i = 0; i < MAX_N; i++)
 	{
