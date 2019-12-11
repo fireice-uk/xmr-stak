@@ -320,7 +320,12 @@ extern "C" {
 			dataset = new randomx_dataset();
 			if (flags & RANDOMX_FLAG_LARGE_PAGES) {
 				dataset->dealloc = &randomx::deallocDataset<randomx::LargePageAllocator>;
-				dataset->memory = (uint8_t*)randomx::LargePageAllocator::allocMemory(RANDOMX_DATASET_MAX_SIZE);
+				if(flags & RANDOMX_FLAG_LARGE_PAGES_1G) {
+					dataset->memory = (uint8_t*)randomx::LargePageAllocator::allocMemory(RANDOMX_DATASET_MAX_SIZE, 1024u);
+				}
+				else {
+					dataset->memory = (uint8_t*)randomx::LargePageAllocator::allocMemory(RANDOMX_DATASET_MAX_SIZE, 2u);
+				}
 			}
 			else {
 				dataset->dealloc = &randomx::deallocDataset<randomx::DefaultAllocator>;

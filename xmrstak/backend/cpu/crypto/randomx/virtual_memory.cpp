@@ -32,6 +32,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "crypto/common/VirtualMemory.h"
 #include "crypto/randomx/virtual_memory.hpp"
 
+#include <string>
+
 
 void* allocExecutableMemory(std::size_t bytes) {
     void *mem = xmrstak::VirtualMemory::allocateExecutableMemory(bytes);
@@ -43,10 +45,10 @@ void* allocExecutableMemory(std::size_t bytes) {
 }
 
 
-void* allocLargePagesMemory(std::size_t bytes) {
-    void *mem = xmrstak::VirtualMemory::allocateLargePagesMemory(bytes);
+void* allocLargePagesMemory(std::size_t bytes, size_t page_size) {
+    void *mem = xmrstak::VirtualMemory::allocateLargePagesMemory(bytes, page_size);
     if (mem == nullptr) {
-        throw std::runtime_error("Failed to allocate large pages memory");
+        throw std::runtime_error(std::string("Failed to allocate large pages memory (page size: " + std::to_string(page_size) + " MiB"));
     }
 
     return mem;
