@@ -13,6 +13,7 @@ enum xmrstak_algo_id
 	randomX = 1,
 	randomX_loki = 2,
 	randomX_wow = 3,
+	randomX_arqma = 4
 
 	//cryptonight_turtle = start_derived_algo_id,
 	// please add the algorithm name to get_algo_name()
@@ -24,12 +25,13 @@ enum xmrstak_algo_id
  */
 inline std::string get_algo_name(xmrstak_algo_id algo_id)
 {
-	static std::array<std::string, 4> base_algo_names =
+	static std::array<std::string, 5> base_algo_names =
 		{{
 			"invalid_algo",
 			"randomx",
 			"randomx_loki",
-			"randomx_wow"
+			"randomx_wow",
+			"randomx_arqma"
 		}};
 
 	static std::array<std::string, 0> derived_algo_names =
@@ -156,25 +158,15 @@ constexpr size_t CN_MEMORY = 2 * 1024 * 1024;
 constexpr uint32_t CN_ITER = 0x80000;
 constexpr uint32_t CN_MASK = ((CN_MEMORY - 1) / 16) * 16;
 
-// crptonight gpu
-constexpr uint32_t CN_GPU_MASK = 0x1FFFC0;
-constexpr uint32_t CN_GPU_ITER = 0xC000;
-
-// cryptonight turtle (the mask is not using the full 256kib scratchpad)
-constexpr uint32_t CN_TURTLE_MASK = 0x1FFF0;
-
-constexpr uint32_t CN_ZELERIUS_ITER = 0x60000;
-
-constexpr uint32_t CN_WALTZ_ITER = 0x60000;
-
-constexpr uint32_t CN_DOUBLE_ITER = 0x100000;
+constexpr uint32_t RX_ARQMA_ITER = 0x10000;
 
 inline xmrstak_algo POW(xmrstak_algo_id algo_id)
 {
-	static std::array<xmrstak_algo, 4> pow = {{{invalid_algo, invalid_algo},
+	static std::array<xmrstak_algo, 5> pow = {{{invalid_algo, invalid_algo},
 		{randomX, randomX, CN_ITER, CN_MEMORY},
 		{randomX_loki, randomX_loki, CN_ITER, CN_MEMORY},
-		{randomX_wow, randomX_wow, CN_ITER, CN_MEMORY/2}
+		{randomX_wow, randomX_wow, CN_ITER, CN_MEMORY/2},
+		{randomX_arqma, randomX_arqma, RX_ARQMA_ITER, CN_MEMORY/8}
 	}};
 
 	return pow[algo_id];

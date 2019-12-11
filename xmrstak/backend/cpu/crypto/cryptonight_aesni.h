@@ -186,6 +186,8 @@ struct RandomX_generator
 				randomx_apply_config(RandomX_LokiConfig);
 			else if(ALGO == randomX_wow)
 				randomx_apply_config(RandomX_WowneroConfig);
+			else if(ALGO == randomX_arqma)
+				randomx_apply_config(RandomX_ArqmaConfig);
 		}
 
 		for(size_t i = 0; i < N; i++)
