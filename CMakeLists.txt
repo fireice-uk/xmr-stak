@@ -472,11 +472,11 @@ file(GLOB BACKEND_CPP
     "xmrstak/misc/*.cpp"
     "xmrstak/net/*.cpp")
 
-add_library(xmr-stak-backend
+add_library(xmr-stak-rx-backend
     STATIC
     ${BACKEND_CPP}
 )
-target_link_libraries(xmr-stak-backend xmr-stak-randomx ${CMAKE_DL_LIBS} ${RANDOMX_LIBRARIES} ${MHTD} ${LIBS})
+target_link_libraries(xmr-stak-rx-backend xmr-stak-randomx ${CMAKE_DL_LIBS} ${RANDOMX_LIBRARIES} ${MHTD} ${LIBS})
 
 # compile CUDA backend
 if(CUDA_FOUND)
@@ -507,7 +507,7 @@ if(CUDA_FOUND)
     set(CUDA_LIBRARIES ${CUDA_LIBRARIES})
     
     target_link_libraries(xmrstakrx_cuda_backend ${CUDA_LIBRARIES})
-    target_link_libraries(xmrstakrx_cuda_backend xmr-stak-backend)
+    target_link_libraries(xmrstakrx_cuda_backend xmr-stak-rx-backend)
 endif()
 
 # compile AMD backend
@@ -520,7 +520,7 @@ if(OpenCL_FOUND)
         ${OPENCLSRCFILES}
     )
     target_link_libraries(xmrstakrx_opencl_backend ${OpenCL_LIBRARY} )
-    target_link_libraries(xmrstakrx_opencl_backend xmr-stak-backend)
+    target_link_libraries(xmrstakrx_opencl_backend xmr-stak-rx-backend)
 endif()
 
 # compile final binary
@@ -536,7 +536,7 @@ endif()
 set(EXECUTABLE_OUTPUT_PATH "bin" CACHE STRING "Path to place executables relative to ${CMAKE_INSTALL_PREFIX}")
 set(LIBRARY_OUTPUT_PATH "bin" CACHE STRING "Path to place libraries relative to ${CMAKE_INSTALL_PREFIX}")
 
-target_link_libraries(xmr-stak-rx ${MHTD} ${LIBS} xmr-stak-backend)
+target_link_libraries(xmr-stak-rx ${MHTD} ${LIBS} xmr-stak-rx-backend)
 
 ################################################################################
 # Install

@@ -19,12 +19,15 @@ POOLCONF],
 /*
  * Currency to mine. Supported values:
  *
+ *    arqma
  *    loki
  *    monero
  *    wownero
  *
  * Native algorithms which do not depend on any block versions:
  *
+ *    # 256KiB scratchpad memory
+ *    randomx_arqma
  *    # 1MiB scratchpad memory
  *    randomx_wow
  *    # 2MiB scratchpad memory

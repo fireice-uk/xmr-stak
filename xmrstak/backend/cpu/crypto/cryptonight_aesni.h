@@ -48,7 +48,7 @@ struct RandomX_hash
 	static void hash(const void* input, size_t len, void* output, cryptonight_ctx** ctx, const xmrstak_algo& algo)
 	{
 		for(size_t i = 0u; i < N; ++i)
-			randomx_calculate_hash(ctx[i]->m_rx_vm, input, len, (char*)output + 32 * i);
+			randomx_calculate_hash(ctx[i]->m_rx_vm, (char*)input + len * i, len, (char*)output + 32 * i);
 	}
 };
 
@@ -186,6 +186,8 @@ struct RandomX_generator
 				randomx_apply_config(RandomX_LokiConfig);
 			else if(ALGO == randomX_wow)
 				randomx_apply_config(RandomX_WowneroConfig);
+			else if(ALGO == randomX_arqma)
+				randomx_apply_config(RandomX_ArqmaConfig);
 		}
 
 		for(size_t i = 0; i < N; i++)
