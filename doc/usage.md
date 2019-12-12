@@ -61,22 +61,6 @@ Some NVIDIA GPUs can reach better performance with this backend.
 xmr-stak-rx --openCLVendor NVIDIA --noNVIDIA
 ```
 
-## Docker image usage
-
-You can run the Docker image the following way:
-
-```
-docker run --rm -it -u $(id -u):$(id -g) --name fireice-uk/xmr-stak-rx -v "$PWD":/mnt xmr-stak-rx
-docker stop xmr-stak-rx
-docker run --rm -it -u $(id -u):$(id -g) --name fireice-uk/xmr-stak-rx -v "$PWD":/mnt xmr-stak-rx --config config.txt
-```
-
-Debug the docker image by getting inside:
-
-```
-docker run --entrypoint=/bin/bash --rm -it -u $(id -u):$(id -g) --name fireice-uk/xmr-stak-rx -v "$PWD":/mnt xmr-stak-rx
-```
-
 ## HTML and JSON API report configuration
 
 To configure the reports shown on the [README](../README.md) side you need to edit the httpd_port variable. Then enable wifi on your phone and navigate to [miner ip address]:[httpd_port] in your phone browser. If you want to use the data in scripts, you can get the JSON version of the data at url [miner ip address]:[httpd_port]/api.json
