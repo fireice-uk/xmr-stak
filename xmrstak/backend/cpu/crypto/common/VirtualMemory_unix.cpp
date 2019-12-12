@@ -94,15 +94,24 @@ void *xmrstak::VirtualMemory::allocateExecutableMemory(size_t size)
     return mem == MAP_FAILED ? nullptr : mem;
 }
 
-
-void *xmrstak::VirtualMemory::allocateLargePagesMemory(size_t size)
+void *xmrstak::VirtualMemory::allocateLargePagesMemory(size_t size, size_t page_size)
 {
 #   if defined(__APPLE__)
     void *mem = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, VM_FLAGS_SUPERPAGE_SIZE_2MB, 0);
 #   elif defined(__FreeBSD__)
     void *mem = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_ALIGNED_SUPER | MAP_PREFAULT_READ, -1, 0);
 #   else
-    void *mem = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, 0, 0);
+	constexpr int MAP_HUGE_2MB = (21 << MAP_HUGE_SHIFT);
+	constexpr int MAP_HUGE_1GB = (30 << MAP_HUGE_SHIFT);
+
+	int page_size_flags = 0;
+	if(page_size == 2u)
+		page_size_flags |= MAP_HUGE_2MB;
+	else if(page_size == 1024u)
+		page_size_flags |= MAP_HUGE_1GB;
+	#define MAP_HUGE_2MB    (21 << MAP_HUGE_SHIFT)
+	#define MAP_HUGE_1GB    (30 << MAP_HUGE_SHIFT)
+    void *mem = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE | page_size_flags, 0, 0);
 #   endif
 
     return mem == MAP_FAILED ? nullptr : mem;

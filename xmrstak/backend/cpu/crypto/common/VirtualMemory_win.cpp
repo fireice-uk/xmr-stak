@@ -180,7 +180,7 @@ void *xmrstak::VirtualMemory::allocateExecutableMemory(size_t size)
 }
 
 
-void *xmrstak::VirtualMemory::allocateLargePagesMemory(size_t size)
+void *xmrstak::VirtualMemory::allocateLargePagesMemory(size_t size, size_t)
 {
     const size_t min = GetLargePageMinimum();
     void *mem        = nullptr;

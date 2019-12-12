@@ -101,10 +101,29 @@ struct randomX_global_ctx
 private:
 	randomX_global_ctx() : m_rx_dataset_init_thread_counter(0u)
 	{
-		randomx_dataset* dataset = randomx_alloc_dataset(RANDOMX_FLAG_LARGE_PAGES);
-		if (!dataset) {
-			dataset = randomx_alloc_dataset(RANDOMX_FLAG_DEFAULT);
+#ifdef __linux__
+		randomx_dataset* dataset = randomx_alloc_dataset(static_cast<randomx_flags>(RANDOMX_FLAG_LARGE_PAGES | RANDOMX_FLAG_LARGE_PAGES_1G));
+		if (!dataset)
+		{
+			printer::inst()->print_msg(LDEBUG,"Warning: dataset allocation with 1 GiB pages failed");
+#else
+			randomx_dataset* dataset = nullptr;
+#endif
+			dataset = randomx_alloc_dataset(RANDOMX_FLAG_LARGE_PAGES);
+			if (!dataset)
+			{
+				printer::inst()->print_msg(LDEBUG,"Warning: dataset allocation with 2 MiB pages failed");
+				dataset = randomx_alloc_dataset(RANDOMX_FLAG_DEFAULT);
+				printer::inst()->print_msg(LDEBUG,"dataset allocated without huge pages");
+			}
+			else
+				printer::inst()->print_msg(LDEBUG,"dataset allocated with 2 MiB pages");
+#ifdef __linux__
 		}
+		else
+			printer::inst()->print_msg(LDEBUG,"dataset allocated with 1 GiB pages");
+#endif
+
 		m_rx_cache = randomx_alloc_cache(static_cast<randomx_flags>(RANDOMX_FLAG_JIT | RANDOMX_FLAG_LARGE_PAGES));
 		if (!m_rx_cache) {
 			m_rx_cache = randomx_alloc_cache(RANDOMX_FLAG_JIT);
