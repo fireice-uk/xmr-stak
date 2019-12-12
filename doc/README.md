@@ -35,8 +35,9 @@ Xmr-Stak-RX supports various variants of RandomX algorithm. Use one of the follo
 
 | Coin name | Coin alias in config | POW type |
 | --- | --- |  --- |
-| Monero | `monero` | RandomX |
+| ArQmA | `Arqma` |  RandomARQ |
 | Loki Network | `loki` | RandomXL |
+| Monero | `monero` | RandomX |
 | Wownero (Monero's testnet) | `wownero` | RandomWOW |
 
 
