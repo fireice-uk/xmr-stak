@@ -1,4 +1,4 @@
-# Compile **xmr-stak** for Linux
+# Compile **xmr-stak-rx** for Linux
 
 ## Install Dependencies
 
@@ -101,7 +101,6 @@ ROCm is not supporting old GPUs please check if your GPU is supported https://ro
 ```
 
 - g++ version 5.1 or higher is required for full C++11 support.
-If you want to compile the binary without installing libraries / compiler or just compile binary for some other distribution, please check the [build_xmr-stak_docker.sh script](scripts/build_xmr-stak_docker/build_xmr-stak_docker.sh).
 
 - Some newer gcc versions are not supported by CUDA (e.g. Ubuntu 17.10). It will require installing gcc 5 but you can avoid changing defaults.
 

@@ -1,4 +1,4 @@
-# Compile **xmr-stak-rc** for macOS
+# Compile **xmr-stak-rx** for macOS
 
 ## Dependencies
 

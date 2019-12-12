@@ -1,4 +1,4 @@
-# Compile **xmr-stak** for Windows
+# Compile **xmr-stak-x** for Windows
 
 ## Install Dependencies
 
@@ -81,9 +81,9 @@ Do not follow old information that you need the AMD APP SDK. AMD has removed the
 ## Compile
 
 - Download xmr-stak [Source Code.zip](https://github.com/fireice-uk/xmr-stak/releases) and save to a location in your home folder (C:\Users\USERNAME\)
-- Extract `Source Code.zip` (e.g. to `C:\Users\USERNAME\xmr-stak-<version>`)
+- Extract `Source Code.zip` (e.g. to `C:\Users\USERNAME\xmr-stak-rx-<version>`)
 - Open a command line (Windows key + r) and enter `cmd`
-- Go to extracted source code directory (e.g. `cd C:\Users\USERNAME\xmr-stak-<version>`)
+- Go to extracted source code directory (e.g. `cd C:\Users\USERNAME\xmr-stak-rx-<version>`)
 - Execute the following commands (NOTE: path to Visual Studio Community 2017 can be different)
   ```
   # Execute next line only if compiling for Cuda 9.x and using Visual Studio 2017 >= 15.5 (released 12/04/17)
@@ -91,7 +91,7 @@ Do not follow old information that you need the AMD APP SDK. AMD has removed the
 
   "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsMSBuildCmd.bat"
   ```
-- Sometimes Windows will change the directory to `C:\Users\USERNAME\source\` instead of `C:\Users\USERNAME\xmr-stak-<version>\`. If that's the case execute `cd C:\Users\USERNAME\xmr-stak-<version>` followed by:
+- Sometimes Windows will change the directory to `C:\Users\USERNAME\source\` instead of `C:\Users\USERNAME\xmr-stak-rx-<version>\`. If that's the case execute `cd C:\Users\USERNAME\xmr-stak-rx-<version>` followed by:
   ```
   mkdir build
 
@@ -102,7 +102,7 @@ Do not follow old information that you need the AMD APP SDK. AMD has removed the
 
 ### CMake
 
-- See [build options](https://github.com/fireice-uk/xmr-stak/blob/master/doc/compile.md#build-system) to enable or disable dependencies.
+- See [build options](https://github.com/fireice-uk/xmr-stak/blob/xmr-stak-rx/doc/compile/compile.md#build-system) to enable or disable dependencies.
 - For CUDA 8* execute: `cmake -G "Visual Studio 15 2017 Win64" -T v140,host=x64 ..`
 - For CUDA 9* **and/or** AMD GPUs, CPU execute: `cmake -G "Visual Studio 15 2017 Win64" -T v141,host=x64 ..`
 - Then execute
