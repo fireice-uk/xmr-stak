@@ -294,6 +294,10 @@ void minethd::work_main()
 			{
 				RandomX_Loki::hash(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, h_per_round);
 			}
+			else if(miner_algo == randomX_arqma)
+			{
+				RandomX_Arqma::hash(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, h_per_round);
+			}
 
 
 
