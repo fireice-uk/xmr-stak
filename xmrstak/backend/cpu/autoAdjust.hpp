@@ -31,7 +31,7 @@ class autoAdjust
 		size_t hashMemSize = 0;
 		for(const auto algo : neededAlgorithms)
 		{
-			hashMemSize = std::max(hashMemSize, algo.Mem());
+			hashMemSize = std::max(hashMemSize, algo.L3());
 		}
 		const size_t hashMemSizeKB = hashMemSize / 1024u;
 

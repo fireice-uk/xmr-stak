@@ -25,7 +25,7 @@
 #include "autoAdjust.hpp"
 #include "xmrstak/backend/cpu/crypto/cryptonight.h"
 #include "xmrstak/backend/cpu/crypto/cryptonight_aesni.h"
-#include "xmrstak/backend/cpu/hwlocMemory.hpp"
+#include "xmrstak/backend/cpu/hwlocHelper.hpp"
 #include "xmrstak/backend/cpu/minethd.hpp"
 #include "xmrstak/backend/cryptonight.hpp"
 #include "xmrstak/jconf.hpp"
@@ -96,9 +96,11 @@ minethd::minethd(miner_work& pWork, size_t iNo, const jconf::thd_cfg& cfg)
 void minethd::start_mining()
 {
 	thread_work_promise.set_value();
+#if defined(CONF_NO_HWLOC) || defined(_WIN32)
 	if(this->affinity >= 0) //-1 means no affinity
 		if(!cpu::minethd::thd_setaffinity(oWorkThd.native_handle(), affinity))
 			printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
+#endif
 }
 
 bool minethd::self_test()
@@ -181,7 +183,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 void minethd::work_main()
 {
 	if(affinity >= 0) //-1 means no affinity
-		bindMemoryToNUMANode(affinity);
+		hwlocBind(affinity);
 
 	if(cuda_get_deviceinfo(&ctx) != 0 || cryptonight_extra_cpu_init(&ctx) != 1)
 	{
@@ -198,6 +200,8 @@ void minethd::work_main()
 
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
+	cpu_ctx->numa = affinity < 0 ? 0 : numdaId(affinity);
+	randomX_global_ctx::inst().init(cpu_ctx->numa);
 
 	// start with root algorithm and switch later if fork version is reached
 	auto miner_algo = ::jconf::inst()->GetCurrentCoinSelection().GetDescription().GetMiningAlgoRoot();
@@ -272,7 +276,7 @@ void minethd::work_main()
 
 			if(ctx.d_scratchpads_size)
 			{
-				const uint32_t num_scratchpads = ctx.d_scratchpads_size / miner_algo.Mem();
+				const uint32_t num_scratchpads = ctx.d_scratchpads_size / miner_algo.L3();
 				if (h_per_round > num_scratchpads)
 				{
 					h_per_round = num_scratchpads;
