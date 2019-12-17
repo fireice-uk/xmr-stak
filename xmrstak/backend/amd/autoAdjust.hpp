@@ -84,7 +84,7 @@ class autoAdjust
 		size_t hashMemSize = 0;
 		for(const auto algo : neededAlgorithms)
 		{
-			hashMemSize = std::max(hashMemSize, algo.Mem());
+			hashMemSize = std::max(hashMemSize, algo.L3());
 		}
 
 		std::string conf;
@@ -171,9 +171,10 @@ class autoAdjust
 				ctx.gcnAsm = false;
 
 
-			if(hashMemSize < CN_MEMORY)
+			size_t _2MiB = 2llu * 1024 * 1024;
+			if(hashMemSize < _2MiB)
 			{
-				size_t factor = CN_MEMORY / hashMemSize;
+				size_t factor = _2MiB / hashMemSize;
 				// increase all intensity relative to the original scratchpad size
 				maxThreads *= factor;
 			}

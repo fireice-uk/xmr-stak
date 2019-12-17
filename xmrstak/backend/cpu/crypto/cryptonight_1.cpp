@@ -3,9 +3,9 @@
 #include "randomx/randomx.h"
 
 
-void* getRandomXDataset()
+void* getRandomXDataset(const size_t numaId)
 {
-	return randomx_get_dataset_memory(randomX_global_ctx::inst().getDataset());
+	return randomx_get_dataset_memory(randomX_global_ctx::inst().getDataset(numaId));
 }
 
 

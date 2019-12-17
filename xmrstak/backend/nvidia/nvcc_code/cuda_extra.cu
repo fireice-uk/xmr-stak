@@ -74,7 +74,7 @@ extern "C" int cryptonight_extra_cpu_init(nvid_ctx* ctx)
 	size_t hashMemSize = 0;
 	for(const auto algo : neededAlgorithms)
 	{
-		hashMemSize = std::max(hashMemSize, algo.Mem());
+		hashMemSize = std::max(hashMemSize, algo.L3());
 	}
 
 	size_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -319,7 +319,7 @@ extern "C" int cuda_get_deviceinfo(nvid_ctx* ctx)
 		size_t hashMemSize = 0;
 		for(const auto algo : neededAlgorithms)
 		{
-			hashMemSize = std::max(hashMemSize, algo.Mem());
+			hashMemSize = std::max(hashMemSize, algo.L3());
 		}
 
 		const size_t dataset_size = getRandomXDatasetSize();
