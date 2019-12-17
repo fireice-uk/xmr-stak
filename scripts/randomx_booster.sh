@@ -45,7 +45,7 @@ fi
 hasWrmsr=$(which wrmsr >/dev/null && { echo 1; } || { echo 0; })
 if [ $hasWrmsr -eq 0 ] ; then
     echo "dependency 'wrmsr' not found, tool failed" >&2
-    exit 1
+exit 1
 fi
 
 hasNumactl=$(which numactl >/dev/null && { echo 1; } || { echo 0; })
@@ -57,23 +57,22 @@ fi
 echo ""
 modprobe msr
 
-if cat /proc/cpuinfo | grep -q "AMD Ryzen" ;
-	then
-		echo "Detected Ryzen"
-		wrmsr -a 0xc0011022 0x510000
-		wrmsr -a 0xc001102b 0x1808cc16
-		wrmsr -a 0xc0011020 0
-		wrmsr -a 0xc0011021 0x40
-		echo "MSR register values for Ryzen applied"
-        echo "Reboot your system to revert the changes."
-elif cat /proc/cpuinfo | grep -q "Intel" ;
-	then
-		echo "Detected Intel"
-		wrmsr -a 0x1a4 7
-		echo "MSR register values for Intel applied"
-        echo "Reboot your system to revert the changes."
+if cat /proc/cpuinfo | grep -q "AMD Ryzen" ; then
+    echo "Detected Ryzen"
+    wrmsr -a 0xc0011022 0x510000
+    wrmsr -a 0xc001102b 0x1808cc16
+    wrmsr -a 0xc0011020 0
+    echo "MSR register values for Ryzen applied"
+    echo "WARNING: MSR register changes can result into stability issues!"
+    echo "Reboot your system to revert the changes."
+elif cat /proc/cpuinfo | grep -q "Intel" ; then
+    echo "Detected Intel"
+    wrmsr -a 0x1a4 7
+    echo "MSR register values for Intel applied"
+    echo "WARNING: MSR register changes can result into stability issues!"
+    echo "Reboot your system to revert the changes."
 else
-	echo "No supported CPU detected"
+    echo "No supported CPU detected"
 fi
 
 echo ""
