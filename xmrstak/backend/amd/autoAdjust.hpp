@@ -126,6 +126,15 @@ class autoAdjust
 			// 8 threads per block (this is a good value for the most gpus)
 			uint32_t default_workSize = 8;
 			size_t minFreeMem = 128u * byteToMiB;
+
+			const bool isAMDRX5XXX =
+				//RX5700
+				ctx.name.compare("gfx1010") == 0 ||
+				//??
+				ctx.name.compare("gfx1011") == 0 ||
+				// RX5500
+				ctx.name.compare("gfx1012") == 0;
+
 			/* 1000 is a magic selected limit, the reason is that more than 2GiB memory
 			 * sowing down the memory performance because of TLB cache misses
 			 */
@@ -152,6 +161,8 @@ class autoAdjust
 				if(useCryptonight_gpu)
 					default_workSize = 16u;
 			}
+			if(isAMDRX5XXX)
+				maxThreads = 2024u;
 
 			// NVIDIA optimizations
 			if(
@@ -192,8 +203,8 @@ class autoAdjust
 				// @todo check again after all optimizations
 				maxThreads = ctx.computeUnits * 6 * 8;
 				ctx.stridedIndex = 0;
-				// do not change unroll for AMD RX5700 but set 2 threads per gpu
-				if(ctx.name.compare("gfx1010") == 0)
+				// do not change unroll for AMD RX5XXX but set 2 threads per gpu
+				if(isAMDRX5XXX)
 					numThreads = 2;
 				else
 					numUnroll = 1;
@@ -207,6 +218,9 @@ class autoAdjust
 			if(ctx.isAMD && !useCryptonight_gpu)
 			{
 				numThreads = 2;
+			}
+			if(numThreads != 1)
+			{
 				size_t memDoubleThread = maxAvailableFreeMem / numThreads;
 				memPerThread = std::min(memPerThread, memDoubleThread);
 			}
