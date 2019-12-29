@@ -37,6 +37,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "crypto/randomx/reciprocal.h"
 #include "crypto/randomx/virtual_memory.hpp"
 
+#include "../../../../misc/win_msr.hpp"
+
 #ifdef _MSC_VER
 #   include <intrin.h>
 #else
@@ -287,10 +289,15 @@ namespace randomx {
 					((model == 0xA6) && (stepping == 0x0)) ||
 					((model == 0xAE) && (stepping == 0xA)));
 			}
+			load_win_msrs({ { 0x1a4, 7 } });
 		}
 		
 		if (strcmp((const char*)manufacturer, "AuthenticAMD") == 0) {
-			set_flag(AMD_RYZEN_FAMILY, processor_info.family == 0x17);
+			if(processor_info.family == 0x17)
+			{
+				set_flag(AMD_RYZEN_FAMILY, true);
+				load_win_msrs({ { 0xc0011022, 0x510000 }, { 0xc001102b, 0x1808cc16}, { 0xc0011020, 0 } });
+			}
 		}
 	}
 
