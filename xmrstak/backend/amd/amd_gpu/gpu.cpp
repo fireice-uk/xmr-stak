@@ -164,7 +164,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	size_t scratchPadSize = 0;
 	for(const auto algo : neededAlgorithms)
 	{
-		scratchPadSize = std::max(scratchPadSize, algo.Mem());
+		scratchPadSize = std::max(scratchPadSize, algo.L3());
 	}
 
 	size_t g_thd = ctx->rawIntensity;
@@ -182,7 +182,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 			ctx->rx_dataset[ctx->deviceIdx] = clCreateBuffer(opencl_ctx, CL_MEM_READ_ONLY, dataset_size, nullptr, &ret);
 		}
 		else {
-			void* dataset = getRandomXDataset();
+			void* dataset = getRandomXDataset(0);
 			ctx->rx_dataset[ctx->deviceIdx] = clCreateBuffer(opencl_ctx, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, dataset_size, dataset, &ret);
 		}
 
@@ -193,7 +193,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 		}
 	}
 
-	ctx->rx_scratchpads = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, (user_algo.Mem() + 64) * g_thd, nullptr, &ret);
+	ctx->rx_scratchpads = clCreateBuffer(opencl_ctx, CL_MEM_READ_WRITE, (user_algo.L3() + 64) * g_thd, nullptr, &ret);
 	if(ret != CL_SUCCESS)
 	{
 		printer::inst()->print_msg(L1, "Error %s when calling clCreateBuffer to create RandomX scratchpads.", err_to_str(ret));
@@ -294,9 +294,7 @@ size_t InitOpenCLGpu(cl_context opencl_ctx, GpuContext* ctx, const char* source_
 	for(const auto miner_algo : neededAlgorithms)
 	{
 		// scratchpad size for the selected mining algorithm
-		size_t hashMemSize = miner_algo.Mem();
-		int threadMemMask = miner_algo.Mask();
-		int hashIterations = miner_algo.Iter();
+		size_t hashMemSize = miner_algo.L3();
 
 		std::string options;
 		options += " -DALGO=" + std::to_string(miner_algo.Id());
@@ -1364,7 +1362,7 @@ uint64_t interleaveAdjustDelay(GpuContext* ctx, const bool enableAutoAdjustment)
 size_t RXSetJob(GpuContext *ctx, uint8_t *input, size_t input_len, uint64_t target, const uint8_t* seed_hash, const xmrstak_algo& miner_algo)
 {
 	cl_int ret;
-	void* dataset = getRandomXDataset();
+	void* dataset = getRandomXDataset(0);
 	const size_t dataset_size = getRandomXDatasetSize();
 
 	if((memcmp(ctx->rx_dataset_seedhash, seed_hash, sizeof(ctx->rx_dataset_seedhash)) != 0))

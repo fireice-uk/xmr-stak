@@ -542,10 +542,19 @@ target_link_libraries(xmr-stak-rx ${MHTD} ${LIBS} xmr-stak-rx-backend)
 # Install
 ################################################################################
 
+# install booster script
+if(NOT WIN32)
+    install(DIRECTORY "${CMAKE_SOURCE_DIR}/scripts/" DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIBRARY_OUTPUT_PATH}
+        FILES_MATCHING PATTERN "*.sh"
+        PERMISSIONS OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_READ GROUP_EXECUTE
+        PATTERN .git EXCLUDE
+    )
+endif()
+
 # do not install the binary if the project and install are equal
 if( NOT CMAKE_INSTALL_PREFIX STREQUAL PROJECT_BINARY_DIR )
     install(TARGETS xmr-stak-rx
-            RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/${EXECUTABLE_OUTPUT_PATH}")
+        RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/${EXECUTABLE_OUTPUT_PATH}")
     if(CUDA_FOUND)
         if(WIN32)
             install(TARGETS xmrstakrx_cuda_backend

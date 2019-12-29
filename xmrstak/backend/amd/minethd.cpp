@@ -27,7 +27,7 @@
 
 #include "xmrstak/backend/cpu/crypto/cryptonight.h"
 #include "xmrstak/backend/cpu/crypto/cryptonight_aesni.h"
-#include "xmrstak/backend/cpu/hwlocMemory.hpp"
+#include "xmrstak/backend/cpu/hwlocHelper.hpp"
 #include "xmrstak/backend/cpu/minethd.hpp"
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/configEditor.hpp"
@@ -68,9 +68,11 @@ minethd::minethd(miner_work& pWork, size_t iNo, GpuContext* ctx, const jconf::th
 
 	order_guard.wait();
 
+#if defined(CONF_NO_HWLOC) || defined(_WIN32)
 	if(affinity >= 0) //-1 means no affinity
 		if(!cpu::minethd::thd_setaffinity(oWorkThd.native_handle(), affinity))
 			printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
+#endif
 }
 
 extern "C"
@@ -164,7 +166,7 @@ std::vector<iBackend*>* minethd::thread_starter(uint32_t threadOffset, miner_wor
 void minethd::work_main()
 {
 	if(affinity >= 0) //-1 means no affinity
-		bindMemoryToNUMANode(affinity);
+		hwlocBind(affinity);
 
 	order_fix.set_value();
 	std::unique_lock<std::mutex> lck(thd_aff_set);
@@ -173,6 +175,8 @@ void minethd::work_main()
 
 	cryptonight_ctx* cpu_ctx;
 	cpu_ctx = cpu::minethd::minethd_alloc_ctx();
+	cpu_ctx->numa = affinity < 0 ? 0 : numdaId(affinity);
+	randomX_global_ctx::inst().init(cpu_ctx->numa);
 
 	if(cpu_ctx == nullptr)
 	{

@@ -31,6 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <cstring>
 #include <vector>
+#include <atomic>
 #include "crypto/randomx/common.hpp"
 
 namespace randomx {
@@ -71,7 +72,23 @@ namespace randomx {
 		uint8_t* code;
 		int32_t codePos;
 
-		static bool BranchesWithin32B;
+		static std::atomic<uint64_t> flags_set;
+		static constexpr uint64_t BRANCHES_WITHIN_32B = 1;
+		static constexpr uint64_t AMD_RYZEN_FAMILY = 2;
+		static uint64_t flags;
+
+		static inline bool check_flag(uint64_t f)
+		{
+			return (flags & f) != 0;
+		}
+		
+		static inline void set_flag(uint64_t f, bool v)
+		{
+			if(v)
+				flags |= f;
+			else
+				flags &= ~f;
+		}
 
 		static void applyTweaks();
 		void generateProgramPrologue(Program&, ProgramConfiguration&);

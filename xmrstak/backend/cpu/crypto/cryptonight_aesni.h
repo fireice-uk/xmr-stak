@@ -55,44 +55,6 @@ struct RandomX_hash
 namespace
 {
 
-template <typename T, typename U>
-static void patchCode(T dst, U src, const uint32_t iterations, const uint32_t mask)
-{
-	const uint8_t* p = reinterpret_cast<const uint8_t*>(src);
-
-	// Workaround for Visual Studio placing trampoline in debug builds.
-#if defined(_MSC_VER)
-	if(p[0] == 0xE9)
-	{
-		p += *(int32_t*)(p + 1) + 5;
-	}
-#endif
-
-	size_t size = 0;
-	while(*(uint32_t*)(p + size) != 0xDEADC0DE)
-	{
-		++size;
-	}
-	size += sizeof(uint32_t);
-
-	memcpy((void*)dst, (const void*)src, size);
-
-	uint8_t* patched_data = reinterpret_cast<uint8_t*>(dst);
-	for(size_t i = 0; i + sizeof(uint32_t) <= size; ++i)
-	{
-		switch(*(uint32_t*)(patched_data + i))
-		{
-		case CN_ITER:
-			*(uint32_t*)(patched_data + i) = iterations;
-			break;
-
-		case CN_MASK:
-			*(uint32_t*)(patched_data + i) = mask;
-			break;
-		}
-	}
-}
-
 void* allocateExecutableMemory(size_t size)
 {
 
@@ -160,9 +122,9 @@ struct RandomX_generator
 			for(size_t i = 0; i < N; i++)
 			{
 				printer::inst()->print_msg(LDEBUG,"%s create vm", POW(ALGO).Name().c_str());
-				ctx[i]->m_rx_vm = randomx_create_vm(static_cast<randomx_flags>(flags), nullptr, randomX_global_ctx::inst().getDataset(), ctx[i]->long_state);
+				ctx[i]->m_rx_vm = randomx_create_vm(static_cast<randomx_flags>(flags), nullptr, randomX_global_ctx::inst().getDataset(ctx[i]->numa), ctx[i]->long_state);
 				if (!ctx[i]->m_rx_vm)
-					ctx[i]->m_rx_vm = randomx_create_vm(static_cast<randomx_flags>(flags - RANDOMX_FLAG_LARGE_PAGES), nullptr, randomX_global_ctx::inst().getDataset(), ctx[i]->long_state);
+					ctx[i]->m_rx_vm = randomx_create_vm(static_cast<randomx_flags>(flags - RANDOMX_FLAG_LARGE_PAGES), nullptr, randomX_global_ctx::inst().getDataset(ctx[i]->numa), ctx[i]->long_state);
 			}
 		}
 		else if(algorithm_switched)

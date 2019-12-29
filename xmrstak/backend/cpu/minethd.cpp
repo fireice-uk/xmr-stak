@@ -35,7 +35,7 @@
 #include "xmrstak/jconf.hpp"
 #include "xmrstak/misc/executor.hpp"
 
-#include "hwlocMemory.hpp"
+#include "xmrstak/backend/cpu/hwlocHelper.hpp"
 #include "xmrstak/backend/miner_work.hpp"
 
 #ifndef CONF_NO_HWLOC
@@ -147,9 +147,11 @@ minethd::minethd(miner_work& pWork, size_t iNo, int iMultiway, int64_t affinity)
 
 	order_guard.wait();
 
+#if defined(CONF_NO_HWLOC) || defined(_WIN32)
 	if(affinity >= 0) //-1 means no affinity
 		if(!thd_setaffinity(oWorkThd.native_handle(), affinity))
 			printer::inst()->print_msg(L1, "WARNING setting affinity failed.");
+#endif
 }
 
 cryptonight_ctx* minethd::minethd_alloc_ctx()
@@ -276,7 +278,9 @@ bool minethd::self_test()
 				cryptonight_free_ctx(ctx[j]);
 			return false;
 		}
+		ctx[i]->numa = 0;
 	}
+	randomX_global_ctx::inst().init(0);
 
 	bool bResult = true;
 
@@ -347,7 +351,10 @@ bool minethd::self_test()
 	}
 
 	for(int i = 0; i < MAX_N; i++)
+	{
 		cryptonight_free_ctx(ctx[i]);
+	}
+	randomX_global_ctx::inst().release(0);
 
 	return bResult;
 }
@@ -545,8 +552,10 @@ void minethd::prep_multiway_work(uint8_t* bWorkBlob, uint32_t** piNonce)
 template <uint32_t N>
 void minethd::multiway_work_main()
 {
+	// keep init phase in some order
+	std::this_thread::sleep_for(std::chrono::milliseconds(2 * affinity));
 	if(affinity >= 0) //-1 means no affinity
-		bindMemoryToNUMANode(affinity);
+		hwlocBind(affinity);
 
 	order_fix.set_value();
 	std::unique_lock<std::mutex> lck(thd_aff_set);
@@ -573,9 +582,12 @@ void minethd::multiway_work_main()
 				cryptonight_free_ctx(ctx[j]);
 			win_exit(1);
 		}
+		ctx[i]->numa = affinity < 0 ? 0 : numdaId(affinity);
 		piHashVal[i] = (uint64_t*)(bHashOut + 32 * i + 24);
 		piNonce[i] = (i == 0) ? (uint32_t*)(bWorkBlob + 39) : nullptr;
 	}
+
+	randomX_global_ctx::inst().init(ctx[0]->numa);
 
 	if(!oWork.bStall)
 		prep_multiway_work<N>(bWorkBlob, piNonce);

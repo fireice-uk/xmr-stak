@@ -2,6 +2,7 @@
 
 ## Content Overview
 * [Fast Startup](#fast-startup)
+* [Booster Script](#booster-script)
 * [Huge Page Support](#huge-page-support)
 * [Benchmark](#benchmark)
 * [Windows](#windows)
@@ -24,9 +25,19 @@
 ## Fast Startup
 You can disable the miner self test performed on each miner start by adding the command line option `--noTest`
 
+## Booster Script
+
+The linux booster script manipulates the CPU caching behavior and activates huge pages.
+
+Call `sudo ./randomx_booster.sh`. 
+
+The booster script will try to install all dependencies if need. 
+If the script can not install the dependencies (e.g. unknown systems) please install the tools `wrmsr` and `numactl`.
+
 ## Huge Page Support
 
 In Linux you can enable 2 MiB huge pages with the following command.
+In linux you can use our [booster script](#booster-script) to active huge pages
 
 ```
 sudo sysctl -w vm.nr_hugepages=1300

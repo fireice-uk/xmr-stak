@@ -33,7 +33,7 @@ void randomx_prepare(nvid_ctx *ctx, const uint8_t* seed_hash, const xmrstak_algo
         CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_rx_dataset, dataset_size));
     }
     if (!ctx->d_long_state) {
-        ctx->d_scratchpads_size = batch_size * (miner_algo.Mem() + 64llu);
+        ctx->d_scratchpads_size = batch_size * (miner_algo.L3() + 64llu);
         CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_long_state, ctx->d_scratchpads_size));
     }
     if (!ctx->d_rx_hashes) {
@@ -52,6 +52,6 @@ void randomx_prepare(nvid_ctx *ctx, const uint8_t* seed_hash, const xmrstak_algo
 	///we do not allow switching between different randomx algorithms
     if((memcmp(ctx->rx_dataset_seedhash, seed_hash, sizeof(ctx->rx_dataset_seedhash)) != 0)) {
         memcpy(ctx->rx_dataset_seedhash, seed_hash, sizeof(ctx->rx_dataset_seedhash));
-        CUDA_CHECK(ctx->device_id, cudaMemcpy(ctx->d_rx_dataset, getRandomXDataset(), dataset_size, cudaMemcpyHostToDevice));
+        CUDA_CHECK(ctx->device_id, cudaMemcpy(ctx->d_rx_dataset, getRandomXDataset(0), dataset_size, cudaMemcpyHostToDevice));
     }
 }

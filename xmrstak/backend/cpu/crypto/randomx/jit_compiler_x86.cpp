@@ -37,6 +37,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "crypto/randomx/reciprocal.h"
 #include "crypto/randomx/virtual_memory.hpp"
 
+#include "../../../../misc/win_msr.hpp"
+
 #ifdef _MSC_VER
 #   include <intrin.h>
 #else
@@ -224,8 +226,6 @@ namespace randomx {
 		{0x0F, 0x1F, 0x44, 0x00, 0x00, 0x2E, 0x2E, 0x2E, 0x2E, 0x2E, 0x2E, 0x2E, 0x2E},
 	};
 
-	bool JitCompilerX86::BranchesWithin32B = false;
-
 	size_t JitCompilerX86::getCodeSize() {
 		return codePos < prologueSize ? 0 : codePos - prologueSize;
 	}
@@ -241,8 +241,14 @@ namespace randomx {
 #   endif
     }
 
+    std::atomic<uint64_t> JitCompilerX86::flags_set(0);
+	uint64_t JitCompilerX86::flags = 0;
     // CPU-specific tweaks
 	void JitCompilerX86::applyTweaks() {
+		
+		if(flags_set.fetch_add(1) != 0)
+			return;
+
 		int32_t info[4];
 		cpuid(0, info);
 
@@ -252,36 +258,45 @@ namespace randomx {
 		manufacturer[2] = info[2];
 		manufacturer[3] = 0;
 
+		struct
+		{
+			unsigned int stepping : 4;
+			unsigned int model : 4;
+			unsigned int family : 4;
+			unsigned int processor_type : 2;
+			unsigned int reserved1 : 2;
+			unsigned int ext_model : 4;
+			unsigned int ext_family : 8;
+			unsigned int reserved2 : 4;
+		} processor_info;
+		
+		cpuid(1, info);
+		memcpy(&processor_info, info, sizeof(processor_info));
+
 		if (strcmp((const char*)manufacturer, "GenuineIntel") == 0) {
-			struct
-			{
-				unsigned int stepping : 4;
-				unsigned int model : 4;
-				unsigned int family : 4;
-				unsigned int processor_type : 2;
-				unsigned int reserved1 : 2;
-				unsigned int ext_model : 4;
-				unsigned int ext_family : 8;
-				unsigned int reserved2 : 4;
-			} processor_info;
-
-			cpuid(1, info);
-			memcpy(&processor_info, info, sizeof(processor_info));
-
 			// Intel JCC erratum mitigation
 			if (processor_info.family == 6) {
 				const uint32_t model = processor_info.model | (processor_info.ext_model << 4);
 				const uint32_t stepping = processor_info.stepping;
 
 				// Affected CPU models and stepping numbers are taken from https://www.intel.com/content/dam/support/us/en/documents/processors/mitigations-jump-conditional-code-erratum.pdf
-				BranchesWithin32B =
+				set_flag(BRANCHES_WITHIN_32B,
 					((model == 0x4E) && (stepping == 0x3)) ||
 					((model == 0x55) && (stepping == 0x4)) ||
 					((model == 0x5E) && (stepping == 0x3)) ||
 					((model == 0x8E) && (stepping >= 0x9) && (stepping <= 0xC)) ||
 					((model == 0x9E) && (stepping >= 0x9) && (stepping <= 0xD)) ||
 					((model == 0xA6) && (stepping == 0x0)) ||
-					((model == 0xAE) && (stepping == 0xA));
+					((model == 0xAE) && (stepping == 0xA)));
+			}
+			load_win_msrs({ { 0x1a4, 7 } });
+		}
+		
+		if (strcmp((const char*)manufacturer, "AuthenticAMD") == 0) {
+			if(processor_info.family == 0x17)
+			{
+				set_flag(AMD_RYZEN_FAMILY, true);
+				load_win_msrs({ { 0xc0011022, 0x510000 }, { 0xc001102b, 0x1808cc16}, { 0xc0011020, 0 } });
 			}
 		}
 	}
@@ -303,8 +318,20 @@ namespace randomx {
 
 	void JitCompilerX86::generateProgram(Program& prog, ProgramConfiguration& pcfg) {
 		generateProgramPrologue(prog, pcfg);
-		memcpy(code + codePos, RandomX_CurrentConfig.codeReadDatasetTweaked, readDatasetSize);
-		codePos += readDatasetSize;
+		
+		uint8_t* p;
+		uint32_t n;
+		if (check_flag(AMD_RYZEN_FAMILY)) {
+			p = RandomX_CurrentConfig.codeReadDatasetRyzenTweaked;
+			n = RandomX_CurrentConfig.codeReadDatasetRyzenTweakedSize;
+		}
+		else {
+			p = RandomX_CurrentConfig.codeReadDatasetTweaked;
+			n = RandomX_CurrentConfig.codeReadDatasetTweakedSize;
+		}
+		memcpy(code + codePos, p, n);
+		codePos += n;
+		
 		generateProgramEpilogue(prog, pcfg);
 	}
 
@@ -396,7 +423,7 @@ namespace randomx {
 		memcpy(code + codePos, codeLoopStore, loopStoreSize);
 		codePos += loopStoreSize;
 
-		if (BranchesWithin32B) {
+		if (check_flag(BRANCHES_WITHIN_32B)) {
 			const uint32_t branch_begin = static_cast<uint32_t>(codePos);
 			const uint32_t branch_end = static_cast<uint32_t>(branch_begin + 9);
 
@@ -989,6 +1016,8 @@ namespace randomx {
 		codePos = pos;
 	}
 
+	static const uint8_t AND_OR_MOV_LDMXCSR_RYZEN[] = { 0x25, 0x00, 0x60, 0x00, 0x00, 0x0D, 0xC0, 0x9F, 0x00, 0x00, 0x3B, 0x44, 0x24, 0xFC, 0x74, 0x09, 0x89, 0x44, 0x24, 0xFC, 0x0F, 0xAE, 0x54, 0x24, 0xFC };
+
 	void JitCompilerX86::h_CFROUND(const Instruction& instr) {
 		uint8_t* const p = code;
 		int pos = codePos;
@@ -1000,7 +1029,13 @@ namespace randomx {
 			emit(ROL_RAX, p, pos);
 			emitByte(rotate, p, pos);
 		}
-		emit(AND_OR_MOV_LDMXCSR, p, pos);
+
+		if (check_flag(AMD_RYZEN_FAMILY)) {
+			emit(AND_OR_MOV_LDMXCSR_RYZEN, p, pos);
+		}
+		else {
+			emit(AND_OR_MOV_LDMXCSR, p, pos);
+		}
 
 		codePos = pos;
 	}
@@ -1012,7 +1047,7 @@ namespace randomx {
 		const int reg = instr.dst;
 		int32_t jmp_offset = registerUsage[reg] - (pos + 16);
 
-		if (BranchesWithin32B) {
+		if (check_flag(BRANCHES_WITHIN_32B)) {
 			const uint32_t branch_begin = static_cast<uint32_t>(pos + 7);
 			const uint32_t branch_end = static_cast<uint32_t>(branch_begin + ((jmp_offset >= -128) ? 9 : 13));
 
