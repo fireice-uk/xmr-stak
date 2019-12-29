@@ -118,7 +118,10 @@ struct RandomX_ConfigurationBase
 	rx_vec_i128 fillAes4Rx4_Key[8];
 
 	uint8_t codeShhPrefetchTweaked[20];
-	uint8_t codeReadDatasetTweaked[64];
+	uint8_t codeReadDatasetTweaked[72];
+	uint32_t codeReadDatasetTweakedSize;
+	uint8_t codeReadDatasetRyzenTweaked[72];
+	uint32_t codeReadDatasetRyzenTweakedSize;
 	uint8_t codeReadDatasetLightSshInitTweaked[68];
 	uint8_t codePrefetchScratchpadTweaked[32];
 
