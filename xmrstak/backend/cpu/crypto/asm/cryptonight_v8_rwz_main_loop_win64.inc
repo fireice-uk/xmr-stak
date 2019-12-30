@@ -17,7 +17,7 @@
 	mov	 rax, QWORD PTR [rcx+48]
 	mov	 r9, rcx
 	xor	 rax, QWORD PTR [rcx+16]
-	mov	 esi, 524288
+	mov	 esi, 393216
 	mov	 r8, QWORD PTR [rcx+32]
 	mov	 r13d, -2147483647
 	xor	 r8, QWORD PTR [rcx]
@@ -53,7 +53,7 @@
 	movdqu	 xmm6, XMMWORD PTR [r10+rbx]
 
 ALIGN(64)
-main_loop_ivybridge:
+rwz_main_loop:
 	lea	 rdx, QWORD PTR [r10+rbx]
 	mov	 ecx, r10d
 	mov	 eax, r10d
@@ -68,11 +68,11 @@ main_loop_ivybridge:
 	movd	 rbp, xmm6
 	mov	 r9, rbp
 	and	 r9d, 2097136
-	movdqu	 xmm2, XMMWORD PTR [rcx+rbx]
+	movdqu	 xmm0, XMMWORD PTR [rcx+rbx]
 	movdqu	 xmm1, XMMWORD PTR [rax+rbx]
-	movdqu	 xmm0, XMMWORD PTR [r10+rbx]
-	paddq	 xmm1, xmm7
+	movdqu	 xmm2, XMMWORD PTR [r10+rbx]
 	paddq	 xmm0, xmm5
+	paddq	 xmm1, xmm7
 	paddq	 xmm2, xmm4
 	movdqu	 XMMWORD PTR [rcx+rbx], xmm0
 	movdqu	 XMMWORD PTR [rax+rbx], xmm2
@@ -111,9 +111,9 @@ main_loop_ivybridge:
 	psubq	 xmm3, XMMWORD PTR [rsp+16]
 	movd	 rdx, xmm3
 	test	 edx, 524287
-	je	 sqrt_fixup_ivybridge
+	je	 rwz_sqrt_fixup
 	psrlq	 xmm3, 19
-sqrt_fixup_ivybridge_ret:
+rwz_sqrt_fixup_ret:
 
 	mov	 ecx, r10d
 	mov	 rax, rdi
@@ -136,20 +136,20 @@ sqrt_fixup_ivybridge_ret:
 	xor	 r10d, 16
 	pxor	 xmm2, XMMWORD PTR [r9+rbx]
 	movdqu	 xmm0, XMMWORD PTR [r10+rbx]
-	paddq	 xmm0, xmm5
+	paddq	 xmm0, xmm4
 	movdqu	 xmm1, XMMWORD PTR [rcx+rbx]
-	paddq	 xmm2, xmm4
+	paddq	 xmm2, xmm5
 	paddq	 xmm1, xmm7
 	movdqa	 xmm5, xmm4
-	movdqu	 XMMWORD PTR [r9+rbx], xmm0
+	movdqu	 XMMWORD PTR [r9+rbx], xmm2
 	movdqa	 xmm4, xmm6
-	movdqu	 XMMWORD PTR [rcx+rbx], xmm2
+	movdqu	 XMMWORD PTR [rcx+rbx], xmm0
 	movdqu	 XMMWORD PTR [r10+rbx], xmm1
 	movdqu xmm6, [rdi+rbx]
 	mov	 r10d, edi
 	xor	 r11, r12
 	dec rsi
-	jne	 main_loop_ivybridge
+	jne	 rwz_main_loop
 
 	ldmxcsr DWORD PTR [rsp]
 	mov	 rbx, QWORD PTR [rsp+160]
@@ -164,9 +164,9 @@ sqrt_fixup_ivybridge_ret:
 	pop	 rdi
 	pop	 rsi
 	pop	 rbp
-	jmp cryptonight_v8_main_loop_ivybridge_endp
+	jmp cryptonight_v8_rwz_main_loop_endp
 
-sqrt_fixup_ivybridge:
+rwz_sqrt_fixup:
 	dec	 rdx
 	mov r13d, -1022
 	shl r13, 32
@@ -183,6 +183,6 @@ sqrt_fixup_ivybridge:
 	sub	 rcx, r9
 	adc	 rdx, 0
 	movd	 xmm3, rdx
-	jmp	 sqrt_fixup_ivybridge_ret
+	jmp	 rwz_sqrt_fixup_ret
 
-cryptonight_v8_main_loop_ivybridge_endp:
+cryptonight_v8_rwz_main_loop_endp:

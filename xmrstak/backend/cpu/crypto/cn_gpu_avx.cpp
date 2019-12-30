@@ -120,7 +120,6 @@ void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad, const xmrstak_algo& al
 		__m256 rc = sum0;
 
 		__m256 n01, n23;
-		__m256 d01, d23;
 		prep_dv_avx(idx0, v01, n01);
 		prep_dv_avx(idx2, v23, n23);
 

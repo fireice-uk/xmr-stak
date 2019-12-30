@@ -1,3 +1,5 @@
+	mov	rcx, [rcx]
+
 	mov	QWORD PTR [rsp+16], rbx
 	mov	QWORD PTR [rsp+24], rbp
 	mov	QWORD PTR [rsp+32], rsi
@@ -45,7 +47,7 @@
 	movd	xmm0, rcx
 	punpcklqdq xmm4, xmm0
 
-	ALIGN(64)
+ALIGN(64)
 main_loop_ryzen:
 	movdqa	xmm5, XMMWORD PTR [r10+rbx]
 	movd	xmm0, r11
@@ -157,7 +159,7 @@ sqrt_fixup_ryzen_ret:
 	pop	r13
 	pop	r12
 	pop	rdi
-	jmp cnv2_main_loop_ryzen_endp
+	jmp cryptonight_v8_main_loop_ryzen_endp
 
 sqrt_fixup_ryzen:
 	movd r9, xmm2
@@ -176,4 +178,4 @@ sqrt_fixup_ryzen:
 	adc	rdi, 0
 	jmp	sqrt_fixup_ryzen_ret
 
-cnv2_main_loop_ryzen_endp:
+cryptonight_v8_main_loop_ryzen_endp:

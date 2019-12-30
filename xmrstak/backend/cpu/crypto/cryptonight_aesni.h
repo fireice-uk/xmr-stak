@@ -140,6 +140,74 @@ static inline void aes_genkey(const __m128i* memory, __m128i* k0, __m128i* k1, _
 	*k9 = xout2;
 }
 
+static inline void soft_aesenc(void* __restrict ptr, const void* __restrict key, const uint32_t* __restrict t)
+{
+	uint32_t x0 = ((const uint32_t*)(ptr))[0];
+	uint32_t x1 = ((const uint32_t*)(ptr))[1];
+	uint32_t x2 = ((const uint32_t*)(ptr))[2];
+	uint32_t x3 = ((const uint32_t*)(ptr))[3];
+
+	uint32_t y0 = t[x0 & 0xff]; x0 >>= 8;
+	uint32_t y1 = t[x1 & 0xff]; x1 >>= 8;
+	uint32_t y2 = t[x2 & 0xff]; x2 >>= 8;
+	uint32_t y3 = t[x3 & 0xff]; x3 >>= 8;
+	t += 256;
+
+	y0 ^= t[x1 & 0xff]; x1 >>= 8;
+	y1 ^= t[x2 & 0xff]; x2 >>= 8;
+	y2 ^= t[x3 & 0xff]; x3 >>= 8;
+	y3 ^= t[x0 & 0xff]; x0 >>= 8;
+	t += 256;
+
+	y0 ^= t[x2 & 0xff]; x2 >>= 8;
+	y1 ^= t[x3 & 0xff]; x3 >>= 8;
+	y2 ^= t[x0 & 0xff]; x0 >>= 8;
+	y3 ^= t[x1 & 0xff]; x1 >>= 8;
+	t += 256;
+
+	y0 ^= t[x3];
+	y1 ^= t[x0];
+	y2 ^= t[x1];
+	y3 ^= t[x2];
+
+	((uint32_t*)ptr)[0] = y0 ^ ((uint32_t*)key)[0];
+	((uint32_t*)ptr)[1] = y1 ^ ((uint32_t*)key)[1];
+	((uint32_t*)ptr)[2] = y2 ^ ((uint32_t*)key)[2];
+	((uint32_t*)ptr)[3] = y3 ^ ((uint32_t*)key)[3];
+}
+
+static inline __m128i soft_aesenc(const void* __restrict ptr, const __m128i key, const uint32_t* __restrict t)
+{
+	uint32_t x0 = ((const uint32_t*)(ptr))[0];
+	uint32_t x1 = ((const uint32_t*)(ptr))[1];
+	uint32_t x2 = ((const uint32_t*)(ptr))[2];
+	uint32_t x3 = ((const uint32_t*)(ptr))[3];
+
+	uint32_t y0 = t[x0 & 0xff]; x0 >>= 8;
+	uint32_t y1 = t[x1 & 0xff]; x1 >>= 8;
+	uint32_t y2 = t[x2 & 0xff]; x2 >>= 8;
+	uint32_t y3 = t[x3 & 0xff]; x3 >>= 8;
+	t += 256;
+
+	y0 ^= t[x1 & 0xff]; x1 >>= 8;
+	y1 ^= t[x2 & 0xff]; x2 >>= 8;
+	y2 ^= t[x3 & 0xff]; x3 >>= 8;
+	y3 ^= t[x0 & 0xff]; x0 >>= 8;
+	t += 256;
+
+	y0 ^= t[x2 & 0xff]; x2 >>= 8;
+	y1 ^= t[x3 & 0xff]; x3 >>= 8;
+	y2 ^= t[x0 & 0xff]; x0 >>= 8;
+	y3 ^= t[x1 & 0xff]; x1 >>= 8;
+
+	y0 ^= t[x3 + 256];
+	y1 ^= t[x0 + 256];
+	y2 ^= t[x1 + 256];
+	y3 ^= t[x2 + 256];
+
+	return _mm_xor_si128(_mm_set_epi32(y3, y2, y1, y0), key);
+}
+
 static inline void aes_round(__m128i key, __m128i* x0, __m128i* x1, __m128i* x2, __m128i* x3, __m128i* x4, __m128i* x5, __m128i* x6, __m128i* x7)
 {
 	*x0 = _mm_aesenc_si128(*x0, key);
@@ -154,14 +222,14 @@ static inline void aes_round(__m128i key, __m128i* x0, __m128i* x1, __m128i* x2,
 
 static inline void soft_aes_round(__m128i key, __m128i* x0, __m128i* x1, __m128i* x2, __m128i* x3, __m128i* x4, __m128i* x5, __m128i* x6, __m128i* x7)
 {
-	*x0 = soft_aesenc(*x0, key);
-	*x1 = soft_aesenc(*x1, key);
-	*x2 = soft_aesenc(*x2, key);
-	*x3 = soft_aesenc(*x3, key);
-	*x4 = soft_aesenc(*x4, key);
-	*x5 = soft_aesenc(*x5, key);
-	*x6 = soft_aesenc(*x6, key);
-	*x7 = soft_aesenc(*x7, key);
+	*x0 = soft_aesenc((uint32_t*)x0, key, (const uint32_t*)saes_table);
+	*x1 = soft_aesenc((uint32_t*)x1, key, (const uint32_t*)saes_table);
+	*x2 = soft_aesenc((uint32_t*)x2, key, (const uint32_t*)saes_table);
+	*x3 = soft_aesenc((uint32_t*)x3, key, (const uint32_t*)saes_table);
+	*x4 = soft_aesenc((uint32_t*)x4, key, (const uint32_t*)saes_table);
+	*x5 = soft_aesenc((uint32_t*)x5, key, (const uint32_t*)saes_table);
+	*x6 = soft_aesenc((uint32_t*)x6, key, (const uint32_t*)saes_table);
+	*x7 = soft_aesenc((uint32_t*)x7, key, (const uint32_t*)saes_table);
 }
 
 inline void mix_and_propagate(__m128i& x0, __m128i& x1, __m128i& x2, __m128i& x3, __m128i& x4, __m128i& x5, __m128i& x6, __m128i& x7)
@@ -790,7 +858,7 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 	else                                                                       \
 	{                                                                          \
 		if(SOFT_AES)                                                           \
-			cx = soft_aesenc(cx, ax0);                                         \
+			cx = soft_aesenc(ptr0, ax0, (const uint32_t*)saes_table);          \
 		else                                                                   \
 			cx = _mm_aesenc_si128(cx, ax0);                                    \
 	}                                                                          \
@@ -957,6 +1025,12 @@ inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 	CN_EXEC(f, CN_ENUM_##n(3, __VA_ARGS__)); \
 	CN_EXEC(f, CN_ENUM_##n(4, __VA_ARGS__))
 
+#ifdef _WIN64
+#define IS_WINDOWS true
+#else
+#define IS_WINDOWS false
+#endif // _WIN32
+
 template <size_t N>
 struct Cryptonight_hash;
 
@@ -973,16 +1047,34 @@ struct Cryptonight_hash<1>
 		const size_t MEM = algo.Mem();
 
 		CN_INIT_SINGLE;
-		REPEAT_1(11, CN_INIT, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm, cn_r_data);
-
-		// Optim - 90% time boundary
-		for(size_t i = 0; i < ITERATIONS; i++)
+		if (SOFT_AES && (ALGO == cryptonight_r || ALGO == cryptonight_r_wow ) && IS_WINDOWS)
 		{
-			REPEAT_1(9, CN_STEP1, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, cx, bx1);
-			REPEAT_1(7, CN_STEP2, monero_const, l0, ax0, bx0, idx0, ptr0, cx);
-			REPEAT_1(16, CN_STEP3, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm, cn_r_data);
-			REPEAT_1(11, CN_STEP4, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0);
-			REPEAT_1(6, CN_STEP5, monero_const, l0, ax0, bx0, idx0, ptr0);
+			keccak((const uint8_t *)input + len * 0, len, ctx[0]->hash_state, 200);
+			uint64_t monero_const;
+			if (ALGO == cryptonight_monero || ALGO == cryptonight_aeon || ALGO == cryptonight_ipbc || ALGO == cryptonight_stellite || ALGO == cryptonight_masari || ALGO == cryptonight_bittube2)
+			{
+				monero_const = *reinterpret_cast<const uint64_t*>(reinterpret_cast<const uint8_t*>(input) + len * 0 + 35);
+				monero_const ^= *(reinterpret_cast<const uint64_t*>(ctx[0]->hash_state) + 24);
+			}
+			/* Optim - 99% time boundary */
+			cn_explode_scratchpad<SOFT_AES, PREFETCH, ALGO>((__m128i*)ctx[0]->hash_state, (__m128i*)ctx[0]->long_state,algo);
+
+			ctx[0]->saes_table = (const uint32_t*)saes_table;
+			ctx[0]->loop_fn(ctx[0]);
+		}
+		else
+		{
+			REPEAT_1(11, CN_INIT, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, bx1, sqrt_result, division_result_xmm, cn_r_data);
+
+			// Optim - 90% time boundary
+			for(size_t i = 0; i < ITERATIONS; i++)
+			{
+				REPEAT_1(9, CN_STEP1, monero_const, conc_var, l0, ax0, bx0, idx0, ptr0, cx, bx1);
+				REPEAT_1(7, CN_STEP2, monero_const, l0, ax0, bx0, idx0, ptr0, cx);
+				REPEAT_1(16, CN_STEP3, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0, cx, bx1, sqrt_result, division_result_xmm, cn_r_data);
+				REPEAT_1(11, CN_STEP4, monero_const, l0, ax0, bx0, idx0, ptr0, lo, cl, ch, al0, ah0);
+				REPEAT_1(6, CN_STEP5, monero_const, l0, ax0, bx0, idx0, ptr0);
+			}
 		}
 
 		REPEAT_1(0, CN_FINALIZE);
@@ -1106,8 +1198,12 @@ struct Cryptonight_hash<5>
 };
 
 extern "C" void cryptonight_v8_mainloop_ivybridge_asm(cryptonight_ctx* ctx0);
-extern "C" void cryptonight_v8_mainloop_ryzen_asm(cryptonight_ctx* ctx0);
 extern "C" void cryptonight_v8_double_mainloop_sandybridge_asm(cryptonight_ctx* ctx0, cryptonight_ctx* ctx1);
+extern "C" void cryptonight_v8_mainloop_bulldozer_asm(cryptonight_ctx* ctx0);
+extern "C" void cryptonight_v8_mainloop_ryzen_asm(cryptonight_ctx* ctx0);
+extern "C" void cryptonight_v8_rwz_mainloop_asm(cryptonight_ctx* ctx0);
+extern "C" void cryptonight_v8_rwz_double_mainloop_asm(cryptonight_ctx* ctx0, cryptonight_ctx* ctx1);
+
 
 template <size_t N, size_t asm_version>
 struct Cryptonight_hash_asm
@@ -1226,7 +1322,7 @@ void* allocateExecutableMemory(size_t size)
 {
 
 #ifdef _WIN64
-	return VirtualAlloc(0, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+	return VirtualAlloc(nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 #else
 #if defined(__APPLE__)
 	return mmap(0, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANON, -1, 0);
@@ -1282,19 +1378,23 @@ void patchAsmVariants(std::string selected_asm, cryptonight_ctx** ctx, const xmr
 
 	cn_mainloop_fun src_code = nullptr;
 
-	if(selected_asm == "intel_avx")
+	if(selected_asm == "intel_avx" || selected_asm == "ivybridge" || selected_asm == "sandybridge")
 	{
 		// Intel Ivy Bridge (Xeon v2, Core i7/i5/i3 3xxx, Pentium G2xxx, Celeron G1xxx)
 		if(N == 2)
 			src_code = reinterpret_cast<cn_mainloop_fun>(cryptonight_v8_double_mainloop_sandybridge_asm);
 		else
 			src_code = cryptonight_v8_mainloop_ivybridge_asm;
-		;
 	}
 	// supports only 1 thread per hash
-	if(selected_asm == "amd_avx")
+	if(selected_asm == "bulldozer")
 	{
-		// AMD Ryzen (1xxx and 2xxx series)
+		// AMD 15h "Bulldozer" - Orochi/Vishera etc; Bulldozer/Piledriver/Steamroller/Excavator 
+		src_code = cryptonight_v8_mainloop_bulldozer_asm;
+	}
+	if(selected_asm == "amd_avx" || selected_asm == "zen")
+	{
+		// AMD 17h "Zen" - Ryzen (1xxx and 2xxx series)
 		src_code = cryptonight_v8_mainloop_ryzen_asm;
 	}
 
@@ -1360,6 +1460,14 @@ struct Cryptonight_R_generator
 				ctx[0]->hash_fn = Cryptonight_hash_asm<2u, 0u>::template hash<cryptonight_r>;
 			else
 				ctx[0]->hash_fn = Cryptonight_hash_asm<N, 1u>::template hash<cryptonight_r>;
+		}
+		else if(!ctx[0]->asm_version && ALGO == cryptonight_r && IS_WINDOWS)
+		{
+			v4_soft_aes_compile_code(N, ctx[0], code_size);
+		}
+		else if(!ctx[0]->asm_version && ALGO == cryptonight_r_wow && IS_WINDOWS)
+		{
+			wow_soft_aes_compile_code(N, ctx[0], code_size);
 		}
 
 		for(size_t i = 1; i < N; i++)

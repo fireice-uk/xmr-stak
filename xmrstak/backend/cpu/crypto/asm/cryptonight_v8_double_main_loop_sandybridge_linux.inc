@@ -1,3 +1,6 @@
+	mov	rdx, [rcx+8]
+	mov	rcx, [rcx]
+
 	mov	rax, rsp
 	push	rbx
 	push	rbp
@@ -354,7 +357,7 @@ sqrt_fix_2_ret_sandybridge:
 	pop	rsi
 	pop	rbp
 	pop	rbx
-	jmp cnv2_double_mainloop_asm_sandybridge_endp
+	jmp cryptonight_v8_double_mainloop_asm_sandybridge_endp
 
 div_fix_1_sandybridge:
 	dec	rbx
@@ -407,4 +410,4 @@ sqrt_fix_2_sandybridge:
 	punpcklqdq xmm5, xmm0
 	jmp	sqrt_fix_2_ret_sandybridge
 
-cnv2_double_mainloop_asm_sandybridge_endp:
+cryptonight_v8_double_mainloop_asm_sandybridge_endp:

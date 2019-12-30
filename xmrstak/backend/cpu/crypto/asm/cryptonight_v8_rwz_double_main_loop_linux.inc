@@ -21,7 +21,7 @@
 	mov	r10, QWORD PTR [rcx+32]
 	mov	r8, rcx
 	xor	r10, QWORD PTR [rcx]
-	mov	r14d, 524288
+	mov	r14d, 393216
 	mov	r11, QWORD PTR [rcx+40]
 	xor	r11, QWORD PTR [rcx+8]
 	mov	rsi, QWORD PTR [rdx+224]
@@ -31,7 +31,7 @@
 	xor	rdi, QWORD PTR [r9]
 	mov	rbp, QWORD PTR [r9+40]
 	xor	rbp, QWORD PTR [r9+8]
-	movd	xmm0, rdx
+	movq	xmm0, rdx
 	movaps	XMMWORD PTR [rax-88], xmm6
 	movaps	XMMWORD PTR [rax-104], xmm7
 	movaps	XMMWORD PTR [rax-120], xmm8
@@ -43,54 +43,54 @@
 	movaps	XMMWORD PTR [rsp+32], xmm14
 	movaps	XMMWORD PTR [rsp+16], xmm15
 	mov	rdx, r10
-	movd	xmm4, QWORD PTR [r8+96]
+	movq	xmm4, QWORD PTR [r8+96]
 	and	edx, 2097136
 	mov	rax, QWORD PTR [rcx+48]
 	xorps	xmm13, xmm13
 	xor	rax, QWORD PTR [rcx+16]
 	mov	rcx, QWORD PTR [rcx+88]
 	xor	rcx, QWORD PTR [r8+72]
-	movd	xmm5, QWORD PTR [r8+104]
-	movd	xmm7, rax
+	movq	xmm5, QWORD PTR [r8+104]
+	movq	xmm7, rax
 
 	mov eax, 1
 	shl rax, 52
-	movd xmm14, rax
+	movq xmm14, rax
 	punpcklqdq xmm14, xmm14
 
 	mov eax, 1023
 	shl rax, 52
-	movd xmm12, rax
+	movq xmm12, rax
 	punpcklqdq xmm12, xmm12
 
 	mov	rax, QWORD PTR [r8+80]
 	xor	rax, QWORD PTR [r8+64]
 	punpcklqdq xmm7, xmm0
-	movd	xmm0, rcx
+	movq	xmm0, rcx
 	mov	rcx, QWORD PTR [r9+56]
 	xor	rcx, QWORD PTR [r9+24]
-	movd	xmm3, rax
+	movq	xmm3, rax
 	mov	rax, QWORD PTR [r9+48]
 	xor	rax, QWORD PTR [r9+16]
 	punpcklqdq xmm3, xmm0
-	movd	xmm0, rcx
+	movq	xmm0, rcx
 	mov	QWORD PTR [rsp], r13
 	mov	rcx, QWORD PTR [r9+88]
 	xor	rcx, QWORD PTR [r9+72]
-	movd	xmm6, rax
+	movq	xmm6, rax
 	mov	rax, QWORD PTR [r9+80]
 	xor	rax, QWORD PTR [r9+64]
 	punpcklqdq xmm6, xmm0
-	movd	xmm0, rcx
+	movq	xmm0, rcx
 	mov	QWORD PTR [rsp+256], r10
 	mov	rcx, rdi
 	mov	QWORD PTR [rsp+264], r11
-	movd	xmm8, rax
+	movq	xmm8, rax
 	and	ecx, 2097136
 	punpcklqdq xmm8, xmm0
-	movd	xmm0, QWORD PTR [r9+96]
+	movq	xmm0, QWORD PTR [r9+96]
 	punpcklqdq xmm4, xmm0
-	movd	xmm0, QWORD PTR [r9+104]
+	movq	xmm0, QWORD PTR [r9+104]
 	lea	r8, QWORD PTR [rcx+rsi]
 	movdqu	xmm11, XMMWORD PTR [r8]
 	punpcklqdq xmm5, xmm0
@@ -98,7 +98,7 @@
 	movdqu	xmm15, XMMWORD PTR [r9]
 
 ALIGN(64)
-main_loop_double_sandybridge:
+rwz_main_loop_double:
 	movdqu	xmm9, xmm15
 	mov eax, edx
 	mov ebx, edx
@@ -106,22 +106,22 @@ main_loop_double_sandybridge:
 	xor ebx, 32
 	xor edx, 48
 
-	movd	xmm0, r11
-	movd	xmm2, r10
+	movq	xmm0, r11
+	movq	xmm2, r10
 	punpcklqdq xmm2, xmm0
 	aesenc	xmm9, xmm2
 
-	movdqu	xmm0, XMMWORD PTR [rax+r13]
+	movdqu	xmm0, XMMWORD PTR [rdx+r13]
 	movdqu	xmm1, XMMWORD PTR [rbx+r13]
 	paddq	xmm0, xmm7
 	paddq	xmm1, xmm2
 	movdqu	XMMWORD PTR [rbx+r13], xmm0
-	movdqu	xmm0, XMMWORD PTR [rdx+r13]
+	movdqu	xmm0, XMMWORD PTR [rax+r13]
 	movdqu	XMMWORD PTR [rdx+r13], xmm1
 	paddq	xmm0, xmm3
 	movdqu	XMMWORD PTR [rax+r13], xmm0
 
-	movd	r11, xmm9
+	movq	r11, xmm9
 	mov	edx, r11d
 	and	edx, 2097136
 	movdqa	xmm0, xmm9
@@ -132,8 +132,8 @@ main_loop_double_sandybridge:
 	mov	r10, QWORD PTR [rdx+r13]
 
 	movdqu	xmm10, xmm11
-	movd	xmm0, rbp
-	movd	xmm11, rdi
+	movq	xmm0, rbp
+	movq	xmm11, rdi
 	punpcklqdq xmm11, xmm0
 	aesenc	xmm10, xmm11
 
@@ -143,17 +143,17 @@ main_loop_double_sandybridge:
 	xor r12d, 32
 	xor ecx, 48
 
-	movdqu	xmm0, XMMWORD PTR [rax+rsi]
+	movdqu	xmm0, XMMWORD PTR [rcx+rsi]
 	paddq	xmm0, xmm6
 	movdqu	xmm1, XMMWORD PTR [r12+rsi]
 	movdqu	XMMWORD PTR [r12+rsi], xmm0
 	paddq	xmm1, xmm11
-	movdqu	xmm0, XMMWORD PTR [rcx+rsi]
+	movdqu	xmm0, XMMWORD PTR [rax+rsi]
 	movdqu	XMMWORD PTR [rcx+rsi], xmm1
 	paddq	xmm0, xmm8
 	movdqu	XMMWORD PTR [rax+rsi], xmm0
 
-	movd	rcx, xmm10
+	movq	rcx, xmm10
 	and	ecx, 2097136
 
 	movdqa	xmm0, xmm10
@@ -167,31 +167,31 @@ main_loop_double_sandybridge:
 	mov r8d, edx
 	mov r15d, edx
 
-	movd	rdx, xmm5
+	movq	rdx, xmm5
 	shl	rdx, 32
-	movd	rax, xmm4
+	movq	rax, xmm4
 	xor	rdx, rax
 	xor	r10, rdx
 	mov	rax, r10
 	mul	r11
 	mov r11d, r8d
 	xor r11d, 48
-	movd xmm0, rdx
+	movq xmm0, rdx
 	xor rdx, [r11+r13]
-	movd xmm1, rax
+	movq xmm1, rax
 	xor rax, [r11+r13+8]
 	punpcklqdq xmm0, xmm1
 
 	pxor xmm0, XMMWORD PTR [r8+r13]
-	xor	r8d, 32
 	movdqu	xmm1, XMMWORD PTR [r11+r13]
-	paddq	xmm0, xmm7
+	paddq	xmm0, xmm3
 	paddq	xmm1, xmm2
-	movdqu	XMMWORD PTR [r11+r13], xmm0
+	movdqu	XMMWORD PTR [r8+r13], xmm0
+	xor	r8d, 32
 	movdqu	xmm0, XMMWORD PTR [r8+r13]
 	movdqu	XMMWORD PTR [r8+r13], xmm1
-	paddq	xmm0, xmm3
-	movdqu	XMMWORD PTR [r15+r13], xmm0
+	paddq	xmm0, xmm7
+	movdqu	XMMWORD PTR [r11+r13], xmm0
 
 	mov	r11, QWORD PTR [rsp+256]
 	add	r11, rdx
@@ -211,18 +211,18 @@ main_loop_double_sandybridge:
 	movdqa	xmm0, xmm5
 	psrldq	xmm0, 8
 	movaps	xmm2, xmm13
-	movd	r10, xmm0
+	movq	r10, xmm0
 	psllq	xmm5, 1
 	shl	r10, 32
 	movdqa	xmm0, xmm9
 	psrldq	xmm0, 8
 	movdqa	xmm1, xmm10
-	movd	r11, xmm0
+	movq	r11, xmm0
 	psrldq	xmm1, 8
-	movd	r8, xmm1
+	movq	r8, xmm1
 	psrldq	xmm4, 8
 	movaps	xmm0, xmm13
-	movd	rax, xmm4
+	movq	rax, xmm4
 	xor	r10, rax
 	movaps	xmm1, xmm13
 	xor	r10, r12
@@ -231,13 +231,13 @@ main_loop_double_sandybridge:
 	movdqa	xmm3, xmm9
 	punpcklqdq xmm3, xmm10
 	paddq	xmm5, xmm3
-	movd	rdx, xmm5
+	movq	rdx, xmm5
 	psrldq	xmm5, 8
 	cvtsi2sd xmm2, rax
 	or	edx, -2147483647
 	lea	rax, QWORD PTR [r8+1]
 	shr	rax, 1
-	movd	r9, xmm5
+	movq	r9, xmm5
 	cvtsi2sd xmm0, rax
 	or	r9d, -2147483647
 	cvtsi2sd xmm1, rdx
@@ -252,8 +252,8 @@ main_loop_double_sandybridge:
 	mov	rbx, rax
 	imul	rax, rdx
 	sub	r11, rax
-	js	div_fix_1_sandybridge
-div_fix_1_ret_sandybridge:
+	js	rwz_div_fix_1
+rwz_div_fix_1_ret:
 
 	cvttsd2si rdx, xmm2
 	mov	rax, rdx
@@ -261,8 +261,8 @@ div_fix_1_ret_sandybridge:
 	movd	xmm2, r11d
 	movd	xmm4, ebx
 	sub	r8, rax
-	js	div_fix_2_sandybridge
-div_fix_2_ret_sandybridge:
+	js	rwz_div_fix_2
+rwz_div_fix_2_ret:
 
 	movd	xmm1, r8d
 	movd	xmm0, edx
@@ -274,19 +274,19 @@ div_fix_2_ret_sandybridge:
 	psrlq	xmm0, 12
 	paddq	xmm0, xmm12
 	sqrtpd	xmm1, xmm0
-	movd	r9, xmm1
+	movq	r9, xmm1
 	movdqa xmm5, xmm1
 	psrlq xmm5, 19
 	test	r9, 524287
-	je	sqrt_fix_1_sandybridge
-sqrt_fix_1_ret_sandybridge:
+	je	rwz_sqrt_fix_1
+rwz_sqrt_fix_1_ret:
 
-	movd r9, xmm10
+	movq r9, xmm10
 	psrldq	xmm1, 8
-	movd	r8, xmm1
+	movq	r8, xmm1
 	test	r8, 524287
-	je	sqrt_fix_2_sandybridge
-sqrt_fix_2_ret_sandybridge:
+	je	rwz_sqrt_fix_2
+rwz_sqrt_fix_2_ret:
 
 	mov r12d, ecx
 	mov r8d, ecx
@@ -295,8 +295,8 @@ sqrt_fix_2_ret_sandybridge:
 	xor ecx, 48
 	mov	rax, r10
 	mul	r9
-	movd xmm0, rax
-	movd xmm3, rdx
+	movq xmm0, rax
+	movq xmm3, rdx
 	punpcklqdq xmm3, xmm0
 
 	movdqu	xmm0, XMMWORD PTR [r12+rsi]
@@ -305,12 +305,12 @@ sqrt_fix_2_ret_sandybridge:
 	xor rdx, [r8+rsi]
 	xor rax, [r8+rsi+8]
 	movdqu	xmm3, XMMWORD PTR [rcx+rsi]
-	paddq	xmm0, xmm6
+	paddq	xmm3, xmm6
 	paddq	xmm1, xmm11
-	paddq	xmm3, xmm8
-	movdqu	XMMWORD PTR [r8+rsi], xmm0
+	paddq	xmm0, xmm8
+	movdqu	XMMWORD PTR [r8+rsi], xmm3
 	movdqu	XMMWORD PTR [rcx+rsi], xmm1
-	movdqu	XMMWORD PTR [r12+rsi], xmm3
+	movdqu	XMMWORD PTR [r12+rsi], xmm0
 
 	add	rdi, rdx
 	mov	QWORD PTR [r13], rdi
@@ -319,7 +319,7 @@ sqrt_fix_2_ret_sandybridge:
 	and	ecx, 2097136
 	lea	r8, QWORD PTR [rcx+rsi]
 
-	mov rdx, QWORD PTR [r13+8]
+	mov rdx, QWORD PTR [r13+8]	
 	add	rbp, rax
 	mov	QWORD PTR [r13+8], rbp
 	movdqu xmm11, XMMWORD PTR [rcx+rsi]
@@ -334,7 +334,7 @@ sqrt_fix_2_ret_sandybridge:
 	movdqa	xmm6, xmm10
 	mov	r9, r15
 	dec r14d
-	jne	main_loop_double_sandybridge
+	jne	rwz_main_loop_double
 
 	ldmxcsr DWORD PTR [rsp+272]
 	movaps	xmm13, XMMWORD PTR [rsp+48]
@@ -357,20 +357,20 @@ sqrt_fix_2_ret_sandybridge:
 	pop	rsi
 	pop	rbp
 	pop	rbx
-	jmp cryptonight_v8_double_mainloop_asm_sandybridge_endp
+	jmp cryptonight_v8_rwz_double_mainloop_asm_endp
 
-div_fix_1_sandybridge:
+rwz_div_fix_1:
 	dec	rbx
 	add	r11, rdx
-	jmp	div_fix_1_ret_sandybridge
+	jmp	rwz_div_fix_1_ret
 
-div_fix_2_sandybridge:
+rwz_div_fix_2:
 	dec	rdx
 	add	r8, r9
-	jmp	div_fix_2_ret_sandybridge
+	jmp	rwz_div_fix_2_ret
 
-sqrt_fix_1_sandybridge:
-	movd	r8, xmm3
+rwz_sqrt_fix_1:
+	movq	r8, xmm3
 	movdqa xmm0, xmm5
 	psrldq xmm0, 8
 	dec	r9
@@ -386,13 +386,13 @@ sqrt_fix_1_sandybridge:
 	imul	rdx, rax
 	sub	rdx, r8
 	adc	r9, 0
-	movd xmm5, r9
+	movq xmm5, r9
 	punpcklqdq xmm5, xmm0
-	jmp	sqrt_fix_1_ret_sandybridge
+	jmp	rwz_sqrt_fix_1_ret
 
-sqrt_fix_2_sandybridge:
+rwz_sqrt_fix_2:
 	psrldq	xmm3, 8
-	movd	r11, xmm3
+	movq	r11, xmm3
 	dec	r8
 	mov ebx, -1022
 	shl rbx, 32
@@ -406,8 +406,8 @@ sqrt_fix_2_sandybridge:
 	imul	rdx, rax
 	sub	rdx, r11
 	adc	r8, 0
-	movd xmm0, r8
+	movq xmm0, r8
 	punpcklqdq xmm5, xmm0
-	jmp	sqrt_fix_2_ret_sandybridge
+	jmp	rwz_sqrt_fix_2_ret
 
-cryptonight_v8_double_mainloop_asm_sandybridge_endp:
+cryptonight_v8_rwz_double_mainloop_asm_endp:
