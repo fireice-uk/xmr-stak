@@ -465,6 +465,16 @@ bool minethd::self_test()
 			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
 			bResult = bResult && memcmp(out, "\x30\x5f\x66\xfe\xbb\xf3\x60\x0e\xda\xbb\x60\xf7\xf1\xc9\xb9\x0a\x3a\xe8\x5a\x31\xd4\x76\xca\x38\x1d\x56\x18\xa6\xc6\x27\x60\xd7", 32) == 0;
 		}
+		else if(algo == POW(cryptonight_talleo))
+		{
+			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), false, algo);
+			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
+			bResult = bResult && memcmp(out, "\x4c\xf9\x3f\x3e\xbf\xc5\x1a\x62\x56\x0d\xa8\x64\xc9\xf4\x85\x70\x76\x87\xfb\xd0\x7f\x4d\xc1\xc1\x5f\xbd\x32\x60\xcd\xe9\x90\x56", 32) == 0;
+
+			func_selector(ctx, ::jconf::inst()->HaveHardwareAes(), true, algo);
+			ctx[0]->hash_fn("This is a test This is a test This is a test", 44, out, ctx, algo);
+			bResult = bResult && memcmp(out, "\x4c\xf9\x3f\x3e\xbf\xc5\x1a\x62\x56\x0d\xa8\x64\xc9\xf4\x85\x70\x76\x87\xfb\xd0\x7f\x4d\xc1\xc1\x5f\xbd\x32\x60\xcd\xe9\x90\x56", 32) == 0;
+		}
 		else if(algo == POW(cryptonight_r))
 		{
 			minethd::cn_on_new_job set_job;
