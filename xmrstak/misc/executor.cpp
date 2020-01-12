@@ -192,10 +192,7 @@ void executor::eval_pool_choice()
 	{
 		if(!goal->is_running() && goal->can_connect())
 		{
-			if(dev_time)
-				printer::inst()->print_msg(L1, "Connecting to dev pool ...");
-			else
-				printer::inst()->print_msg(L1, "Connecting to %s pool ...", goal->get_pool_addr());
+			printer::inst()->print_msg(L1, "Connecting to %s pool...", dev_time ? "dev" : goal->get_pool_addr());
 
 			std::string error;
 			if(!goal->connect(error))
@@ -320,11 +317,7 @@ jpsock* executor::pick_pool_by_id(size_t pool_id)
 void executor::on_sock_ready(size_t pool_id)
 {
 	jpsock* pool = pick_pool_by_id(pool_id);
-
-	if(pool->is_dev_pool())
-		printer::inst()->print_msg(L1, "Dev pool connected. Logging in...");
-	else
-		printer::inst()->print_msg(L1, "Pool %s connected. Logging in...", pool->get_pool_addr());
+	printer::inst()->print_msg(L1, "%s connected. Logging in...", pool->is_dev_pool() ? "Dev pool" : pool->get_pool_addr());
 
 	if(!pool->cmd_login())
 	{
