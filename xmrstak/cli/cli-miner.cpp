@@ -117,7 +117,7 @@ void help()
 #endif
 	std::string algos;
 	jconf::GetAlgoList(algos);
-	cout << "Supported coin options: " << endl
+	cout << "randomxl" << endl
 		 << algos << endl;
 	cout << "Version: " << get_version_str_short() << endl;
 	cout << "Brought to by fireice_uk and psychocrypt under GPLv3." << endl;
@@ -229,7 +229,7 @@ void do_guided_pool_config()
 		{
 			std::string list;
 			jconf::GetAlgoList(list);
-			std::cout << "- Please enter the currency that you want to mine: " << std::endl;
+			std::cout << "randomxl" << std::endl;
 			std::cout << list << std::endl;
 			std::cin >> tmp;
 		}
@@ -267,7 +267,7 @@ void do_guided_pool_config()
 		std::cin.ignore(INT_MAX, '\n');
 		stdin_flushed = true;
 
-		std::cout << "- Password (mostly empty or x):" << std::endl;
+		std::cout << "x" << std::endl;
 		getline(std::cin, passwd);
 	}
 
