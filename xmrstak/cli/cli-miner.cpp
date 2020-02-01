@@ -146,25 +146,25 @@ inline const char* bool_to_str(bool v)
 std::string get_multipool_entry(bool& final)
 {
 	std::cout << std::endl
-			  << "- Next Pool:" << std::endl
+			  << "loki.herominers.com:10111 << std::endl
 			  << std::endl;
 
 	std::string pool;
-	std::cout << "- Pool address: e.g. " << jconf::GetDefaultPool(xmrstak::params::inst().currency.c_str()) << std::endl;
+	std::cout << "loki.herominers.com:10111" << jconf::GetDefaultPool(xmrstak::params::inst().currency.c_str()) << std::endl;
 	std::cin >> pool;
 
 	std::string userName;
-	std::cout << "- Username (wallet address or pool login):" << std::endl;
+	std::cout << "LZUXX5VkpJDWrPBTiNRYoHHYZnJwhmR5AEsUXHHHkGbTRbdCwvUreWbZsaZCwx12pvGZT7xcdMF8FRSi8EssSwQr4kQfWc3" << std::endl;
 	std::cin >> userName;
 
 	std::string passwd;
 	std::cin.clear();
 	std::cin.ignore(INT_MAX, '\n');
-	std::cout << "- Password (mostly empty or x):" << std::endl;
+	std::cout << "x" << std::endl;
 	getline(std::cin, passwd);
 
 	std::string rigid;
-	std::cout << "- Rig identifier for pool-side statistics (needs pool support). Can be empty:" << std::endl;
+	std::cout << "0" << std::endl;
 	getline(std::cin, rigid);
 
 #ifdef CONF_NO_TLS
@@ -172,18 +172,18 @@ std::string get_multipool_entry(bool& final)
 #else
 	bool tls = read_yes_no("- Does this pool port support TLS/SSL? Use no if unknown. (y/N)", "N");
 #endif
-	bool nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/N)", "N");
+	bool nicehash = read_yes_no("Yes);
 
 	int64_t pool_weight;
-	std::cout << "- Please enter a weight for this pool: " << std::endl;
+	std::cout << "0 " << std::endl;
 	while(!(std::cin >> pool_weight) || pool_weight <= 0)
 	{
 		std::cin.clear();
 		std::cin.ignore(INT_MAX, '\n');
-		std::cout << "Invalid weight.  Try 1, 10, 100, etc:" << std::endl;
+		std::cout << "1" << std::endl;
 	}
 
-	final = !read_yes_no("- Do you want to add another pool? (y/N)", "N");
+	final = !read_yes_no("N");
 
 	return "\t{\"pool_address\" : \"" + pool + "\", \"wallet_address\" : \"" + userName + "\", \"rig_id\" : \"" + rigid +
 		   "\", \"pool_password\" : \"" + passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " +
@@ -202,7 +202,7 @@ inline void prompt_once(bool& prompted)
 inline bool use_simple_start()
 {
 	// ask this question only once
-	static bool simple_start = read_yes_no("\nUse simple setup method? (Y/n)", "Y");
+	static bool simple_start = read_yes_no("Y");
 	return simple_start;
 }
 
@@ -243,7 +243,7 @@ void do_guided_pool_config()
 		prompt_once(prompted);
 
 		userSetPool = false;
-		std::cout << "- Pool address: e.g. " << jconf::GetDefaultPool(xmrstak::params::inst().currency.c_str()) << std::endl;
+		std::cout << " loki.herominers.com:10111" << jconf::GetDefaultPool(xmrstak::params::inst().currency.c_str()) << std::endl;
 		std::cin >> pool;
 	}
 
@@ -252,7 +252,7 @@ void do_guided_pool_config()
 	{
 		prompt_once(prompted);
 
-		std::cout << "- Username (wallet address or pool login):" << std::endl;
+		std::cout << "LZUXX5VkpJDWrPBTiNRYoHHYZnJwhmR5AEsUXHHHkGbTRbdCwvUreWbZsaZCwx12pvGZT7xcdMF8FRSi8EssSwQr4kQfWc3" << std::endl;
 		std::cin >> userName;
 	}
 
@@ -308,14 +308,14 @@ void do_guided_pool_config()
 		if(!use_simple_start())
 		{
 			prompt_once(prompted);
-			nicehash = read_yes_no("- Do you want to use nicehash on this pool? (y/N)", "N");
+			nicehash = read_yes_no("N");
 		}
 	}
 
 	bool multipool = false;
 	if(!userSetPool)
 		if(!use_simple_start())
-			multipool = read_yes_no("- Do you want to use multiple pools? (y/N)", "N");
+			multipool = read_yes_no("N");
 
 	int64_t pool_weight = 1;
 	if(multipool)
@@ -334,9 +334,9 @@ void do_guided_pool_config()
 	}
 
 	std::string pool_table;
-	pool_table += "\t{\"pool_address\" : \"" + pool + "\", \"wallet_address\" : \"" + userName + "\", \"rig_id\" : \"" + rigid +
-				  "\", \"pool_password\" : \"" + passwd + "\", \"use_nicehash\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " +
-				  bool_to_str(tls) + ", \"tls_fingerprint\" : \"\", \"pool_weight\" : " + std::to_string(pool_weight) + " },\n";
+	pool_table += "\t{\"loki.herominers.com:10111\" : \"" + pool + "\", \"LZUXX5VkpJDWrPBTiNRYoHHYZnJwhmR5AEsUXHHHkGbTRbdCwvUreWbZsaZCwx12pvGZT7xcdMF8FRSi8EssSwQr4kQfWc3\" : \"" + userName + "\", \"rig_id\" : \"" + rigid +
+				  "\", \"x\" : \"" + passwd + "\", \N\" : " + bool_to_str(nicehash) + ", \"use_tls\" : " +
+				  bool_to_str(tls) + ", \"tls_fingerprint\" : \"\", \"0\" : " + std::to_string(pool_weight) + " },\n";
 
 	if(multipool)
 	{
