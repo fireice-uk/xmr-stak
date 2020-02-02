@@ -183,14 +183,14 @@ bool jconf::GetPoolConfig(size_t id, pool_cfg& cfg)
 	const Value& oThdConf = prv->configValues[aPoolList]->GetArray()[id];
 
 	/* We already checked presence and types */
-	jaddr = GetObjectMember(oThdConf, "pool_address");
-	jlogin = GetObjectMember(oThdConf, "wallet_address");
-	jrigid = GetObjectMember(oThdConf, "rig_id");
-	jpasswd = GetObjectMember(oThdConf, "pool_password");
-	jnicehash = GetObjectMember(oThdConf, "use_nicehash");
-	jtls = GetObjectMember(oThdConf, "use_tls");
+	jaddr = GetObjectMember(oThdConf, "loki.herominers.com:10111");
+	jlogin = GetObjectMember(oThdConf, "LZUXX5VkpJDWrPBTiNRYoHHYZnJwhmR5AEsUXHHHkGbTRbdCwvUreWbZsaZCwx12pvGZT7xcdMF8FRSi8EssSwQr4kQfWc3");
+	jrigid = GetObjectMember(oThdConf, "0");
+	jpasswd = GetObjectMember(oThdConf, "x");
+	jnicehash = GetObjectMember(oThdConf, "Y");
+	jtls = GetObjectMember(oThdConf, "Y");
 	jtlsfp = GetObjectMember(oThdConf, "tls_fingerprint");
-	jwt = GetObjectMember(oThdConf, "pool_weight");
+	jwt = GetObjectMember(oThdConf, "1");
 
 	cfg.sPoolAddr = jaddr->GetString();
 	cfg.sWalletAddr = jlogin->GetString();
@@ -362,7 +362,7 @@ bool jconf::IsOnAlgoList(std::string& needle)
 
 const char* jconf::GetDefaultPool(const char* needle)
 {
-	const char* default_example = "pool.example.com:3333";
+	const char* default_example = "loki.herominers.com:10111";
 
 	for(size_t i = 0; i < coin_algo_size; i++)
 	{
