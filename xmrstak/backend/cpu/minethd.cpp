@@ -522,7 +522,7 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 		{randomX, RandomX_generator<N>::template cn_on_new_job<randomX>},
 		{randomX_loki, RandomX_generator<N>::template cn_on_new_job<randomX_loki>},
 		{randomX_wow, RandomX_generator<N>::template cn_on_new_job<randomX_wow>},
-		{randomX_arqma, RandomX_generator<N>::template cn_on_new_job<randomX_arqma>}
+		{randomX_arqma, RandomX_generator<N>::template cn_on_new_job<randomX_arqma>},
 		{randomX_evo, RandomX_generator<N>::template cn_on_new_job<randomX_evo>}
 
 	};

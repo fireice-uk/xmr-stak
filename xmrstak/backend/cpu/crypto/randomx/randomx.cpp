@@ -86,6 +86,11 @@ RandomX_ConfigurationArqma::RandomX_ConfigurationArqma()
 	ScratchpadL2_Size = 131072;
 	ScratchpadL3_Size = 262144;
 }
+RandomX_ConfigurationCoinevo::RandomX_ConfigurationCoinevo()
+{
+        ArgonSalt = "RandomEVO\x08";
+}
+
 
 RandomX_ConfigurationBase::RandomX_ConfigurationBase()
 	: ArgonMemory(262144)
@@ -251,6 +256,7 @@ RandomX_ConfigurationMonero RandomX_MoneroConfig;
 RandomX_ConfigurationWownero RandomX_WowneroConfig;
 RandomX_ConfigurationLoki RandomX_LokiConfig;
 RandomX_ConfigurationArqma RandomX_ArqmaConfig;
+RandomX_ConfigurationCoinevo RandomX_CoinevoConfig;
 
 RandomX_ConfigurationBase RandomX_CurrentConfig;
 

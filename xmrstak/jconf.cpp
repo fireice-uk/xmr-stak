@@ -108,9 +108,9 @@ xmrstak::coin_selection coins[] = {
 	{"randomx_arqma", {POW(randomX_arqma)}, {POW(randomX_arqma)}, nullptr},
 	{"randomx_loki", {POW(randomX_loki)}, {POW(randomX_loki)}, nullptr},
 	{"randomx_wow", {POW(randomX_wow)}, {POW(randomX_wow)}, nullptr},
-	{"wownero", {POW(randomX_wow)}, {POW(randomX_wow)}, nullptr}
+	{"wownero", {POW(randomX_wow)}, {POW(randomX_wow)}, nullptr},
 	{"randomx_evo", {POW(randomX_evo)}, {POW(randomX_evo)}, nullptr},
-	{"coinevo", {POW(randomX_evo)}, {POW(randomX_evo)}, nullptr},
+	{"coinevo", {POW(randomX_evo)}, {POW(randomX_evo)}, nullptr}
 
 
 };
