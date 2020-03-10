@@ -302,7 +302,10 @@ void minethd::work_main()
 			{
 				RandomX_Arqma::hash(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, h_per_round);
 			}
-
+			else if(miner_algo == randomX_evo)
+			{
+				RandomX_Coinevo::hash(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce, h_per_round);
+			}
 
 
 			for(size_t i = 0; i < foundCount; i++)

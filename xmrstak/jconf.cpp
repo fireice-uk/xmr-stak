@@ -109,6 +109,10 @@ xmrstak::coin_selection coins[] = {
 	{"randomx_loki", {POW(randomX_loki)}, {POW(randomX_loki)}, nullptr},
 	{"randomx_wow", {POW(randomX_wow)}, {POW(randomX_wow)}, nullptr},
 	{"wownero", {POW(randomX_wow)}, {POW(randomX_wow)}, nullptr}
+	{"randomx_evo", {POW(randomX_evo)}, {POW(randomX_evo)}, nullptr},
+	{"coinevo", {POW(randomX_evo)}, {POW(randomX_evo)}, nullptr},
+
+
 };
 
 constexpr size_t coin_algo_size = (sizeof(coins) / sizeof(coins[0]));
@@ -340,7 +344,7 @@ bool jconf::IsOnAlgoList(std::string& needle)
 
 const char* jconf::GetDefaultPool(const char* needle)
 {
-	const char* default_example = "pool.example.com:3333";
+	const char* default_example = "pool.coinevo.tech:4242";
 
 	for(size_t i = 0; i < coin_algo_size; i++)
 	{
