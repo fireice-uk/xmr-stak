@@ -150,6 +150,8 @@ struct RandomX_generator
 				randomx_apply_config(RandomX_WowneroConfig);
 			else if(ALGO == randomX_arqma)
 				randomx_apply_config(RandomX_ArqmaConfig);
+			else if(ALGO == randomX_evo)
+				randomx_apply_config(RandomX_CoinevoConfig);
 		}
 
 		for(size_t i = 0; i < N; i++)
