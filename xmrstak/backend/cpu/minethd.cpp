@@ -499,18 +499,14 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 	for(int h = 1; h < N; ++h)
 		ctx[h]->hash_fn = ctx[0]->hash_fn;
 
-	static const std::unordered_map<uint32_t, minethd::cn_on_new_job> on_new_job_map = {
-		{randomX, RandomX_generator<N>::template cn_on_new_job<randomX>},
-		{randomX_loki, RandomX_generator<N>::template cn_on_new_job<randomX_loki>},
-		{randomX_wow, RandomX_generator<N>::template cn_on_new_job<randomX_wow>},
-		{randomX_arqma, RandomX_generator<N>::template cn_on_new_job<randomX_arqma>}
+ 	static const minethd::cn_on_new_job on_new_job_map[] = {
+ 		RandomX_generator<N>::template cn_on_new_job<randomX>,
+ 		RandomX_generator<N>::template cn_on_new_job<randomX_loki>,
+ 		RandomX_generator<N>::template cn_on_new_job<randomX_wow>,
+ 		RandomX_generator<N>::template cn_on_new_job<randomX_arqma>
 	};
 
-	auto it = on_new_job_map.find(algo.Id());
-	if(it != on_new_job_map.end())
-		on_new_job = it->second;
-	else
-		on_new_job = nullptr;
+	on_new_job = on_new_job_map[algv];
 }
 
 void minethd::work_main()
