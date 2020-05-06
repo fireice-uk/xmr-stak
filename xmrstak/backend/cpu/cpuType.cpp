@@ -107,5 +107,12 @@ Model getModel()
 	return result;
 }
 
+bool firstHasBMI2()
+{
+	int32_t cpu_info[4];
+	cpuid(7, 0, cpu_info);
+	return has_feature(cpu_info[1], 8);
+}
+
 } // namespace cpu
 } // namespace xmrstak

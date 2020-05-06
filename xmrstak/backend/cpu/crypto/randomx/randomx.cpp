@@ -34,7 +34,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "crypto/randomx/vm_compiled.hpp"
 #include "crypto/randomx/vm_compiled_light.hpp"
 #include "crypto/randomx/blake2/blake2.h"
+
 #include "crypto/randomx/jit_compiler_x86_static.hpp"
+#include "crypto/common/VirtualMemory.h"
+
+#include "cpuType.hpp"
+
+#include <mutex>
 
 #include <cassert>
 
@@ -85,6 +91,18 @@ RandomX_ConfigurationArqma::RandomX_ConfigurationArqma()
 	ProgramCount = 4;
 	ScratchpadL2_Size = 131072;
 	ScratchpadL3_Size = 262144;
+}
+
+RandomX_ConfigurationSafex::RandomX_ConfigurationSafex()
+{
+	ArgonSalt = "RandomSFX\x01";
+}
+
+RandomX_ConfigurationKeva::RandomX_ConfigurationKeva()
+{
+	ArgonSalt = "RandomKV\x01";
+	ScratchpadL2_Size = 131072;
+	ScratchpadL3_Size = 1048576;
 }
 
 RandomX_ConfigurationBase::RandomX_ConfigurationBase()
@@ -193,15 +211,26 @@ void RandomX_ConfigurationBase::Apply()
 
 #if defined(_M_X64) || defined(__x86_64__)
 	*(uint32_t*)(codeShhPrefetchTweaked + 3) = ArgonMemory * 16 - 1;
-	const uint32_t DatasetBaseMask = DatasetBaseSize - RANDOMX_DATASET_ITEM_SIZE;
-	*(uint32_t*)(codeReadDatasetTweaked + 7) = DatasetBaseMask;
-	*(uint32_t*)(codeReadDatasetTweaked + 23) = DatasetBaseMask;
-	*(uint32_t*)(codeReadDatasetLightSshInitTweaked + 59) = DatasetBaseMask;
+	// Not needed right now because all variants use default dataset base size
+	//const uint32_t DatasetBaseMask = DatasetBaseSize - RANDOMX_DATASET_ITEM_SIZE;
+	//*(uint32_t*)(codeReadDatasetTweaked + 9) = DatasetBaseMask;
+	//*(uint32_t*)(codeReadDatasetTweaked + 24) = DatasetBaseMask;
+	//*(uint32_t*)(codeReadDatasetLightSshInitTweaked + 59) = DatasetBaseMask;
 
 	*(uint32_t*)(codePrefetchScratchpadTweaked + 4) = ScratchpadL3Mask64_Calculated;
 	*(uint32_t*)(codePrefetchScratchpadTweaked + 18) = ScratchpadL3Mask64_Calculated;
 
 #define JIT_HANDLE(x, prev) randomx::JitCompilerX86::engine[k] = &randomx::JitCompilerX86::h_##x
+
+#elif defined(XMRIG_ARMv8)
+
+	Log2_ScratchpadL1 = Log2(ScratchpadL1_Size);
+	Log2_ScratchpadL2 = Log2(ScratchpadL2_Size);
+	Log2_ScratchpadL3 = Log2(ScratchpadL3_Size);
+	Log2_DatasetBaseSize = Log2(DatasetBaseSize);
+	Log2_CacheSize = Log2((ArgonMemory * randomx::ArgonBlockSize) / randomx::CacheLineSize);
+
+#define JIT_HANDLE(x, prev) randomx::JitCompilerA64::engine[k] = &randomx::JitCompilerA64::h_##x
 
 #else
 #define JIT_HANDLE(x, prev)
@@ -214,14 +243,29 @@ void RandomX_ConfigurationBase::Apply()
 	CEIL_##x = CEIL_##prev + RANDOMX_FREQ_##x; \
 	for (; k < CEIL_##x; ++k) { JIT_HANDLE(x, prev); }
 
+#define INST_HANDLE2(x, func_name, prev) \
+	CEIL_##x = CEIL_##prev + RANDOMX_FREQ_##x; \
+	for (; k < CEIL_##x; ++k) { JIT_HANDLE(func_name, prev); }
+
 	INST_HANDLE(IADD_RS, NULL);
 	INST_HANDLE(IADD_M, IADD_RS);
 	INST_HANDLE(ISUB_R, IADD_M);
 	INST_HANDLE(ISUB_M, ISUB_R);
 	INST_HANDLE(IMUL_R, ISUB_M);
 	INST_HANDLE(IMUL_M, IMUL_R);
-	INST_HANDLE(IMULH_R, IMUL_M);
-	INST_HANDLE(IMULH_M, IMULH_R);
+
+#if defined(_M_X64) || defined(__x86_64__)
+	if (xmrstak::cpu::hasBMI2()) {
+		INST_HANDLE2(IMULH_R, IMULH_R_BMI2, IMUL_M);
+		INST_HANDLE2(IMULH_M, IMULH_M_BMI2, IMULH_R);
+	}
+	else
+#endif
+	{
+		INST_HANDLE(IMULH_R, IMUL_M);
+		INST_HANDLE(IMULH_M, IMULH_R);
+	}
+
 	INST_HANDLE(ISMULH_R, IMULH_M);
 	INST_HANDLE(ISMULH_M, ISMULH_R);
 	INST_HANDLE(IMUL_RCP, ISMULH_M);
@@ -241,7 +285,17 @@ void RandomX_ConfigurationBase::Apply()
 	INST_HANDLE(FDIV_M, FMUL_R);
 	INST_HANDLE(FSQRT_R, FDIV_M);
 	INST_HANDLE(CBRANCH, FSQRT_R);
-	INST_HANDLE(CFROUND, CBRANCH);
+
+#if defined(_M_X64) || defined(__x86_64__)
+	if (xmrstak::cpu::hasBMI2()) {
+		INST_HANDLE2(CFROUND, CFROUND_BMI2, CBRANCH);
+	}
+	else
+#endif
+	{
+		INST_HANDLE(CFROUND, CBRANCH);
+	}
+
 	INST_HANDLE(ISTORE, CFROUND);
 	INST_HANDLE(NOP, ISTORE);
 #undef INST_HANDLE
@@ -251,8 +305,12 @@ RandomX_ConfigurationMonero RandomX_MoneroConfig;
 RandomX_ConfigurationWownero RandomX_WowneroConfig;
 RandomX_ConfigurationLoki RandomX_LokiConfig;
 RandomX_ConfigurationArqma RandomX_ArqmaConfig;
+RandomX_ConfigurationSafex RandomX_SafexConfig;
+RandomX_ConfigurationKeva RandomX_KevaConfig;
 
-RandomX_ConfigurationBase RandomX_CurrentConfig;
+alignas(64) RandomX_ConfigurationBase RandomX_CurrentConfig;
+
+static std::mutex vm_pool_mutex;
 
 extern "C" {
 
@@ -327,7 +385,7 @@ extern "C" {
 			dataset = new randomx_dataset();
 			if (flags & RANDOMX_FLAG_LARGE_PAGES) {
 				dataset->dealloc = &randomx::deallocDataset<randomx::LargePageAllocator>;
-				if(flags & RANDOMX_FLAG_LARGE_PAGES_1G) {
+				if(flags & RANDOMX_FLAG_1GB_PAGES) {
 					dataset->memory = (uint8_t*)randomx::LargePageAllocator::allocMemory(RANDOMX_DATASET_MAX_SIZE, 1024u);
 				}
 				else {
