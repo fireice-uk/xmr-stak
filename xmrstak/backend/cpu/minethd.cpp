@@ -468,6 +468,12 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 	case randomX_arqma:
 		algv = 3;
 		break;
+	case randomX_safex:
+		algv = 4;
+		break;
+	case randomX_keva:
+		algv = 5;
+		break;
 	default:
 		algv = 0;
 		break;
@@ -488,7 +494,15 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 
 		//arqma
 		RandomX_hash<N>::template hash<randomX_arqma, false>,
-		RandomX_hash<N>::template hash<randomX_arqma, true>
+		RandomX_hash<N>::template hash<randomX_arqma, true>,
+
+		//safex
+		RandomX_hash<N>::template hash<randomX_safex, false>,
+		RandomX_hash<N>::template hash<randomX_safex, true>,
+
+		//keva
+		RandomX_hash<N>::template hash<randomX_keva, false>,
+		RandomX_hash<N>::template hash<randomX_keva, true>
 	};
 
 	std::bitset<1> digit;
@@ -503,7 +517,9 @@ void minethd::func_multi_selector(cryptonight_ctx** ctx, minethd::cn_on_new_job&
 		{randomX, RandomX_generator<N>::template cn_on_new_job<randomX>},
 		{randomX_loki, RandomX_generator<N>::template cn_on_new_job<randomX_loki>},
 		{randomX_wow, RandomX_generator<N>::template cn_on_new_job<randomX_wow>},
-		{randomX_arqma, RandomX_generator<N>::template cn_on_new_job<randomX_arqma>}
+		{randomX_arqma, RandomX_generator<N>::template cn_on_new_job<randomX_arqma>},
+		{randomX_safex, RandomX_generator<N>::template cn_on_new_job<randomX_safex>},
+		{randomX_keva, RandomX_generator<N>::template cn_on_new_job<randomX_keva>}
 	};
 
 	auto it = on_new_job_map.find(algo.Id());

@@ -124,7 +124,7 @@ struct randomX_global_ctx
 			}
 			printer::inst()->print_msg(LDEBUG,"allocate dataset/cache for numa %u", uint32_t(numaId));
 	#ifdef __linux__
-			randomx_dataset* dataset = randomx_alloc_dataset(static_cast<randomx_flags>(RANDOMX_FLAG_LARGE_PAGES | RANDOMX_FLAG_LARGE_PAGES_1G));
+			randomx_dataset* dataset = randomx_alloc_dataset(static_cast<randomx_flags>(RANDOMX_FLAG_LARGE_PAGES | RANDOMX_FLAG_1GB_PAGES));
 			if (!dataset)
 			{
 				printer::inst()->print_msg(LDEBUG,"Warning: dataset allocation with 1 GiB pages failed");

@@ -27,5 +27,13 @@ Model getModel();
 	 */
 int32_t get_masked(int32_t val, int32_t h, int32_t l);
 
+bool firstHasBMI2();
+
+inline bool hasBMI2()
+{
+	static bool bmi2 = firstHasBMI2();
+	return bmi2;
+}
+
 } // namespace cpu
 } // namespace xmrstak
