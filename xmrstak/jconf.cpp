@@ -102,11 +102,15 @@ constexpr size_t iConfigCnt = (sizeof(oConfigValues) / sizeof(oConfigValues[0]))
 xmrstak::coin_selection coins[] = {
 	// name, userpool, default_pool_suggestion
 	{"arqma", {POW(randomX_arqma)}, {POW(randomX_arqma)}, nullptr},
+	{"keva", {POW(randomX_keva)}, {POW(randomX_keva)}, nullptr},
 	{"loki", {POW(randomX_loki)}, {POW(randomX_loki)}, nullptr},
 	{"monero", {POW(randomX)}, {POW(randomX)}, nullptr},
+	{"safex", {POW(randomX_safex)}, {POW(randomX_safex)}, nullptr},
 	{"randomx", {POW(randomX)}, {POW(randomX)}, nullptr},
 	{"randomx_arqma", {POW(randomX_arqma)}, {POW(randomX_arqma)}, nullptr},
+	{"randomx_keva", {POW(randomX_keva)}, {POW(randomX_keva)}, nullptr},
 	{"randomx_loki", {POW(randomX_loki)}, {POW(randomX_loki)}, nullptr},
+	{"randomx_safex", {POW(randomX_safex)}, {POW(randomX_safex)}, nullptr},
 	{"randomx_wow", {POW(randomX_wow)}, {POW(randomX_wow)}, nullptr},
 	{"wownero", {POW(randomX_wow)}, {POW(randomX_wow)}, nullptr}
 };

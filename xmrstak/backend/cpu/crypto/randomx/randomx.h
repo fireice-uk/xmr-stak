@@ -48,7 +48,8 @@ enum randomx_flags {
   RANDOMX_FLAG_HARD_AES = 2,
   RANDOMX_FLAG_FULL_MEM = 4,
   RANDOMX_FLAG_JIT = 8,
-  RANDOMX_FLAG_LARGE_PAGES_1G = 16
+  RANDOMX_FLAG_1GB_PAGES = 16,
+  RANDOMX_FLAG_AMD = 64,
 };
 
 
@@ -118,9 +119,9 @@ struct RandomX_ConfigurationBase
 	rx_vec_i128 fillAes4Rx4_Key[8];
 
 	uint8_t codeShhPrefetchTweaked[20];
-	uint8_t codeReadDatasetTweaked[72];
+	uint8_t codeReadDatasetTweaked[64];
 	uint32_t codeReadDatasetTweakedSize;
-	uint8_t codeReadDatasetRyzenTweaked[72];
+	uint8_t codeReadDatasetRyzenTweaked[76];
 	uint32_t codeReadDatasetRyzenTweakedSize;
 	uint8_t codeReadDatasetLightSshInitTweaked[68];
 	uint8_t codePrefetchScratchpadTweaked[32];
@@ -136,6 +137,14 @@ struct RandomX_ConfigurationBase
 	uint32_t ScratchpadL3Mask64_Calculated;
 
 	uint32_t ConditionMask_Calculated;
+
+#if defined(XMRIG_ARMv8)
+	uint32_t Log2_ScratchpadL1;
+	uint32_t Log2_ScratchpadL2;
+	uint32_t Log2_ScratchpadL3;
+	uint32_t Log2_DatasetBaseSize;
+	uint32_t Log2_CacheSize;
+#endif
 
 	int CEIL_IADD_RS;
 	int CEIL_IADD_M;
@@ -173,11 +182,15 @@ struct RandomX_ConfigurationMonero : public RandomX_ConfigurationBase {};
 struct RandomX_ConfigurationWownero : public RandomX_ConfigurationBase { RandomX_ConfigurationWownero(); };
 struct RandomX_ConfigurationLoki : public RandomX_ConfigurationBase { RandomX_ConfigurationLoki(); };
 struct RandomX_ConfigurationArqma : public RandomX_ConfigurationBase { RandomX_ConfigurationArqma(); };
+struct RandomX_ConfigurationSafex : public RandomX_ConfigurationBase { RandomX_ConfigurationSafex(); };
+struct RandomX_ConfigurationKeva : public RandomX_ConfigurationBase { RandomX_ConfigurationKeva(); };
 
 extern RandomX_ConfigurationMonero RandomX_MoneroConfig;
 extern RandomX_ConfigurationWownero RandomX_WowneroConfig;
 extern RandomX_ConfigurationLoki RandomX_LokiConfig;
 extern RandomX_ConfigurationArqma RandomX_ArqmaConfig;
+extern RandomX_ConfigurationSafex RandomX_SafexConfig;
+extern RandomX_ConfigurationKeva RandomX_KevaConfig;
 
 extern RandomX_ConfigurationBase RandomX_CurrentConfig;
 
