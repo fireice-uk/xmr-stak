@@ -212,13 +212,14 @@ void printer::print_str(const char* str)
 #ifdef _WIN32
 void win_exit(int code)
 {
-	size_t envSize = 0;
-	getenv_s(&envSize, nullptr, 0, "XMRSTAK_NOWAIT");
-	if(envSize == 0)
-	{
-		printer::inst()->print_str("Press any key to exit.");
-		get_key();
-	}
+	// We don't want this UAC stuff breaking our std::io stuff so remove it
+	// size_t envSize = 0;
+	// getenv_s(&envSize, nullptr, 0, "XMRSTAK_NOWAIT");
+	// if(envSize == 0)
+	// {
+	// 	printer::inst()->print_str("Press any key to exit.");
+	// 	get_key();
+	// }
 	std::exit(code);
 }
 

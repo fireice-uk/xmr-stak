@@ -157,10 +157,39 @@ int httpd::req_handler(void* cls,
 
 bool httpd::start_daemon()
 {
+#ifdef _WIN32
+	// On Windows we don't want to prompt the firewall notice no need
+	struct sockaddr_in daemon_ip_addr;
+#if HAVE_INET6
+	struct sockaddr_in6 daemon_ip_addr6;
+#endif
+
+	memset(&daemon_ip_addr, 0, sizeof(struct sockaddr_in));
+	daemon_ip_addr.sin_family = AF_INET;
+	daemon_ip_addr.sin_port = htons(jconf::inst()->GetHttpdPort());
+
+#if HAVE_INET6
+	memset(&daemon_ip_addr6, 0, sizeof(struct sockaddr_in6));
+	daemon_ip_addr6.sin6_family = AF_INET6;
+	daemon_ip_addr6.sin6_port = htons(jconf::inst()->GetHttpdPort());
+#endif
+
+	inet_pton(AF_INET, "127.0.0.1", &daemon_ip_addr.sin_addr);
+#if HAVE_INET6
+	inet_pton(AF_INET6, "::ffff:127.0.0.1", &daemon_ip_addr6.sin6_addr);
+#endif
+
 	d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION,
 		jconf::inst()->GetHttpdPort(), NULL, NULL,
 		&httpd::req_handler,
-		NULL, MHD_OPTION_END);
+		NULL, MHD_OPTION_SOCK_ADDR,
+		&daemon_ip_addr, MHD_OPTION_END);
+#else
+	d = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION,
+			jconf::inst()->GetHttpdPort(), NULL, NULL,
+			&httpd::req_handler,
+	NULL, MHD_OPTION_END);
+#endif
 
 	if(d == nullptr)
 	{

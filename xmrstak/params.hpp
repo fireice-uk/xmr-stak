@@ -72,7 +72,6 @@ struct params
 		binaryName("xmr-stak"),
 		executablePrefix(""),
 		useAMD(true),
-		AMDCache(true),
 		useNVIDIA(true),
 		useCPU(true),
 		openCLVendor("AMD"),
