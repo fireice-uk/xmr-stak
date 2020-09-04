@@ -46,7 +46,7 @@ httpd::httpd()
 {
 }
 
-int httpd::req_handler(void* cls,
+MHD_Result httpd::req_handler(void* cls,
 	MHD_Connection* connection,
 	const char* url,
 	const char* method,
@@ -63,7 +63,7 @@ int httpd::req_handler(void* cls,
 	if(strlen(jconf::inst()->GetHttpUsername()) != 0)
 	{
 		char* username;
-		int ret;
+		MHD_Result ret;
 
 		username = MHD_digest_auth_get_username(connection);
 		if(username == NULL)
@@ -75,7 +75,7 @@ int httpd::req_handler(void* cls,
 		}
 		free(username);
 
-		ret = MHD_digest_auth_check(connection, sHttpAuthRealm, jconf::inst()->GetHttpUsername(), jconf::inst()->GetHttpPassword(), 300);
+		ret = static_cast<MHD_Result>(MHD_digest_auth_check(connection, sHttpAuthRealm, jconf::inst()->GetHttpUsername(), jconf::inst()->GetHttpPassword(), 300));
 		if(ret == MHD_INVALID_NONCE || ret == MHD_NO)
 		{
 			rsp = MHD_create_response_from_buffer(sHtmlAccessDeniedSize, (void*)sHtmlAccessDenied, MHD_RESPMEM_PERSISTENT);
@@ -95,7 +95,7 @@ int httpd::req_handler(void* cls,
 		{ //Cache hit
 			rsp = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
 
-			int ret = MHD_queue_response(connection, MHD_HTTP_NOT_MODIFIED, rsp);
+			MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_NOT_MODIFIED, rsp);
 			MHD_destroy_response(rsp);
 			return ret;
 		}
@@ -144,13 +144,13 @@ int httpd::req_handler(void* cls,
 			snprintf(loc_path, sizeof(loc_path), "/h");
 
 		rsp = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
-		int ret = MHD_queue_response(connection, MHD_HTTP_TEMPORARY_REDIRECT, rsp);
+		MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_TEMPORARY_REDIRECT, rsp);
 		MHD_add_response_header(rsp, "Location", loc_path);
 		MHD_destroy_response(rsp);
 		return ret;
 	}
 
-	int ret = MHD_queue_response(connection, MHD_HTTP_OK, rsp);
+	MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_OK, rsp);
 	MHD_destroy_response(rsp);
 	return ret;
 }
