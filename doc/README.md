@@ -73,7 +73,7 @@ Miner has 2 ways of initial configuring: simple and advanced. The simple method 
 * `Rig identifier for pool-side statistics (needs pool support). Can be empty:` Enter rig name or press Enter
 * `Does this pool port support TLS/SSL? Use no if unknown. (y/N)` Enter y or n
 * `Do you want to use nicehash on this pool? (y/N)` n
-* `Do you want to use multiple pools? (y/N)` Enter y if you want to se up backup pool or n
+* `Do you want to use multiple pools? (y/N)` Enter y if you want to set up backup pool or n
 
 
 ## Support additional guides and feedback
