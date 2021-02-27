@@ -57,8 +57,8 @@ fi
 echo ""
 modprobe msr
 
-if cat /proc/cpuinfo | grep -q "AMD Ryzen" ; then
-    echo "Detected Ryzen"
+if cat /proc/cpuinfo | grep -q "AMD Ryzen\|AMD EPYC" ; then
+    echo "Detected Ryzen/EPYC"
     wrmsr -a 0xc0011022 0x510000
     wrmsr -a 0xc001102b 0x1808cc16
     wrmsr -a 0xc0011020 0
