@@ -1,6 +1,16 @@
 #pragma once
 
 #include <stdlib.h>
+#include <microhttpd.h>
+#if MHD_VERSION >= 0x00097002
+
+#define MHD_RESULT enum MHD_Result
+
+#else
+
+#define MHD_RESULT int
+
+#endif
 
 struct MHD_Daemon;
 struct MHD_Connection;
@@ -21,7 +31,7 @@ class httpd
 	httpd();
 	static httpd* oInst;
 
-	static int req_handler(void* cls,
+    static MHD_RESULT  req_handler(void* cls,
 		MHD_Connection* connection,
 		const char* url,
 		const char* method,
