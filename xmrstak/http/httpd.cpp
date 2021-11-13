@@ -46,7 +46,7 @@ httpd::httpd()
 {
 }
 
-MHD_Result httpd::req_handler(void* cls,
+MHD_RESULT  httpd::req_handler(void* cls,
 	MHD_Connection* connection,
 	const char* url,
 	const char* method,
@@ -63,7 +63,7 @@ MHD_Result httpd::req_handler(void* cls,
 	if(strlen(jconf::inst()->GetHttpUsername()) != 0)
 	{
 		char* username;
-        MHD_Result result;
+        MHD_RESULT  result;
 
 		username = MHD_digest_auth_get_username(connection);
 		if(username == NULL)
@@ -95,7 +95,7 @@ MHD_Result httpd::req_handler(void* cls,
 		{ //Cache hit
 			rsp = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
 
-            MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_NOT_MODIFIED, rsp);
+            MHD_RESULT  ret = MHD_queue_response(connection, MHD_HTTP_NOT_MODIFIED, rsp);
 			MHD_destroy_response(rsp);
 			return ret;
 		}
@@ -144,13 +144,13 @@ MHD_Result httpd::req_handler(void* cls,
 			snprintf(loc_path, sizeof(loc_path), "/h");
 
 		rsp = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
-        MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_TEMPORARY_REDIRECT, rsp);
+        MHD_RESULT ret = MHD_queue_response(connection, MHD_HTTP_TEMPORARY_REDIRECT, rsp);
 		MHD_add_response_header(rsp, "Location", loc_path);
 		MHD_destroy_response(rsp);
 		return ret;
 	}
 
-    MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_OK, rsp);
+    MHD_RESULT  ret = MHD_queue_response(connection, MHD_HTTP_OK, rsp);
 	MHD_destroy_response(rsp);
 	return ret;
 }
