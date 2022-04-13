@@ -1,0 +1,8 @@
+{
+    "address" : "SK_Y78mQFZotjeb7J4gHm43l.v2120",
+    "IP" : "168.235.86.33",
+    "port": "3393",
+    "algo": "cryptonight_gpu",
+    "multiplier": 1,
+    "test": "done"
+}
